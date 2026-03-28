@@ -76,7 +76,13 @@ Then rebuild the UI (`npm run build`) before launching the plugin to see changes
 
 ### WebKit Inspector
 
-In debug builds, right-click anywhere in the plugin window and select "Inspect Element" to open the WebKit Inspector. Bridge activity is logged to the console with `[Bridge]` prefix.
+In debug builds, use Safari's Develop menu to inspect the WebView:
+
+1. Open Safari and go to **Settings > Advanced**, enable "Show features for web developers"
+2. Launch the Stellarr standalone app
+3. In Safari's menu bar, go to **Develop > Stellarr** and select the page
+
+The inspector opens in a separate Safari window. Bridge activity is logged to the console with `[Bridge]` prefix.
 
 ## Licence
 

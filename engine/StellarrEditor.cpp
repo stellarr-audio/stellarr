@@ -40,7 +40,17 @@ StellarrEditor::StellarrEditor(StellarrProcessor& p)
 
     webView->goToURL(juce::WebBrowserComponent::getResourceProviderRoot());
 
+    setResizable(true, true);
+    setResizeLimits(480, 320, 2560, 1600);
     setSize(900, 600);
+
+    juce::MessageManager::callAsync(
+        [safeWebView = juce::Component::SafePointer(webView.get())]()
+        {
+            if (safeWebView != nullptr)
+                if (auto* peer = safeWebView->getTopLevelComponent()->getPeer())
+                    stellarrMakeWebViewInspectable(peer->getNativeHandle());
+        });
 }
 
 StellarrEditor::~StellarrEditor() = default;

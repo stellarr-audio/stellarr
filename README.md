@@ -32,8 +32,9 @@ npm run build
 
 ### 3. Configure and build the C++ project
 
+From the project root:
+
 ```
-cd ..
 cmake -B build -DCMAKE_BUILD_TYPE=Debug
 cmake --build build
 ```

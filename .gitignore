@@ -1,0 +1,6 @@
+build/
+node_modules/
+ui/dist/
+.claude/
+.DS_Store
+*.user

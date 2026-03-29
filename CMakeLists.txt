@@ -69,3 +69,13 @@ target_link_libraries(StellarrTest
         juce::juce_gui_extra
 )
 add_test(NAME PassThrough COMMAND StellarrTest)
+
+add_executable(GraphTest engine/test/GraphTest.cpp)
+target_include_directories(GraphTest PRIVATE ${CMAKE_SOURCE_DIR}/engine)
+target_link_libraries(GraphTest
+    PRIVATE
+        Stellarr
+        juce::juce_audio_utils
+        juce::juce_gui_extra
+)
+add_test(NAME Graph COMMAND GraphTest)

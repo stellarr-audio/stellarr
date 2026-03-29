@@ -13,9 +13,13 @@ public:
 
     void resized() override;
 
+    void toggleDevTools();
+    bool isDevToolsEnabled() const;
+
 private:
     static juce::String getMimeType(const juce::File& file);
 
     StellarrBridge bridge;
     std::unique_ptr<juce::WebBrowserComponent> webView;
+    bool devToolsEnabled = false;
 };

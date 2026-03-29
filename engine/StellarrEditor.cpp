@@ -60,6 +60,18 @@ void StellarrEditor::resized()
     webView->setBounds(getLocalBounds());
 }
 
+void StellarrEditor::toggleDevTools()
+{
+    devToolsEnabled = !devToolsEnabled;
+
+    if (devToolsEnabled)
+        webView->evaluateJavascript("document.body.oncontextmenu = null;");
+    else
+        webView->evaluateJavascript("document.body.oncontextmenu = function() { return false; };");
+}
+
+bool StellarrEditor::isDevToolsEnabled() const { return devToolsEnabled; }
+
 juce::String StellarrEditor::getMimeType(const juce::File& file)
 {
     auto ext = file.getFileExtension().toLowerCase();

@@ -195,15 +195,290 @@ static bool testAddDuringProcessing()
 }
 
 // ---------------------------------------------------------------------------
+// Phase 1B — Routing test suite
+// ---------------------------------------------------------------------------
+
+static bool testSeriesRouting()
+{
+    printf("Test: series routing (two gain blocks)... ");
+
+    StellarrProcessor proc;
+    proc.prepareToPlay(kSampleRate, kBlockSize);
+
+    auto gain1 = std::make_unique<stellarr::GainBlock>();
+    auto gain2 = std::make_unique<stellarr::GainBlock>();
+    gain1->setGain(0.5f);
+    gain2->setGain(0.5f);
+
+    proc.disconnectBlocks(proc.getAudioInputNodeId(), proc.getAudioOutputNodeId());
+
+    auto node1 = proc.addBlock(std::move(gain1));
+    auto node2 = proc.addBlock(std::move(gain2));
+
+    // Input → Gain(0.5) → Gain(0.5) → Output = 0.25 amplitude
+    proc.connectBlocks(proc.getAudioInputNodeId(), node1);
+    proc.connectBlocks(node1, node2);
+    proc.connectBlocks(node2, proc.getAudioOutputNodeId());
+
+    juce::AudioBuffer<float> buffer(2, kTotalSamples);
+    generateSine(buffer);
+    juce::AudioBuffer<float> original(buffer);
+
+    processInBlocks(proc, buffer);
+
+    if (!compareBuffers(buffer, original, 1e-5f, 0.25f))
+    {
+        printf("FAIL\n");
+        return false;
+    }
+
+    proc.releaseResources();
+    printf("PASS\n");
+    return true;
+}
+
+static bool testParallelRouting()
+{
+    printf("Test: parallel routing (two gain blocks merged)... ");
+
+    StellarrProcessor proc;
+    proc.prepareToPlay(kSampleRate, kBlockSize);
+
+    auto gainA = std::make_unique<stellarr::GainBlock>();
+    auto gainB = std::make_unique<stellarr::GainBlock>();
+    gainA->setGain(0.5f);
+    gainB->setGain(0.5f);
+
+    proc.disconnectBlocks(proc.getAudioInputNodeId(), proc.getAudioOutputNodeId());
+
+    auto nodeA = proc.addBlock(std::move(gainA));
+    auto nodeB = proc.addBlock(std::move(gainB));
+
+    // Input → GainA(0.5) → Output
+    // Input → GainB(0.5) → Output
+    // Graph sums at output: 0.5 + 0.5 = 1.0
+    proc.connectBlocks(proc.getAudioInputNodeId(), nodeA);
+    proc.connectBlocks(proc.getAudioInputNodeId(), nodeB);
+    proc.connectBlocks(nodeA, proc.getAudioOutputNodeId());
+    proc.connectBlocks(nodeB, proc.getAudioOutputNodeId());
+
+    juce::AudioBuffer<float> buffer(2, kTotalSamples);
+    generateSine(buffer);
+    juce::AudioBuffer<float> original(buffer);
+
+    processInBlocks(proc, buffer);
+
+    // Both paths carry signal, summed at output = original amplitude
+    if (!compareBuffers(buffer, original, 1e-5f, 1.0f))
+    {
+        printf("FAIL\n");
+        return false;
+    }
+
+    proc.releaseResources();
+    printf("PASS\n");
+    return true;
+}
+
+static bool testDisconnectedBlock()
+{
+    printf("Test: disconnected block receives no audio... ");
+
+    StellarrProcessor proc;
+    proc.prepareToPlay(kSampleRate, kBlockSize);
+
+    // Add a gain block but do not connect it to anything
+    auto orphan = std::make_unique<stellarr::GainBlock>();
+    orphan->setGain(2.0f);
+    proc.addBlock(std::move(orphan));
+
+    // Default Input → Output path remains intact
+    juce::AudioBuffer<float> buffer(2, kTotalSamples);
+    generateSine(buffer);
+    juce::AudioBuffer<float> expected(buffer);
+
+    processInBlocks(proc, buffer);
+
+    // Output must match input — the orphan block has no effect
+    if (!compareBuffers(buffer, expected, 1e-6f))
+    {
+        printf("FAIL\n");
+        return false;
+    }
+
+    proc.releaseResources();
+    printf("PASS\n");
+    return true;
+}
+
+static bool testReconnection()
+{
+    printf("Test: disconnect and reconnect mid-stream... ");
+
+    StellarrProcessor proc;
+    proc.prepareToPlay(kSampleRate, kBlockSize);
+
+    auto gain = std::make_unique<stellarr::GainBlock>();
+    gain->setGain(0.5f);
+
+    proc.disconnectBlocks(proc.getAudioInputNodeId(), proc.getAudioOutputNodeId());
+    auto gainNode = proc.addBlock(std::move(gain));
+    proc.connectBlocks(proc.getAudioInputNodeId(), gainNode);
+    proc.connectBlocks(gainNode, proc.getAudioOutputNodeId());
+
+    // Process one block through the gain path
+    juce::AudioBuffer<float> buf1(2, kBlockSize);
+    generateSine(buf1);
+    juce::MidiBuffer midi;
+    proc.processBlock(buf1, midi);
+
+    // Disconnect the gain block
+    proc.disconnectBlocks(proc.getAudioInputNodeId(), gainNode);
+    proc.disconnectBlocks(gainNode, proc.getAudioOutputNodeId());
+
+    // Process while disconnected — output should be silence
+    juce::AudioBuffer<float> buf2(2, kBlockSize);
+    generateSine(buf2);
+    proc.processBlock(buf2, midi);
+
+    // Reconnect
+    proc.connectBlocks(proc.getAudioInputNodeId(), gainNode);
+    proc.connectBlocks(gainNode, proc.getAudioOutputNodeId());
+
+    // Process again — should produce 0.5 amplitude
+    juce::AudioBuffer<float> buf3(2, kBlockSize);
+    generateSine(buf3);
+    juce::AudioBuffer<float> original(buf3);
+    proc.processBlock(buf3, midi);
+
+    if (!compareBuffers(buf3, original, 1e-5f, 0.5f))
+    {
+        printf("FAIL\n");
+        return false;
+    }
+
+    proc.releaseResources();
+    printf("PASS\n");
+    return true;
+}
+
+static bool testSerialisation()
+{
+    printf("Test: block serialises to valid JSON... ");
+
+    auto gain = std::make_unique<stellarr::GainBlock>();
+    gain->setGain(0.75f);
+
+    auto json = gain->toJson();
+    auto* obj = json.getDynamicObject();
+
+    if (obj == nullptr)
+    {
+        fprintf(stderr, "  toJson() returned null object\n");
+        printf("FAIL\n");
+        return false;
+    }
+
+    bool ok = true;
+
+    auto id = obj->getProperty("id").toString();
+    if (id.isEmpty())
+    {
+        fprintf(stderr, "  missing or empty 'id'\n");
+        ok = false;
+    }
+
+    auto type = obj->getProperty("type").toString();
+    if (type != "gain")
+    {
+        fprintf(stderr, "  expected type 'gain', got '%s'\n", type.toRawUTF8());
+        ok = false;
+    }
+
+    auto name = obj->getProperty("name").toString();
+    if (name != "Gain")
+    {
+        fprintf(stderr, "  expected name 'Gain', got '%s'\n", name.toRawUTF8());
+        ok = false;
+    }
+
+    auto gainVal = static_cast<float>(obj->getProperty("gain"));
+    if (std::abs(gainVal - 0.75f) > 1e-6f)
+    {
+        fprintf(stderr, "  expected gain 0.75, got %f\n", static_cast<double>(gainVal));
+        ok = false;
+    }
+
+    printf("%s\n", ok ? "PASS" : "FAIL");
+    return ok;
+}
+
+static bool testDeserialisation()
+{
+    printf("Test: deserialised block routes audio identically... ");
+
+    // Create and serialise a gain block
+    auto original = std::make_unique<stellarr::GainBlock>();
+    original->setGain(0.3f);
+    auto json = original->toJson();
+
+    // Deserialise into a new block
+    auto restored = std::make_unique<stellarr::GainBlock>();
+    restored->fromJson(json);
+
+    if (std::abs(restored->getGain() - 0.3f) > 1e-6f)
+    {
+        fprintf(stderr, "  gain mismatch after deserialisation: %f\n",
+                static_cast<double>(restored->getGain()));
+        printf("FAIL\n");
+        return false;
+    }
+
+    // Wire the restored block into a graph and verify audio output
+    StellarrProcessor proc;
+    proc.prepareToPlay(kSampleRate, kBlockSize);
+
+    proc.disconnectBlocks(proc.getAudioInputNodeId(), proc.getAudioOutputNodeId());
+    auto nodeId = proc.addBlock(std::move(restored));
+    proc.connectBlocks(proc.getAudioInputNodeId(), nodeId);
+    proc.connectBlocks(nodeId, proc.getAudioOutputNodeId());
+
+    juce::AudioBuffer<float> buffer(2, kTotalSamples);
+    generateSine(buffer);
+    juce::AudioBuffer<float> reference(buffer);
+
+    processInBlocks(proc, buffer);
+
+    if (!compareBuffers(buffer, reference, 1e-5f, 0.3f))
+    {
+        printf("FAIL\n");
+        return false;
+    }
+
+    proc.releaseResources();
+    printf("PASS\n");
+    return true;
+}
+
+// ---------------------------------------------------------------------------
 
 int main()
 {
     int failures = 0;
 
-    if (!testPassThrough())        ++failures;
-    if (!testGainBlock())          ++failures;
-    if (!testRemoveBlock())        ++failures;
+    // Phase 1A
+    if (!testPassThrough())         ++failures;
+    if (!testGainBlock())           ++failures;
+    if (!testRemoveBlock())         ++failures;
     if (!testAddDuringProcessing()) ++failures;
+
+    // Phase 1B
+    if (!testSeriesRouting())       ++failures;
+    if (!testParallelRouting())     ++failures;
+    if (!testDisconnectedBlock())   ++failures;
+    if (!testReconnection())        ++failures;
+    if (!testSerialisation())       ++failures;
+    if (!testDeserialisation())     ++failures;
 
     printf("\n%d test(s) failed\n", failures);
     return failures;

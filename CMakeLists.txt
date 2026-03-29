@@ -35,6 +35,7 @@ target_sources(Stellarr
         engine/StellarrEditor.cpp
         engine/StellarrBridge.cpp
         engine/StellarrPlatform.mm
+        engine/StellarrStandaloneApp.cpp
 )
 
 target_compile_definitions(Stellarr
@@ -42,6 +43,7 @@ target_compile_definitions(Stellarr
         JUCE_WEB_BROWSER=1
         JUCE_USE_CURL=0
         JUCE_VST3_CAN_REPLACE_VST2=0
+        JUCE_USE_CUSTOM_PLUGIN_STANDALONE_APP=1
     PRIVATE
         STELLARR_UI_DIR="${CMAKE_SOURCE_DIR}/ui/dist"
 )

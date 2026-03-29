@@ -9,51 +9,34 @@ Open-source guitar signal processing application built with JUCE (C++) for the a
 - Node.js 18+
 - npm
 
+## Quick Start
+
+```
+make build    # install npm deps, build UI, configure + build C++
+make run      # launch the standalone app
+make test     # run audio processing tests
+```
+
+The first build fetches JUCE via git and compiles the `juceaide` tool. This takes several minutes on the first run.
+
 ## Project Structure
 
 - `engine/` — C++ audio engine, plugin editor, and WebView bridge
 - `engine/test/` — Audio processing tests
 - `ui/` — React + TypeScript frontend (Vite, Zustand)
 
-## Getting Started
+## Make Targets
 
-### 1. Install UI dependencies
+| Target | Description |
+|---|---|
+| `make build` | Full build: npm install, UI build, CMake configure + compile |
+| `make build-ui` | Install npm deps and build the React app only |
+| `make build-cpp` | CMake configure and compile only |
+| `make test` | Build and run all tests |
+| `make run` | Build and launch the standalone app |
+| `make clean` | Remove build/, ui/dist/, and ui/node_modules/ |
 
-```
-cd ui
-npm install
-```
-
-### 2. Build the UI
-
-```
-npm run build
-```
-
-### 3. Configure and build the C++ project
-
-From the project root:
-
-```
-cmake -B build -DCMAKE_BUILD_TYPE=Debug
-cmake --build build
-```
-
-The first configure fetches JUCE via git and builds the `juceaide` tool. This takes several minutes on the first run.
-
-### 4. Run the standalone app
-
-```
-open build/Stellarr_artefacts/Debug/Standalone/Stellarr.app
-```
-
-### 5. Run tests
-
-```
-ctest --test-dir build --output-on-failure
-```
-
-## Build Targets
+## Build Outputs
 
 The CMake build produces three plugin formats from the same codebase:
 
@@ -76,13 +59,7 @@ Then rebuild the UI (`npm run build`) before launching the plugin to see changes
 
 ### WebKit Inspector
 
-In debug builds, use Safari's Develop menu to inspect the WebView:
-
-1. Open Safari and go to **Settings > Advanced**, enable "Show features for web developers"
-2. Launch the Stellarr standalone app
-3. In Safari's menu bar, go to **Develop > Stellarr** and select the page
-
-The inspector opens in a separate Safari window. Bridge activity is logged to the console with `[Bridge]` prefix.
+In debug builds, right-click anywhere in the plugin window and select "Inspect Element" to open the WebKit Inspector. Bridge activity is logged to the console with `[Bridge]` prefix.
 
 ## Licence
 

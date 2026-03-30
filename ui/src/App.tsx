@@ -1,6 +1,5 @@
 import { useStore } from './store';
 import { Grid } from './grid/Grid';
-import { Palette } from './grid/Palette';
 import { colors } from './grid/colors';
 
 function App() {
@@ -31,21 +30,18 @@ function App() {
           flexShrink: 0,
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <span
-            style={{
-              fontSize: '0.9rem',
-              fontWeight: 700,
-              color: colors.primary,
-              letterSpacing: '0.08em',
-              textTransform: 'uppercase',
-              textShadow: `0 0 12px ${colors.primary}44`,
-            }}
-          >
-            Stellarr
-          </span>
-          <Palette />
-        </div>
+        <span
+          style={{
+            fontSize: '0.9rem',
+            fontWeight: 700,
+            color: colors.primary,
+            letterSpacing: '0.08em',
+            textTransform: 'uppercase',
+            textShadow: `0 0 12px ${colors.primary}44`,
+          }}
+        >
+          Stellarr
+        </span>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
           <div

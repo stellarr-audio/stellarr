@@ -210,8 +210,8 @@ export function GridBlockComponent({ block }: Props) {
         </div>
       )}
 
-      {/* Remove button — hover only, non-I/O blocks */}
-      {block.type !== 'input' && block.type !== 'output' && hovered && (
+      {/* Remove button — hover only */}
+      {hovered && (
         <div
           onClick={(e) => {
             e.stopPropagation();

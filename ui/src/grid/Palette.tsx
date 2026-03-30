@@ -1,9 +1,11 @@
 import { colors } from './colors';
 
 const blockTypes = [
-  { type: 'gain', label: 'Gain' },
   { type: 'input', label: 'Input' },
   { type: 'output', label: 'Output' },
+  { type: 'amp', label: 'Amp' },
+  { type: 'cab', label: 'Cab' },
+  { type: 'fx', label: 'FX' },
 ];
 
 export function Palette() {

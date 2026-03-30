@@ -1,11 +1,10 @@
 import { useCallback, useRef } from 'react';
 import { useStore } from '../store';
-import { requestAddBlock, requestAddConnection } from '../bridge';
+import { requestAddBlock, requestAddConnection, requestMoveBlock } from '../bridge';
 import { GridBlockComponent } from './GridBlock';
 import { ConnectionLayer } from './ConnectionLayer';
 import { colors } from './colors';
-
-const CELL_SIZE = 80;
+import { CELL_SIZE, STEP, cellLeft, cellTop, gridWidth, gridHeight } from './layout';
 
 export function Grid() {
   const grid = useStore((s) => s.grid);
@@ -13,6 +12,26 @@ export function Grid() {
   const draggingConnection = useStore((s) => s.draggingConnection);
   const setDraggingConnection = useStore((s) => s.setDraggingConnection);
   const gridRef = useRef<HTMLDivElement>(null);
+
+  const cellFromPoint = useCallback(
+    (clientX: number, clientY: number): { col: number; row: number } | null => {
+      if (!gridRef.current) return null;
+      const rect = gridRef.current.getBoundingClientRect();
+      const x = clientX - rect.left;
+      const y = clientY - rect.top;
+      const col = Math.floor(x / STEP);
+      const row = Math.floor(y / STEP);
+      if (col < 0 || col >= grid.columns || row < 0 || row >= grid.rows) return null;
+
+      // Check the click is within the cell area, not in the gap
+      const cellX = x - col * STEP;
+      const cellY = y - row * STEP;
+      if (cellX > CELL_SIZE || cellY > CELL_SIZE) return null;
+
+      return { col, row };
+    },
+    [grid],
+  );
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -22,23 +41,30 @@ export function Grid() {
   const handleDrop = useCallback(
     (e: React.DragEvent) => {
       e.preventDefault();
+      const cell = cellFromPoint(e.clientX, e.clientY);
+      if (!cell) return;
+
       const blockType = e.dataTransfer.getData('blockType');
-      if (!blockType || !gridRef.current) return;
+      const moveBlockId = e.dataTransfer.getData('moveBlockId');
 
-      const rect = gridRef.current.getBoundingClientRect();
-      const col = Math.floor((e.clientX - rect.left) / CELL_SIZE);
-      const row = Math.floor((e.clientY - rect.top) / CELL_SIZE);
+      const occupied = blocks.some(
+        (b) => b.col === cell.col && b.row === cell.row,
+      );
 
-      if (col < 0 || col >= grid.columns || row < 0 || row >= grid.rows)
-        return;
-
-      // Check cell is empty
-      const occupied = blocks.some((b) => b.col === col && b.row === row);
-      if (occupied) return;
-
-      requestAddBlock(blockType, col, row);
+      if (moveBlockId) {
+        const moving = blocks.find((b) => b.id === moveBlockId);
+        if (!moving) return;
+        // Allow drop on the block's own cell (no-op) or an empty cell
+        if (occupied && !(moving.col === cell.col && moving.row === cell.row))
+          return;
+        if (moving.col !== cell.col || moving.row !== cell.row)
+          requestMoveBlock(moveBlockId, cell.col, cell.row);
+      } else if (blockType) {
+        if (occupied) return;
+        requestAddBlock(blockType, cell.col, cell.row);
+      }
     },
-    [grid, blocks],
+    [blocks, cellFromPoint],
   );
 
   const handleMouseMove = useCallback(
@@ -58,13 +84,17 @@ export function Grid() {
     (e: React.MouseEvent) => {
       if (!draggingConnection) return;
 
-      // Check if we dropped on an input port
       const target = e.target as HTMLElement;
-      const portBlockId = target.getAttribute('data-port-block-id');
-      const portType = target.getAttribute('data-port-type');
+      const dropBlockId = target.getAttribute('data-port-block-id');
+      const dropPortType = target.getAttribute('data-port-type');
 
-      if (portBlockId && portType === 'input') {
-        requestAddConnection(draggingConnection.sourceId, portBlockId);
+      if (dropBlockId && dropPortType) {
+        // Resolve direction: output→input
+        if (draggingConnection.portType === 'output' && dropPortType === 'input') {
+          requestAddConnection(draggingConnection.blockId, dropBlockId);
+        } else if (draggingConnection.portType === 'input' && dropPortType === 'output') {
+          requestAddConnection(dropBlockId, draggingConnection.blockId);
+        }
       }
 
       setDraggingConnection(null);
@@ -72,8 +102,8 @@ export function Grid() {
     [draggingConnection, setDraggingConnection],
   );
 
-  const gridWidth = grid.columns * CELL_SIZE;
-  const gridHeight = grid.rows * CELL_SIZE;
+  const gw = gridWidth(grid.columns);
+  const gh = gridHeight(grid.rows);
 
   return (
     <div
@@ -84,51 +114,35 @@ export function Grid() {
       onMouseUp={handleMouseUp}
       style={{
         position: 'relative',
-        width: gridWidth,
-        height: gridHeight,
+        width: gw,
+        height: gh,
         background: colors.bg,
         overflow: 'hidden',
       }}
     >
-      {/* Grid lines */}
-      <svg
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          width: gridWidth,
-          height: gridHeight,
-          pointerEvents: 'none',
-        }}
-      >
-        {Array.from({ length: grid.columns + 1 }, (_, i) => (
-          <line
-            key={`v${i}`}
-            x1={i * CELL_SIZE}
-            y1={0}
-            x2={i * CELL_SIZE}
-            y2={gridHeight}
-            stroke={colors.border}
-            strokeWidth={0.5}
+      {/* Cell backgrounds */}
+      {Array.from({ length: grid.rows }, (_, row) =>
+        Array.from({ length: grid.columns }, (_, col) => (
+          <div
+            key={`cell-${col}-${row}`}
+            style={{
+              position: 'absolute',
+              left: cellLeft(col),
+              top: cellTop(row),
+              width: CELL_SIZE,
+              height: CELL_SIZE,
+              background: colors.cell,
+              border: `1px solid ${colors.border}`,
+              boxSizing: 'border-box',
+            }}
           />
-        ))}
-        {Array.from({ length: grid.rows + 1 }, (_, i) => (
-          <line
-            key={`h${i}`}
-            x1={0}
-            y1={i * CELL_SIZE}
-            x2={gridWidth}
-            y2={i * CELL_SIZE}
-            stroke={colors.border}
-            strokeWidth={0.5}
-          />
-        ))}
-      </svg>
+        )),
+      )}
 
-      <ConnectionLayer cellSize={CELL_SIZE} />
+      <ConnectionLayer gridRef={gridRef} />
 
       {blocks.map((block) => (
-        <GridBlockComponent key={block.id} block={block} cellSize={CELL_SIZE} />
+        <GridBlockComponent key={block.id} block={block} />
       ))}
     </div>
   );

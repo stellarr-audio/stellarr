@@ -16,7 +16,21 @@ interface Props {
 const typeColors: Record<string, string> = {
   input: colors.green,
   output: colors.primary,
-  gain: colors.secondary,
+  amp: '#ff8800',
+  cab: '#cc66ff',
+  fx: '#00ffe0',
+  utility: colors.muted,
+  vst: colors.secondary,
+};
+
+const typeAbbreviations: Record<string, string> = {
+  input: 'INP',
+  output: 'OUT',
+  amp: 'AMP',
+  cab: 'CAB',
+  fx: 'EFX',
+  utility: 'UTL',
+  vst: 'VST',
 };
 
 function Port({
@@ -141,19 +155,28 @@ export function GridBlockComponent({ block }: Props) {
     >
       <div
         style={{
-          fontSize: '0.6rem',
+          fontSize: '0.7rem',
           fontWeight: 700,
           color: accentColor,
-          letterSpacing: '0.08em',
-          textTransform: 'uppercase',
-          marginBottom: '0.15rem',
+          letterSpacing: '0.12em',
         }}
       >
-        {block.type}
+        {typeAbbreviations[block.type] ?? block.type.slice(0, 3).toUpperCase()}
       </div>
-      <div style={{ fontSize: '0.5rem', color: colors.muted }}>
-        {block.name}
-      </div>
+      {block.type !== 'input' && block.type !== 'output' && (
+        <div
+          style={{
+            fontSize: '0.4rem',
+            fontWeight: 600,
+            color: colors.muted,
+            letterSpacing: '0.08em',
+            textTransform: 'uppercase',
+            marginTop: '0.15rem',
+          }}
+        >
+          {block.name}
+        </div>
+      )}
 
       {/* Input port (left) */}
       {block.type !== 'input' && (

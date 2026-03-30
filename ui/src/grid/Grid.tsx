@@ -1,8 +1,9 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { useStore } from '../store';
 import { requestAddBlock, requestAddConnection, requestMoveBlock } from '../bridge';
 import { GridBlockComponent } from './GridBlock';
 import { ConnectionLayer } from './ConnectionLayer';
+import { BlockMenu } from './BlockMenu';
 import { colors } from './colors';
 import { CELL_SIZE, STEP, cellLeft, cellTop, gridWidth, gridHeight } from './layout';
 
@@ -13,6 +14,11 @@ export function Grid() {
   const setDraggingConnection = useStore((s) => s.setDraggingConnection);
   const gridRef = useRef<HTMLDivElement>(null);
 
+  const [hoveredCell, setHoveredCell] = useState<{ col: number; row: number } | null>(null);
+  const [menuCell, setMenuCell] = useState<{ col: number; row: number } | null>(null);
+
+  const occupiedSet = new Set(blocks.map((b) => `${b.col},${b.row}`));
+
   const cellFromPoint = useCallback(
     (clientX: number, clientY: number): { col: number; row: number } | null => {
       if (!gridRef.current) return null;
@@ -22,12 +28,9 @@ export function Grid() {
       const col = Math.floor(x / STEP);
       const row = Math.floor(y / STEP);
       if (col < 0 || col >= grid.columns || row < 0 || row >= grid.rows) return null;
-
-      // Check the click is within the cell area, not in the gap
       const cellX = x - col * STEP;
       const cellY = y - row * STEP;
       if (cellX > CELL_SIZE || cellY > CELL_SIZE) return null;
-
       return { col, row };
     },
     [grid],
@@ -35,7 +38,7 @@ export function Grid() {
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
-    e.dataTransfer.dropEffect = 'copy';
+    e.dataTransfer.dropEffect = 'move';
   }, []);
 
   const handleDrop = useCallback(
@@ -44,38 +47,30 @@ export function Grid() {
       const cell = cellFromPoint(e.clientX, e.clientY);
       if (!cell) return;
 
-      const blockType = e.dataTransfer.getData('blockType');
       const moveBlockId = e.dataTransfer.getData('moveBlockId');
+      if (!moveBlockId) return;
 
-      const occupied = blocks.some(
-        (b) => b.col === cell.col && b.row === cell.row,
-      );
+      const moving = blocks.find((b) => b.id === moveBlockId);
+      if (!moving) return;
 
-      if (moveBlockId) {
-        const moving = blocks.find((b) => b.id === moveBlockId);
-        if (!moving) return;
-        // Allow drop on the block's own cell (no-op) or an empty cell
-        if (occupied && !(moving.col === cell.col && moving.row === cell.row))
-          return;
-        if (moving.col !== cell.col || moving.row !== cell.row)
-          requestMoveBlock(moveBlockId, cell.col, cell.row);
-      } else if (blockType) {
-        if (occupied) return;
-        requestAddBlock(blockType, cell.col, cell.row);
-      }
+      const occupied = occupiedSet.has(`${cell.col},${cell.row}`);
+      if (occupied && !(moving.col === cell.col && moving.row === cell.row)) return;
+      if (moving.col !== cell.col || moving.row !== cell.row)
+        requestMoveBlock(moveBlockId, cell.col, cell.row);
     },
-    [blocks, cellFromPoint],
+    [blocks, cellFromPoint, occupiedSet],
   );
 
   const handleMouseMove = useCallback(
     (e: React.MouseEvent) => {
-      if (!draggingConnection || !gridRef.current) return;
-      const rect = gridRef.current.getBoundingClientRect();
-      setDraggingConnection({
-        ...draggingConnection,
-        mouseX: e.clientX - rect.left,
-        mouseY: e.clientY - rect.top,
-      });
+      if (draggingConnection && gridRef.current) {
+        const rect = gridRef.current.getBoundingClientRect();
+        setDraggingConnection({
+          ...draggingConnection,
+          mouseX: e.clientX - rect.left,
+          mouseY: e.clientY - rect.top,
+        });
+      }
     },
     [draggingConnection, setDraggingConnection],
   );
@@ -89,17 +84,33 @@ export function Grid() {
       const dropPortType = target.getAttribute('data-port-type');
 
       if (dropBlockId && dropPortType) {
-        // Resolve direction: output→input
-        if (draggingConnection.portType === 'output' && dropPortType === 'input') {
+        if (draggingConnection.portType === 'output' && dropPortType === 'input')
           requestAddConnection(draggingConnection.blockId, dropBlockId);
-        } else if (draggingConnection.portType === 'input' && dropPortType === 'output') {
+        else if (draggingConnection.portType === 'input' && dropPortType === 'output')
           requestAddConnection(dropBlockId, draggingConnection.blockId);
-        }
       }
 
       setDraggingConnection(null);
     },
     [draggingConnection, setDraggingConnection],
+  );
+
+  const handleCellClick = useCallback(
+    (col: number, row: number) => {
+      if (occupiedSet.has(`${col},${row}`)) return;
+      setMenuCell({ col, row });
+    },
+    [occupiedSet],
+  );
+
+  const handleMenuSelect = useCallback(
+    (type: string) => {
+      if (menuCell) {
+        requestAddBlock(type, menuCell.col, menuCell.row);
+        setMenuCell(null);
+      }
+    },
+    [menuCell],
   );
 
   const gw = gridWidth(grid.columns);
@@ -112,31 +123,73 @@ export function Grid() {
       onDrop={handleDrop}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
+      onMouseLeave={() => setHoveredCell(null)}
       style={{
         position: 'relative',
         width: gw,
         height: gh,
         background: colors.bg,
-        overflow: 'hidden',
+        overflow: 'visible',
       }}
     >
       {/* Cell backgrounds */}
       {Array.from({ length: grid.rows }, (_, row) =>
-        Array.from({ length: grid.columns }, (_, col) => (
-          <div
-            key={`cell-${col}-${row}`}
-            style={{
-              position: 'absolute',
-              left: cellLeft(col),
-              top: cellTop(row),
-              width: CELL_SIZE,
-              height: CELL_SIZE,
-              background: colors.cell,
-              border: `1px solid ${colors.border}`,
-              boxSizing: 'border-box',
-            }}
-          />
-        )),
+        Array.from({ length: grid.columns }, (_, col) => {
+          const key = `${col},${row}`;
+          const occupied = occupiedSet.has(key);
+          const isHovered =
+            !occupied &&
+            hoveredCell?.col === col &&
+            hoveredCell?.row === row;
+          const isMenuOpen =
+            menuCell?.col === col && menuCell?.row === row;
+
+          return (
+            <div
+              key={key}
+              onMouseEnter={() => {
+                if (!occupied) setHoveredCell({ col, row });
+              }}
+              onMouseLeave={() => {
+                if (hoveredCell?.col === col && hoveredCell?.row === row)
+                  setHoveredCell(null);
+              }}
+              onClick={() => handleCellClick(col, row)}
+              style={{
+                position: 'absolute',
+                left: cellLeft(col),
+                top: cellTop(row),
+                width: CELL_SIZE,
+                height: CELL_SIZE,
+                background: isHovered || isMenuOpen
+                  ? colors.cellHover
+                  : colors.cell,
+                border: `1px solid ${
+                  isHovered || isMenuOpen ? colors.muted : colors.border
+                }`,
+                boxSizing: 'border-box',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: occupied ? 'default' : 'pointer',
+                transition: 'background 0.1s ease, border-color 0.1s ease',
+              }}
+            >
+              {(isHovered || isMenuOpen) && (
+                <span
+                  style={{
+                    fontSize: '1.2rem',
+                    fontWeight: 300,
+                    color: colors.muted,
+                    lineHeight: 1,
+                  }}
+                >
+                  +
+                </span>
+              )}
+            </div>
+          );
+        }),
       )}
 
       <ConnectionLayer gridRef={gridRef} />
@@ -144,6 +197,19 @@ export function Grid() {
       {blocks.map((block) => (
         <GridBlockComponent key={block.id} block={block} />
       ))}
+
+      {menuCell && (() => {
+        const openAbove = menuCell.row >= Math.floor(grid.rows / 2);
+        return (
+          <BlockMenu
+            x={cellLeft(menuCell.col)}
+            y={openAbove ? cellTop(menuCell.row) : cellTop(menuCell.row) + CELL_SIZE + 4}
+            anchor={openAbove ? 'bottom' : 'top'}
+            onSelect={handleMenuSelect}
+            onClose={() => setMenuCell(null)}
+          />
+        );
+      })()}
     </div>
   );
 }

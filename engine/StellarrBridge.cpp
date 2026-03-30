@@ -1,6 +1,8 @@
 #include "StellarrBridge.h"
 #include "StellarrProcessor.h"
-#include "blocks/GainBlock.h"
+#include "blocks/AmpBlock.h"
+#include "blocks/CabBlock.h"
+#include "blocks/FxBlock.h"
 #include "blocks/InputBlock.h"
 #include "blocks/OutputBlock.h"
 
@@ -110,9 +112,11 @@ void StellarrBridge::handleAddBlock(const juce::var& json)
 
     std::unique_ptr<stellarr::Block> block;
 
-    if (type == "gain")        block = std::make_unique<stellarr::GainBlock>();
-    else if (type == "input")  block = std::make_unique<stellarr::InputBlock>();
+    if (type == "input")       block = std::make_unique<stellarr::InputBlock>();
     else if (type == "output") block = std::make_unique<stellarr::OutputBlock>();
+    else if (type == "amp")    block = std::make_unique<stellarr::AmpBlock>();
+    else if (type == "cab")    block = std::make_unique<stellarr::CabBlock>();
+    else if (type == "fx")     block = std::make_unique<stellarr::FxBlock>();
     else return;
 
     auto blockId = block->getBlockId().toString();

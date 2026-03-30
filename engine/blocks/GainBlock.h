@@ -4,6 +4,9 @@
 namespace stellarr
 {
 
+// Test-only block. Applies a simple gain stage for verifying audio routing
+// in automated tests. Not exposed in the UI or palette — end users add gain
+// via FX blocks with a gain/EQ effect type.
 class GainBlock final : public Block
 {
 public:

@@ -39,9 +39,9 @@ interface StellarrState {
   syncGraph: (blocks: GridBlock[], connections: Connection[]) => void;
 
   // UI-only state
-  draggingConnection: { sourceId: string; mouseX: number; mouseY: number } | null;
+  draggingConnection: { blockId: string; portType: 'input' | 'output'; mouseX: number; mouseY: number } | null;
   setDraggingConnection: (
-    state: { sourceId: string; mouseX: number; mouseY: number } | null,
+    state: { blockId: string; portType: 'input' | 'output'; mouseX: number; mouseY: number } | null,
   ) => void;
 }
 
@@ -49,7 +49,7 @@ export const useStore = create<StellarrState>((set) => ({
   connected: false,
   blocks: [],
   connections: [],
-  grid: { columns: 14, rows: 6 },
+  grid: { columns: 12, rows: 6 },
   draggingConnection: null,
 
   setConnected: (value) => set({ connected: value }),

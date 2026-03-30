@@ -1,12 +1,16 @@
-import { useCallback } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import type { GridBlock as GridBlockData } from '../store';
-import { requestRemoveBlock, requestToggleTestTone } from '../bridge';
+import {
+  requestRemoveBlock,
+  requestRemoveConnection,
+  requestToggleTestTone,
+} from '../bridge';
 import { useStore } from '../store';
 import { colors } from './colors';
+import { CELL_SIZE, cellLeft, cellTop } from './layout';
 
 interface Props {
   block: GridBlockData;
-  cellSize: number;
 }
 
 const typeColors: Record<string, string> = {
@@ -15,44 +19,129 @@ const typeColors: Record<string, string> = {
   gain: colors.secondary,
 };
 
-export function GridBlockComponent({ block, cellSize }: Props) {
+function Port({
+  side,
+  blockId,
+  connected,
+}: {
+  side: 'input' | 'output';
+  blockId: string;
+  connected: boolean;
+}) {
+  const [hovered, setHovered] = useState(false);
+  const connections = useStore((s) => s.connections);
   const setDraggingConnection = useStore((s) => s.setDraggingConnection);
 
-  const handlePortMouseDown = useCallback(
+  const isLeft = side === 'input';
+  const showDisconnect = connected && hovered;
+
+  const handleClick = useCallback(() => {
+    if (!connected) return;
+
+    const conn = isLeft
+      ? connections.find((c) => c.destId === blockId)
+      : connections.find((c) => c.sourceId === blockId);
+
+    if (conn) requestRemoveConnection(conn.sourceId, conn.destId);
+  }, [connected, connections, blockId, isLeft]);
+
+  const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
+      if (connected) return; // connected ports use click-to-disconnect instead
       e.stopPropagation();
+      e.preventDefault();
       setDraggingConnection({
-        sourceId: block.id,
+        blockId,
+        portType: side,
         mouseX: e.clientX,
         mouseY: e.clientY,
       });
     },
-    [block.id, setDraggingConnection],
+    [blockId, side, connected, setDraggingConnection],
+  );
+
+  return (
+    <div
+      draggable={false}
+      data-port-block-id={blockId}
+      data-port-type={side}
+      onMouseDown={handleMouseDown}
+      onDragStart={(e) => e.preventDefault()}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      onClick={handleClick}
+      style={{
+        position: 'absolute',
+        [isLeft ? 'left' : 'right']: -6,
+        top: '50%',
+        transform: 'translateY(-50%)',
+        width: 12,
+        height: 12,
+        borderRadius: '50%',
+        background: showDisconnect
+          ? '#ff4444'
+          : !connected && hovered
+            ? '#ffcc00'
+            : colors.portColor,
+        cursor: connected ? 'pointer' : 'crosshair',
+        zIndex: 3,
+        transition: 'background 0.15s ease',
+      }}
+    />
+  );
+}
+
+export function GridBlockComponent({ block }: Props) {
+  const connections = useStore((s) => s.connections);
+  const [hovered, setHovered] = useState(false);
+  const portActive = useRef(false);
+
+  const hasInputConnection = connections.some((c) => c.destId === block.id);
+  const hasOutputConnection = connections.some((c) => c.sourceId === block.id);
+
+  const handleDragStart = useCallback(
+    (e: React.DragEvent) => {
+      if (portActive.current) {
+        e.preventDefault();
+        portActive.current = false;
+        return;
+      }
+      e.dataTransfer.setData('moveBlockId', block.id);
+      e.dataTransfer.effectAllowed = 'move';
+    },
+    [block.id],
   );
 
   const accentColor = typeColors[block.type] ?? colors.secondary;
 
   return (
     <div
+      draggable
+      onDragStart={handleDragStart}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      onMouseDown={() => { portActive.current = false; }}
       style={{
         position: 'absolute',
-        left: block.col * cellSize,
-        top: block.row * cellSize,
-        width: cellSize - 2,
-        height: cellSize - 2,
+        left: cellLeft(block.col),
+        top: cellTop(block.row),
+        width: CELL_SIZE,
+        height: CELL_SIZE,
         background: colors.blockBg,
-        border: `1px solid ${accentColor}44`,
+        border: `1px solid ${accentColor}55`,
+        boxSizing: 'border-box',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
         userSelect: 'none',
+        cursor: 'grab',
         zIndex: 2,
       }}
     >
       <div
         style={{
-          fontSize: '0.55rem',
+          fontSize: '0.6rem',
           fontWeight: 700,
           color: accentColor,
           letterSpacing: '0.08em',
@@ -62,52 +151,18 @@ export function GridBlockComponent({ block, cellSize }: Props) {
       >
         {block.type}
       </div>
-      <div
-        style={{
-          fontSize: '0.5rem',
-          color: colors.muted,
-        }}
-      >
+      <div style={{ fontSize: '0.5rem', color: colors.muted }}>
         {block.name}
       </div>
 
       {/* Input port (left) */}
       {block.type !== 'input' && (
-        <div
-          data-port-block-id={block.id}
-          data-port-type="input"
-          style={{
-            position: 'absolute',
-            left: -5,
-            top: '50%',
-            transform: 'translateY(-50%)',
-            width: 10,
-            height: 10,
-            borderRadius: '50%',
-            background: colors.portColor,
-            cursor: 'pointer',
-            zIndex: 3,
-          }}
-        />
+        <Port side="input" blockId={block.id} connected={hasInputConnection} />
       )}
 
       {/* Output port (right) */}
       {block.type !== 'output' && (
-        <div
-          onMouseDown={handlePortMouseDown}
-          style={{
-            position: 'absolute',
-            right: -5,
-            top: '50%',
-            transform: 'translateY(-50%)',
-            width: 10,
-            height: 10,
-            borderRadius: '50%',
-            background: colors.portColor,
-            cursor: 'crosshair',
-            zIndex: 3,
-          }}
-        />
+        <Port side="output" blockId={block.id} connected={hasOutputConnection} />
       )}
 
       {/* Test tone toggle (Input blocks only) */}
@@ -132,15 +187,24 @@ export function GridBlockComponent({ block, cellSize }: Props) {
         </div>
       )}
 
-      {/* Remove button */}
-      {block.type !== 'input' && block.type !== 'output' && (
+      {/* Remove button — hover only, non-I/O blocks */}
+      {block.type !== 'input' && block.type !== 'output' && hovered && (
         <div
-          onClick={() => requestRemoveBlock(block.id)}
+          onClick={(e) => {
+            e.stopPropagation();
+            requestRemoveBlock(block.id);
+          }}
           style={{
             position: 'absolute',
-            top: 2,
-            right: 4,
-            fontSize: '0.55rem',
+            top: 3,
+            right: 5,
+            width: 14,
+            height: 14,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '0.6rem',
+            fontWeight: 700,
             color: colors.muted,
             cursor: 'pointer',
             lineHeight: 1,

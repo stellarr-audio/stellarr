@@ -7,7 +7,7 @@ namespace stellarr
 class OutputBlock final : public Block
 {
 public:
-    OutputBlock() : Block("Output", 2, 0) {}
+    OutputBlock() : Block("Output", 2, 2) {}
 
     BlockType getBlockType() const override { return BlockType::output; }
 

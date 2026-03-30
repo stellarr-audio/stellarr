@@ -43,6 +43,7 @@ void StellarrProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::Mid
     graph.processBlock(buffer, midi);
 }
 
+
 // Graph management -----------------------------------------------------------
 
 juce::AudioProcessorGraph::NodeID StellarrProcessor::addBlock(

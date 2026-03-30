@@ -1,4 +1,5 @@
 import { useStore } from '../store';
+import type { GridBlock, Connection } from '../store';
 
 declare global {
   interface Window {
@@ -19,16 +20,6 @@ declare global {
 
 let bridgeReady = false;
 
-function extractMessage(detail: unknown): string {
-  if (
-    typeof detail === 'object' &&
-    detail !== null &&
-    'message' in detail
-  )
-    return String((detail as Record<string, unknown>).message);
-  return String(detail);
-}
-
 function callNativeFunction(name: string, ...args: unknown[]): void {
   const juce = window.__JUCE__;
   if (!juce) return;
@@ -38,6 +29,54 @@ function callNativeFunction(name: string, ...args: unknown[]): void {
     params: args,
     resultId: 0,
   });
+}
+
+function extractMessage(detail: unknown): string {
+  if (typeof detail === 'object' && detail !== null && 'message' in detail)
+    return String((detail as Record<string, unknown>).message);
+  return String(detail);
+}
+
+function asRecord(detail: unknown): Record<string, unknown> {
+  if (typeof detail === 'object' && detail !== null) return detail as Record<string, unknown>;
+  return {};
+}
+
+// -- Graph commands (UI → C++) -----------------------------------------------
+
+export function requestAddBlock(type: string, col: number, row: number): void {
+  sendEvent('addBlock', JSON.stringify({ type, col, row }));
+}
+
+export function requestRemoveBlock(blockId: string): void {
+  sendEvent('removeBlock', JSON.stringify({ blockId }));
+}
+
+export function requestMoveBlock(blockId: string, col: number, row: number): void {
+  sendEvent('moveBlock', JSON.stringify({ blockId, col, row }));
+}
+
+export function requestAddConnection(sourceId: string, destId: string): void {
+  sendEvent('addConnection', JSON.stringify({ sourceId, destId }));
+}
+
+export function requestRemoveConnection(sourceId: string, destId: string): void {
+  sendEvent('removeConnection', JSON.stringify({ sourceId, destId }));
+}
+
+export function requestToggleTestTone(blockId: string): void {
+  sendEvent('toggleTestTone', JSON.stringify({ blockId }));
+}
+
+// -- Core bridge -------------------------------------------------------------
+
+export function sendEvent(eventName: string, payload: string): void {
+  if (!bridgeReady) {
+    console.warn('[Bridge] Not connected — event not sent:', eventName);
+    return;
+  }
+  callNativeFunction('sendToNative', eventName, payload);
+  console.log(`[Bridge] TX ${eventName}:`, payload);
 }
 
 export function initBridge(): void {
@@ -50,28 +89,92 @@ export function initBridge(): void {
 
   console.log('[Bridge] Initialising...');
 
+  // Welcome / connection
   juce.backend.addEventListener('welcome', (detail: unknown) => {
-    const message = extractMessage(detail);
-    console.log('[Bridge] RX welcome:', message);
+    console.log('[Bridge] RX welcome:', extractMessage(detail));
     useStore.getState().setConnected(true);
   });
 
   juce.backend.addEventListener('pong', (detail: unknown) => {
-    const message = extractMessage(detail);
-    console.log('[Bridge] RX pong:', message);
+    console.log('[Bridge] RX pong:', extractMessage(detail));
+  });
+
+  juce.backend.addEventListener('testToneChanged', (detail: unknown) => {
+    const d = asRecord(detail);
+    console.log('[Bridge] RX testToneChanged:', d);
+    useStore.getState().setBlockTestTone(String(d.blockId), Boolean(d.enabled));
+  });
+
+  // Graph confirmations from C++
+  juce.backend.addEventListener('blockAdded', (detail: unknown) => {
+    const d = asRecord(detail);
+    console.log('[Bridge] RX blockAdded:', d);
+    useStore.getState().addBlock({
+      id: String(d.id),
+      type: String(d.type),
+      name: String(d.name),
+      col: Number(d.col),
+      row: Number(d.row),
+      nodeId: Number(d.nodeId),
+    });
+  });
+
+  juce.backend.addEventListener('blockRemoved', (detail: unknown) => {
+    const d = asRecord(detail);
+    console.log('[Bridge] RX blockRemoved:', d);
+    useStore.getState().removeBlock(String(d.blockId));
+  });
+
+  juce.backend.addEventListener('blockMoved', (detail: unknown) => {
+    const d = asRecord(detail);
+    console.log('[Bridge] RX blockMoved:', d);
+    useStore.getState().moveBlock(String(d.blockId), Number(d.col), Number(d.row));
+  });
+
+  juce.backend.addEventListener('connectionAdded', (detail: unknown) => {
+    const d = asRecord(detail);
+    console.log('[Bridge] RX connectionAdded:', d);
+    useStore.getState().addConnection({
+      sourceId: String(d.sourceId),
+      destId: String(d.destId),
+    });
+  });
+
+  juce.backend.addEventListener('connectionRemoved', (detail: unknown) => {
+    const d = asRecord(detail);
+    console.log('[Bridge] RX connectionRemoved:', d);
+    useStore.getState().removeConnection(String(d.sourceId), String(d.destId));
+  });
+
+  juce.backend.addEventListener('graphState', (detail: unknown) => {
+    const d = asRecord(detail);
+    console.log('[Bridge] RX graphState');
+    const blocks = (Array.isArray(d.blocks) ? d.blocks : []).map(
+      (b: unknown) => {
+        const r = asRecord(b);
+        return {
+          id: String(r.id),
+          type: String(r.type),
+          name: String(r.name),
+          col: Number(r.col),
+          row: Number(r.row),
+          nodeId: Number(r.nodeId),
+        } satisfies GridBlock;
+      },
+    );
+    const connections = (
+      Array.isArray(d.connections) ? d.connections : []
+    ).map((c: unknown) => {
+      const r = asRecord(c);
+      return {
+        sourceId: String(r.sourceId),
+        destId: String(r.destId),
+      } satisfies Connection;
+    });
+    useStore.getState().syncGraph(blocks, connections);
   });
 
   bridgeReady = true;
   callNativeFunction('sendToNative', 'bridgeReady', '');
   console.log('[Bridge] TX bridgeReady');
-}
-
-export function sendEvent(eventName: string, payload: string): void {
-  if (!bridgeReady) {
-    console.warn('[Bridge] Not connected — event not sent:', eventName);
-    return;
-  }
-
-  callNativeFunction('sendToNative', eventName, payload);
-  console.log(`[Bridge] TX ${eventName}:`, payload);
 }

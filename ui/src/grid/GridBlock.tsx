@@ -1,10 +1,6 @@
 import { useCallback, useRef, useState } from 'react';
 import type { GridBlock as GridBlockData } from '../store';
-import {
-  requestRemoveBlock,
-  requestRemoveConnection,
-  requestToggleTestTone,
-} from '../bridge';
+import { requestRemoveBlock, requestRemoveConnection } from '../bridge';
 import { useStore } from '../store';
 import { colors } from './colors';
 import { CELL_SIZE, cellLeft, cellTop } from './layout';
@@ -107,9 +103,12 @@ function Port({
 
 export function GridBlockComponent({ block }: Props) {
   const connections = useStore((s) => s.connections);
+  const selectedBlockId = useStore((s) => s.selectedBlockId);
+  const selectBlock = useStore((s) => s.selectBlock);
   const [hovered, setHovered] = useState(false);
   const portActive = useRef(false);
 
+  const isSelected = selectedBlockId === block.id;
   const hasInputConnection = connections.some((c) => c.destId === block.id);
   const hasOutputConnection = connections.some((c) => c.sourceId === block.id);
 
@@ -135,6 +134,7 @@ export function GridBlockComponent({ block }: Props) {
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       onMouseDown={() => { portActive.current = false; }}
+      onClick={() => selectBlock(block.id)}
       style={{
         position: 'absolute',
         left: cellLeft(block.col),
@@ -142,7 +142,9 @@ export function GridBlockComponent({ block }: Props) {
         width: CELL_SIZE,
         height: CELL_SIZE,
         background: colors.blockBg,
-        border: `1px solid ${accentColor}55`,
+        border: isSelected
+          ? '2px solid #ffffff'
+          : `1px solid ${accentColor}55`,
         boxSizing: 'border-box',
         display: 'flex',
         flexDirection: 'column',
@@ -186,28 +188,6 @@ export function GridBlockComponent({ block }: Props) {
       {/* Output port (right) */}
       {block.type !== 'output' && (
         <Port side="output" blockId={block.id} connected={hasOutputConnection} />
-      )}
-
-      {/* Test tone toggle (Input blocks only) */}
-      {block.type === 'input' && (
-        <div
-          onClick={() => requestToggleTestTone(block.id)}
-          style={{
-            position: 'absolute',
-            bottom: 4,
-            left: '50%',
-            transform: 'translateX(-50%)',
-            fontSize: '0.45rem',
-            fontWeight: 600,
-            letterSpacing: '0.05em',
-            textTransform: 'uppercase',
-            color: block.testTone ? colors.green : colors.muted,
-            cursor: 'pointer',
-            whiteSpace: 'nowrap',
-          }}
-        >
-          {block.testTone ? 'Tone On' : 'Test Tone'}
-        </div>
       )}
 
       {/* Remove button — hover only */}

@@ -42,8 +42,8 @@ StellarrEditor::StellarrEditor(StellarrProcessor& p)
     webView->goToURL(juce::WebBrowserComponent::getResourceProviderRoot());
 
     setResizable(true, true);
-    setSize(1280, 700);
-    setResizeLimits(1280, 700, 2560, 1600);
+    setSize(1440, 700);
+    setResizeLimits(1440, 700, 2560, 1600);
 
     juce::MessageManager::callAsync(
         [safeWebView = juce::Component::SafePointer(webView.get())]()

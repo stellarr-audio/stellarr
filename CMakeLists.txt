@@ -27,6 +27,8 @@ juce_add_plugin(Stellarr
     PLUGIN_CODE Stl1
     FORMATS Standalone VST3 AU
     PRODUCT_NAME "Stellarr"
+    ICON_BIG "${CMAKE_SOURCE_DIR}/assets/icon.png"
+    ICON_SMALL "${CMAKE_SOURCE_DIR}/assets/icon.png"
 )
 
 target_sources(Stellarr

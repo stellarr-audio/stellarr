@@ -1,0 +1,11 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="1024" height="1024" rx="180" fill="#0d0b1a"/>
+  <!-- Horizontal signal path -->
+  <path d="M 180 512 Q 340 384, 410 512 Q 460 576, 512 512 Q 564 448, 614 512 Q 684 640, 844 512" stroke="#ff2d7b" stroke-width="48" stroke-linecap="round"/>
+  <!-- Vertical star points -->
+  <path d="M 512 120 Q 448 350, 512 420" stroke="#ff2d7b" stroke-width="36" stroke-linecap="round"/>
+  <path d="M 512 604 Q 576 674, 512 904" stroke="#ff2d7b" stroke-width="36" stroke-linecap="round"/>
+  <!-- Centre dot -->
+  <circle cx="512" cy="512" r="36" fill="#ff2d7b"/>
+</svg>

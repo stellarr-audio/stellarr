@@ -9,9 +9,7 @@ export interface MenuItem {
 const menuItems: MenuItem[] = [
   { type: 'input', label: 'Input' },
   { type: 'output', label: 'Output' },
-  { type: 'amp', label: 'Amp' },
-  { type: 'cab', label: 'Cabinet' },
-  { type: 'fx', label: 'FX' },
+  { type: 'vst', label: 'VST Plugin' },
 ];
 
 interface Props {

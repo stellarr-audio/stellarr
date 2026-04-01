@@ -1,10 +1,8 @@
 #include "StellarrBridge.h"
 #include "StellarrProcessor.h"
-#include "blocks/AmpBlock.h"
-#include "blocks/CabBlock.h"
-#include "blocks/FxBlock.h"
 #include "blocks/InputBlock.h"
 #include "blocks/OutputBlock.h"
+#include "blocks/VstBlock.h"
 
 StellarrBridge::StellarrBridge() = default;
 
@@ -43,12 +41,17 @@ void StellarrBridge::handleEvent(const juce::String& eventName, const juce::var&
     {
         sendWelcome();
         sendGraphState();
+        sendScanDirectories();
     }
-    else if (eventName == "addBlock")      handleAddBlock(json);
-    else if (eventName == "removeBlock")   handleRemoveBlock(json);
-    else if (eventName == "moveBlock")     handleMoveBlock(json);
-    else if (eventName == "addConnection") handleAddConnection(json);
-    else if (eventName == "removeConnection") handleRemoveConnection(json);
+    else if (eventName == "addBlock")            handleAddBlock(json);
+    else if (eventName == "removeBlock")         handleRemoveBlock(json);
+    else if (eventName == "moveBlock")           handleMoveBlock(json);
+    else if (eventName == "addConnection")       handleAddConnection(json);
+    else if (eventName == "removeConnection")    handleRemoveConnection(json);
+    else if (eventName == "scanPlugins")         handleScanPlugins();
+    else if (eventName == "getScanDirectories")  handleGetScanDirectories();
+    else if (eventName == "pickScanDirectory")   handlePickScanDirectory();
+    else if (eventName == "removeScanDirectory") handleRemoveScanDirectory(json);
     else if (eventName == "toggleTestTone" && processor != nullptr)
     {
         auto* obj = json.getDynamicObject();
@@ -114,9 +117,7 @@ void StellarrBridge::handleAddBlock(const juce::var& json)
 
     if (type == "input")       block = std::make_unique<stellarr::InputBlock>();
     else if (type == "output") block = std::make_unique<stellarr::OutputBlock>();
-    else if (type == "amp")    block = std::make_unique<stellarr::AmpBlock>();
-    else if (type == "cab")    block = std::make_unique<stellarr::CabBlock>();
-    else if (type == "fx")     block = std::make_unique<stellarr::FxBlock>();
+    else if (type == "vst")    block = std::make_unique<stellarr::VstBlock>();
     else return;
 
     auto blockId = block->getBlockId().toString();
@@ -233,6 +234,96 @@ void StellarrBridge::handleRemoveConnection(const juce::var& json)
     detail->setProperty("sourceId", sourceId);
     detail->setProperty("destId", destId);
     emitToJs("connectionRemoved", detail);
+}
+
+// -- Plugin management -------------------------------------------------------
+
+void StellarrBridge::handleScanPlugins()
+{
+    if (processor == nullptr) return;
+
+    processor->getPluginManager().scanPlugins();
+    sendPluginList();
+}
+
+void StellarrBridge::handleGetScanDirectories()
+{
+    sendScanDirectories();
+}
+
+void StellarrBridge::handlePickScanDirectory()
+{
+    if (processor == nullptr) return;
+
+    // Defer the file chooser so it runs after the native function callback returns.
+    // FileChooser::launchAsync does not work from within a WKWebView message handler.
+    juce::MessageManager::callAsync([this]()
+    {
+        if (processor == nullptr) return;
+
+        auto chooser = std::make_shared<juce::FileChooser>("Select Plugin Directory");
+
+        chooser->launchAsync(
+            juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectDirectories,
+            [this, chooser](const juce::FileChooser&)
+            {
+                auto result = chooser->getResult();
+                if (result == juce::File{}) return;
+
+                processor->getPluginManager().addScanDirectory(result.getFullPathName());
+                sendScanDirectories();
+            });
+    });
+}
+
+void StellarrBridge::handleRemoveScanDirectory(const juce::var& json)
+{
+    if (processor == nullptr) return;
+
+    auto* obj = json.getDynamicObject();
+    if (obj == nullptr) return;
+
+    auto path = obj->getProperty("path").toString();
+    processor->getPluginManager().removeScanDirectory(path);
+    sendScanDirectories();
+}
+
+void StellarrBridge::sendPluginList()
+{
+    if (processor == nullptr) return;
+
+    juce::Array<juce::var> plugins;
+    for (auto& desc : processor->getPluginManager().getKnownPlugins().getTypes())
+    {
+        auto* p = new juce::DynamicObject();
+        p->setProperty("id", desc.createIdentifierString());
+        p->setProperty("name", desc.name);
+        p->setProperty("manufacturer", desc.manufacturerName);
+        p->setProperty("format", desc.pluginFormatName);
+        plugins.add(juce::var(p));
+    }
+
+    auto* detail = new juce::DynamicObject();
+    detail->setProperty("plugins", plugins);
+    emitToJs("pluginListUpdated", detail);
+}
+
+void StellarrBridge::sendScanDirectories()
+{
+    if (processor == nullptr) return;
+
+    juce::Array<juce::var> dirs;
+    for (auto& d : processor->getPluginManager().getScanDirectories())
+    {
+        auto* obj = new juce::DynamicObject();
+        obj->setProperty("path", d.path);
+        obj->setProperty("isDefault", d.isDefault);
+        dirs.add(juce::var(obj));
+    }
+
+    auto* detail = new juce::DynamicObject();
+    detail->setProperty("directories", dirs);
+    emitToJs("scanDirectoriesUpdated", detail);
 }
 
 // -- Welcome and graph state -------------------------------------------------

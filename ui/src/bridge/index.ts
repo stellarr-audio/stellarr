@@ -1,5 +1,5 @@
 import { useStore } from '../store';
-import type { GridBlock, Connection } from '../store';
+import type { GridBlock, Connection, ScanDirectory, PluginInfo } from '../store';
 
 declare global {
   interface Window {
@@ -66,6 +66,18 @@ export function requestRemoveConnection(sourceId: string, destId: string): void 
 
 export function requestToggleTestTone(blockId: string): void {
   sendEvent('toggleTestTone', JSON.stringify({ blockId }));
+}
+
+export function requestScanPlugins(): void {
+  sendEvent('scanPlugins', '');
+}
+
+export function requestPickScanDirectory(): void {
+  sendEvent('pickScanDirectory', '');
+}
+
+export function requestRemoveScanDirectory(path: string): void {
+  sendEvent('removeScanDirectory', JSON.stringify({ path }));
 }
 
 // -- Core bridge -------------------------------------------------------------
@@ -172,6 +184,38 @@ export function initBridge(): void {
       } satisfies Connection;
     });
     useStore.getState().syncGraph(blocks, connections);
+  });
+
+  juce.backend.addEventListener('pluginListUpdated', (detail: unknown) => {
+    const d = asRecord(detail);
+    console.log('[Bridge] RX pluginListUpdated');
+    const plugins = (Array.isArray(d.plugins) ? d.plugins : []).map(
+      (p: unknown) => {
+        const r = asRecord(p);
+        return {
+          id: String(r.id),
+          name: String(r.name),
+          manufacturer: String(r.manufacturer),
+          format: String(r.format),
+        } satisfies PluginInfo;
+      },
+    );
+    useStore.getState().setAvailablePlugins(plugins);
+  });
+
+  juce.backend.addEventListener('scanDirectoriesUpdated', (detail: unknown) => {
+    const d = asRecord(detail);
+    console.log('[Bridge] RX scanDirectoriesUpdated');
+    const dirs = (Array.isArray(d.directories) ? d.directories : []).map(
+      (dir: unknown) => {
+        const r = asRecord(dir);
+        return {
+          path: String(r.path),
+          isDefault: Boolean(r.isDefault),
+        } satisfies ScanDirectory;
+      },
+    );
+    useStore.getState().setScanDirectories(dirs);
   });
 
   bridgeReady = true;

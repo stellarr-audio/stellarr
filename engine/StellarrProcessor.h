@@ -1,6 +1,7 @@
 #pragma once
 #include <juce_audio_processors/juce_audio_processors.h>
 #include "blocks/Block.h"
+#include "PluginManager.h"
 
 class StellarrProcessor final : public juce::AudioProcessor
 {
@@ -45,9 +46,13 @@ public:
     juce::AudioProcessorGraph::NodeID getAudioInputNodeId() const  { return audioInputNodeId; }
     juce::AudioProcessorGraph::NodeID getAudioOutputNodeId() const { return audioOutputNodeId; }
 
+    PluginManager& getPluginManager() { return pluginManager; }
+
 private:
     juce::AudioProcessorGraph graph;
 
     juce::AudioProcessorGraph::NodeID audioInputNodeId;
     juce::AudioProcessorGraph::NodeID audioOutputNodeId;
+
+    PluginManager pluginManager;
 };

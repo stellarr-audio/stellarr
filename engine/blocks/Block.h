@@ -8,11 +8,7 @@ enum class BlockType
 {
     input,
     output,
-    gain,
-    amp,
-    cab,
-    fx,
-    utility,
+    gain, // test-only
     vst
 };
 
@@ -23,10 +19,6 @@ inline juce::String blockTypeToString(BlockType type)
         case BlockType::input:   return "input";
         case BlockType::output:  return "output";
         case BlockType::gain:    return "gain";
-        case BlockType::amp:     return "amp";
-        case BlockType::cab:     return "cab";
-        case BlockType::fx:      return "fx";
-        case BlockType::utility: return "utility";
         case BlockType::vst:     return "vst";
     }
     return "unknown";
@@ -37,12 +29,8 @@ inline BlockType blockTypeFromString(const juce::String& str)
     if (str == "input")   return BlockType::input;
     if (str == "output")  return BlockType::output;
     if (str == "gain")    return BlockType::gain;
-    if (str == "amp")     return BlockType::amp;
-    if (str == "cab")     return BlockType::cab;
-    if (str == "fx")      return BlockType::fx;
-    if (str == "utility") return BlockType::utility;
     if (str == "vst")     return BlockType::vst;
-    return BlockType::utility;
+    return BlockType::vst;
 }
 
 class Block : public juce::AudioProcessor

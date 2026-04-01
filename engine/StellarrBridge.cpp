@@ -38,11 +38,7 @@ void StellarrBridge::handleEvent(const juce::String& eventName, const juce::var&
         : payload;
 
     if (eventName == "bridgeReady")
-    {
-        sendWelcome();
-        sendGraphState();
-        sendScanDirectories();
-    }
+        handleBridgeReady();
     else if (eventName == "addBlock")            handleAddBlock(json);
     else if (eventName == "removeBlock")         handleRemoveBlock(json);
     else if (eventName == "moveBlock")           handleMoveBlock(json);
@@ -98,6 +94,23 @@ void StellarrBridge::emitToJs(const juce::String& eventName, juce::DynamicObject
         if (webView != nullptr)
             webView->emitEventIfBrowserIsVisible(eventId, data);
     });
+}
+
+void StellarrBridge::handleBridgeReady()
+{
+    sendWelcome();
+
+    // Create default Input and Output blocks if the graph is empty
+    if (blockNodeMap.empty())
+    {
+        auto inputJson = juce::JSON::parse(R"({"type":"input","col":0,"row":2})");
+        auto outputJson = juce::JSON::parse(R"({"type":"output","col":11,"row":2})");
+        handleAddBlock(inputJson);
+        handleAddBlock(outputJson);
+    }
+
+    sendGraphState();
+    sendScanDirectories();
 }
 
 // -- Graph event handlers ----------------------------------------------------

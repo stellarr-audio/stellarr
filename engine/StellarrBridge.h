@@ -16,6 +16,7 @@ public:
 
 private:
     void handleEvent(const juce::String& eventName, const juce::var& payload);
+    void handleBridgeReady();
     void sendWelcome();
     void sendGraphState();
 

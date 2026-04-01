@@ -8,6 +8,8 @@ export interface GridBlock {
   row: number;
   nodeId: number;
   testTone?: boolean;
+  pluginId?: string;
+  pluginName?: string;
 }
 
 export interface Connection {
@@ -20,17 +22,34 @@ export interface GridSettings {
   rows: number;
 }
 
+export interface ScanDirectory {
+  path: string;
+  isDefault: boolean;
+}
+
+export interface PluginInfo {
+  id: string;
+  name: string;
+  manufacturer: string;
+  format: string;
+}
+
 interface StellarrState {
   connected: boolean;
+  showSettings: boolean;
   blocks: GridBlock[];
   connections: Connection[];
   grid: GridSettings;
+  scanDirectories: ScanDirectory[];
+  availablePlugins: PluginInfo[];
 
   setConnected: (value: boolean) => void;
+  setShowSettings: (value: boolean) => void;
   setBlockTestTone: (blockId: string, enabled: boolean) => void;
   setGridSize: (columns: number, rows: number) => void;
+  setScanDirectories: (dirs: ScanDirectory[]) => void;
+  setAvailablePlugins: (plugins: PluginInfo[]) => void;
 
-  // Store mutations — called only by bridge when C++ confirms
   addBlock: (block: GridBlock) => void;
   removeBlock: (blockId: string) => void;
   moveBlock: (blockId: string, col: number, row: number) => void;
@@ -38,25 +57,38 @@ interface StellarrState {
   removeConnection: (sourceId: string, destId: string) => void;
   syncGraph: (blocks: GridBlock[], connections: Connection[]) => void;
 
-  // UI-only state
   selectedBlockId: string | null;
   selectBlock: (blockId: string | null) => void;
 
-  draggingConnection: { blockId: string; portType: 'input' | 'output'; mouseX: number; mouseY: number } | null;
+  draggingConnection: {
+    blockId: string;
+    portType: 'input' | 'output';
+    mouseX: number;
+    mouseY: number;
+  } | null;
   setDraggingConnection: (
-    state: { blockId: string; portType: 'input' | 'output'; mouseX: number; mouseY: number } | null,
+    state: {
+      blockId: string;
+      portType: 'input' | 'output';
+      mouseX: number;
+      mouseY: number;
+    } | null,
   ) => void;
 }
 
 export const useStore = create<StellarrState>((set) => ({
   connected: false,
+  showSettings: false,
   blocks: [],
   connections: [],
   grid: { columns: 12, rows: 6 },
+  scanDirectories: [],
+  availablePlugins: [],
   selectedBlockId: null,
   draggingConnection: null,
 
   setConnected: (value) => set({ connected: value }),
+  setShowSettings: (value) => set({ showSettings: value }),
 
   setBlockTestTone: (blockId, enabled) =>
     set((s) => ({
@@ -66,6 +98,8 @@ export const useStore = create<StellarrState>((set) => ({
     })),
 
   setGridSize: (columns, rows) => set({ grid: { columns, rows } }),
+  setScanDirectories: (dirs) => set({ scanDirectories: dirs }),
+  setAvailablePlugins: (plugins) => set({ availablePlugins: plugins }),
 
   addBlock: (block) =>
     set((s) => ({ blocks: [...s.blocks, block] })),
@@ -76,7 +110,8 @@ export const useStore = create<StellarrState>((set) => ({
       connections: s.connections.filter(
         (c) => c.sourceId !== blockId && c.destId !== blockId,
       ),
-      selectedBlockId: s.selectedBlockId === blockId ? null : s.selectedBlockId,
+      selectedBlockId:
+        s.selectedBlockId === blockId ? null : s.selectedBlockId,
     })),
 
   moveBlock: (blockId, col, row) =>

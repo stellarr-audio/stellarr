@@ -19,19 +19,27 @@ private:
     void sendWelcome();
     void sendGraphState();
 
+    // Graph event handlers
     void handleAddBlock(const juce::var& json);
     void handleRemoveBlock(const juce::var& json);
     void handleMoveBlock(const juce::var& json);
     void handleAddConnection(const juce::var& json);
     void handleRemoveConnection(const juce::var& json);
 
+    // Plugin management event handlers
+    void handleScanPlugins();
+    void handleGetScanDirectories();
+    void handlePickScanDirectory();
+    void handleRemoveScanDirectory(const juce::var& json);
+
+    void sendPluginList();
+    void sendScanDirectories();
+
     void emitToJs(const juce::String& eventName, juce::DynamicObject* detail);
 
     juce::WebBrowserComponent* webView = nullptr;
     StellarrProcessor* processor = nullptr;
 
-    // Block UUID → graph node ID
     std::map<juce::String, juce::AudioProcessorGraph::NodeID> blockNodeMap;
-    // Block UUID → grid position (col, row)
     std::map<juce::String, std::pair<int, int>> blockPositions;
 };

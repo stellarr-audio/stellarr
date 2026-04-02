@@ -2,18 +2,21 @@ import { Slider as RadixSlider } from 'radix-ui';
 import { colors } from './colors';
 
 interface Props {
-  value: number; // 0–100
+  value: number;
+  min?: number;
+  max?: number;
+  step?: number;
   onChange: (value: number) => void;
 }
 
-export function Slider({ value, onChange }: Props) {
+export function Slider({ value, min = 0, max = 100, step = 1, onChange }: Props) {
   return (
     <RadixSlider.Root
       value={[value]}
       onValueChange={([v]) => onChange(v)}
-      min={0}
-      max={100}
-      step={1}
+      min={min}
+      max={max}
+      step={step}
       style={{
         position: 'relative',
         display: 'flex',

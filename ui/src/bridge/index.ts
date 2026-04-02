@@ -79,6 +79,10 @@ export function requestSetBlockMix(blockId: string, mix: number): void {
   sendEvent('setBlockMix', JSON.stringify({ blockId, mix }));
 }
 
+export function requestSetBlockBalance(blockId: string, balance: number): void {
+  sendEvent('setBlockBalance', JSON.stringify({ blockId, balance }));
+}
+
 export function requestToggleTestTone(blockId: string): void {
   sendEvent('toggleTestTone', JSON.stringify({ blockId }));
 }
@@ -179,6 +183,11 @@ export function initBridge(): void {
     useStore.getState().setBlockMix(String(d.blockId), Number(d.mix));
   });
 
+  juce.backend.addEventListener('blockBalanceChanged', (detail: unknown) => {
+    const d = asRecord(detail);
+    useStore.getState().setBlockBalance(String(d.blockId), Number(d.balance));
+  });
+
   // Graph confirmations from C++
   juce.backend.addEventListener('blockAdded', (detail: unknown) => {
     const d = asRecord(detail);
@@ -249,6 +258,7 @@ export function initBridge(): void {
           pluginId: r.pluginId ? String(r.pluginId) : undefined,
           pluginName: r.pluginName ? String(r.pluginName) : undefined,
           mix: r.mix !== undefined ? Number(r.mix) : undefined,
+          balance: r.balance !== undefined ? Number(r.balance) : undefined,
         } satisfies GridBlock;
       },
     );

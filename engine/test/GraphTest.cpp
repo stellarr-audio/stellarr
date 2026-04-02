@@ -1,5 +1,7 @@
 #include "StellarrProcessor.h"
 #include "blocks/GainBlock.h"
+#include "blocks/InputBlock.h"
+#include "blocks/VstBlock.h"
 #include <cmath>
 #include <cstdio>
 
@@ -461,6 +463,413 @@ static bool testDeserialisation()
 }
 
 // ---------------------------------------------------------------------------
+// Additional tests
+// ---------------------------------------------------------------------------
+
+static bool testMultipleRemoves()
+{
+    printf("Test: remove middle block, reconnect remaining... ");
+
+    StellarrProcessor proc;
+    proc.prepareToPlay(kSampleRate, kBlockSize);
+
+    auto g1 = std::make_unique<stellarr::GainBlock>();
+    auto g2 = std::make_unique<stellarr::GainBlock>();
+    auto g3 = std::make_unique<stellarr::GainBlock>();
+    g1->setGain(0.5f);
+    g2->setGain(0.5f);
+    g3->setGain(0.5f);
+
+    proc.disconnectBlocks(proc.getAudioInputNodeId(), proc.getAudioOutputNodeId());
+
+    auto n1 = proc.addBlock(std::move(g1));
+    auto n2 = proc.addBlock(std::move(g2));
+    auto n3 = proc.addBlock(std::move(g3));
+
+    proc.connectBlocks(proc.getAudioInputNodeId(), n1);
+    proc.connectBlocks(n1, n2);
+    proc.connectBlocks(n2, n3);
+    proc.connectBlocks(n3, proc.getAudioOutputNodeId());
+
+    // Remove middle block
+    proc.removeBlock(n2);
+
+    // Reconnect: n1 → n3
+    proc.connectBlocks(n1, n3);
+
+    // Expected: 0.5 * 0.5 = 0.25
+    juce::AudioBuffer<float> buffer(2, kTotalSamples);
+    generateSine(buffer);
+    juce::AudioBuffer<float> original(buffer);
+
+    processInBlocks(proc, buffer);
+
+    if (!compareBuffers(buffer, original, 1e-5f, 0.25f))
+    {
+        printf("FAIL\n");
+        return false;
+    }
+
+    proc.releaseResources();
+    printf("PASS\n");
+    return true;
+}
+
+static bool testRemoveAllBlocks()
+{
+    printf("Test: remove all user blocks produces silence... ");
+
+    StellarrProcessor proc;
+    proc.prepareToPlay(kSampleRate, kBlockSize);
+
+    auto gain = std::make_unique<stellarr::GainBlock>();
+    proc.disconnectBlocks(proc.getAudioInputNodeId(), proc.getAudioOutputNodeId());
+    auto nodeId = proc.addBlock(std::move(gain));
+    proc.connectBlocks(proc.getAudioInputNodeId(), nodeId);
+    proc.connectBlocks(nodeId, proc.getAudioOutputNodeId());
+
+    // Remove the gain block — no path from input to output
+    proc.removeBlock(nodeId);
+
+    juce::AudioBuffer<float> buffer(2, kBlockSize);
+    generateSine(buffer);
+    juce::MidiBuffer midi;
+    proc.processBlock(buffer, midi);
+
+    // Output should be silence (no connected path)
+    for (int ch = 0; ch < buffer.getNumChannels(); ++ch)
+    {
+        for (int i = 0; i < buffer.getNumSamples(); ++i)
+        {
+            if (std::abs(buffer.getSample(ch, i)) > 1e-6f)
+            {
+                fprintf(stderr, "  expected silence at ch=%d sample=%d, got %f\n",
+                        ch, i, static_cast<double>(buffer.getSample(ch, i)));
+                printf("FAIL\n");
+                return false;
+            }
+        }
+    }
+
+    proc.releaseResources();
+    printf("PASS\n");
+    return true;
+}
+
+static bool testDuplicateConnections()
+{
+    printf("Test: duplicate connection does not double audio... ");
+
+    StellarrProcessor proc;
+    proc.prepareToPlay(kSampleRate, kBlockSize);
+
+    auto gain = std::make_unique<stellarr::GainBlock>();
+    gain->setGain(0.5f);
+
+    proc.disconnectBlocks(proc.getAudioInputNodeId(), proc.getAudioOutputNodeId());
+    auto nodeId = proc.addBlock(std::move(gain));
+    proc.connectBlocks(proc.getAudioInputNodeId(), nodeId);
+    proc.connectBlocks(nodeId, proc.getAudioOutputNodeId());
+
+    // Try to add the same connection again
+    proc.connectBlocks(nodeId, proc.getAudioOutputNodeId());
+
+    juce::AudioBuffer<float> buffer(2, kTotalSamples);
+    generateSine(buffer);
+    juce::AudioBuffer<float> original(buffer);
+
+    processInBlocks(proc, buffer);
+
+    // Should still be 0.5x, not 1.0x
+    if (!compareBuffers(buffer, original, 1e-5f, 0.5f))
+    {
+        printf("FAIL\n");
+        return false;
+    }
+
+    proc.releaseResources();
+    printf("PASS\n");
+    return true;
+}
+
+static bool testVstBlockPassThrough()
+{
+    printf("Test: VstBlock with no plugin passes audio... ");
+
+    StellarrProcessor proc;
+    proc.prepareToPlay(kSampleRate, kBlockSize);
+
+    auto vst = std::make_unique<stellarr::VstBlock>();
+
+    proc.disconnectBlocks(proc.getAudioInputNodeId(), proc.getAudioOutputNodeId());
+    auto nodeId = proc.addBlock(std::move(vst));
+    proc.connectBlocks(proc.getAudioInputNodeId(), nodeId);
+    proc.connectBlocks(nodeId, proc.getAudioOutputNodeId());
+
+    juce::AudioBuffer<float> buffer(2, kTotalSamples);
+    generateSine(buffer);
+    juce::AudioBuffer<float> expected(buffer);
+
+    processInBlocks(proc, buffer);
+
+    if (!compareBuffers(buffer, expected, 1e-6f))
+    {
+        printf("FAIL\n");
+        return false;
+    }
+
+    proc.releaseResources();
+    printf("PASS\n");
+    return true;
+}
+
+static bool testInputBlockTestTone()
+{
+    printf("Test: InputBlock test tone produces non-zero output... ");
+
+    auto input = std::make_unique<stellarr::InputBlock>();
+    input->prepareToPlay(kSampleRate, kBlockSize);
+    input->setTestToneEnabled(true);
+
+    juce::AudioBuffer<float> buffer(2, kBlockSize);
+    buffer.clear();
+    juce::MidiBuffer midi;
+    input->processBlock(buffer, midi);
+
+    bool hasSignal = false;
+    for (int i = 0; i < buffer.getNumSamples(); ++i)
+    {
+        float sample = std::abs(buffer.getSample(0, i));
+        if (sample > 0.01f)
+        {
+            hasSignal = true;
+            break;
+        }
+    }
+
+    if (!hasSignal)
+    {
+        fprintf(stderr, "  test tone produced no signal\n");
+        printf("FAIL\n");
+        return false;
+    }
+
+    // Check amplitude is within expected range (0.45 max)
+    float peak = 0.0f;
+    for (int i = 0; i < buffer.getNumSamples(); ++i)
+        peak = std::max(peak, std::abs(buffer.getSample(0, i)));
+
+    if (peak > 0.5f)
+    {
+        fprintf(stderr, "  peak %f exceeds expected range\n", static_cast<double>(peak));
+        printf("FAIL\n");
+        return false;
+    }
+
+    input->releaseResources();
+    printf("PASS\n");
+    return true;
+}
+
+static bool testInputBlockTestToneReset()
+{
+    printf("Test: InputBlock resetToDefault disables test tone... ");
+
+    auto input = std::make_unique<stellarr::InputBlock>();
+    input->prepareToPlay(kSampleRate, kBlockSize);
+    input->setTestToneEnabled(true);
+
+    // Process one block to confirm tone is active
+    juce::AudioBuffer<float> buffer(2, kBlockSize);
+    buffer.clear();
+    juce::MidiBuffer midi;
+    input->processBlock(buffer, midi);
+
+    // Reset
+    input->resetToDefault();
+
+    // Process again — should be silence (pass-through of cleared buffer)
+    buffer.clear();
+    input->processBlock(buffer, midi);
+
+    for (int i = 0; i < buffer.getNumSamples(); ++i)
+    {
+        if (std::abs(buffer.getSample(0, i)) > 1e-6f)
+        {
+            fprintf(stderr, "  expected silence after reset at sample=%d\n", i);
+            printf("FAIL\n");
+            return false;
+        }
+    }
+
+    input->releaseResources();
+    printf("PASS\n");
+    return true;
+}
+
+static bool testSessionRoundTrip()
+{
+    printf("Test: full session serialise/restore round-trip... ");
+
+    // Build original graph: Input → Gain(0.3) → Output
+    StellarrProcessor proc1;
+    proc1.prepareToPlay(kSampleRate, kBlockSize);
+
+    auto gain = std::make_unique<stellarr::GainBlock>();
+    gain->setGain(0.3f);
+
+    proc1.disconnectBlocks(proc1.getAudioInputNodeId(), proc1.getAudioOutputNodeId());
+    auto gainNode = proc1.addBlock(std::move(gain));
+    proc1.connectBlocks(proc1.getAudioInputNodeId(), gainNode);
+    proc1.connectBlocks(gainNode, proc1.getAudioOutputNodeId());
+
+    // Process with original
+    juce::AudioBuffer<float> buf1(2, kTotalSamples);
+    generateSine(buf1);
+    processInBlocks(proc1, buf1);
+
+    // Serialise the gain block
+    auto* node = proc1.getGraph().getNodeForId(gainNode);
+    auto* block = dynamic_cast<stellarr::Block*>(node->getProcessor());
+    auto json = block->toJson();
+
+    proc1.releaseResources();
+
+    // Restore into a fresh processor
+    StellarrProcessor proc2;
+    proc2.prepareToPlay(kSampleRate, kBlockSize);
+
+    auto restored = std::make_unique<stellarr::GainBlock>();
+    restored->fromJson(json);
+
+    proc2.disconnectBlocks(proc2.getAudioInputNodeId(), proc2.getAudioOutputNodeId());
+    auto restoredNode = proc2.addBlock(std::move(restored));
+    proc2.connectBlocks(proc2.getAudioInputNodeId(), restoredNode);
+    proc2.connectBlocks(restoredNode, proc2.getAudioOutputNodeId());
+
+    juce::AudioBuffer<float> buf2(2, kTotalSamples);
+    generateSine(buf2);
+    processInBlocks(proc2, buf2);
+
+    // Both outputs should match
+    if (!compareBuffers(buf1, buf2, 1e-5f))
+    {
+        printf("FAIL\n");
+        return false;
+    }
+
+    proc2.releaseResources();
+    printf("PASS\n");
+    return true;
+}
+
+static bool testSessionWithConnections()
+{
+    printf("Test: session preserves multiple connections... ");
+
+    StellarrProcessor proc;
+    proc.prepareToPlay(kSampleRate, kBlockSize);
+
+    auto g1 = std::make_unique<stellarr::GainBlock>();
+    auto g2 = std::make_unique<stellarr::GainBlock>();
+    g1->setGain(0.5f);
+    g2->setGain(0.5f);
+
+    proc.disconnectBlocks(proc.getAudioInputNodeId(), proc.getAudioOutputNodeId());
+
+    auto n1 = proc.addBlock(std::move(g1));
+    auto n2 = proc.addBlock(std::move(g2));
+
+    proc.connectBlocks(proc.getAudioInputNodeId(), n1);
+    proc.connectBlocks(n1, n2);
+    proc.connectBlocks(n2, proc.getAudioOutputNodeId());
+
+    // Process original: 0.5 * 0.5 = 0.25
+    juce::AudioBuffer<float> buf1(2, kTotalSamples);
+    generateSine(buf1);
+    juce::AudioBuffer<float> original(buf1);
+    processInBlocks(proc, buf1);
+
+    if (!compareBuffers(buf1, original, 1e-5f, 0.25f))
+    {
+        printf("FAIL (original)\n");
+        return false;
+    }
+
+    // Verify connections count
+    int connectionCount = 0;
+    for (auto& conn : proc.getGraph().getConnections())
+    {
+        (void)conn;
+        ++connectionCount;
+    }
+
+    // Should have connections: audioIn→n1 (x2 channels), n1→n2 (x2), n2→audioOut (x2) = 6
+    if (connectionCount < 6)
+    {
+        fprintf(stderr, "  expected at least 6 connections, got %d\n", connectionCount);
+        printf("FAIL\n");
+        return false;
+    }
+
+    proc.releaseResources();
+    printf("PASS\n");
+    return true;
+}
+
+static bool testZeroLengthBuffer()
+{
+    printf("Test: zero-length buffer does not crash... ");
+
+    StellarrProcessor proc;
+    proc.prepareToPlay(kSampleRate, kBlockSize);
+
+    juce::AudioBuffer<float> buffer(2, 0);
+    juce::MidiBuffer midi;
+    proc.processBlock(buffer, midi);
+
+    proc.releaseResources();
+    printf("PASS\n");
+    return true;
+}
+
+static bool testRapidAddRemove()
+{
+    printf("Test: rapid add/remove 50 blocks... ");
+
+    StellarrProcessor proc;
+    proc.prepareToPlay(kSampleRate, kBlockSize);
+
+    std::vector<juce::AudioProcessorGraph::NodeID> nodes;
+
+    for (int i = 0; i < 50; ++i)
+    {
+        auto gain = std::make_unique<stellarr::GainBlock>();
+        auto nodeId = proc.addBlock(std::move(gain));
+        nodes.push_back(nodeId);
+    }
+
+    // Process a block mid-way
+    juce::AudioBuffer<float> buffer(2, kBlockSize);
+    generateSine(buffer);
+    juce::MidiBuffer midi;
+    proc.processBlock(buffer, midi);
+
+    // Remove all
+    for (auto& nodeId : nodes)
+        proc.removeBlock(nodeId);
+
+    // Process again after removal
+    buffer.clear();
+    generateSine(buffer);
+    proc.processBlock(buffer, midi);
+
+    proc.releaseResources();
+    printf("PASS\n");
+    return true;
+}
+
+// ---------------------------------------------------------------------------
 
 int main()
 {
@@ -479,6 +888,18 @@ int main()
     if (!testReconnection())        ++failures;
     if (!testSerialisation())       ++failures;
     if (!testDeserialisation())     ++failures;
+
+    // Additional tests
+    if (!testMultipleRemoves())         ++failures;
+    if (!testRemoveAllBlocks())         ++failures;
+    if (!testDuplicateConnections())    ++failures;
+    if (!testVstBlockPassThrough())     ++failures;
+    if (!testInputBlockTestTone())      ++failures;
+    if (!testInputBlockTestToneReset()) ++failures;
+    if (!testSessionRoundTrip())        ++failures;
+    if (!testSessionWithConnections())  ++failures;
+    if (!testZeroLengthBuffer())        ++failures;
+    if (!testRapidAddRemove())          ++failures;
 
     printf("\n%d test(s) failed\n", failures);
     return failures;

@@ -41,6 +41,11 @@ public:
     void setPlugin(std::unique_ptr<juce::AudioPluginInstance> newPlugin,
                    const juce::String& identifier)
     {
+        // Close the editor window before swapping — the old plugin's UI
+        // references the instance and will crash if it tries to draw
+        // after the instance is destroyed.
+        pluginWindow = nullptr;
+
         if (newPlugin != nullptr)
             newPlugin->prepareToPlay(currentSampleRate, currentBlockSize);
 
@@ -73,8 +78,15 @@ public:
 
     void openPluginEditor()
     {
-        juce::SpinLock::ScopedLockType lock(pluginLock);
-        if (plugin == nullptr) return;
+        juce::AudioPluginInstance* p = nullptr;
+        juce::String name;
+
+        {
+            juce::SpinLock::ScopedLockType lock(pluginLock);
+            if (plugin == nullptr) return;
+            p = plugin.get();
+            name = plugin->getName();
+        }
 
         if (pluginWindow != nullptr && pluginWindow->isVisible())
         {
@@ -82,8 +94,18 @@ public:
             return;
         }
 
-        if (auto* editor = plugin->createEditorIfNecessary())
-            pluginWindow = std::make_unique<PluginWindow>(editor, plugin->getName());
+        // Editor creation and window display must happen without the lock
+        // held — AU plugin UIs trigger layout callbacks that can re-enter.
+        try
+        {
+            if (auto* editor = p->createEditorIfNecessary())
+                pluginWindow = std::make_unique<PluginWindow>(editor, name);
+        }
+        catch (...)
+        {
+            DBG("Failed to create plugin editor for: " + name);
+            pluginWindow = nullptr;
+        }
     }
 
     void closePluginEditor()

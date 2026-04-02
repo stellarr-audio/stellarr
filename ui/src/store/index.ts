@@ -35,6 +35,9 @@ export interface PluginInfo {
 }
 
 interface StellarrState {
+  loading: boolean;
+  loadingStatus: string;
+  loadingProgress: number;
   connected: boolean;
   showSettings: boolean;
   blocks: GridBlock[];
@@ -43,6 +46,8 @@ interface StellarrState {
   scanDirectories: ScanDirectory[];
   availablePlugins: PluginInfo[];
 
+  setLoading: (loading: boolean) => void;
+  setLoadingStatus: (status: string, progress: number) => void;
   setConnected: (value: boolean) => void;
   setShowSettings: (value: boolean) => void;
   setBlockTestTone: (blockId: string, enabled: boolean) => void;
@@ -78,6 +83,9 @@ interface StellarrState {
 }
 
 export const useStore = create<StellarrState>((set) => ({
+  loading: true,
+  loadingStatus: 'Initialising...',
+  loadingProgress: 0,
   connected: false,
   showSettings: false,
   blocks: [],
@@ -88,6 +96,9 @@ export const useStore = create<StellarrState>((set) => ({
   selectedBlockId: null,
   draggingConnection: null,
 
+  setLoading: (loading) => set({ loading }),
+  setLoadingStatus: (status, progress) =>
+    set({ loadingStatus: status, loadingProgress: progress }),
   setConnected: (value) => set({ connected: value }),
   setShowSettings: (value) => set({ showSettings: value }),
 

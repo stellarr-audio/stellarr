@@ -17,6 +17,7 @@ public:
 private:
     void handleEvent(const juce::String& eventName, const juce::var& payload);
     void handleBridgeReady();
+    void sendStartupProgress(const juce::String& status, int progress);
     void sendWelcome();
     void sendGraphState();
 

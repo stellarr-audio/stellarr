@@ -1,6 +1,7 @@
-import { FiChevronLeft, FiChevronRight, FiSave, FiUpload } from 'react-icons/fi';
+import { FiChevronLeft, FiChevronRight, FiPlus, FiUpload, FiSave } from 'react-icons/fi';
 import { useStore } from '../store';
 import {
+  requestNewSession,
   requestSaveSession,
   requestLoadSession,
   requestLoadPresetByIndex,
@@ -39,7 +40,7 @@ export function PresetBrowser() {
   const currentName =
     currentPresetIndex >= 0 && currentPresetIndex < presetFiles.length
       ? presetFiles[currentPresetIndex].replace('.stellarr', '')
-      : 'No preset';
+      : 'Untitled';
 
   const canPrev = currentPresetIndex > 0;
   const canNext =
@@ -126,6 +127,26 @@ export function PresetBrowser() {
         </button>
       </div>
 
+      {/* New */}
+      <button
+        onClick={requestNewSession}
+        title="New preset"
+        {...hoverHandlers()}
+        style={iconBtnStyle}
+      >
+        <FiPlus size={16} />
+      </button>
+
+      {/* Open */}
+      <button
+        onClick={requestLoadSession}
+        title="Open preset"
+        {...hoverHandlers()}
+        style={iconBtnStyle}
+      >
+        <FiUpload size={16} />
+      </button>
+
       {/* Save */}
       <button
         onClick={requestSaveSession}
@@ -134,16 +155,6 @@ export function PresetBrowser() {
         style={iconBtnStyle}
       >
         <FiSave size={16} />
-      </button>
-
-      {/* Load */}
-      <button
-        onClick={requestLoadSession}
-        title="Load preset"
-        {...hoverHandlers()}
-        style={iconBtnStyle}
-      >
-        <FiUpload size={16} />
       </button>
     </div>
   );

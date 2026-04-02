@@ -105,12 +105,33 @@ export function Grid() {
 
   const handleMenuSelect = useCallback(
     (type: string) => {
-      if (menuCell) {
-        requestAddBlock(type, menuCell.col, menuCell.row);
-        setMenuCell(null);
+      if (!menuCell) return;
+
+      // Check if a connection passes through this cell (same row, between source and dest)
+      const blockMap = new Map(blocks.map((b) => [b.id, b]));
+      let spliceSourceId: string | undefined;
+      let spliceDestId: string | undefined;
+
+      for (const conn of useStore.getState().connections) {
+        const src = blockMap.get(conn.sourceId);
+        const dst = blockMap.get(conn.destId);
+        if (!src || !dst) continue;
+        if (src.row !== menuCell.row || dst.row !== menuCell.row) continue;
+
+        const minCol = Math.min(src.col, dst.col);
+        const maxCol = Math.max(src.col, dst.col);
+
+        if (menuCell.col > minCol && menuCell.col < maxCol) {
+          spliceSourceId = conn.sourceId;
+          spliceDestId = conn.destId;
+          break;
+        }
       }
+
+      requestAddBlock(type, menuCell.col, menuCell.row, spliceSourceId, spliceDestId);
+      setMenuCell(null);
     },
-    [menuCell],
+    [menuCell, blocks],
   );
 
   const gw = gridWidth(grid.columns);

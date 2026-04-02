@@ -83,6 +83,10 @@ export function requestSetBlockBalance(blockId: string, balance: number): void {
   sendEvent('setBlockBalance', JSON.stringify({ blockId, balance }));
 }
 
+export function requestToggleBlockBypass(blockId: string): void {
+  sendEvent('toggleBlockBypass', JSON.stringify({ blockId }));
+}
+
 export function requestToggleTestTone(blockId: string): void {
   sendEvent('toggleTestTone', JSON.stringify({ blockId }));
 }
@@ -188,6 +192,11 @@ export function initBridge(): void {
     useStore.getState().setBlockBalance(String(d.blockId), Number(d.balance));
   });
 
+  juce.backend.addEventListener('blockBypassChanged', (detail: unknown) => {
+    const d = asRecord(detail);
+    useStore.getState().setBlockBypassed(String(d.blockId), Boolean(d.bypassed));
+  });
+
   // Graph confirmations from C++
   juce.backend.addEventListener('blockAdded', (detail: unknown) => {
     const d = asRecord(detail);
@@ -259,6 +268,7 @@ export function initBridge(): void {
           pluginName: r.pluginName ? String(r.pluginName) : undefined,
           mix: r.mix !== undefined ? Number(r.mix) : undefined,
           balance: r.balance !== undefined ? Number(r.balance) : undefined,
+          bypassed: r.bypassed ? Boolean(r.bypassed) : undefined,
         } satisfies GridBlock;
       },
     );

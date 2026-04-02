@@ -1,6 +1,6 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useStore } from '../store';
-import { requestAddBlock, requestAddConnection, requestMoveBlock } from '../bridge';
+import { requestAddBlock, requestAddConnection, requestMoveBlock, requestToggleBlockBypass } from '../bridge';
 import { GridBlockComponent } from './GridBlock';
 import { ConnectionLayer } from './ConnectionLayer';
 import { BlockMenu } from './BlockMenu';
@@ -14,7 +14,25 @@ export function Grid() {
   const setDraggingConnection = useStore((s) => s.setDraggingConnection);
   const gridRef = useRef<HTMLDivElement>(null);
 
+  const selectedBlockId = useStore((s) => s.selectedBlockId);
+
   const [hoveredCell, setHoveredCell] = useState<{ col: number; row: number } | null>(null);
+
+  // Space key toggles bypass on the selected block
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.code === 'Space' && selectedBlockId) {
+        e.preventDefault();
+        const block = useStore.getState().blocks.find((b) => b.id === selectedBlockId);
+        if (block && block.type !== 'input' && block.type !== 'output') {
+          useStore.getState().setBlockBypassed(selectedBlockId, !block.bypassed);
+          requestToggleBlockBypass(selectedBlockId);
+        }
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [selectedBlockId]);
   const [menuCell, setMenuCell] = useState<{ col: number; row: number } | null>(null);
 
   const occupiedSet = new Set(blocks.map((b) => `${b.col},${b.row}`));

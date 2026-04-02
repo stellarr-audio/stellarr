@@ -132,6 +132,30 @@ void StellarrBridge::handleEvent(const juce::String& eventName, const juce::var&
             }
         }
     }
+    else if (eventName == "toggleBlockBypass" && processor != nullptr)
+    {
+        auto* obj = json.getDynamicObject();
+        if (obj == nullptr) return;
+
+        auto blockId = obj->getProperty("blockId").toString();
+
+        auto nodeIt = blockNodeMap.find(blockId);
+        if (nodeIt == blockNodeMap.end()) return;
+
+        if (auto* node = processor->getGraph().getNodeForId(nodeIt->second))
+        {
+            if (auto* block = dynamic_cast<stellarr::Block*>(node->getProcessor()))
+            {
+                bool newState = !block->isBypassed();
+                block->setBypassed(newState);
+
+                auto* detail = new juce::DynamicObject();
+                detail->setProperty("blockId", blockId);
+                detail->setProperty("bypassed", newState);
+                emitToJs("blockBypassChanged", detail);
+            }
+        }
+    }
     else if (eventName == "uiAction" && webView != nullptr)
     {
         auto* response = new juce::DynamicObject();
@@ -654,6 +678,7 @@ void StellarrBridge::sendGraphState()
 
                 blockObj->setProperty("mix", static_cast<double>(block->getMix()));
                 blockObj->setProperty("balance", static_cast<double>(block->getBalance()));
+                blockObj->setProperty("bypassed", block->isBypassed());
             }
         }
 

@@ -66,22 +66,19 @@ target_link_libraries(Stellarr
 
 enable_testing()
 
-add_executable(StellarrTest engine/test/PassThroughTest.cpp)
-target_include_directories(StellarrTest PRIVATE ${CMAKE_SOURCE_DIR}/engine)
-target_link_libraries(StellarrTest
-    PRIVATE
-        Stellarr
-        juce::juce_audio_utils
-        juce::juce_gui_extra
-)
-add_test(NAME PassThrough COMMAND StellarrTest)
+set(TEST_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/engine)
+set(TEST_LIBS Stellarr juce::juce_audio_utils juce::juce_gui_extra)
 
-add_executable(GraphTest engine/test/GraphTest.cpp)
-target_include_directories(GraphTest PRIVATE ${CMAKE_SOURCE_DIR}/engine)
-target_link_libraries(GraphTest
-    PRIVATE
-        Stellarr
-        juce::juce_audio_utils
-        juce::juce_gui_extra
-)
-add_test(NAME Graph COMMAND GraphTest)
+function(add_stellarr_test NAME SOURCE)
+    add_executable(${NAME} ${SOURCE})
+    target_include_directories(${NAME} PRIVATE ${TEST_INCLUDE_DIR})
+    target_link_libraries(${NAME} PRIVATE ${TEST_LIBS})
+    add_test(NAME ${NAME} COMMAND ${NAME})
+endfunction()
+
+add_stellarr_test(PassThroughTest  engine/test/PassThroughTest.cpp)
+add_stellarr_test(GraphBasicTest   engine/test/GraphBasicTest.cpp)
+add_stellarr_test(GraphRoutingTest engine/test/GraphRoutingTest.cpp)
+add_stellarr_test(GraphEdgeTest    engine/test/GraphEdgeTest.cpp)
+add_stellarr_test(BlockTest        engine/test/BlockTest.cpp)
+add_stellarr_test(SessionTest      engine/test/SessionTest.cpp)

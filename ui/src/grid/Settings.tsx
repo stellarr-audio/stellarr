@@ -11,13 +11,14 @@ export function Settings() {
   const availablePlugins = useStore((s) => s.availablePlugins);
 
   return (
-    <div
-      style={{
-        flex: 1,
-        padding: '2rem',
-        overflow: 'auto',
-      }}
-    >
+    <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
+      <div
+        style={{
+          flex: 1,
+          padding: '2rem',
+          overflow: 'auto',
+        }}
+      >
       {/* Libraries section */}
       <Section title="Libraries">
         <div
@@ -165,6 +166,57 @@ export function Settings() {
           </div>
         )}
       </Section>
+      </div>
+
+      {/* App info panel */}
+      <div
+        style={{
+          width: 280,
+          flexShrink: 0,
+          padding: '1rem',
+          boxSizing: 'border-box',
+          borderLeft: `1px solid ${colors.border}`,
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'center',
+          gap: '1rem',
+        }}
+      >
+        <span
+          style={{
+            fontSize: '1.2rem',
+            fontWeight: 700,
+            color: colors.primary,
+            letterSpacing: '0.1em',
+            textTransform: 'uppercase',
+            textShadow: `0 0 12px ${colors.primary}44`,
+          }}
+        >
+          Stellarr
+        </span>
+        <span
+          style={{
+            fontSize: '1rem',
+            color: colors.muted,
+            letterSpacing: '0.06em',
+          }}
+        >
+          v0.1.0
+        </span>
+        <p
+          style={{
+            fontSize: '1rem',
+            color: colors.muted,
+            textAlign: 'center',
+            lineHeight: 1.6,
+            margin: 0,
+            maxWidth: 220,
+          }}
+        >
+          Made by an AI and a human, together. Free and open, forever. For the love of music and art.
+        </p>
+      </div>
     </div>
   );
 }

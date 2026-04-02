@@ -2,7 +2,7 @@
 #include "StellarrProcessor.h"
 #include "blocks/InputBlock.h"
 #include "blocks/OutputBlock.h"
-#include "blocks/VstBlock.h"
+#include "blocks/PluginBlock.h"
 
 StellarrBridge::StellarrBridge() = default;
 
@@ -319,7 +319,7 @@ void StellarrBridge::handleAddBlock(const juce::var& json)
 
     if (type == "input")       block = std::make_unique<stellarr::InputBlock>();
     else if (type == "output") block = std::make_unique<stellarr::OutputBlock>();
-    else if (type == "vst")    block = std::make_unique<stellarr::VstBlock>();
+    else if (type == "plugin") block = std::make_unique<stellarr::PluginBlock>();
     else return;
 
     auto blockId = block->getBlockId().toString();
@@ -487,8 +487,8 @@ void StellarrBridge::handleSetBlockPlugin(const juce::var& json)
     auto* node = processor->getGraph().getNodeForId(nodeIt->second);
     if (node == nullptr) return;
 
-    auto* vstBlock = dynamic_cast<stellarr::VstBlock*>(node->getProcessor());
-    if (vstBlock == nullptr) return;
+    auto* pluginBlock = dynamic_cast<stellarr::PluginBlock*>(node->getProcessor());
+    if (pluginBlock == nullptr) return;
 
     juce::String errorMessage;
     auto instance = processor->getPluginManager().createPluginInstance(
@@ -498,7 +498,7 @@ void StellarrBridge::handleSetBlockPlugin(const juce::var& json)
     if (instance == nullptr) return;
 
     auto pluginName = instance->getName();
-    vstBlock->setPlugin(std::move(instance), pluginId);
+    pluginBlock->setPlugin(std::move(instance), pluginId);
 
     auto* detail = new juce::DynamicObject();
     detail->setProperty("blockId", blockId);
@@ -522,13 +522,13 @@ void StellarrBridge::handleOpenPluginEditor(const juce::var& json)
     auto* node = processor->getGraph().getNodeForId(nodeIt->second);
     if (node == nullptr) return;
 
-    auto* vstBlock = dynamic_cast<stellarr::VstBlock*>(node->getProcessor());
-    if (vstBlock == nullptr || !vstBlock->hasPlugin()) return;
+    auto* pluginBlock = dynamic_cast<stellarr::PluginBlock*>(node->getProcessor());
+    if (pluginBlock == nullptr || !pluginBlock->hasPlugin()) return;
 
     // Defer to message thread in case called from within native function handler
-    juce::MessageManager::callAsync([vstBlock]()
+    juce::MessageManager::callAsync([pluginBlock]()
     {
-        vstBlock->openPluginEditor();
+        pluginBlock->openPluginEditor();
     });
 }
 
@@ -695,10 +695,10 @@ void StellarrBridge::sendGraphState()
                 blockObj->setProperty("type", stellarr::blockTypeToString(block->getBlockType()));
                 blockObj->setProperty("name", block->getName());
 
-                if (auto* vstBlock = dynamic_cast<stellarr::VstBlock*>(node->getProcessor()))
+                if (auto* pluginBlock = dynamic_cast<stellarr::PluginBlock*>(node->getProcessor()))
                 {
-                    blockObj->setProperty("pluginId", vstBlock->getPluginIdentifier());
-                    blockObj->setProperty("pluginName", vstBlock->getPluginName());
+                    blockObj->setProperty("pluginId", pluginBlock->getPluginIdentifier());
+                    blockObj->setProperty("pluginName", pluginBlock->getPluginName());
                 }
 
                 blockObj->setProperty("mix", static_cast<double>(block->getMix()));
@@ -805,8 +805,8 @@ void StellarrBridge::clearGraph()
     for (auto& [blockId, nodeId] : blockNodeMap)
     {
         if (auto* node = processor->getGraph().getNodeForId(nodeId))
-            if (auto* vstBlock = dynamic_cast<stellarr::VstBlock*>(node->getProcessor()))
-                vstBlock->closePluginEditor();
+            if (auto* pluginBlock = dynamic_cast<stellarr::PluginBlock*>(node->getProcessor()))
+                pluginBlock->closePluginEditor();
     }
 
     // Remove all user blocks
@@ -844,7 +844,7 @@ void StellarrBridge::restoreSession(const juce::var& session)
             std::unique_ptr<stellarr::Block> block;
             if (type == "input")       block = std::make_unique<stellarr::InputBlock>();
             else if (type == "output") block = std::make_unique<stellarr::OutputBlock>();
-            else if (type == "vst")    block = std::make_unique<stellarr::VstBlock>();
+            else if (type == "plugin" || type == "vst")  block = std::make_unique<stellarr::PluginBlock>();
             else continue;
 
             block->fromJson(blockVar);
@@ -863,14 +863,14 @@ void StellarrBridge::restoreSession(const juce::var& session)
             else if (type == "output")
                 processor->connectBlocks(nodeId, processor->getAudioOutputNodeId());
 
-            // Restore VST plugin
-            if (type == "vst")
+            // Restore plugin
+            if (type == "plugin" || type == "vst")
             {
                 auto pluginId = blockObj->getProperty("pluginId").toString();
                 if (pluginId.isNotEmpty())
                 {
                     auto* node = processor->getGraph().getNodeForId(nodeId);
-                    if (auto* vstBlock = dynamic_cast<stellarr::VstBlock*>(node->getProcessor()))
+                    if (auto* pluginBlock = dynamic_cast<stellarr::PluginBlock*>(node->getProcessor()))
                     {
                         juce::String errorMessage;
                         auto instance = processor->getPluginManager().createPluginInstance(
@@ -879,8 +879,8 @@ void StellarrBridge::restoreSession(const juce::var& session)
 
                         if (instance != nullptr)
                         {
-                            vstBlock->setPlugin(std::move(instance), pluginId);
-                            vstBlock->restorePluginState();
+                            pluginBlock->setPlugin(std::move(instance), pluginId);
+                            pluginBlock->restorePluginState();
                         }
                     }
                 }

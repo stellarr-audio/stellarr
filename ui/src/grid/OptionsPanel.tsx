@@ -5,6 +5,7 @@ import {
   requestToggleTestTone,
   requestSetBlockPlugin,
   requestSetBlockMix,
+  requestSetBlockBalance,
   requestOpenPluginEditor,
 } from '../bridge';
 import { colors } from './colors';
@@ -220,6 +221,54 @@ export function OptionsPanel() {
                     onChange={(v) => {
                       useStore.getState().setBlockMix(block.id, v / 100);
                       requestSetBlockMix(block.id, v / 100);
+                    }}
+                  />
+                </div>
+
+                {/* Balance */}
+                <div>
+                  <div
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      marginBottom: '0.4rem',
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontSize: '1rem',
+                        color: colors.text,
+                        letterSpacing: '0.05em',
+                        textTransform: 'uppercase',
+                      }}
+                    >
+                      Balance
+                    </span>
+                    <span
+                      style={{
+                        fontSize: '1rem',
+                        color: colors.secondary,
+                        fontWeight: 600,
+                        fontVariantNumeric: 'tabular-nums',
+                        minWidth: '4ch',
+                        textAlign: 'right',
+                      }}
+                    >
+                      {(() => {
+                        const bal = Math.round((block.balance ?? 0) * 100);
+                        if (bal === 0) return 'C';
+                        return bal < 0 ? `L${Math.abs(bal)}` : `R${bal}`;
+                      })()}
+                    </span>
+                  </div>
+                  <Slider
+                    min={-100}
+                    max={100}
+                    value={Math.round((block.balance ?? 0) * 100)}
+                    onChange={(v) => {
+                      useStore.getState().setBlockBalance(block.id, v / 100);
+                      requestSetBlockBalance(block.id, v / 100);
                     }}
                   />
                 </div>

@@ -11,6 +11,7 @@ export interface GridBlock {
   pluginId?: string;
   pluginName?: string;
   mix?: number;
+  balance?: number;
   hasEditor?: boolean;
 }
 
@@ -64,6 +65,7 @@ interface StellarrState {
   setAvailablePlugins: (plugins: PluginInfo[]) => void;
   setBlockPlugin: (blockId: string, pluginId: string, pluginName: string, hasEditor: boolean) => void;
   setBlockMix: (blockId: string, mix: number) => void;
+  setBlockBalance: (blockId: string, balance: number) => void;
   setPresetList: (directory: string, files: string[], currentIndex: number) => void;
   setSystemStats: (cpu: number, memory: number, totalMemory: number) => void;
 
@@ -141,6 +143,13 @@ export const useStore = create<StellarrState>((set) => ({
     set((s) => ({
       blocks: s.blocks.map((b) =>
         b.id === blockId ? { ...b, mix } : b,
+      ),
+    })),
+
+  setBlockBalance: (blockId, balance) =>
+    set((s) => ({
+      blocks: s.blocks.map((b) =>
+        b.id === blockId ? { ...b, balance } : b,
       ),
     })),
 

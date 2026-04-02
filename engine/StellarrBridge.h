@@ -26,6 +26,8 @@ private:
     void handleMoveBlock(const juce::var& json);
     void handleAddConnection(const juce::var& json);
     void handleRemoveConnection(const juce::var& json);
+    void handleSetBlockPlugin(const juce::var& json);
+    void handleOpenPluginEditor(const juce::var& json);
 
     // Plugin management event handlers
     void handleScanPlugins();

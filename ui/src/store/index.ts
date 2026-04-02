@@ -55,6 +55,7 @@ interface StellarrState {
   currentPresetIndex: number;
   cpuPercent: number;
   memoryMB: number;
+  justSaved: boolean;
   totalMemoryMB: number;
 
   setLoading: (loading: boolean) => void;
@@ -72,6 +73,7 @@ interface StellarrState {
   setBlockBypassMode: (blockId: string, mode: string) => void;
   setPresetList: (directory: string, files: string[], currentIndex: number) => void;
   setSystemStats: (cpu: number, memory: number, totalMemory: number) => void;
+  setJustSaved: (value: boolean) => void;
 
   addBlock: (block: GridBlock) => void;
   removeBlock: (blockId: string) => void;
@@ -115,6 +117,7 @@ export const useStore = create<StellarrState>((set) => ({
   currentPresetIndex: -1,
   cpuPercent: 0,
   memoryMB: 0,
+  justSaved: false,
   totalMemoryMB: 1,
   selectedBlockId: null,
   draggingConnection: null,
@@ -176,6 +179,8 @@ export const useStore = create<StellarrState>((set) => ({
 
   setSystemStats: (cpu, memory, totalMemory) =>
     set({ cpuPercent: cpu, memoryMB: memory, totalMemoryMB: totalMemory }),
+
+  setJustSaved: (value) => set({ justSaved: value }),
 
   addBlock: (block) =>
     set((s) => ({ blocks: [...s.blocks, block] })),

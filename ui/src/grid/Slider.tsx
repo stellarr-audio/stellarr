@@ -31,7 +31,7 @@ export function Slider({ value, min = 0, max = 100, step = 1, onChange }: Props)
         style={{
           position: 'relative',
           flexGrow: 1,
-          height: 6,
+          height: 4,
           borderRadius: 9999,
           background: colors.border,
           overflow: 'hidden',

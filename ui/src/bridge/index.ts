@@ -111,6 +111,10 @@ export function requestSaveSession(): void {
   sendEvent('saveSession', '');
 }
 
+export function requestSaveSessionQuiet(): void {
+  sendEvent('saveSessionQuiet', '');
+}
+
 export function requestLoadSession(): void {
   sendEvent('loadSession', '');
 }
@@ -340,6 +344,11 @@ export function initBridge(): void {
   juce.backend.addEventListener('systemStats', (detail: unknown) => {
     const d = asRecord(detail);
     useStore.getState().setSystemStats(Number(d.cpu), Number(d.memory), Number(d.totalMemory));
+  });
+
+  juce.backend.addEventListener('sessionSaved', () => {
+    useStore.getState().setJustSaved(true);
+    setTimeout(() => useStore.getState().setJustSaved(false), 1200);
   });
 
   bridgeReady = true;

@@ -44,6 +44,7 @@ private:
     // Preset management
     void handleNewSession();
     void handleSaveSession();
+    void handleSaveSessionQuiet();
     void handleLoadSession();
     void handlePickPresetDirectory();
     void handleLoadPresetByIndex(const juce::var& json);

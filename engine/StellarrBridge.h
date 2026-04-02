@@ -11,10 +11,10 @@ public:
     StellarrBridge();
 
     void setProcessor(StellarrProcessor* proc);
+    void setAppProperties(juce::ApplicationProperties* props);
     juce::WebBrowserComponent::Options configureOptions(juce::WebBrowserComponent::Options options);
     void setWebView(juce::WebBrowserComponent* browser);
 
-    // Session state (also used by getStateInformation / setStateInformation)
     juce::var serialiseSession() const;
     void restoreSession(const juce::var& session);
 
@@ -52,11 +52,14 @@ private:
     void sendPresetList();
 
     void clearGraph();
+    void setPresetFromFile(const juce::File& file);
+    void persistPresetInfo();
 
     void emitToJs(const juce::String& eventName, juce::DynamicObject* detail);
 
     juce::WebBrowserComponent* webView = nullptr;
     StellarrProcessor* processor = nullptr;
+    juce::ApplicationProperties* appProperties = nullptr;
 
     std::map<juce::String, juce::AudioProcessorGraph::NodeID> blockNodeMap;
     std::map<juce::String, std::pair<int, int>> blockPositions;
@@ -65,4 +68,5 @@ private:
     juce::File presetDirectory;
     juce::StringArray presetFiles;
     int currentPresetIndex = -1;
+    juce::File lastPresetFile;
 };

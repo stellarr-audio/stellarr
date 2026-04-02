@@ -2,6 +2,7 @@
 #include <juce_gui_extra/juce_gui_extra.h>
 #include <juce_audio_plugin_client/Standalone/juce_StandaloneFilterWindow.h>
 #include "StellarrEditor.h"
+#include "StellarrProcessor.h"
 
 namespace juce
 {
@@ -83,7 +84,12 @@ public:
         mainWindow.reset(createWindow());
 
         if (mainWindow != nullptr)
+        {
+            if (auto* proc = dynamic_cast<StellarrProcessor*>(mainWindow->getAudioProcessor()))
+                proc->setAppProperties(&appProperties);
+
             mainWindow->setVisible(true);
+        }
     }
 
     void shutdown() override
@@ -114,6 +120,11 @@ private:
         auto holder = std::make_unique<StandalonePluginHolder>(
             appProperties.getUserSettings(), false, String{},
             nullptr, channelConfig, false);
+
+        // Set app properties on the processor before the editor is created,
+        // so handleBridgeReady can access saved state.
+        if (auto* proc = dynamic_cast<StellarrProcessor*>(holder->processor.get()))
+            proc->setAppProperties(&appProperties);
 
         return new StellarrFilterWindow(
             getApplicationName(),

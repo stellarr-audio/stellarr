@@ -37,6 +37,7 @@ StellarrEditor::StellarrEditor(StellarrProcessor& p)
     webView = std::make_unique<juce::WebBrowserComponent>(options);
     addAndMakeVisible(*webView);
     bridge.setProcessor(&p);
+    bridge.setAppProperties(p.getAppProperties());
     bridge.setWebView(webView.get());
 
     webView->goToURL(juce::WebBrowserComponent::getResourceProviderRoot());

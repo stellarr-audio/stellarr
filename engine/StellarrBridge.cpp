@@ -84,6 +84,30 @@ void StellarrBridge::handleEvent(const juce::String& eventName, const juce::var&
             }
         }
     }
+    else if (eventName == "setBlockMix" && processor != nullptr)
+    {
+        auto* obj = json.getDynamicObject();
+        if (obj == nullptr) return;
+
+        auto blockId = obj->getProperty("blockId").toString();
+        auto mixVal  = static_cast<float>(obj->getProperty("mix"));
+
+        auto nodeIt = blockNodeMap.find(blockId);
+        if (nodeIt == blockNodeMap.end()) return;
+
+        if (auto* node = processor->getGraph().getNodeForId(nodeIt->second))
+        {
+            if (auto* block = dynamic_cast<stellarr::Block*>(node->getProcessor()))
+            {
+                block->setMix(mixVal);
+
+                auto* detail = new juce::DynamicObject();
+                detail->setProperty("blockId", blockId);
+                detail->setProperty("mix", static_cast<double>(mixVal));
+                emitToJs("blockMixChanged", detail);
+            }
+        }
+    }
     else if (eventName == "uiAction" && webView != nullptr)
     {
         auto* response = new juce::DynamicObject();
@@ -603,6 +627,8 @@ void StellarrBridge::sendGraphState()
                     blockObj->setProperty("pluginId", vstBlock->getPluginIdentifier());
                     blockObj->setProperty("pluginName", vstBlock->getPluginName());
                 }
+
+                blockObj->setProperty("mix", static_cast<double>(block->getMix()));
             }
         }
 

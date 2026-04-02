@@ -8,19 +8,17 @@ namespace stellarr
 class InputBlock final : public Block
 {
 public:
-    InputBlock() : Block("Input", 2, 2) {}
+    InputBlock() : Block("Input", 2, 2, false) {}
 
     BlockType getBlockType() const override { return BlockType::input; }
 
-    void prepareToPlay(double sampleRate, int) override
+    void prepareBlock(double sampleRate, int) override
     {
         currentSampleRate = sampleRate;
         samplesPerBeat = sampleRate * 60.0 / bpm;
     }
 
-    void releaseResources() override {}
-
-    void processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer&) override
+    void process(juce::AudioBuffer<float>& buffer, juce::MidiBuffer&) override
     {
         if (!testToneEnabled.load(std::memory_order_relaxed))
             return;

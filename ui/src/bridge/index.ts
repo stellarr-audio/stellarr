@@ -75,6 +75,10 @@ export function requestRemoveConnection(sourceId: string, destId: string): void 
   sendEvent('removeConnection', JSON.stringify({ sourceId, destId }));
 }
 
+export function requestSetBlockMix(blockId: string, mix: number): void {
+  sendEvent('setBlockMix', JSON.stringify({ blockId, mix }));
+}
+
 export function requestToggleTestTone(blockId: string): void {
   sendEvent('toggleTestTone', JSON.stringify({ blockId }));
 }
@@ -170,6 +174,11 @@ export function initBridge(): void {
     useStore.getState().setBlockTestTone(String(d.blockId), Boolean(d.enabled));
   });
 
+  juce.backend.addEventListener('blockMixChanged', (detail: unknown) => {
+    const d = asRecord(detail);
+    useStore.getState().setBlockMix(String(d.blockId), Number(d.mix));
+  });
+
   // Graph confirmations from C++
   juce.backend.addEventListener('blockAdded', (detail: unknown) => {
     const d = asRecord(detail);
@@ -239,6 +248,7 @@ export function initBridge(): void {
           nodeId: Number(r.nodeId),
           pluginId: r.pluginId ? String(r.pluginId) : undefined,
           pluginName: r.pluginName ? String(r.pluginName) : undefined,
+          mix: r.mix !== undefined ? Number(r.mix) : undefined,
         } satisfies GridBlock;
       },
     );

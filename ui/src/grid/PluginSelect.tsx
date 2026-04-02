@@ -1,4 +1,6 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useMemo } from 'react';
+import { Select } from 'radix-ui';
+import { ChevronDownIcon, ChevronUpIcon } from '@radix-ui/react-icons';
 import type { PluginInfo } from '../store';
 import { colors } from './colors';
 
@@ -15,35 +17,25 @@ interface Props {
 }
 
 export function PluginSelect({ plugins, selectedId, onSelect }: Props) {
-  const [open, setOpen] = useState(false);
-  const [filter, setFilter] = useState('');
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node))
-        setOpen(false);
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [open]);
+  const [search, setSearch] = useState('');
 
   const selected = plugins.find((p) => p.id === selectedId);
 
-  const filtered = filter
-    ? plugins.filter(
-        (p) =>
-          p.name.toLowerCase().includes(filter.toLowerCase()) ||
-          p.manufacturer.toLowerCase().includes(filter.toLowerCase()),
-      )
-    : plugins;
+  const filtered = useMemo(
+    () =>
+      search
+        ? plugins.filter(
+            (p) =>
+              p.name.toLowerCase().includes(search.toLowerCase()) ||
+              p.manufacturer.toLowerCase().includes(search.toLowerCase()),
+          )
+        : plugins,
+    [plugins, search],
+  );
 
   return (
-    <div ref={ref} style={{ position: 'relative' }}>
-      {/* Trigger button */}
-      <button
-        onClick={() => setOpen(!open)}
+    <Select.Root value={selectedId} onValueChange={onSelect}>
+      <Select.Trigger
         style={{
           width: '100%',
           textAlign: 'left',
@@ -57,59 +49,62 @@ export function PluginSelect({ plugins, selectedId, onSelect }: Props) {
           alignItems: 'center',
           justifyContent: 'space-between',
           gap: '0.25rem',
+          outline: 'none',
         }}
       >
-        <span
-          style={{
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
-          }}
-        >
-          {selected ? selected.name : 'Select a plugin...'}
-        </span>
-        <span style={{ fontSize: '1rem', color: colors.muted, flexShrink: 0 }}>
-          {open ? '\u25B2' : '\u25BC'}
-        </span>
-      </button>
+        <Select.Value placeholder="Select a plugin..." />
+        <Select.Icon>
+          <ChevronDownIcon />
+        </Select.Icon>
+      </Select.Trigger>
 
-      {/* Dropdown */}
-      {open && (
-        <div
+      <Select.Portal>
+        <Select.Content
+          position="popper"
+          sideOffset={4}
           style={{
-            position: 'absolute',
-            top: '100%',
-            left: 0,
-            right: 0,
-            marginTop: 2,
             background: '#1a1535',
             border: `1px solid ${colors.border}`,
-            zIndex: 20,
             maxHeight: 240,
-            display: 'flex',
-            flexDirection: 'column',
+            overflow: 'auto',
+            width: 'var(--radix-select-trigger-width)',
+            zIndex: 20,
           }}
         >
-          {/* Search */}
-          <input
-            type="text"
-            placeholder="Search..."
-            value={filter}
-            onChange={(e) => setFilter(e.target.value)}
-            autoFocus
+          <Select.ScrollUpButton
             style={{
-              background: colors.cell,
-              color: colors.text,
-              border: 'none',
-              borderBottom: `1px solid ${colors.border}`,
-              padding: '0.35rem 0.5rem',
-              fontSize: '1rem',
-              outline: 'none',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              height: 20,
+              color: colors.muted,
             }}
-          />
+          >
+            <ChevronUpIcon />
+          </Select.ScrollUpButton>
 
-          {/* List */}
-          <div style={{ overflow: 'auto', flex: 1 }}>
+          <Select.Viewport>
+            {/* Search — using a div so it doesn't interfere with Select keyboard nav */}
+            <div style={{ padding: '0.25rem 0.5rem', borderBottom: `1px solid ${colors.border}` }}>
+              <input
+                type="text"
+                placeholder="Search..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                onClick={(e) => e.stopPropagation()}
+                onKeyDown={(e) => e.stopPropagation()}
+                style={{
+                  background: colors.cell,
+                  color: colors.text,
+                  border: 'none',
+                  width: '100%',
+                  padding: '0.25rem 0',
+                  fontSize: '1rem',
+                  outline: 'none',
+                }}
+              />
+            </div>
+
             {filtered.length === 0 ? (
               <div
                 style={{
@@ -122,82 +117,82 @@ export function PluginSelect({ plugins, selectedId, onSelect }: Props) {
                 No plugins found
               </div>
             ) : (
-              filtered.map((p) => (
-                <div
-                  key={p.id}
-                  onClick={() => {
-                    onSelect(p.id);
-                    setOpen(false);
-                    setFilter('');
-                  }}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    padding: '0.35rem 0.5rem',
-                    cursor: 'pointer',
-                    background:
-                      p.id === selectedId ? colors.border : 'transparent',
-                  }}
-                  onMouseEnter={(e) => {
-                    if (p.id !== selectedId)
+              filtered.map((p) => {
+                const formatLabel =
+                  p.format === 'AudioUnit'
+                    ? 'AU'
+                    : p.format === 'VST3'
+                      ? 'VST3'
+                      : p.format;
+                const formatColor = formatColors[p.format] ?? colors.muted;
+
+                return (
+                  <Select.Item
+                    key={p.id}
+                    value={p.id}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '0.35rem 0.5rem',
+                      cursor: 'pointer',
+                      outline: 'none',
+                      fontSize: '1rem',
+                      color: colors.text,
+                    }}
+                    onMouseEnter={(e) => {
                       e.currentTarget.style.background = `${colors.border}88`;
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background =
-                      p.id === selectedId ? colors.border : 'transparent';
-                  }}
-                >
-                  <div>
-                    <div
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = 'transparent';
+                    }}
+                  >
+                    <div>
+                      <Select.ItemText>{p.name}</Select.ItemText>
+                      <div
+                        style={{
+                          fontSize: '0.85rem',
+                          color: colors.muted,
+                          marginTop: '0.1rem',
+                        }}
+                      >
+                        {p.manufacturer}
+                      </div>
+                    </div>
+                    <span
                       style={{
-                        fontSize: '1rem',
-                        fontWeight: 600,
-                        color: colors.text,
+                        fontSize: '0.85rem',
+                        fontWeight: 700,
+                        color: formatColor,
+                        border: `1px solid ${formatColor}55`,
+                        padding: '0.1rem 0.25rem',
+                        letterSpacing: '0.06em',
+                        textTransform: 'uppercase',
+                        flexShrink: 0,
+                        marginLeft: '0.5rem',
                       }}
                     >
-                      {p.name}
-                    </div>
-                    <div
-                      style={{
-                        fontSize: '1rem',
-                        color: colors.muted,
-                        marginTop: '0.1rem',
-                      }}
-                    >
-                      {p.manufacturer}
-                    </div>
-                  </div>
-                  <FormatTag format={p.format} />
-                </div>
-              ))
+                      {formatLabel}
+                    </span>
+                  </Select.Item>
+                );
+              })
             )}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
+          </Select.Viewport>
 
-function FormatTag({ format }: { format: string }) {
-  const label =
-    format === 'AudioUnit' ? 'AU' : format === 'VST3' ? 'VST3' : format;
-  const color = formatColors[format] ?? colors.muted;
-
-  return (
-    <span
-      style={{
-        fontSize: '1rem',
-        fontWeight: 700,
-        color,
-        border: `1px solid ${color}55`,
-        padding: '0.1rem 0.25rem',
-        letterSpacing: '0.06em',
-        textTransform: 'uppercase',
-        flexShrink: 0,
-      }}
-    >
-      {label}
-    </span>
+          <Select.ScrollDownButton
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              height: 20,
+              color: colors.muted,
+            }}
+          >
+            <ChevronDownIcon />
+          </Select.ScrollDownButton>
+        </Select.Content>
+      </Select.Portal>
+    </Select.Root>
   );
 }

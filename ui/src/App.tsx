@@ -1,3 +1,4 @@
+import { Tabs } from 'radix-ui';
 import { useStore } from './store';
 import { Grid } from './grid/Grid';
 import { OptionsPanel } from './grid/OptionsPanel';
@@ -8,37 +9,19 @@ import { SystemStats } from './grid/SystemStats';
 import { colors } from './grid/colors';
 import { Logo } from './grid/Logo';
 
-type Tab = 'grid' | 'settings';
-
-function TabButton({
-  label,
-  active,
-  onClick,
-}: {
-  label: string;
-  active: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      style={{
-        background: active ? colors.border : 'transparent',
-        border: 'none',
-        borderBottom: active ? `2px solid ${colors.primary}` : '2px solid transparent',
-        color: active ? colors.text : colors.muted,
-        padding: '0.6rem 1rem',
-        fontSize: '1rem',
-        fontWeight: 600,
-        letterSpacing: '0.08em',
-        textTransform: 'uppercase',
-        cursor: 'pointer',
-      }}
-    >
-      {label}
-    </button>
-  );
-}
+const tabStyle = (active: boolean): React.CSSProperties => ({
+  background: active ? colors.border : 'transparent',
+  border: 'none',
+  borderBottom: active ? `2px solid ${colors.primary}` : '2px solid transparent',
+  color: active ? colors.text : colors.muted,
+  padding: '0.6rem 1rem',
+  fontSize: '1rem',
+  fontWeight: 600,
+  letterSpacing: '0.08em',
+  textTransform: 'uppercase',
+  cursor: 'pointer',
+  outline: 'none',
+});
 
 function App() {
   const loading = useStore((s) => s.loading);
@@ -46,14 +29,14 @@ function App() {
   const showSettings = useStore((s) => s.showSettings);
   const setShowSettings = useStore((s) => s.setShowSettings);
 
-  const activeTab: Tab = showSettings ? 'settings' : 'grid';
-
-  const setTab = (tab: Tab) => setShowSettings(tab === 'settings');
+  const activeTab = showSettings ? 'settings' : 'grid';
 
   if (loading) return <LoadingScreen />;
 
   return (
-    <div
+    <Tabs.Root
+      value={activeTab}
+      onValueChange={(v) => setShowSettings(v === 'settings')}
       style={{
         background: colors.bg,
         color: colors.text,
@@ -105,24 +88,20 @@ function App() {
             </span>
           </div>
 
-          <div
+          <Tabs.List
             style={{
               display: 'flex',
               alignItems: 'center',
               marginLeft: '0.25rem',
             }}
           >
-            <TabButton
-              label="Grid"
-              active={activeTab === 'grid'}
-              onClick={() => setTab('grid')}
-            />
-            <TabButton
-              label="Settings"
-              active={activeTab === 'settings'}
-              onClick={() => setTab('settings')}
-            />
-          </div>
+            <Tabs.Trigger value="grid" style={tabStyle(activeTab === 'grid')}>
+              Grid
+            </Tabs.Trigger>
+            <Tabs.Trigger value="settings" style={tabStyle(activeTab === 'settings')}>
+              Settings
+            </Tabs.Trigger>
+          </Tabs.List>
         </div>
 
         {/* Centre: preset browser */}
@@ -136,30 +115,40 @@ function App() {
 
       {/* Main area */}
       <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
-        {activeTab === 'settings' ? (
+        <Tabs.Content
+          value="settings"
+          forceMount
+          hidden={activeTab !== 'settings'}
+          style={{ flex: 1, display: activeTab === 'settings' ? 'flex' : 'none' }}
+        >
           <Settings />
-        ) : (
-          <>
-            <div
-              onClick={(e) => {
-                if (e.target === e.currentTarget) selectBlock(null);
-              }}
-              style={{
-                flex: 1,
-                overflow: 'auto',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                padding: '1rem',
-              }}
-            >
-              <Grid />
-            </div>
-            <OptionsPanel />
-          </>
-        )}
+        </Tabs.Content>
+
+        <Tabs.Content
+          value="grid"
+          forceMount
+          hidden={activeTab !== 'grid'}
+          style={{ flex: 1, display: activeTab === 'grid' ? 'flex' : 'none' }}
+        >
+          <div
+            onClick={(e) => {
+              if (e.target === e.currentTarget) selectBlock(null);
+            }}
+            style={{
+              flex: 1,
+              overflow: 'auto',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '1rem',
+            }}
+          >
+            <Grid />
+          </div>
+          <OptionsPanel />
+        </Tabs.Content>
       </div>
-    </div>
+    </Tabs.Root>
   );
 }
 

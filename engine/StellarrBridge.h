@@ -42,6 +42,7 @@ private:
     void handleRemoveScanDirectory(const juce::var& json);
 
     // Preset management
+    void handleNewSession();
     void handleSaveSession();
     void handleLoadSession();
     void handlePickPresetDirectory();

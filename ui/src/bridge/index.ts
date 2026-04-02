@@ -44,8 +44,19 @@ function asRecord(detail: unknown): Record<string, unknown> {
 
 // -- Graph commands (UI → C++) -----------------------------------------------
 
-export function requestAddBlock(type: string, col: number, row: number): void {
-  sendEvent('addBlock', JSON.stringify({ type, col, row }));
+export function requestAddBlock(
+  type: string,
+  col: number,
+  row: number,
+  spliceSourceId?: string,
+  spliceDestId?: string,
+): void {
+  sendEvent('addBlock', JSON.stringify({
+    type, col, row,
+    ...(spliceSourceId && spliceDestId
+      ? { spliceSourceId, spliceDestId }
+      : {}),
+  }));
 }
 
 export function requestRemoveBlock(blockId: string): void {
@@ -74,6 +85,10 @@ export function requestSetBlockPlugin(blockId: string, pluginId: string): void {
 
 export function requestOpenPluginEditor(blockId: string): void {
   sendEvent('openPluginEditor', JSON.stringify({ blockId }));
+}
+
+export function requestNewSession(): void {
+  sendEvent('newSession', '');
 }
 
 export function requestSaveSession(): void {

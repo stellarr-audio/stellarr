@@ -4,7 +4,7 @@ import { colors } from './colors';
 const menuItems = [
   { type: 'input', label: 'Input' },
   { type: 'output', label: 'Output' },
-  { type: 'vst', label: 'VST Plugin' },
+  { type: 'plugin', label: 'Plugin' },
 ];
 
 interface Props {

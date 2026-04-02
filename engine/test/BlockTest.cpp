@@ -1,19 +1,19 @@
 #include "TestUtils.h"
 #include "blocks/GainBlock.h"
 #include "blocks/InputBlock.h"
-#include "blocks/VstBlock.h"
+#include "blocks/PluginBlock.h"
 
-static bool testVstBlockPassThrough()
+static bool testPluginBlockPassThrough()
 {
-    printf("Test: VstBlock with no plugin passes audio... ");
+    printf("Test: PluginBlock with no plugin passes audio... ");
 
     StellarrProcessor proc;
     proc.prepareToPlay(kSampleRate, kBlockSize);
 
-    auto vst = std::make_unique<stellarr::VstBlock>();
+    auto pluginBlock = std::make_unique<stellarr::PluginBlock>();
 
     proc.disconnectBlocks(proc.getAudioInputNodeId(), proc.getAudioOutputNodeId());
-    auto nodeId = proc.addBlock(std::move(vst));
+    auto nodeId = proc.addBlock(std::move(pluginBlock));
     proc.connectBlocks(proc.getAudioInputNodeId(), nodeId);
     proc.connectBlocks(nodeId, proc.getAudioOutputNodeId());
 
@@ -410,7 +410,7 @@ int main()
 {
     int failures = 0;
 
-    if (!testVstBlockPassThrough())      ++failures;
+    if (!testPluginBlockPassThrough())   ++failures;
     if (!testInputBlockTestTone())      ++failures;
     if (!testInputBlockTestToneReset()) ++failures;
     if (!testSerialisation())           ++failures;

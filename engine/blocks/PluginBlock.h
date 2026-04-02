@@ -6,12 +6,12 @@
 namespace stellarr
 {
 
-class VstBlock final : public Block
+class PluginBlock final : public Block
 {
 public:
-    VstBlock() : Block("VST", 2, 2) {}
+    PluginBlock() : Block("Plugin", 2, 2) {}
 
-    BlockType getBlockType() const override { return BlockType::vst; }
+    BlockType getBlockType() const override { return BlockType::plugin; }
 
     void prepareBlock(double sampleRate, int samplesPerBlock) override
     {

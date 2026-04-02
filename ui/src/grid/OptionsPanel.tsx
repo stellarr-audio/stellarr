@@ -158,8 +158,8 @@ export function OptionsPanel() {
             </OptionRow>
           )}
 
-          {/* VST block options */}
-          {block.type === 'vst' && (
+          {/* Plugin block options */}
+          {block.type === 'plugin' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
               <div
                 style={{

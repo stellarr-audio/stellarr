@@ -17,13 +17,13 @@ interface Props {
 const typeColors: Record<string, string> = {
   input: colors.green,
   output: colors.primary,
-  vst: colors.secondary,
+  plugin: colors.secondary,
 };
 
 const typeAbbreviations: Record<string, string> = {
   input: 'INP',
   output: 'OUT',
-  vst: 'VST',
+  plugin: 'PLG',
 };
 
 function Port({
@@ -81,10 +81,9 @@ function Port({
         position: 'absolute',
         [isLeft ? 'left' : 'right']: -6,
         top: '50%',
-        transform: 'translateY(-50%)',
+        transform: 'translateY(-50%) rotate(45deg)',
         width: 12,
         height: 12,
-        borderRadius: '50%',
         background: showDisconnect
           ? '#ff4444'
           : !connected && hovered
@@ -133,7 +132,7 @@ export function GridBlockComponent({ block }: Props) {
       onMouseDown={() => { portActive.current = false; }}
       onClick={() => selectBlock(block.id)}
       onDoubleClick={() => {
-        if (block.type === 'vst' && block.pluginId)
+        if (block.type === 'plugin' && block.pluginId)
           requestOpenPluginEditor(block.id);
       }}
       style={{
@@ -190,7 +189,7 @@ export function GridBlockComponent({ block }: Props) {
           overflow: 'hidden',
         }}
       >
-        {block.type === 'vst' && (
+        {block.type === 'plugin' && (
           <div
             style={{
               fontSize: '0.85rem',

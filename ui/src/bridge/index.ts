@@ -109,6 +109,20 @@ export function initBridge(): void {
 
   console.log('[Bridge] Initialising...');
 
+  // Startup progress
+  juce.backend.addEventListener('startupProgress', (detail: unknown) => {
+    const d = asRecord(detail);
+    useStore.getState().setLoadingStatus(
+      String(d.status),
+      Number(d.progress),
+    );
+  });
+
+  juce.backend.addEventListener('startupComplete', () => {
+    console.log('[Bridge] RX startupComplete');
+    useStore.getState().setLoading(false);
+  });
+
   // Welcome / connection
   juce.backend.addEventListener('welcome', (detail: unknown) => {
     console.log('[Bridge] RX welcome:', extractMessage(detail));

@@ -3,6 +3,7 @@ import { Grid } from './grid/Grid';
 import { OptionsPanel } from './grid/OptionsPanel';
 import { Settings } from './grid/Settings';
 import { LoadingScreen } from './grid/LoadingScreen';
+import { PresetBrowser } from './grid/PresetBrowser';
 import { colors } from './grid/colors';
 import { Logo } from './grid/Logo';
 
@@ -126,26 +127,30 @@ function App() {
           </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-          <div
-            style={{
-              width: 6,
-              height: 6,
-              borderRadius: '50%',
-              background: connected ? colors.green : colors.muted,
-              boxShadow: connected ? `0 0 6px ${colors.green}` : 'none',
-            }}
-          />
-          <span
-            style={{
-              color: connected ? colors.green : colors.muted,
-              fontSize: '0.6rem',
-              letterSpacing: '0.1em',
-              textTransform: 'uppercase',
-            }}
-          >
-            {connected ? 'Connected' : 'Waiting'}
-          </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <PresetBrowser />
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            <div
+              style={{
+                width: 6,
+                height: 6,
+                borderRadius: '50%',
+                background: connected ? colors.green : colors.muted,
+                boxShadow: connected ? `0 0 6px ${colors.green}` : 'none',
+              }}
+            />
+            <span
+              style={{
+                color: connected ? colors.green : colors.muted,
+                fontSize: '0.6rem',
+                letterSpacing: '0.1em',
+                textTransform: 'uppercase',
+              }}
+            >
+              {connected ? 'Connected' : 'Waiting'}
+            </span>
+          </div>
         </div>
       </div>
 

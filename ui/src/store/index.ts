@@ -10,6 +10,7 @@ export interface GridBlock {
   testTone?: boolean;
   pluginId?: string;
   pluginName?: string;
+  hasEditor?: boolean;
 }
 
 export interface Connection {
@@ -45,6 +46,9 @@ interface StellarrState {
   grid: GridSettings;
   scanDirectories: ScanDirectory[];
   availablePlugins: PluginInfo[];
+  presetDirectory: string;
+  presetFiles: string[];
+  currentPresetIndex: number;
 
   setLoading: (loading: boolean) => void;
   setLoadingStatus: (status: string, progress: number) => void;
@@ -54,7 +58,8 @@ interface StellarrState {
   setGridSize: (columns: number, rows: number) => void;
   setScanDirectories: (dirs: ScanDirectory[]) => void;
   setAvailablePlugins: (plugins: PluginInfo[]) => void;
-  setBlockPlugin: (blockId: string, pluginId: string, pluginName: string) => void;
+  setBlockPlugin: (blockId: string, pluginId: string, pluginName: string, hasEditor: boolean) => void;
+  setPresetList: (directory: string, files: string[], currentIndex: number) => void;
 
   addBlock: (block: GridBlock) => void;
   removeBlock: (blockId: string) => void;
@@ -93,6 +98,9 @@ export const useStore = create<StellarrState>((set) => ({
   grid: { columns: 12, rows: 6 },
   scanDirectories: [],
   availablePlugins: [],
+  presetDirectory: '',
+  presetFiles: [],
+  currentPresetIndex: -1,
   selectedBlockId: null,
   draggingConnection: null,
 
@@ -113,12 +121,15 @@ export const useStore = create<StellarrState>((set) => ({
   setScanDirectories: (dirs) => set({ scanDirectories: dirs }),
   setAvailablePlugins: (plugins) => set({ availablePlugins: plugins }),
 
-  setBlockPlugin: (blockId, pluginId, pluginName) =>
+  setBlockPlugin: (blockId, pluginId, pluginName, hasEditor) =>
     set((s) => ({
       blocks: s.blocks.map((b) =>
-        b.id === blockId ? { ...b, pluginId, pluginName } : b,
+        b.id === blockId ? { ...b, pluginId, pluginName, hasEditor } : b,
       ),
     })),
+
+  setPresetList: (directory, files, currentIndex) =>
+    set({ presetDirectory: directory, presetFiles: files, currentPresetIndex: currentIndex }),
 
   addBlock: (block) =>
     set((s) => ({ blocks: [...s.blocks, block] })),

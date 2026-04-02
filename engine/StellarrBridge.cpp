@@ -50,6 +50,11 @@ void StellarrBridge::handleEvent(const juce::String& eventName, const juce::var&
     else if (eventName == "getScanDirectories")  handleGetScanDirectories();
     else if (eventName == "pickScanDirectory")   handlePickScanDirectory();
     else if (eventName == "removeScanDirectory") handleRemoveScanDirectory(json);
+    else if (eventName == "saveSession")         handleSaveSession();
+    else if (eventName == "loadSession")         handleLoadSession();
+    else if (eventName == "pickPresetDirectory") handlePickPresetDirectory();
+    else if (eventName == "loadPresetByIndex")   handleLoadPresetByIndex(json);
+    else if (eventName == "getPresetList")       handleGetPresetList();
     else if (eventName == "toggleTestTone" && processor != nullptr)
     {
         auto* obj = json.getDynamicObject();
@@ -314,6 +319,7 @@ void StellarrBridge::handleSetBlockPlugin(const juce::var& json)
     detail->setProperty("blockId", blockId);
     detail->setProperty("pluginId", pluginId);
     detail->setProperty("pluginName", pluginName);
+    detail->setProperty("hasEditor", true);
     emitToJs("blockPluginSet", detail);
 }
 
@@ -360,24 +366,17 @@ void StellarrBridge::handlePickScanDirectory()
 {
     if (processor == nullptr) return;
 
-    // Defer the file chooser so it runs after the native function callback returns.
-    // FileChooser::launchAsync does not work from within a WKWebView message handler.
     juce::MessageManager::callAsync([this]()
     {
         if (processor == nullptr) return;
 
-        auto chooser = std::make_shared<juce::FileChooser>("Select Plugin Directory");
+        juce::FileChooser chooser("Select Plugin Directory");
 
-        chooser->launchAsync(
-            juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectDirectories,
-            [this, chooser](const juce::FileChooser&)
-            {
-                auto result = chooser->getResult();
-                if (result == juce::File{}) return;
+        if (!chooser.browseForDirectory()) return;
 
-                processor->getPluginManager().addScanDirectory(result.getFullPathName());
-                sendScanDirectories();
-            });
+        processor->getPluginManager().addScanDirectory(
+            chooser.getResult().getFullPathName());
+        sendScanDirectories();
     });
 }
 
@@ -400,6 +399,8 @@ void StellarrBridge::sendPluginList()
     juce::Array<juce::var> plugins;
     for (auto& desc : processor->getPluginManager().getKnownPlugins().getTypes())
     {
+        if (desc.name == "Stellarr") continue;
+
         auto* p = new juce::DynamicObject();
         p->setProperty("id", desc.createIdentifierString());
         p->setProperty("name", desc.name);
@@ -497,4 +498,286 @@ void StellarrBridge::sendGraphState()
     state->setProperty("blocks", blocksArray);
     state->setProperty("connections", connectionsArray);
     emitToJs("graphState", state);
+}
+
+// -- Session serialisation ---------------------------------------------------
+
+juce::var StellarrBridge::serialiseSession() const
+{
+    if (processor == nullptr) return {};
+
+    auto* session = new juce::DynamicObject();
+    session->setProperty("version", 1);
+
+    // Grid
+    auto* gridObj = new juce::DynamicObject();
+    gridObj->setProperty("columns", 12);
+    gridObj->setProperty("rows", 6);
+    session->setProperty("grid", juce::var(gridObj));
+
+    // Blocks
+    juce::Array<juce::var> blocksArray;
+    for (auto& [blockId, nodeId] : blockNodeMap)
+    {
+        if (auto* node = processor->getGraph().getNodeForId(nodeId))
+        {
+            if (auto* block = dynamic_cast<stellarr::Block*>(node->getProcessor()))
+            {
+                auto blockJson = block->toJson();
+                if (auto* obj = blockJson.getDynamicObject())
+                {
+                    auto posIt = blockPositions.find(blockId);
+                    if (posIt != blockPositions.end())
+                    {
+                        obj->setProperty("col", posIt->second.first);
+                        obj->setProperty("row", posIt->second.second);
+                    }
+                }
+                blocksArray.add(blockJson);
+            }
+        }
+    }
+    session->setProperty("blocks", blocksArray);
+
+    // Connections
+    juce::Array<juce::var> connectionsArray;
+    std::map<juce::uint32, juce::String> nodeToBlock;
+    for (auto& [blockId, nodeId] : blockNodeMap)
+        nodeToBlock[nodeId.uid] = blockId;
+
+    for (auto& conn : processor->getGraph().getConnections())
+    {
+        if (conn.source.channelIndex != 0) continue;
+        auto srcIt = nodeToBlock.find(conn.source.nodeID.uid);
+        auto dstIt = nodeToBlock.find(conn.destination.nodeID.uid);
+        if (srcIt == nodeToBlock.end() || dstIt == nodeToBlock.end()) continue;
+
+        auto* connObj = new juce::DynamicObject();
+        connObj->setProperty("sourceId", srcIt->second);
+        connObj->setProperty("destId", dstIt->second);
+        connectionsArray.add(juce::var(connObj));
+    }
+    session->setProperty("connections", connectionsArray);
+
+    return juce::var(session);
+}
+
+void StellarrBridge::clearGraph()
+{
+    // Close all plugin editor windows
+    for (auto& [blockId, nodeId] : blockNodeMap)
+    {
+        if (auto* node = processor->getGraph().getNodeForId(nodeId))
+            if (auto* vstBlock = dynamic_cast<stellarr::VstBlock*>(node->getProcessor()))
+                vstBlock->closePluginEditor();
+    }
+
+    // Remove all user blocks
+    auto ids = blockNodeMap;
+    for (auto& [blockId, nodeId] : ids)
+        processor->removeBlock(nodeId);
+
+    blockNodeMap.clear();
+    blockPositions.clear();
+}
+
+void StellarrBridge::restoreSession(const juce::var& session)
+{
+    if (processor == nullptr) return;
+
+    auto* obj = session.getDynamicObject();
+    if (obj == nullptr) return;
+
+    clearGraph();
+
+    // Restore blocks
+    auto blocksVar = obj->getProperty("blocks");
+    if (auto* blocksArray = blocksVar.getArray())
+    {
+        for (auto& blockVar : *blocksArray)
+        {
+            auto* blockObj = blockVar.getDynamicObject();
+            if (blockObj == nullptr) continue;
+
+            auto type = blockObj->getProperty("type").toString();
+            auto col  = static_cast<int>(blockObj->getProperty("col"));
+            auto row  = static_cast<int>(blockObj->getProperty("row"));
+            auto savedId = blockObj->getProperty("id").toString();
+
+            std::unique_ptr<stellarr::Block> block;
+            if (type == "input")       block = std::make_unique<stellarr::InputBlock>();
+            else if (type == "output") block = std::make_unique<stellarr::OutputBlock>();
+            else if (type == "vst")    block = std::make_unique<stellarr::VstBlock>();
+            else continue;
+
+            block->fromJson(blockVar);
+
+            auto blockId = savedId.isNotEmpty() ? savedId : block->getBlockId().toString();
+            auto nodeId = processor->addBlock(std::move(block));
+            if (nodeId.uid == 0) continue;
+
+            blockNodeMap[blockId] = nodeId;
+            blockPositions[blockId] = {col, row};
+
+            // Auto-wire I/O blocks
+            if (type == "input")
+                processor->connectBlocks(processor->getAudioInputNodeId(), nodeId);
+            else if (type == "output")
+                processor->connectBlocks(nodeId, processor->getAudioOutputNodeId());
+
+            // Restore VST plugin
+            if (type == "vst")
+            {
+                auto pluginId = blockObj->getProperty("pluginId").toString();
+                if (pluginId.isNotEmpty())
+                {
+                    auto* node = processor->getGraph().getNodeForId(nodeId);
+                    if (auto* vstBlock = dynamic_cast<stellarr::VstBlock*>(node->getProcessor()))
+                    {
+                        juce::String errorMessage;
+                        auto instance = processor->getPluginManager().createPluginInstance(
+                            pluginId, processor->getSampleRate(),
+                            processor->getBlockSize(), errorMessage);
+
+                        if (instance != nullptr)
+                        {
+                            vstBlock->setPlugin(std::move(instance), pluginId);
+                            vstBlock->restorePluginState();
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Restore connections
+    auto connectionsVar = obj->getProperty("connections");
+    if (auto* connectionsArray = connectionsVar.getArray())
+    {
+        for (auto& connVar : *connectionsArray)
+        {
+            auto* connObj = connVar.getDynamicObject();
+            if (connObj == nullptr) continue;
+
+            auto sourceId = connObj->getProperty("sourceId").toString();
+            auto destId   = connObj->getProperty("destId").toString();
+
+            auto srcIt = blockNodeMap.find(sourceId);
+            auto dstIt = blockNodeMap.find(destId);
+            if (srcIt == blockNodeMap.end() || dstIt == blockNodeMap.end()) continue;
+
+            processor->connectBlocks(srcIt->second, dstIt->second);
+        }
+    }
+
+    sendGraphState();
+}
+
+// -- Preset management -------------------------------------------------------
+
+void StellarrBridge::handleSaveSession()
+{
+    if (processor == nullptr) return;
+
+    juce::MessageManager::callAsync([this]()
+    {
+        juce::FileChooser chooser("Save Preset", presetDirectory, "*.stellarr");
+
+        if (!chooser.browseForFileToSave(true)) return;
+
+        auto file = chooser.getResult().withFileExtension("stellarr");
+        auto session = serialiseSession();
+        auto jsonStr = juce::JSON::toString(session);
+        file.replaceWithText(jsonStr);
+
+        if (file.getParentDirectory() == presetDirectory)
+        {
+            handleGetPresetList();
+            for (int i = 0; i < presetFiles.size(); ++i)
+            {
+                if (presetFiles[i] == file.getFileName())
+                {
+                    currentPresetIndex = i;
+                    break;
+                }
+            }
+            sendPresetList();
+        }
+    });
+}
+
+void StellarrBridge::handleLoadSession()
+{
+    if (processor == nullptr) return;
+
+    juce::MessageManager::callAsync([this]()
+    {
+        juce::FileChooser chooser("Load Preset", presetDirectory, "*.stellarr");
+
+        if (!chooser.browseForFileToOpen()) return;
+
+        auto jsonStr = chooser.getResult().loadFileAsString();
+        auto session = juce::JSON::parse(jsonStr);
+        restoreSession(session);
+    });
+}
+
+void StellarrBridge::handlePickPresetDirectory()
+{
+    juce::MessageManager::callAsync([this]()
+    {
+        juce::FileChooser chooser("Select Preset Directory");
+
+        if (!chooser.browseForDirectory()) return;
+
+        presetDirectory = chooser.getResult();
+        currentPresetIndex = -1;
+        handleGetPresetList();
+        sendPresetList();
+    });
+}
+
+void StellarrBridge::handleGetPresetList()
+{
+    presetFiles.clear();
+
+    if (presetDirectory.isDirectory())
+    {
+        for (auto& f : presetDirectory.findChildFiles(
+                juce::File::findFiles, false, "*.stellarr"))
+        {
+            presetFiles.add(f.getFileName());
+        }
+
+        presetFiles.sort(true);
+    }
+}
+
+void StellarrBridge::handleLoadPresetByIndex(const juce::var& json)
+{
+    auto* obj = json.getDynamicObject();
+    if (obj == nullptr) return;
+
+    auto index = static_cast<int>(obj->getProperty("index"));
+    if (index < 0 || index >= presetFiles.size()) return;
+
+    currentPresetIndex = index;
+    auto file = presetDirectory.getChildFile(presetFiles[index]);
+    auto jsonStr = file.loadFileAsString();
+    auto session = juce::JSON::parse(jsonStr);
+    restoreSession(session);
+    sendPresetList();
+}
+
+void StellarrBridge::sendPresetList()
+{
+    juce::Array<juce::var> files;
+    for (auto& f : presetFiles)
+        files.add(juce::var(f));
+
+    auto* detail = new juce::DynamicObject();
+    detail->setProperty("directory", presetDirectory.getFullPathName());
+    detail->setProperty("files", files);
+    detail->setProperty("currentIndex", currentPresetIndex);
+    emitToJs("presetListUpdated", detail);
 }

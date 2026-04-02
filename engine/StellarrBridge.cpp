@@ -55,6 +55,7 @@ void StellarrBridge::handleEvent(const juce::String& eventName, const juce::var&
     else if (eventName == "getScanDirectories")  handleGetScanDirectories();
     else if (eventName == "pickScanDirectory")   handlePickScanDirectory();
     else if (eventName == "removeScanDirectory") handleRemoveScanDirectory(json);
+    else if (eventName == "newSession")           handleNewSession();
     else if (eventName == "saveSession")         handleSaveSession();
     else if (eventName == "loadSession")         handleLoadSession();
     else if (eventName == "pickPresetDirectory") handlePickPresetDirectory();
@@ -244,6 +245,39 @@ void StellarrBridge::handleAddBlock(const juce::var& json)
     {
         processor->disconnectBlocks(processor->getAudioInputNodeId(), processor->getAudioOutputNodeId());
         processor->connectBlocks(nodeId, processor->getAudioOutputNodeId());
+    }
+
+    // Splice: insert the new block into an existing connection
+    auto spliceSourceId = obj->getProperty("spliceSourceId").toString();
+    auto spliceDestId   = obj->getProperty("spliceDestId").toString();
+
+    if (spliceSourceId.isNotEmpty() && spliceDestId.isNotEmpty())
+    {
+        auto srcIt = blockNodeMap.find(spliceSourceId);
+        auto dstIt = blockNodeMap.find(spliceDestId);
+
+        if (srcIt != blockNodeMap.end() && dstIt != blockNodeMap.end())
+        {
+            processor->disconnectBlocks(srcIt->second, dstIt->second);
+            processor->connectBlocks(srcIt->second, nodeId);
+            processor->connectBlocks(nodeId, dstIt->second);
+
+            // Notify UI of the new connections
+            auto* connDetail1 = new juce::DynamicObject();
+            connDetail1->setProperty("sourceId", spliceSourceId);
+            connDetail1->setProperty("destId", blockId);
+            emitToJs("connectionAdded", connDetail1);
+
+            auto* connDetail2 = new juce::DynamicObject();
+            connDetail2->setProperty("sourceId", blockId);
+            connDetail2->setProperty("destId", spliceDestId);
+            emitToJs("connectionAdded", connDetail2);
+
+            auto* connRemoved = new juce::DynamicObject();
+            connRemoved->setProperty("sourceId", spliceSourceId);
+            connRemoved->setProperty("destId", spliceDestId);
+            emitToJs("connectionRemoved", connRemoved);
+        }
     }
 
     auto* detail = new juce::DynamicObject();
@@ -776,6 +810,25 @@ void StellarrBridge::restoreSession(const juce::var& session)
 }
 
 // -- Preset management -------------------------------------------------------
+
+void StellarrBridge::handleNewSession()
+{
+    clearGraph();
+
+    // Create default Input and Output blocks
+    auto inputJson = juce::JSON::parse(R"({"type":"input","col":0,"row":2})");
+    auto outputJson = juce::JSON::parse(R"({"type":"output","col":11,"row":2})");
+    handleAddBlock(inputJson);
+    handleAddBlock(outputJson);
+
+    // Clear preset info
+    lastPresetFile = juce::File{};
+    currentPresetIndex = -1;
+    persistPresetInfo();
+
+    sendGraphState();
+    sendPresetList();
+}
 
 void StellarrBridge::handleSaveSession()
 {

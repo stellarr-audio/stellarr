@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState } from 'react';
-import { FiX } from 'react-icons/fi';
+import { FiX, FiVolume1 } from 'react-icons/fi';
 import type { GridBlock as GridBlockData } from '../store';
 import {
   requestRemoveBlock,
@@ -147,15 +147,21 @@ export function GridBlockComponent({ block }: Props) {
           ? '2px solid #ffffff'
           : `1px solid ${accentColor}55`,
         boxSizing: 'border-box',
-        display: 'flex',
-        flexDirection: 'column',
+        display: 'grid',
+        gridTemplateRows: '1fr auto 1fr',
         alignItems: 'center',
-        justifyContent: 'center',
+        justifyItems: 'center',
+        overflow: 'hidden',
         userSelect: 'none',
         cursor: 'grab',
         zIndex: 2,
+        padding: '4px 2px',
       }}
     >
+      {/* Top region */}
+      <div />
+
+      {/* Middle region — block type */}
       <div
         style={{
           fontSize: '1rem',
@@ -166,25 +172,39 @@ export function GridBlockComponent({ block }: Props) {
       >
         {typeAbbreviations[block.type] ?? block.type.slice(0, 3).toUpperCase()}
       </div>
-      {block.type === 'vst' && (
-        <div
-          style={{
-            fontSize: '0.85rem',
-            fontWeight: 600,
-            color: colors.muted,
-            letterSpacing: '0.05em',
-            textTransform: 'uppercase',
-            marginTop: '0.15rem',
-            maxWidth: '90%',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
-            textAlign: 'center',
-          }}
-        >
-          {block.pluginName ?? 'No plugin'}
-        </div>
-      )}
+
+      {/* Bottom region — subtitle */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: 16,
+          width: '100%',
+          overflow: 'hidden',
+        }}
+      >
+        {block.type === 'input' && block.testTone && (
+          <FiVolume1 size={14} color={colors.green} />
+        )}
+        {block.type === 'vst' && (
+          <div
+            style={{
+              fontSize: '0.85rem',
+              fontWeight: 600,
+              color: colors.muted,
+              letterSpacing: '0.05em',
+              textTransform: 'uppercase',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+              textAlign: 'center',
+            }}
+          >
+            {block.pluginName ?? 'No plugin'}
+          </div>
+        )}
+      </div>
 
       {/* Input port (left) */}
       {block.type !== 'input' && (

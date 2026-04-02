@@ -1,4 +1,5 @@
 import { useStore } from '../store';
+import { PluginSelect } from './PluginSelect';
 import {
   requestToggleTestTone,
   requestSetBlockPlugin,
@@ -118,29 +119,13 @@ export function OptionsPanel() {
                 </div>
               )}
 
-              <select
-                value={block.pluginId ?? ''}
-                onChange={(e) => {
-                  if (e.target.value)
-                    requestSetBlockPlugin(block.id, e.target.value);
-                }}
-                style={{
-                  background: colors.cell,
-                  color: colors.text,
-                  border: `1px solid ${colors.border}`,
-                  padding: '0.35rem 0.5rem',
-                  fontSize: '0.6rem',
-                  outline: 'none',
-                  width: '100%',
-                }}
-              >
-                <option value="">Select a plugin...</option>
-                {availablePlugins.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name} ({p.manufacturer})
-                  </option>
-                ))}
-              </select>
+              <PluginSelect
+                plugins={availablePlugins}
+                selectedId={block.pluginId ?? ''}
+                onSelect={(pluginId) =>
+                  requestSetBlockPlugin(block.id, pluginId)
+                }
+              />
 
               {availablePlugins.length === 0 && (
                 <div

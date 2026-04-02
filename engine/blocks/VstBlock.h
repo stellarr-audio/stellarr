@@ -62,6 +62,7 @@ public:
 
     juce::String getPluginIdentifier() const { return pluginIdentifier; }
 
+
     juce::String getPluginName() const
     {
         juce::SpinLock::ScopedLockType lock(pluginLock);
@@ -94,17 +95,20 @@ public:
             return;
         }
 
-        // Editor creation and window display must happen without the lock
-        // held — AU plugin UIs trigger layout callbacks that can re-enter.
-        try
+        // AU plugin editors on macOS 26 crash in CoreAudioAUUI during layout
+        // with an Objective-C exception that C++ try/catch cannot intercept.
+        // Use the generic parameter editor for AU plugins, native editor for VST3.
+        auto format = p->getPluginDescription().pluginFormatName;
+
+        if (format == "VST3")
         {
-            if (auto* editor = p->createEditorIfNecessary())
+            if (auto* editor = p->createEditorAndMakeActive())
                 pluginWindow = std::make_unique<PluginWindow>(editor, name);
         }
-        catch (...)
+        else
         {
-            DBG("Failed to create plugin editor for: " + name);
-            pluginWindow = nullptr;
+            auto* generic = new juce::GenericAudioProcessorEditor(*p);
+            pluginWindow = std::make_unique<PluginWindow>(generic, name);
         }
     }
 
@@ -120,6 +124,14 @@ public:
         {
             obj->setProperty("pluginId", pluginIdentifier);
             obj->setProperty("pluginName", getPluginName());
+
+            juce::SpinLock::ScopedLockType lock(pluginLock);
+            if (plugin != nullptr)
+            {
+                juce::MemoryBlock state;
+                plugin->getStateInformation(state);
+                obj->setProperty("pluginState", state.toBase64Encoding());
+            }
         }
         return json;
     }
@@ -128,7 +140,23 @@ public:
     {
         Block::fromJson(json);
         if (auto* obj = json.getDynamicObject())
+        {
             pluginIdentifier = obj->getProperty("pluginId").toString();
+            pluginStateBase64 = obj->getProperty("pluginState").toString();
+        }
+    }
+
+    // Call after the plugin instance has been loaded to restore its state
+    void restorePluginState()
+    {
+        juce::SpinLock::ScopedLockType lock(pluginLock);
+        if (plugin != nullptr && pluginStateBase64.isNotEmpty())
+        {
+            juce::MemoryBlock state;
+            state.fromBase64Encoding(pluginStateBase64);
+            plugin->setStateInformation(state.getData(), static_cast<int>(state.getSize()));
+            pluginStateBase64.clear();
+        }
     }
 
 private:
@@ -136,6 +164,7 @@ private:
     std::unique_ptr<juce::AudioPluginInstance> plugin;
     std::unique_ptr<PluginWindow> pluginWindow;
     juce::String pluginIdentifier;
+    juce::String pluginStateBase64;
     double currentSampleRate = 44100.0;
     int currentBlockSize = 512;
 };

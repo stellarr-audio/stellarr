@@ -48,6 +48,9 @@ public:
 
     PluginManager& getPluginManager() { return pluginManager; }
 
+    void setAppProperties(juce::ApplicationProperties* props) { appProperties = props; }
+    juce::ApplicationProperties* getAppProperties() const { return appProperties; }
+
 private:
     juce::AudioProcessorGraph graph;
 
@@ -55,4 +58,5 @@ private:
     juce::AudioProcessorGraph::NodeID audioOutputNodeId;
 
     PluginManager pluginManager;
+    juce::ApplicationProperties* appProperties = nullptr;
 };

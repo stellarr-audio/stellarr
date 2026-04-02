@@ -220,6 +220,8 @@ export function initBridge(): void {
           col: Number(r.col),
           row: Number(r.row),
           nodeId: Number(r.nodeId),
+          pluginId: r.pluginId ? String(r.pluginId) : undefined,
+          pluginName: r.pluginName ? String(r.pluginName) : undefined,
         } satisfies GridBlock;
       },
     );

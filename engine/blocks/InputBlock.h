@@ -62,6 +62,11 @@ public:
         }
     }
 
+    void resetToDefault() override
+    {
+        setTestToneEnabled(false);
+    }
+
     void setTestToneEnabled(bool enabled)
     {
         testToneEnabled.store(enabled, std::memory_order_relaxed);
@@ -110,7 +115,7 @@ private:
         {293.66, 0.5},   // D4
         {329.63, 0.5},   // E4
         {392.00, 1.0},   // G4
-        {0.0,    0.5},   // rest
+        {0.0,    1.5},   // rest
     };
 
     static constexpr double bpm = 120.0;

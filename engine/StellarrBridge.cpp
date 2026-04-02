@@ -11,6 +11,11 @@ void StellarrBridge::setProcessor(StellarrProcessor* proc)
     processor = proc;
 }
 
+void StellarrBridge::setAppProperties(juce::ApplicationProperties* props)
+{
+    appProperties = props;
+}
+
 juce::WebBrowserComponent::Options StellarrBridge::configureOptions(juce::WebBrowserComponent::Options options)
 {
     return options.withNativeFunction("sendToNative",
@@ -113,35 +118,84 @@ void StellarrBridge::sendStartupProgress(const juce::String& status, int progres
 
 void StellarrBridge::handleBridgeReady()
 {
-    // Startup runs as a chain of deferred steps so that progress events
-    // are delivered to JS between each step.
     sendStartupProgress("Connecting to engine...", 10);
     sendWelcome();
 
     juce::MessageManager::callAsync([this]()
     {
-        sendStartupProgress("Setting up default graph...", 30);
-        if (blockNodeMap.empty())
-        {
-            auto inputJson = juce::JSON::parse(R"({"type":"input","col":0,"row":2})");
-            auto outputJson = juce::JSON::parse(R"({"type":"output","col":11,"row":2})");
-            handleAddBlock(inputJson);
-            handleAddBlock(outputJson);
-        }
-        sendGraphState();
+        sendStartupProgress("Scanning plugin libraries...", 30);
+        sendScanDirectories();
 
         juce::MessageManager::callAsync([this]()
         {
-            sendStartupProgress("Scanning plugin libraries...", 50);
-            sendScanDirectories();
+            if (processor != nullptr)
+            {
+                processor->getPluginManager().scanPlugins();
+                sendPluginList();
+            }
 
             juce::MessageManager::callAsync([this]()
             {
-                if (processor != nullptr)
+                sendStartupProgress("Restoring session...", 60);
+
+                bool restored = false;
+
+                if (appProperties != nullptr)
                 {
-                    processor->getPluginManager().scanPlugins();
-                    sendPluginList();
+                    auto* settings = appProperties->getUserSettings();
+
+                    // Restore preset directory and index
+                    auto savedDir = settings->getValue("lastPresetDirectory", "");
+                    auto savedIndex = settings->getIntValue("lastPresetIndex", -1);
+                    if (savedDir.isNotEmpty())
+                    {
+                        presetDirectory = juce::File(savedDir);
+                        handleGetPresetList();
+                        currentPresetIndex = savedIndex;
+                    }
+
+                    // Restore last loaded/saved preset file
+                    auto savedFile = settings->getValue("lastPresetFile", "");
+                    if (savedFile.isNotEmpty())
+                    {
+                        auto file = juce::File(savedFile);
+                        if (file.existsAsFile())
+                        {
+                            auto jsonStr = file.loadFileAsString();
+                            auto session = juce::JSON::parse(jsonStr);
+                            if (session.getDynamicObject() != nullptr)
+                            {
+                                restoreSession(session);
+                                lastPresetFile = file;
+                                presetDirectory = file.getParentDirectory();
+                                handleGetPresetList();
+
+                                for (int i = 0; i < presetFiles.size(); ++i)
+                                {
+                                    if (presetFiles[i] == file.getFileName())
+                                    {
+                                        currentPresetIndex = i;
+                                        break;
+                                    }
+                                }
+
+                                restored = true;
+                            }
+                        }
+                    }
                 }
+
+                // Default: create Input and Output blocks
+                if (!restored && blockNodeMap.empty())
+                {
+                    auto inputJson = juce::JSON::parse(R"({"type":"input","col":0,"row":2})");
+                    auto outputJson = juce::JSON::parse(R"({"type":"output","col":11,"row":2})");
+                    handleAddBlock(inputJson);
+                    handleAddBlock(outputJson);
+                }
+
+                sendGraphState();
+                sendPresetList();
 
                 sendStartupProgress("Ready", 100);
                 emitToJs("startupComplete", new juce::DynamicObject());
@@ -347,6 +401,39 @@ void StellarrBridge::handleOpenPluginEditor(const juce::var& json)
     });
 }
 
+// -- State persistence -------------------------------------------------------
+
+void StellarrBridge::setPresetFromFile(const juce::File& file)
+{
+    lastPresetFile = file;
+    presetDirectory = file.getParentDirectory();
+    handleGetPresetList();
+
+    currentPresetIndex = -1;
+    for (int i = 0; i < presetFiles.size(); ++i)
+    {
+        if (presetFiles[i] == file.getFileName())
+        {
+            currentPresetIndex = i;
+            break;
+        }
+    }
+
+    sendPresetList();
+    persistPresetInfo();
+}
+
+void StellarrBridge::persistPresetInfo()
+{
+    if (appProperties == nullptr) return;
+
+    auto* settings = appProperties->getUserSettings();
+    settings->setValue("lastPresetDirectory", presetDirectory.getFullPathName());
+    settings->setValue("lastPresetIndex", currentPresetIndex);
+    settings->setValue("lastPresetFile", lastPresetFile.getFullPathName());
+    appProperties->saveIfNeeded();
+}
+
 // -- Plugin management -------------------------------------------------------
 
 void StellarrBridge::handleScanPlugins()
@@ -461,13 +548,18 @@ void StellarrBridge::sendGraphState()
             blockObj->setProperty("row", posIt->second.second);
         }
 
-        // Look up block type and name from the graph node
         if (auto* node = processor->getGraph().getNodeForId(nodeId))
         {
             if (auto* block = dynamic_cast<stellarr::Block*>(node->getProcessor()))
             {
                 blockObj->setProperty("type", stellarr::blockTypeToString(block->getBlockType()));
                 blockObj->setProperty("name", block->getName());
+
+                if (auto* vstBlock = dynamic_cast<stellarr::VstBlock*>(node->getProcessor()))
+                {
+                    blockObj->setProperty("pluginId", vstBlock->getPluginIdentifier());
+                    blockObj->setProperty("pluginName", vstBlock->getPluginName());
+                }
             }
         }
 
@@ -611,6 +703,7 @@ void StellarrBridge::restoreSession(const juce::var& session)
             else continue;
 
             block->fromJson(blockVar);
+            block->resetToDefault();
 
             auto blockId = savedId.isNotEmpty() ? savedId : block->getBlockId().toString();
             auto nodeId = processor->addBlock(std::move(block));
@@ -690,19 +783,7 @@ void StellarrBridge::handleSaveSession()
         auto jsonStr = juce::JSON::toString(session);
         file.replaceWithText(jsonStr);
 
-        if (file.getParentDirectory() == presetDirectory)
-        {
-            handleGetPresetList();
-            for (int i = 0; i < presetFiles.size(); ++i)
-            {
-                if (presetFiles[i] == file.getFileName())
-                {
-                    currentPresetIndex = i;
-                    break;
-                }
-            }
-            sendPresetList();
-        }
+        setPresetFromFile(file);
     });
 }
 
@@ -716,9 +797,11 @@ void StellarrBridge::handleLoadSession()
 
         if (!chooser.browseForFileToOpen()) return;
 
-        auto jsonStr = chooser.getResult().loadFileAsString();
+        auto file = chooser.getResult();
+        auto jsonStr = file.loadFileAsString();
         auto session = juce::JSON::parse(jsonStr);
         restoreSession(session);
+        setPresetFromFile(file);
     });
 }
 
@@ -734,6 +817,7 @@ void StellarrBridge::handlePickPresetDirectory()
         currentPresetIndex = -1;
         handleGetPresetList();
         sendPresetList();
+        persistPresetInfo();
     });
 }
 
@@ -766,7 +850,7 @@ void StellarrBridge::handleLoadPresetByIndex(const juce::var& json)
     auto jsonStr = file.loadFileAsString();
     auto session = juce::JSON::parse(jsonStr);
     restoreSession(session);
-    sendPresetList();
+    setPresetFromFile(file);
 }
 
 void StellarrBridge::sendPresetList()

@@ -12,6 +12,34 @@ enum class BlockType
     vst
 };
 
+enum class BypassMode
+{
+    thru,
+    muteIn,
+    muteOut,
+    mute
+};
+
+inline juce::String bypassModeToString(BypassMode mode)
+{
+    switch (mode)
+    {
+        case BypassMode::thru:    return "thru";
+        case BypassMode::muteIn:  return "muteIn";
+        case BypassMode::muteOut: return "muteOut";
+        case BypassMode::mute:    return "mute";
+    }
+    return "thru";
+}
+
+inline BypassMode bypassModeFromString(const juce::String& str)
+{
+    if (str == "muteIn")  return BypassMode::muteIn;
+    if (str == "muteOut") return BypassMode::muteOut;
+    if (str == "mute")    return BypassMode::mute;
+    return BypassMode::thru;
+}
+
 inline juce::String blockTypeToString(BlockType type)
 {
     switch (type)
@@ -77,6 +105,16 @@ public:
         bypassed.store(value, std::memory_order_relaxed);
     }
 
+    BypassMode getBypassMode() const
+    {
+        return static_cast<BypassMode>(bypassMode.load(std::memory_order_relaxed));
+    }
+
+    void setBypassMode(BypassMode mode)
+    {
+        bypassMode.store(static_cast<int>(mode), std::memory_order_relaxed);
+    }
+
     // Reset transient state to defaults. Called when loading a preset.
     virtual void resetToDefault() {}
 
@@ -86,9 +124,31 @@ public:
     // Final: handles bypass, dry/wet blending, and balance
     void processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midi) final
     {
-        // THRU bypass: block is fully disengaged, audio passes through unchanged
         if (bypassed.load(std::memory_order_relaxed))
+        {
+            auto mode = getBypassMode();
+
+            switch (mode)
+            {
+                case BypassMode::thru:
+                    return; // audio passes through unchanged
+
+                case BypassMode::muteIn:
+                    buffer.clear(); // silence input, but let process() run (tails ring)
+                    process(buffer, midi);
+                    return;
+
+                case BypassMode::muteOut:
+                    process(buffer, midi); // process runs (signal enters effect)
+                    buffer.clear();        // but output is silenced (tails cut)
+                    return;
+
+                case BypassMode::mute:
+                    buffer.clear(); // total silence
+                    return;
+            }
             return;
+        }
 
         auto mixVal = mix.load(std::memory_order_relaxed);
 
@@ -162,6 +222,7 @@ public:
             obj->setProperty("mix", static_cast<double>(getMix()));
             obj->setProperty("balance", static_cast<double>(getBalance()));
             obj->setProperty("bypassed", isBypassed());
+            obj->setProperty("bypassMode", bypassModeToString(getBypassMode()));
         }
 
         return juce::var(obj);
@@ -183,6 +244,9 @@ public:
 
             if (hasMix && obj->hasProperty("bypassed"))
                 setBypassed(static_cast<bool>(obj->getProperty("bypassed")));
+
+            if (hasMix && obj->hasProperty("bypassMode"))
+                setBypassMode(bypassModeFromString(obj->getProperty("bypassMode").toString()));
         }
     }
 
@@ -223,6 +287,7 @@ private:
     std::atomic<float> mix { 1.0f };
     std::atomic<float> balance { 0.0f };
     std::atomic<bool> bypassed { false };
+    std::atomic<int> bypassMode { static_cast<int>(BypassMode::thru) };
     juce::AudioBuffer<float> dryBuffer;
 };
 

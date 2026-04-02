@@ -87,6 +87,10 @@ export function requestToggleBlockBypass(blockId: string): void {
   sendEvent('toggleBlockBypass', JSON.stringify({ blockId }));
 }
 
+export function requestSetBlockBypassMode(blockId: string, mode: string): void {
+  sendEvent('setBlockBypassMode', JSON.stringify({ blockId, mode }));
+}
+
 export function requestToggleTestTone(blockId: string): void {
   sendEvent('toggleTestTone', JSON.stringify({ blockId }));
 }
@@ -197,6 +201,11 @@ export function initBridge(): void {
     useStore.getState().setBlockBypassed(String(d.blockId), Boolean(d.bypassed));
   });
 
+  juce.backend.addEventListener('blockBypassModeChanged', (detail: unknown) => {
+    const d = asRecord(detail);
+    useStore.getState().setBlockBypassMode(String(d.blockId), String(d.bypassMode));
+  });
+
   // Graph confirmations from C++
   juce.backend.addEventListener('blockAdded', (detail: unknown) => {
     const d = asRecord(detail);
@@ -269,6 +278,7 @@ export function initBridge(): void {
           mix: r.mix !== undefined ? Number(r.mix) : undefined,
           balance: r.balance !== undefined ? Number(r.balance) : undefined,
           bypassed: r.bypassed ? Boolean(r.bypassed) : undefined,
+          bypassMode: r.bypassMode ? String(r.bypassMode) : undefined,
         } satisfies GridBlock;
       },
     );

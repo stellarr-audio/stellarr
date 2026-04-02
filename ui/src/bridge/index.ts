@@ -76,6 +76,22 @@ export function requestOpenPluginEditor(blockId: string): void {
   sendEvent('openPluginEditor', JSON.stringify({ blockId }));
 }
 
+export function requestSaveSession(): void {
+  sendEvent('saveSession', '');
+}
+
+export function requestLoadSession(): void {
+  sendEvent('loadSession', '');
+}
+
+export function requestPickPresetDirectory(): void {
+  sendEvent('pickPresetDirectory', '');
+}
+
+export function requestLoadPresetByIndex(index: number): void {
+  sendEvent('loadPresetByIndex', JSON.stringify({ index }));
+}
+
 export function requestScanPlugins(): void {
   sendEvent('scanPlugins', '');
 }
@@ -187,6 +203,7 @@ export function initBridge(): void {
       String(d.blockId),
       String(d.pluginId),
       String(d.pluginName),
+      Boolean(d.hasEditor),
     );
   });
 
@@ -248,6 +265,17 @@ export function initBridge(): void {
       },
     );
     useStore.getState().setScanDirectories(dirs);
+  });
+
+  juce.backend.addEventListener('presetListUpdated', (detail: unknown) => {
+    const d = asRecord(detail);
+    console.log('[Bridge] RX presetListUpdated');
+    const files = (Array.isArray(d.files) ? d.files : []).map(String);
+    useStore.getState().setPresetList(
+      String(d.directory),
+      files,
+      Number(d.currentIndex),
+    );
   });
 
   bridgeReady = true;

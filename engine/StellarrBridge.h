@@ -14,6 +14,10 @@ public:
     juce::WebBrowserComponent::Options configureOptions(juce::WebBrowserComponent::Options options);
     void setWebView(juce::WebBrowserComponent* browser);
 
+    // Session state (also used by getStateInformation / setStateInformation)
+    juce::var serialiseSession() const;
+    void restoreSession(const juce::var& session);
+
 private:
     void handleEvent(const juce::String& eventName, const juce::var& payload);
     void handleBridgeReady();
@@ -36,8 +40,18 @@ private:
     void handlePickScanDirectory();
     void handleRemoveScanDirectory(const juce::var& json);
 
+    // Preset management
+    void handleSaveSession();
+    void handleLoadSession();
+    void handlePickPresetDirectory();
+    void handleLoadPresetByIndex(const juce::var& json);
+    void handleGetPresetList();
+
     void sendPluginList();
     void sendScanDirectories();
+    void sendPresetList();
+
+    void clearGraph();
 
     void emitToJs(const juce::String& eventName, juce::DynamicObject* detail);
 
@@ -46,4 +60,9 @@ private:
 
     std::map<juce::String, juce::AudioProcessorGraph::NodeID> blockNodeMap;
     std::map<juce::String, std::pair<int, int>> blockPositions;
+
+    // Preset directory and browsing
+    juce::File presetDirectory;
+    juce::StringArray presetFiles;
+    int currentPresetIndex = -1;
 };

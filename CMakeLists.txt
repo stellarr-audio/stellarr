@@ -49,6 +49,7 @@ target_compile_definitions(Stellarr
         JUCE_USE_CUSTOM_PLUGIN_STANDALONE_APP=1
         JUCE_PLUGINHOST_VST3=1
         JUCE_PLUGINHOST_AU=1
+        JUCE_MODAL_LOOPS_PERMITTED=1
     PRIVATE
         STELLARR_UI_DIR="${CMAKE_SOURCE_DIR}/ui/dist"
 )

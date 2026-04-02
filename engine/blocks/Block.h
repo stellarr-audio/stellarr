@@ -51,6 +51,9 @@ public:
     int getNumAudioInputs() const  { return getTotalNumInputChannels(); }
     int getNumAudioOutputs() const { return getTotalNumOutputChannels(); }
 
+    // Reset transient state to defaults. Called when loading a preset.
+    virtual void resetToDefault() {}
+
     virtual juce::var toJson() const
     {
         auto* obj = new juce::DynamicObject();

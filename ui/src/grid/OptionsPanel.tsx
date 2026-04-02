@@ -16,8 +16,6 @@ import { colors } from './colors';
 
 const bypassModes = [
   { value: 'thru', label: 'Thru' },
-  { value: 'muteIn', label: 'Mute In' },
-  { value: 'muteOut', label: 'Mute Out' },
   { value: 'mute', label: 'Mute' },
 ];
 
@@ -131,19 +129,31 @@ export function OptionsPanel() {
             <OptionRow label="Test Tone">
               <button
                 onClick={() => requestToggleTestTone(block.id)}
+                title={block.testTone ? 'Disable test tone' : 'Enable test tone'}
                 style={{
-                  background: block.testTone ? colors.green : 'transparent',
-                  color: block.testTone ? '#0d0b1a' : colors.muted,
-                  border: `1px solid ${block.testTone ? colors.green : colors.muted}`,
-                  padding: '0.25rem 0.6rem',
-                  fontSize: '1rem',
-                  fontWeight: 600,
-                  letterSpacing: '0.06em',
-                  textTransform: 'uppercase',
+                  position: 'relative',
+                  width: 36,
+                  height: 20,
+                  borderRadius: 10,
+                  border: 'none',
+                  background: block.testTone ? colors.green : colors.border,
                   cursor: 'pointer',
+                  padding: 0,
+                  transition: 'background 0.2s ease',
                 }}
               >
-                {block.testTone ? 'On' : 'Off'}
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: 2,
+                    left: block.testTone ? 18 : 2,
+                    width: 16,
+                    height: 16,
+                    borderRadius: '50%',
+                    background: '#ffffff',
+                    transition: 'left 0.2s ease',
+                  }}
+                />
               </button>
             </OptionRow>
           )}

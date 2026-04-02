@@ -57,6 +57,7 @@ void StellarrBridge::handleEvent(const juce::String& eventName, const juce::var&
     else if (eventName == "removeScanDirectory") handleRemoveScanDirectory(json);
     else if (eventName == "newSession")           handleNewSession();
     else if (eventName == "saveSession")         handleSaveSession();
+    else if (eventName == "saveSessionQuiet")    handleSaveSessionQuiet();
     else if (eventName == "loadSession")         handleLoadSession();
     else if (eventName == "pickPresetDirectory") handlePickPresetDirectory();
     else if (eventName == "loadPresetByIndex")   handleLoadPresetByIndex(json);
@@ -947,7 +948,26 @@ void StellarrBridge::handleSaveSession()
         file.replaceWithText(jsonStr);
 
         setPresetFromFile(file);
+        emitToJs("sessionSaved", new juce::DynamicObject());
     });
+}
+
+void StellarrBridge::handleSaveSessionQuiet()
+{
+    if (processor == nullptr) return;
+
+    if (lastPresetFile.existsAsFile())
+    {
+        auto session = serialiseSession();
+        auto jsonStr = juce::JSON::toString(session);
+        lastPresetFile.replaceWithText(jsonStr);
+
+        emitToJs("sessionSaved", new juce::DynamicObject());
+    }
+    else
+    {
+        handleSaveSession();
+    }
 }
 
 void StellarrBridge::handleLoadSession()

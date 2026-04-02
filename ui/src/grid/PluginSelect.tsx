@@ -22,14 +22,18 @@ export function PluginSelect({ plugins, selectedId, onSelect }: Props) {
   const selected = plugins.find((p) => p.id === selectedId);
 
   const filtered = useMemo(
-    () =>
-      search
-        ? plugins.filter(
+    () => {
+      const sorted = [...plugins].sort((a, b) =>
+        a.name.localeCompare(b.name),
+      );
+      return search
+        ? sorted.filter(
             (p) =>
               p.name.toLowerCase().includes(search.toLowerCase()) ||
               p.manufacturer.toLowerCase().includes(search.toLowerCase()),
           )
-        : plugins,
+        : sorted;
+    },
     [plugins, search],
   );
 

@@ -1,8 +1,18 @@
-import { ChevronLeftIcon, ChevronRightIcon, PlusIcon, UploadIcon, DownloadIcon } from '@radix-ui/react-icons';
+import { DropdownMenu } from 'radix-ui';
+import {
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  PlusIcon,
+  CheckIcon,
+  UploadIcon,
+  BookmarkIcon,
+  ChevronDownIcon,
+} from '@radix-ui/react-icons';
 import { useStore } from '../store';
 import {
   requestNewSession,
   requestSaveSession,
+  requestSaveSessionQuiet,
   requestLoadSession,
   requestLoadPresetByIndex,
 } from '../bridge';
@@ -36,6 +46,7 @@ const iconBtnStyle: React.CSSProperties = {
 export function PresetBrowser() {
   const presetFiles = useStore((s) => s.presetFiles);
   const currentPresetIndex = useStore((s) => s.currentPresetIndex);
+  const justSaved = useStore((s) => s.justSaved);
 
   const currentName =
     currentPresetIndex >= 0 && currentPresetIndex < presetFiles.length
@@ -54,6 +65,26 @@ export function PresetBrowser() {
         gap: '0.4rem',
       }}
     >
+      {/* New */}
+      <button
+        onClick={requestNewSession}
+        title="New preset"
+        {...hoverHandlers()}
+        style={iconBtnStyle}
+      >
+        <PlusIcon width={16} height={16} />
+      </button>
+
+      {/* Open */}
+      <button
+        onClick={requestLoadSession}
+        title="Open preset"
+        {...hoverHandlers()}
+        style={iconBtnStyle}
+      >
+        <UploadIcon width={16} height={16} />
+      </button>
+
       {/* Preset input group: prev | name | next */}
       <div
         style={{
@@ -64,7 +95,9 @@ export function PresetBrowser() {
       >
         {/* Prev */}
         <button
-          onClick={() => canPrev && requestLoadPresetByIndex(currentPresetIndex - 1)}
+          onClick={() =>
+            canPrev && requestLoadPresetByIndex(currentPresetIndex - 1)
+          }
           title="Previous preset"
           {...hoverHandlers()}
           style={{
@@ -107,7 +140,9 @@ export function PresetBrowser() {
 
         {/* Next */}
         <button
-          onClick={() => canNext && requestLoadPresetByIndex(currentPresetIndex + 1)}
+          onClick={() =>
+            canNext && requestLoadPresetByIndex(currentPresetIndex + 1)
+          }
           title="Next preset"
           {...hoverHandlers()}
           style={{
@@ -127,35 +162,110 @@ export function PresetBrowser() {
         </button>
       </div>
 
-      {/* New */}
-      <button
-        onClick={requestNewSession}
-        title="New preset"
-        {...hoverHandlers()}
-        style={iconBtnStyle}
+      {/* Save split button */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'stretch',
+          border: `1px solid ${colors.border}`,
+        }}
       >
-        <PlusIcon width={16} height={16} />
-      </button>
+        {/* Save main */}
+        <button
+          onClick={requestSaveSessionQuiet}
+          title="Save preset"
+          {...hoverHandlers()}
+          style={{
+            background: 'transparent',
+            border: 'none',
+            color: justSaved ? colors.green : colors.muted,
+            padding: '0.3rem 0.4rem',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            transition: 'color 0.2s ease, background 0.1s ease',
+          }}
+        >
+          {justSaved
+            ? <CheckIcon width={16} height={16} />
+            : <BookmarkIcon width={16} height={16} />}
+        </button>
 
-      {/* Open */}
-      <button
-        onClick={requestLoadSession}
-        title="Open preset"
-        {...hoverHandlers()}
-        style={iconBtnStyle}
-      >
-        <UploadIcon width={16} height={16} />
-      </button>
+        {/* Save dropdown */}
+        <DropdownMenu.Root>
+          <DropdownMenu.Trigger asChild>
+            <button
+              title="Save options"
+              {...hoverHandlers()}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                borderLeft: `1px solid ${colors.border}`,
+                color: colors.muted,
+                padding: '0.3rem 0.2rem',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                transition: 'background 0.1s ease',
+                outline: 'none',
+              }}
+            >
+              <ChevronDownIcon width={12} height={12} />
+            </button>
+          </DropdownMenu.Trigger>
 
-      {/* Save */}
-      <button
-        onClick={requestSaveSession}
-        title="Save preset"
-        {...hoverHandlers()}
-        style={iconBtnStyle}
-      >
-        <DownloadIcon width={16} height={16} />
-      </button>
+          <DropdownMenu.Portal>
+            <DropdownMenu.Content
+              sideOffset={4}
+              align="end"
+              style={{
+                background: '#1a1535',
+                border: `1px solid ${colors.border}`,
+                padding: '0.25rem 0',
+                minWidth: 100,
+                zIndex: 20,
+              }}
+            >
+              <DropdownMenu.Item
+                onSelect={requestSaveSessionQuiet}
+                style={{
+                  padding: '0.35rem 0.75rem',
+                  fontSize: '1rem',
+                  color: colors.text,
+                  cursor: 'pointer',
+                  outline: 'none',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = colors.border;
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'transparent';
+                }}
+              >
+                Save
+              </DropdownMenu.Item>
+              <DropdownMenu.Item
+                onSelect={requestSaveSession}
+                style={{
+                  padding: '0.35rem 0.75rem',
+                  fontSize: '1rem',
+                  color: colors.text,
+                  cursor: 'pointer',
+                  outline: 'none',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = colors.border;
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'transparent';
+                }}
+              >
+                Save As...
+              </DropdownMenu.Item>
+            </DropdownMenu.Content>
+          </DropdownMenu.Portal>
+        </DropdownMenu.Root>
+      </div>
     </div>
   );
 }

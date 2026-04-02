@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState } from 'react';
-import { Cross2Icon, SpeakerLoudIcon } from '@radix-ui/react-icons';
+import { Cross2Icon, SpeakerLoudIcon, LinkBreak2Icon } from '@radix-ui/react-icons';
 import type { GridBlock as GridBlockData } from '../store';
 import {
   requestRemoveBlock,
@@ -144,8 +144,10 @@ export function GridBlockComponent({ block }: Props) {
         height: CELL_SIZE,
         background: colors.blockBg,
         border: isSelected
-          ? '2px solid #ffffff'
-          : `1px solid ${accentColor}55`,
+          ? `2px ${block.bypassed ? 'dashed' : 'solid'} #ffffff`
+          : block.bypassed
+            ? `2px dashed ${accentColor}44`
+            : `1px solid ${accentColor}55`,
         boxSizing: 'border-box',
         display: 'grid',
         gridTemplateRows: '1fr auto 1fr',
@@ -158,8 +160,12 @@ export function GridBlockComponent({ block }: Props) {
         padding: '4px 2px',
       }}
     >
-      {/* Top region */}
-      <div />
+      {/* Top region — bypass indicator */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        {block.bypassed && (
+          <LinkBreak2Icon width={12} height={12} color="#cc444488" />
+        )}
+      </div>
 
       {/* Middle region — block type */}
       <div

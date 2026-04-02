@@ -69,15 +69,27 @@ public:
         balance.store(juce::jlimit(-1.0f, 1.0f, value), std::memory_order_relaxed);
     }
 
+    // Bypass: when true, block is disengaged (THRU mode — audio passes through unchanged)
+    bool isBypassed() const { return bypassed.load(std::memory_order_relaxed); }
+
+    void setBypassed(bool value)
+    {
+        bypassed.store(value, std::memory_order_relaxed);
+    }
+
     // Reset transient state to defaults. Called when loading a preset.
     virtual void resetToDefault() {}
 
     // Derived blocks implement this instead of processBlock
     virtual void process(juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midi) = 0;
 
-    // Final: handles dry/wet blending and balance, delegates to process()
+    // Final: handles bypass, dry/wet blending, and balance
     void processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midi) final
     {
+        // THRU bypass: block is fully disengaged, audio passes through unchanged
+        if (bypassed.load(std::memory_order_relaxed))
+            return;
+
         auto mixVal = mix.load(std::memory_order_relaxed);
 
         if (!hasMix || mixVal >= 1.0f)
@@ -149,6 +161,7 @@ public:
         {
             obj->setProperty("mix", static_cast<double>(getMix()));
             obj->setProperty("balance", static_cast<double>(getBalance()));
+            obj->setProperty("bypassed", isBypassed());
         }
 
         return juce::var(obj);
@@ -167,6 +180,9 @@ public:
 
             if (hasMix && obj->hasProperty("balance"))
                 setBalance(static_cast<float>(obj->getProperty("balance")));
+
+            if (hasMix && obj->hasProperty("bypassed"))
+                setBypassed(static_cast<bool>(obj->getProperty("bypassed")));
         }
     }
 
@@ -206,6 +222,7 @@ private:
     bool hasMix;
     std::atomic<float> mix { 1.0f };
     std::atomic<float> balance { 0.0f };
+    std::atomic<bool> bypassed { false };
     juce::AudioBuffer<float> dryBuffer;
 };
 

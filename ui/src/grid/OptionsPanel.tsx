@@ -31,7 +31,7 @@ export function OptionsPanel() {
     >
       <div
         style={{
-          fontSize: '0.6rem',
+          fontSize: '1rem',
           fontWeight: 600,
           color: colors.muted,
           letterSpacing: '0.12em',
@@ -45,7 +45,7 @@ export function OptionsPanel() {
       {!block ? (
         <div
           style={{
-            fontSize: '0.7rem',
+            fontSize: '1rem',
             color: colors.muted,
             fontStyle: 'italic',
           }}
@@ -57,7 +57,7 @@ export function OptionsPanel() {
           <div>
             <div
               style={{
-                fontSize: '0.85rem',
+                fontSize: '1rem',
                 fontWeight: 700,
                 color: colors.text,
                 letterSpacing: '0.08em',
@@ -80,7 +80,7 @@ export function OptionsPanel() {
                   color: block.testTone ? '#0d0b1a' : colors.muted,
                   border: `1px solid ${block.testTone ? colors.green : colors.muted}`,
                   padding: '0.25rem 0.6rem',
-                  fontSize: '0.6rem',
+                  fontSize: '1rem',
                   fontWeight: 600,
                   letterSpacing: '0.06em',
                   textTransform: 'uppercase',
@@ -97,7 +97,7 @@ export function OptionsPanel() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
               <div
                 style={{
-                  fontSize: '0.6rem',
+                  fontSize: '1rem',
                   fontWeight: 600,
                   color: colors.secondary,
                   letterSpacing: '0.08em',
@@ -106,18 +106,6 @@ export function OptionsPanel() {
               >
                 Plugin
               </div>
-
-              {block.pluginName && (
-                <div
-                  style={{
-                    fontSize: '0.65rem',
-                    color: colors.green,
-                    fontWeight: 600,
-                  }}
-                >
-                  {block.pluginName}
-                </div>
-              )}
 
               <PluginSelect
                 plugins={availablePlugins}
@@ -130,7 +118,7 @@ export function OptionsPanel() {
               {availablePlugins.length === 0 && (
                 <div
                   style={{
-                    fontSize: '0.55rem',
+                    fontSize: '1rem',
                     color: colors.muted,
                     fontStyle: 'italic',
                   }}
@@ -147,7 +135,7 @@ export function OptionsPanel() {
                     color: colors.secondary,
                     border: `1px solid ${colors.secondary}`,
                     padding: '0.3rem 0.6rem',
-                    fontSize: '0.6rem',
+                    fontSize: '1rem',
                     fontWeight: 600,
                     letterSpacing: '0.06em',
                     textTransform: 'uppercase',
@@ -165,7 +153,7 @@ export function OptionsPanel() {
           {block.type === 'output' && (
             <div
               style={{
-                fontSize: '0.65rem',
+                fontSize: '1rem',
                 color: colors.muted,
                 fontStyle: 'italic',
               }}
@@ -196,7 +184,7 @@ function OptionRow({
     >
       <span
         style={{
-          fontSize: '0.65rem',
+          fontSize: '1rem',
           color: colors.text,
           letterSpacing: '0.05em',
           textTransform: 'uppercase',

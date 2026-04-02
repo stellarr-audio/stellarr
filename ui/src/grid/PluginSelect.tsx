@@ -51,7 +51,7 @@ export function PluginSelect({ plugins, selectedId, onSelect }: Props) {
           color: selected ? colors.text : colors.muted,
           border: `1px solid ${colors.border}`,
           padding: '0.35rem 0.5rem',
-          fontSize: '0.6rem',
+          fontSize: '1rem',
           cursor: 'pointer',
           display: 'flex',
           alignItems: 'center',
@@ -68,7 +68,7 @@ export function PluginSelect({ plugins, selectedId, onSelect }: Props) {
         >
           {selected ? selected.name : 'Select a plugin...'}
         </span>
-        <span style={{ fontSize: '0.5rem', color: colors.muted, flexShrink: 0 }}>
+        <span style={{ fontSize: '1rem', color: colors.muted, flexShrink: 0 }}>
           {open ? '\u25B2' : '\u25BC'}
         </span>
       </button>
@@ -103,7 +103,7 @@ export function PluginSelect({ plugins, selectedId, onSelect }: Props) {
               border: 'none',
               borderBottom: `1px solid ${colors.border}`,
               padding: '0.35rem 0.5rem',
-              fontSize: '0.6rem',
+              fontSize: '1rem',
               outline: 'none',
             }}
           />
@@ -114,7 +114,7 @@ export function PluginSelect({ plugins, selectedId, onSelect }: Props) {
               <div
                 style={{
                   padding: '0.5rem',
-                  fontSize: '0.55rem',
+                  fontSize: '1rem',
                   color: colors.muted,
                   fontStyle: 'italic',
                 }}
@@ -151,7 +151,7 @@ export function PluginSelect({ plugins, selectedId, onSelect }: Props) {
                   <div>
                     <div
                       style={{
-                        fontSize: '0.6rem',
+                        fontSize: '1rem',
                         fontWeight: 600,
                         color: colors.text,
                       }}
@@ -160,7 +160,7 @@ export function PluginSelect({ plugins, selectedId, onSelect }: Props) {
                     </div>
                     <div
                       style={{
-                        fontSize: '0.45rem',
+                        fontSize: '1rem',
                         color: colors.muted,
                         marginTop: '0.1rem',
                       }}
@@ -187,7 +187,7 @@ function FormatTag({ format }: { format: string }) {
   return (
     <span
       style={{
-        fontSize: '0.4rem',
+        fontSize: '1rem',
         fontWeight: 700,
         color,
         border: `1px solid ${color}55`,

@@ -1,4 +1,5 @@
 import { useCallback, useRef, useState } from 'react';
+import { FiX } from 'react-icons/fi';
 import type { GridBlock as GridBlockData } from '../store';
 import {
   requestRemoveBlock,
@@ -157,7 +158,7 @@ export function GridBlockComponent({ block }: Props) {
     >
       <div
         style={{
-          fontSize: '0.7rem',
+          fontSize: '1rem',
           fontWeight: 700,
           color: accentColor,
           letterSpacing: '0.12em',
@@ -168,7 +169,7 @@ export function GridBlockComponent({ block }: Props) {
       {block.type === 'vst' && (
         <div
           style={{
-            fontSize: '0.35rem',
+            fontSize: '0.85rem',
             fontWeight: 600,
             color: colors.muted,
             letterSpacing: '0.05em',
@@ -195,7 +196,7 @@ export function GridBlockComponent({ block }: Props) {
         <Port side="output" blockId={block.id} connected={hasOutputConnection} />
       )}
 
-      {/* Remove button — hover only */}
+      {/* Remove button — hover only, floats above top-right corner */}
       {hovered && (
         <div
           onClick={(e) => {
@@ -205,20 +206,13 @@ export function GridBlockComponent({ block }: Props) {
           style={{
             position: 'absolute',
             top: 3,
-            right: 5,
-            width: 14,
-            height: 14,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: '0.6rem',
-            fontWeight: 700,
-            color: colors.muted,
+            right: 3,
+            color: '#cc2222',
             cursor: 'pointer',
-            lineHeight: 1,
+            zIndex: 5,
           }}
         >
-          x
+          <FiX size={14} strokeWidth={3} />
         </div>
       )}
     </div>

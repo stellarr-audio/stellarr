@@ -40,7 +40,14 @@ void StellarrProcessor::releaseResources()
 void StellarrProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midi)
 {
     juce::ScopedNoDenormals noDenormals;
+
+    auto start = juce::Time::getHighResolutionTicks();
     graph.processBlock(buffer, midi);
+    auto end = juce::Time::getHighResolutionTicks();
+
+    auto elapsedSecs = juce::Time::highResolutionTicksToSeconds(end - start);
+    auto bufferDuration = static_cast<double>(buffer.getNumSamples()) / getSampleRate();
+    cpuUsagePercent.store(elapsedSecs / bufferDuration * 100.0, std::memory_order_relaxed);
 }
 
 

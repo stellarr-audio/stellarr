@@ -53,13 +53,26 @@ StellarrEditor::StellarrEditor(StellarrProcessor& p)
                 if (auto* peer = safeWebView->getTopLevelComponent()->getPeer())
                     stellarrMakeWebViewInspectable(peer->getNativeHandle());
         });
+
+    startTimerHz(2);
 }
 
-StellarrEditor::~StellarrEditor() = default;
+StellarrEditor::~StellarrEditor()
+{
+    stopTimer();
+}
 
 void StellarrEditor::resized()
 {
     webView->setBounds(getLocalBounds());
+}
+
+void StellarrEditor::timerCallback()
+{
+    auto& proc = dynamic_cast<StellarrProcessor&>(processor);
+    bridge.sendSystemStats(proc.getCpuUsagePercent(),
+                           stellarrGetProcessMemoryMB(),
+                           stellarrGetTotalMemoryMB());
 }
 
 void StellarrEditor::toggleDevTools()

@@ -52,7 +52,7 @@ export function BlockMenu({ x, y, anchor = 'top', onSelect, onClose }: Props) {
           onClick={() => onSelect(item.type)}
           style={{
             padding: '0.35rem 0.75rem',
-            fontSize: '0.7rem',
+            fontSize: '1rem',
             fontWeight: 600,
             letterSpacing: '0.06em',
             textTransform: 'uppercase',

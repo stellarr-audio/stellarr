@@ -61,53 +61,69 @@ public:
         mix.store(juce::jlimit(0.0f, 1.0f, value), std::memory_order_relaxed);
     }
 
+    // Balance: -1.0 (full left) to +1.0 (full right), 0.0 = centre
+    float getBalance() const { return balance.load(std::memory_order_relaxed); }
+
+    void setBalance(float value)
+    {
+        balance.store(juce::jlimit(-1.0f, 1.0f, value), std::memory_order_relaxed);
+    }
+
     // Reset transient state to defaults. Called when loading a preset.
     virtual void resetToDefault() {}
 
     // Derived blocks implement this instead of processBlock
     virtual void process(juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midi) = 0;
 
-    // Final: handles dry/wet blending, delegates to process()
+    // Final: handles dry/wet blending and balance, delegates to process()
     void processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midi) final
     {
         auto mixVal = mix.load(std::memory_order_relaxed);
 
         if (!hasMix || mixVal >= 1.0f)
         {
-            // Fully wet or mix not supported — skip dry buffer copy
             process(buffer, midi);
-            return;
         }
-
-        if (mixVal <= 0.0f)
+        else if (mixVal > 0.0f)
         {
-            // Fully dry — skip processing entirely
-            return;
+            // Save dry signal
+            if (dryBuffer.getNumChannels() != buffer.getNumChannels()
+                || dryBuffer.getNumSamples() != buffer.getNumSamples())
+            {
+                dryBuffer.setSize(buffer.getNumChannels(), buffer.getNumSamples(), false, false, true);
+            }
+
+            for (int ch = 0; ch < buffer.getNumChannels(); ++ch)
+                dryBuffer.copyFrom(ch, 0, buffer, ch, 0, buffer.getNumSamples());
+
+            process(buffer, midi);
+
+            float dryGain = 1.0f - mixVal;
+
+            for (int ch = 0; ch < buffer.getNumChannels(); ++ch)
+            {
+                auto* wet = buffer.getWritePointer(ch);
+                auto* dry = dryBuffer.getReadPointer(ch);
+
+                for (int i = 0; i < buffer.getNumSamples(); ++i)
+                    wet[i] = dry[i] * dryGain + wet[i] * mixVal;
+            }
         }
+        // mixVal <= 0.0f: fully dry, buffer untouched
 
-        // Save dry signal
-        if (dryBuffer.getNumChannels() != buffer.getNumChannels()
-            || dryBuffer.getNumSamples() != buffer.getNumSamples())
+        // Apply balance (stereo only, skip for mono or when centred)
+        if (hasMix && buffer.getNumChannels() >= 2)
         {
-            dryBuffer.setSize(buffer.getNumChannels(), buffer.getNumSamples(), false, false, true);
-        }
+            auto bal = balance.load(std::memory_order_relaxed);
 
-        for (int ch = 0; ch < buffer.getNumChannels(); ++ch)
-            dryBuffer.copyFrom(ch, 0, buffer, ch, 0, buffer.getNumSamples());
+            if (bal < -0.001f || bal > 0.001f)
+            {
+                float leftGain  = 1.0f - std::max(0.0f, bal);
+                float rightGain = 1.0f + std::min(0.0f, bal);
 
-        // Process (wet)
-        process(buffer, midi);
-
-        // Blend: output = dry * (1 - mix) + wet * mix
-        float dryGain = 1.0f - mixVal;
-
-        for (int ch = 0; ch < buffer.getNumChannels(); ++ch)
-        {
-            auto* wet = buffer.getWritePointer(ch);
-            auto* dry = dryBuffer.getReadPointer(ch);
-
-            for (int i = 0; i < buffer.getNumSamples(); ++i)
-                wet[i] = dry[i] * dryGain + wet[i] * mixVal;
+                buffer.applyGain(0, 0, buffer.getNumSamples(), leftGain);
+                buffer.applyGain(1, 0, buffer.getNumSamples(), rightGain);
+            }
         }
     }
 
@@ -130,7 +146,10 @@ public:
         obj->setProperty("name", blockName);
 
         if (hasMix)
+        {
             obj->setProperty("mix", static_cast<double>(getMix()));
+            obj->setProperty("balance", static_cast<double>(getBalance()));
+        }
 
         return juce::var(obj);
     }
@@ -145,6 +164,9 @@ public:
 
             if (hasMix && obj->hasProperty("mix"))
                 setMix(static_cast<float>(obj->getProperty("mix")));
+
+            if (hasMix && obj->hasProperty("balance"))
+                setBalance(static_cast<float>(obj->getProperty("balance")));
         }
     }
 
@@ -183,6 +205,7 @@ private:
     juce::String blockName;
     bool hasMix;
     std::atomic<float> mix { 1.0f };
+    std::atomic<float> balance { 0.0f };
     juce::AudioBuffer<float> dryBuffer;
 };
 

@@ -4,6 +4,7 @@ import { OptionsPanel } from './grid/OptionsPanel';
 import { Settings } from './grid/Settings';
 import { LoadingScreen } from './grid/LoadingScreen';
 import { PresetBrowser } from './grid/PresetBrowser';
+import { SystemStats } from './grid/SystemStats';
 import { colors } from './grid/colors';
 import { Logo } from './grid/Logo';
 
@@ -26,8 +27,8 @@ function TabButton({
         border: 'none',
         borderBottom: active ? `2px solid ${colors.primary}` : '2px solid transparent',
         color: active ? colors.text : colors.muted,
-        padding: '0.5rem 0.75rem',
-        fontSize: '0.6rem',
+        padding: '0.6rem 1rem',
+        fontSize: '1rem',
         fontWeight: 600,
         letterSpacing: '0.08em',
         textTransform: 'uppercase',
@@ -41,7 +42,6 @@ function TabButton({
 
 function App() {
   const loading = useStore((s) => s.loading);
-  const connected = useStore((s) => s.connected);
   const selectBlock = useStore((s) => s.selectBlock);
   const showSettings = useStore((s) => s.showSettings);
   const setShowSettings = useStore((s) => s.setShowSettings);
@@ -72,7 +72,7 @@ function App() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          padding: '0 1rem',
+          padding: '0.5rem 1.25rem',
           borderBottom: `1px solid ${colors.border}`,
           flexShrink: 0,
         }}
@@ -87,13 +87,13 @@ function App() {
             }}
           >
             <Logo
-              size={18}
+              size={22}
               color={colors.primary}
               style={{ filter: `drop-shadow(0 0 4px ${colors.primary}88)` }}
             />
             <span
               style={{
-                fontSize: '0.85rem',
+                fontSize: '1rem',
                 fontWeight: 700,
                 color: colors.primary,
                 letterSpacing: '0.08em',
@@ -109,9 +109,7 @@ function App() {
             style={{
               display: 'flex',
               alignItems: 'center',
-              borderLeft: `1px solid ${colors.border}`,
               marginLeft: '0.25rem',
-              paddingLeft: '0.25rem',
             }}
           >
             <TabButton
@@ -127,31 +125,13 @@ function App() {
           </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+        {/* Centre: preset browser */}
+        <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
           <PresetBrowser />
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-            <div
-              style={{
-                width: 6,
-                height: 6,
-                borderRadius: '50%',
-                background: connected ? colors.green : colors.muted,
-                boxShadow: connected ? `0 0 6px ${colors.green}` : 'none',
-              }}
-            />
-            <span
-              style={{
-                color: connected ? colors.green : colors.muted,
-                fontSize: '0.6rem',
-                letterSpacing: '0.1em',
-                textTransform: 'uppercase',
-              }}
-            >
-              {connected ? 'Connected' : 'Waiting'}
-            </span>
-          </div>
         </div>
+
+        {/* Right: system stats */}
+        <SystemStats />
       </div>
 
       {/* Main area */}

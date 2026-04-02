@@ -20,7 +20,7 @@ export function Palette() {
       <span
         style={{
           color: colors.muted,
-          fontSize: '0.65rem',
+          fontSize: '1rem',
           letterSpacing: '0.1em',
           textTransform: 'uppercase',
           alignSelf: 'center',
@@ -41,7 +41,7 @@ export function Palette() {
             background: colors.blockBg,
             border: `1px solid ${colors.blockBorder}`,
             color: colors.text,
-            fontSize: '0.7rem',
+            fontSize: '1rem',
             fontWeight: 600,
             letterSpacing: '0.05em',
             padding: '0.3rem 0.7rem',

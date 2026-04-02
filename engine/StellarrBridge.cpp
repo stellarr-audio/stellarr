@@ -401,6 +401,15 @@ void StellarrBridge::handleOpenPluginEditor(const juce::var& json)
     });
 }
 
+void StellarrBridge::sendSystemStats(double cpuPercent, double memoryMB, double totalMemoryMB)
+{
+    auto* detail = new juce::DynamicObject();
+    detail->setProperty("cpu", cpuPercent);
+    detail->setProperty("memory", memoryMB);
+    detail->setProperty("totalMemory", totalMemoryMB);
+    emitToJs("systemStats", detail);
+}
+
 // -- State persistence -------------------------------------------------------
 
 void StellarrBridge::setPresetFromFile(const juce::File& file)

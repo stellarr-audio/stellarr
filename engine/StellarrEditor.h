@@ -5,7 +5,8 @@
 
 class StellarrProcessor;
 
-class StellarrEditor final : public juce::AudioProcessorEditor
+class StellarrEditor final : public juce::AudioProcessorEditor,
+                              private juce::Timer
 {
 public:
     explicit StellarrEditor(StellarrProcessor&);
@@ -18,6 +19,7 @@ public:
 
 private:
     static juce::String getMimeType(const juce::File& file);
+    void timerCallback() override;
 
     StellarrBridge bridge;
     std::unique_ptr<juce::WebBrowserComponent> webView;

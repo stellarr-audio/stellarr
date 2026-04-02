@@ -61,7 +61,7 @@ export function LoadingScreen() {
 
       <span
         style={{
-          fontSize: '0.6rem',
+          fontSize: '1rem',
           color: colors.muted,
           letterSpacing: '0.08em',
           textTransform: 'uppercase',

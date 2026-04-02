@@ -159,14 +159,16 @@ export function initBridge(): void {
   juce.backend.addEventListener('blockAdded', (detail: unknown) => {
     const d = asRecord(detail);
     console.log('[Bridge] RX blockAdded:', d);
+    const blockId = String(d.id);
     useStore.getState().addBlock({
-      id: String(d.id),
+      id: blockId,
       type: String(d.type),
       name: String(d.name),
       col: Number(d.col),
       row: Number(d.row),
       nodeId: Number(d.nodeId),
     });
+    useStore.getState().selectBlock(blockId);
   });
 
   juce.backend.addEventListener('blockRemoved', (detail: unknown) => {
@@ -278,6 +280,11 @@ export function initBridge(): void {
       files,
       Number(d.currentIndex),
     );
+  });
+
+  juce.backend.addEventListener('systemStats', (detail: unknown) => {
+    const d = asRecord(detail);
+    useStore.getState().setSystemStats(Number(d.cpu), Number(d.memory), Number(d.totalMemory));
   });
 
   bridgeReady = true;

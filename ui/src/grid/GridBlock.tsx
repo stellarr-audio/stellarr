@@ -1,6 +1,10 @@
 import { useCallback, useRef, useState } from 'react';
 import type { GridBlock as GridBlockData } from '../store';
-import { requestRemoveBlock, requestRemoveConnection } from '../bridge';
+import {
+  requestRemoveBlock,
+  requestRemoveConnection,
+  requestOpenPluginEditor,
+} from '../bridge';
 import { useStore } from '../store';
 import { colors } from './colors';
 import { CELL_SIZE, cellLeft, cellTop } from './layout';
@@ -127,6 +131,10 @@ export function GridBlockComponent({ block }: Props) {
       onMouseLeave={() => setHovered(false)}
       onMouseDown={() => { portActive.current = false; }}
       onClick={() => selectBlock(block.id)}
+      onDoubleClick={() => {
+        if (block.type === 'vst' && block.pluginId)
+          requestOpenPluginEditor(block.id);
+      }}
       style={{
         position: 'absolute',
         left: cellLeft(block.col),

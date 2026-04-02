@@ -11,7 +11,7 @@ export function LoadingScreen() {
       style={{
         background: colors.bg,
         color: colors.text,
-        fontFamily: 'system-ui, -apple-system, sans-serif',
+        
         height: '100vh',
         display: 'flex',
         flexDirection: 'column',

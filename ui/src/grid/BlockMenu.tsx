@@ -30,7 +30,7 @@ export function BlockMenu({ open, onSelect, onClose, children }: Props) {
             padding: '0.25rem 0',
             minWidth: 120,
             zIndex: 10,
-            fontFamily: 'system-ui, -apple-system, sans-serif',
+            
           }}
         >
           {menuItems.map((item) => (

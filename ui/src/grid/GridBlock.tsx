@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState } from 'react';
-import { Cross2Icon, SpeakerLoudIcon, LinkBreak2Icon } from '@radix-ui/react-icons';
+import { Cross2Icon, SpeakerLoudIcon } from '@radix-ui/react-icons';
 import type { GridBlock as GridBlockData } from '../store';
 import {
   requestRemoveBlock,
@@ -160,10 +160,10 @@ export function GridBlockComponent({ block }: Props) {
         padding: '4px 2px',
       }}
     >
-      {/* Top region — bypass indicator */}
+      {/* Top region — status icons */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        {block.bypassed && (
-          <LinkBreak2Icon width={12} height={12} color="#cc444488" />
+        {block.type === 'input' && block.testTone && (
+          <SpeakerLoudIcon width={12} height={12} color={colors.green} />
         )}
       </div>
 
@@ -190,9 +190,6 @@ export function GridBlockComponent({ block }: Props) {
           overflow: 'hidden',
         }}
       >
-        {block.type === 'input' && block.testTone && (
-          <SpeakerLoudIcon width={14} height={14} color={colors.green} />
-        )}
         {block.type === 'vst' && (
           <div
             style={{

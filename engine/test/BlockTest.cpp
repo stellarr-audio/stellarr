@@ -282,6 +282,130 @@ static bool testBypassSkipsMixAndBalance()
     return true;
 }
 
+static bool testBypassMuteIn()
+{
+    printf("Test: bypass muteIn silences input but process runs... ");
+
+    StellarrProcessor proc;
+    proc.prepareToPlay(kSampleRate, kBlockSize);
+
+    auto gain = std::make_unique<stellarr::GainBlock>();
+    gain->setGain(0.5f);
+    gain->setBypassed(true);
+    gain->setBypassMode(stellarr::BypassMode::muteIn);
+
+    proc.disconnectBlocks(proc.getAudioInputNodeId(), proc.getAudioOutputNodeId());
+    auto nodeId = proc.addBlock(std::move(gain));
+    proc.connectBlocks(proc.getAudioInputNodeId(), nodeId);
+    proc.connectBlocks(nodeId, proc.getAudioOutputNodeId());
+
+    juce::AudioBuffer<float> buffer(2, kBlockSize);
+    generateSine(buffer);
+    juce::MidiBuffer midi;
+    proc.processBlock(buffer, midi);
+
+    // muteIn clears buffer then calls process() — since input is zero,
+    // gain * 0 = 0, so output should be silence
+    for (int ch = 0; ch < buffer.getNumChannels(); ++ch)
+    {
+        for (int i = 0; i < buffer.getNumSamples(); ++i)
+        {
+            if (std::abs(buffer.getSample(ch, i)) > 1e-6f)
+            {
+                fprintf(stderr, "  expected silence at ch=%d sample=%d\n", ch, i);
+                printf("FAIL\n");
+                return false;
+            }
+        }
+    }
+
+    proc.releaseResources();
+    printf("PASS\n");
+    return true;
+}
+
+static bool testBypassMuteOut()
+{
+    printf("Test: bypass muteOut silences output... ");
+
+    StellarrProcessor proc;
+    proc.prepareToPlay(kSampleRate, kBlockSize);
+
+    auto gain = std::make_unique<stellarr::GainBlock>();
+    gain->setGain(1.0f);
+    gain->setBypassed(true);
+    gain->setBypassMode(stellarr::BypassMode::muteOut);
+
+    proc.disconnectBlocks(proc.getAudioInputNodeId(), proc.getAudioOutputNodeId());
+    auto nodeId = proc.addBlock(std::move(gain));
+    proc.connectBlocks(proc.getAudioInputNodeId(), nodeId);
+    proc.connectBlocks(nodeId, proc.getAudioOutputNodeId());
+
+    juce::AudioBuffer<float> buffer(2, kBlockSize);
+    generateSine(buffer);
+    juce::MidiBuffer midi;
+    proc.processBlock(buffer, midi);
+
+    // muteOut calls process() then clears — output should be silence
+    for (int ch = 0; ch < buffer.getNumChannels(); ++ch)
+    {
+        for (int i = 0; i < buffer.getNumSamples(); ++i)
+        {
+            if (std::abs(buffer.getSample(ch, i)) > 1e-6f)
+            {
+                fprintf(stderr, "  expected silence at ch=%d sample=%d\n", ch, i);
+                printf("FAIL\n");
+                return false;
+            }
+        }
+    }
+
+    proc.releaseResources();
+    printf("PASS\n");
+    return true;
+}
+
+static bool testBypassMute()
+{
+    printf("Test: bypass mute silences everything... ");
+
+    StellarrProcessor proc;
+    proc.prepareToPlay(kSampleRate, kBlockSize);
+
+    auto gain = std::make_unique<stellarr::GainBlock>();
+    gain->setGain(1.0f);
+    gain->setBypassed(true);
+    gain->setBypassMode(stellarr::BypassMode::mute);
+
+    proc.disconnectBlocks(proc.getAudioInputNodeId(), proc.getAudioOutputNodeId());
+    auto nodeId = proc.addBlock(std::move(gain));
+    proc.connectBlocks(proc.getAudioInputNodeId(), nodeId);
+    proc.connectBlocks(nodeId, proc.getAudioOutputNodeId());
+
+    juce::AudioBuffer<float> buffer(2, kBlockSize);
+    generateSine(buffer);
+    juce::MidiBuffer midi;
+    proc.processBlock(buffer, midi);
+
+    // mute clears buffer without processing — total silence
+    for (int ch = 0; ch < buffer.getNumChannels(); ++ch)
+    {
+        for (int i = 0; i < buffer.getNumSamples(); ++i)
+        {
+            if (std::abs(buffer.getSample(ch, i)) > 1e-6f)
+            {
+                fprintf(stderr, "  expected silence at ch=%d sample=%d\n", ch, i);
+                printf("FAIL\n");
+                return false;
+            }
+        }
+    }
+
+    proc.releaseResources();
+    printf("PASS\n");
+    return true;
+}
+
 int main()
 {
     int failures = 0;
@@ -293,6 +417,9 @@ int main()
     if (!testBypassPassesThrough())     ++failures;
     if (!testBypassToggle())            ++failures;
     if (!testBypassSkipsMixAndBalance()) ++failures;
+    if (!testBypassMuteIn())            ++failures;
+    if (!testBypassMuteOut())           ++failures;
+    if (!testBypassMute())              ++failures;
 
     printf("\n%d test(s) failed\n", failures);
     return failures;

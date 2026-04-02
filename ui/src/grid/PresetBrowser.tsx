@@ -1,4 +1,4 @@
-import { FiChevronLeft, FiChevronRight, FiPlus, FiUpload, FiSave } from 'react-icons/fi';
+import { ChevronLeftIcon, ChevronRightIcon, PlusIcon, UploadIcon, DownloadIcon } from '@radix-ui/react-icons';
 import { useStore } from '../store';
 import {
   requestNewSession,
@@ -80,7 +80,7 @@ export function PresetBrowser() {
             transition: 'background 0.1s ease',
           }}
         >
-          <FiChevronLeft size={16} />
+          <ChevronLeftIcon width={16} height={16} />
         </button>
 
         {/* Preset name */}
@@ -123,7 +123,7 @@ export function PresetBrowser() {
             transition: 'background 0.1s ease',
           }}
         >
-          <FiChevronRight size={16} />
+          <ChevronRightIcon width={16} height={16} />
         </button>
       </div>
 
@@ -134,7 +134,7 @@ export function PresetBrowser() {
         {...hoverHandlers()}
         style={iconBtnStyle}
       >
-        <FiPlus size={16} />
+        <PlusIcon width={16} height={16} />
       </button>
 
       {/* Open */}
@@ -144,7 +144,7 @@ export function PresetBrowser() {
         {...hoverHandlers()}
         style={iconBtnStyle}
       >
-        <FiUpload size={16} />
+        <UploadIcon width={16} height={16} />
       </button>
 
       {/* Save */}
@@ -154,7 +154,7 @@ export function PresetBrowser() {
         {...hoverHandlers()}
         style={iconBtnStyle}
       >
-        <FiSave size={16} />
+        <DownloadIcon width={16} height={16} />
       </button>
     </div>
   );

@@ -165,7 +165,7 @@ export function Grid() {
           const isMenuOpen =
             menuCell?.col === col && menuCell?.row === row;
 
-          return (
+          const cellContent = (
             <div
               key={key}
               onMouseEnter={() => {
@@ -210,6 +210,21 @@ export function Grid() {
               )}
             </div>
           );
+
+          if (isMenuOpen) {
+            return (
+              <BlockMenu
+                key={key}
+                open={true}
+                onSelect={handleMenuSelect}
+                onClose={() => setMenuCell(null)}
+              >
+                {cellContent}
+              </BlockMenu>
+            );
+          }
+
+          return cellContent;
         }),
       )}
 
@@ -219,18 +234,6 @@ export function Grid() {
         <GridBlockComponent key={block.id} block={block} />
       ))}
 
-      {menuCell && (() => {
-        const openAbove = menuCell.row >= Math.floor(grid.rows / 2);
-        return (
-          <BlockMenu
-            x={cellLeft(menuCell.col)}
-            y={openAbove ? cellTop(menuCell.row) : cellTop(menuCell.row) + CELL_SIZE + 4}
-            anchor={openAbove ? 'bottom' : 'top'}
-            onSelect={handleMenuSelect}
-            onClose={() => setMenuCell(null)}
-          />
-        );
-      })()}
     </div>
   );
 }

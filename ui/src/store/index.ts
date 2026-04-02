@@ -10,6 +10,7 @@ export interface GridBlock {
   testTone?: boolean;
   pluginId?: string;
   pluginName?: string;
+  mix?: number;
   hasEditor?: boolean;
 }
 
@@ -62,6 +63,7 @@ interface StellarrState {
   setScanDirectories: (dirs: ScanDirectory[]) => void;
   setAvailablePlugins: (plugins: PluginInfo[]) => void;
   setBlockPlugin: (blockId: string, pluginId: string, pluginName: string, hasEditor: boolean) => void;
+  setBlockMix: (blockId: string, mix: number) => void;
   setPresetList: (directory: string, files: string[], currentIndex: number) => void;
   setSystemStats: (cpu: number, memory: number, totalMemory: number) => void;
 
@@ -132,6 +134,13 @@ export const useStore = create<StellarrState>((set) => ({
     set((s) => ({
       blocks: s.blocks.map((b) =>
         b.id === blockId ? { ...b, pluginId, pluginName, hasEditor } : b,
+      ),
+    })),
+
+  setBlockMix: (blockId, mix) =>
+    set((s) => ({
+      blocks: s.blocks.map((b) =>
+        b.id === blockId ? { ...b, mix } : b,
       ),
     })),
 

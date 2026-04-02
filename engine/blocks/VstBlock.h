@@ -13,7 +13,7 @@ public:
 
     BlockType getBlockType() const override { return BlockType::vst; }
 
-    void prepareToPlay(double sampleRate, int samplesPerBlock) override
+    void prepareBlock(double sampleRate, int samplesPerBlock) override
     {
         currentSampleRate = sampleRate;
         currentBlockSize = samplesPerBlock;
@@ -23,14 +23,7 @@ public:
             plugin->prepareToPlay(sampleRate, samplesPerBlock);
     }
 
-    void releaseResources() override
-    {
-        juce::SpinLock::ScopedLockType lock(pluginLock);
-        if (plugin != nullptr)
-            plugin->releaseResources();
-    }
-
-    void processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midi) override
+    void process(juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midi) override
     {
         juce::SpinLock::ScopedTryLockType lock(pluginLock);
 

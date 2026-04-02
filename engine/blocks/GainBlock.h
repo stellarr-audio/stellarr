@@ -20,10 +20,7 @@ public:
 
     BlockType getBlockType() const override { return BlockType::gain; }
 
-    void prepareToPlay(double, int) override {}
-    void releaseResources() override {}
-
-    void processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer&) override
+    void process(juce::AudioBuffer<float>& buffer, juce::MidiBuffer&) override
     {
         auto gain = gainParam->get();
 

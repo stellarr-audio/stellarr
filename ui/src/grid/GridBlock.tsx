@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState } from 'react';
-import { FiX, FiVolume1 } from 'react-icons/fi';
+import { Cross2Icon, SpeakerLoudIcon } from '@radix-ui/react-icons';
 import type { GridBlock as GridBlockData } from '../store';
 import {
   requestRemoveBlock,
@@ -185,7 +185,7 @@ export function GridBlockComponent({ block }: Props) {
         }}
       >
         {block.type === 'input' && block.testTone && (
-          <FiVolume1 size={14} color={colors.green} />
+          <SpeakerLoudIcon width={14} height={14} color={colors.green} />
         )}
         {block.type === 'vst' && (
           <div
@@ -232,7 +232,7 @@ export function GridBlockComponent({ block }: Props) {
             zIndex: 5,
           }}
         >
-          <FiX size={14} strokeWidth={3} />
+          <Cross2Icon width={14} height={14} />
         </div>
       )}
     </div>

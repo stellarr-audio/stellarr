@@ -1,8 +1,10 @@
 import { useStore } from '../store';
 import { PluginSelect } from './PluginSelect';
+import { Slider } from './Slider';
 import {
   requestToggleTestTone,
   requestSetBlockPlugin,
+  requestSetBlockMix,
   requestOpenPluginEditor,
 } from '../bridge';
 import { colors } from './colors';
@@ -19,8 +21,9 @@ export function OptionsPanel() {
   return (
     <div
       style={{
-        width: 240,
+        width: 280,
         flexShrink: 0,
+        boxSizing: 'border-box',
         background: '#0f0d1e',
         borderLeft: `1px solid ${colors.border}`,
         padding: '1rem',
@@ -160,6 +163,68 @@ export function OptionsPanel() {
             >
               No options available
             </div>
+          )}
+
+          {/* Parameters — for non-I/O blocks */}
+          {block.type !== 'input' && block.type !== 'output' && (
+            <>
+              <div style={{ height: 1, background: colors.border }} />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                <div
+                  style={{
+                    fontSize: '1rem',
+                    fontWeight: 600,
+                    color: colors.secondary,
+                    letterSpacing: '0.08em',
+                    textTransform: 'uppercase',
+                  }}
+                >
+                  Parameters
+                </div>
+
+                {/* Mix */}
+                <div>
+                  <div
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      marginBottom: '0.4rem',
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontSize: '1rem',
+                        color: colors.text,
+                        letterSpacing: '0.05em',
+                        textTransform: 'uppercase',
+                      }}
+                    >
+                      Mix
+                    </span>
+                    <span
+                      style={{
+                        fontSize: '1rem',
+                        color: colors.secondary,
+                        fontWeight: 600,
+                        fontVariantNumeric: 'tabular-nums',
+                        minWidth: '4ch',
+                        textAlign: 'right',
+                      }}
+                    >
+                      {Math.round((block.mix ?? 1) * 100)}%
+                    </span>
+                  </div>
+                  <Slider
+                    value={Math.round((block.mix ?? 1) * 100)}
+                    onChange={(v) => {
+                      useStore.getState().setBlockMix(block.id, v / 100);
+                      requestSetBlockMix(block.id, v / 100);
+                    }}
+                  />
+                </div>
+              </div>
+            </>
           )}
         </div>
       )}

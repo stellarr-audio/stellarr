@@ -6,6 +6,7 @@ import {
   requestSetBlockPlugin,
   requestSetBlockMix,
   requestSetBlockBalance,
+  requestToggleBlockBypass,
   requestOpenPluginEditor,
 } from '../bridge';
 import { colors } from './colors';
@@ -58,18 +59,59 @@ export function OptionsPanel() {
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          <div>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}
+          >
             <div
               style={{
                 fontSize: '1rem',
                 fontWeight: 700,
-                color: colors.text,
+                color: block.bypassed ? colors.muted : colors.text,
                 letterSpacing: '0.08em',
                 textTransform: 'uppercase',
               }}
             >
               {block.name}
             </div>
+
+            {/* Bypass toggle — non-I/O blocks only */}
+            {block.type !== 'input' && block.type !== 'output' && (
+              <button
+                onClick={() => {
+                  useStore.getState().setBlockBypassed(block.id, !block.bypassed);
+                  requestToggleBlockBypass(block.id);
+                }}
+                title={block.bypassed ? 'Enable block' : 'Bypass block'}
+                style={{
+                  position: 'relative',
+                  width: 36,
+                  height: 20,
+                  borderRadius: 10,
+                  border: 'none',
+                  background: block.bypassed ? colors.border : colors.green,
+                  cursor: 'pointer',
+                  padding: 0,
+                  transition: 'background 0.2s ease',
+                }}
+              >
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: 2,
+                    left: block.bypassed ? 2 : 18,
+                    width: 16,
+                    height: 16,
+                    borderRadius: '50%',
+                    background: '#ffffff',
+                    transition: 'left 0.2s ease',
+                  }}
+                />
+              </button>
+            )}
           </div>
 
           <div style={{ height: 1, background: colors.border }} />

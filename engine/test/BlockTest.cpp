@@ -164,14 +164,135 @@ static bool testSerialisation()
     return ok;
 }
 
+static bool testBypassPassesThrough()
+{
+    printf("Test: bypassed block passes audio unchanged... ");
+
+    StellarrProcessor proc;
+    proc.prepareToPlay(kSampleRate, kBlockSize);
+
+    auto gain = std::make_unique<stellarr::GainBlock>();
+    gain->setGain(0.5f);
+    gain->setBypassed(true);
+
+    proc.disconnectBlocks(proc.getAudioInputNodeId(), proc.getAudioOutputNodeId());
+    auto nodeId = proc.addBlock(std::move(gain));
+    proc.connectBlocks(proc.getAudioInputNodeId(), nodeId);
+    proc.connectBlocks(nodeId, proc.getAudioOutputNodeId());
+
+    juce::AudioBuffer<float> buffer(2, kTotalSamples);
+    generateSine(buffer);
+    juce::AudioBuffer<float> expected(buffer);
+
+    processInBlocks(proc, buffer);
+
+    // Bypassed gain block should not attenuate — output equals input
+    if (!compareBuffers(buffer, expected, 1e-6f))
+    {
+        printf("FAIL\n");
+        return false;
+    }
+
+    proc.releaseResources();
+    printf("PASS\n");
+    return true;
+}
+
+static bool testBypassToggle()
+{
+    printf("Test: toggling bypass on/off restores processing... ");
+
+    StellarrProcessor proc;
+    proc.prepareToPlay(kSampleRate, kBlockSize);
+
+    auto gain = std::make_unique<stellarr::GainBlock>();
+    gain->setGain(0.5f);
+    auto* gainPtr = gain.get();
+
+    proc.disconnectBlocks(proc.getAudioInputNodeId(), proc.getAudioOutputNodeId());
+    auto nodeId = proc.addBlock(std::move(gain));
+    proc.connectBlocks(proc.getAudioInputNodeId(), nodeId);
+    proc.connectBlocks(nodeId, proc.getAudioOutputNodeId());
+
+    // Process with bypass ON — should be pass-through
+    gainPtr->setBypassed(true);
+    juce::AudioBuffer<float> buf1(2, kBlockSize);
+    generateSine(buf1);
+    juce::AudioBuffer<float> original(buf1);
+    juce::MidiBuffer midi;
+    proc.processBlock(buf1, midi);
+
+    if (!compareBuffers(buf1, original, 1e-6f))
+    {
+        printf("FAIL (bypass on should pass through)\n");
+        return false;
+    }
+
+    // Process with bypass OFF — should apply 0.5 gain
+    gainPtr->setBypassed(false);
+    juce::AudioBuffer<float> buf2(2, kBlockSize);
+    generateSine(buf2);
+    juce::AudioBuffer<float> original2(buf2);
+    proc.processBlock(buf2, midi);
+
+    if (!compareBuffers(buf2, original2, 1e-5f, 0.5f))
+    {
+        printf("FAIL (bypass off should process)\n");
+        return false;
+    }
+
+    proc.releaseResources();
+    printf("PASS\n");
+    return true;
+}
+
+static bool testBypassSkipsMixAndBalance()
+{
+    printf("Test: bypass skips mix and balance... ");
+
+    StellarrProcessor proc;
+    proc.prepareToPlay(kSampleRate, kBlockSize);
+
+    auto gain = std::make_unique<stellarr::GainBlock>();
+    gain->setGain(0.5f);
+    gain->setMix(0.5f);
+    gain->setBalance(-1.0f); // full left
+    gain->setBypassed(true);
+
+    proc.disconnectBlocks(proc.getAudioInputNodeId(), proc.getAudioOutputNodeId());
+    auto nodeId = proc.addBlock(std::move(gain));
+    proc.connectBlocks(proc.getAudioInputNodeId(), nodeId);
+    proc.connectBlocks(nodeId, proc.getAudioOutputNodeId());
+
+    juce::AudioBuffer<float> buffer(2, kBlockSize);
+    generateSine(buffer);
+    juce::AudioBuffer<float> expected(buffer);
+    juce::MidiBuffer midi;
+    proc.processBlock(buffer, midi);
+
+    // Bypassed: mix and balance should have no effect — output equals input
+    if (!compareBuffers(buffer, expected, 1e-6f))
+    {
+        printf("FAIL\n");
+        return false;
+    }
+
+    proc.releaseResources();
+    printf("PASS\n");
+    return true;
+}
+
 int main()
 {
     int failures = 0;
 
-    if (!testVstBlockPassThrough())     ++failures;
+    if (!testVstBlockPassThrough())      ++failures;
     if (!testInputBlockTestTone())      ++failures;
     if (!testInputBlockTestToneReset()) ++failures;
     if (!testSerialisation())           ++failures;
+    if (!testBypassPassesThrough())     ++failures;
+    if (!testBypassToggle())            ++failures;
+    if (!testBypassSkipsMixAndBalance()) ++failures;
 
     printf("\n%d test(s) failed\n", failures);
     return failures;

@@ -1,15 +1,25 @@
 import { useStore } from '../store';
 import { PluginSelect } from './PluginSelect';
 import { Slider } from './Slider';
+import { Select } from 'radix-ui';
+import { GearIcon, ChevronDownIcon } from '@radix-ui/react-icons';
 import {
   requestToggleTestTone,
   requestSetBlockPlugin,
   requestSetBlockMix,
   requestSetBlockBalance,
   requestToggleBlockBypass,
+  requestSetBlockBypassMode,
   requestOpenPluginEditor,
 } from '../bridge';
 import { colors } from './colors';
+
+const bypassModes = [
+  { value: 'thru', label: 'Thru' },
+  { value: 'muteIn', label: 'Mute In' },
+  { value: 'muteOut', label: 'Mute Out' },
+  { value: 'mute', label: 'Mute' },
+];
 
 export function OptionsPanel() {
   const selectedBlockId = useStore((s) => s.selectedBlockId);
@@ -153,13 +163,36 @@ export function OptionsPanel() {
                 Plugin
               </div>
 
-              <PluginSelect
-                plugins={availablePlugins}
-                selectedId={block.pluginId ?? ''}
-                onSelect={(pluginId) =>
-                  requestSetBlockPlugin(block.id, pluginId)
-                }
-              />
+              {/* Plugin select + options button in one row */}
+              <div style={{ display: 'flex', gap: '0.3rem', alignItems: 'stretch' }}>
+                <div style={{ flex: 1 }}>
+                  <PluginSelect
+                    plugins={availablePlugins}
+                    selectedId={block.pluginId ?? ''}
+                    onSelect={(pluginId) =>
+                      requestSetBlockPlugin(block.id, pluginId)
+                    }
+                  />
+                </div>
+                {block.pluginId && (
+                  <button
+                    onClick={() => requestOpenPluginEditor(block.id)}
+                    title="Plugin Options"
+                    style={{
+                      background: 'transparent',
+                      border: `1px solid ${colors.border}`,
+                      color: colors.muted,
+                      padding: '0.3rem',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <GearIcon width={16} height={16} />
+                  </button>
+                )}
+              </div>
 
               {availablePlugins.length === 0 && (
                 <div
@@ -172,26 +205,89 @@ export function OptionsPanel() {
                   No plugins found. Scan libraries in Settings.
                 </div>
               )}
+            </div>
+          )}
 
-              {block.pluginId && (
-                <button
-                  onClick={() => requestOpenPluginEditor(block.id)}
+          {/* Bypass mode — non-I/O blocks */}
+          {block.type !== 'input' && block.type !== 'output' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              <div
+                style={{
+                  fontSize: '1rem',
+                  fontWeight: 600,
+                  color: colors.secondary,
+                  letterSpacing: '0.08em',
+                  textTransform: 'uppercase',
+                }}
+              >
+                Bypass Mode
+              </div>
+              <Select.Root
+                value={block.bypassMode ?? 'thru'}
+                onValueChange={(v) => {
+                  useStore.getState().setBlockBypassMode(block.id, v);
+                  requestSetBlockBypassMode(block.id, v);
+                }}
+              >
+                <Select.Trigger
                   style={{
-                    background: 'transparent',
-                    color: colors.secondary,
-                    border: `1px solid ${colors.secondary}`,
-                    padding: '0.3rem 0.6rem',
+                    width: '100%',
+                    textAlign: 'left',
+                    background: colors.cell,
+                    color: colors.text,
+                    border: `1px solid ${colors.border}`,
+                    padding: '0.35rem 0.5rem',
                     fontSize: '1rem',
-                    fontWeight: 600,
-                    letterSpacing: '0.06em',
-                    textTransform: 'uppercase',
                     cursor: 'pointer',
-                    marginTop: '0.25rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    outline: 'none',
                   }}
                 >
-                  Plugin Options
-                </button>
-              )}
+                  <Select.Value />
+                  <Select.Icon>
+                    <ChevronDownIcon />
+                  </Select.Icon>
+                </Select.Trigger>
+                <Select.Portal>
+                  <Select.Content
+                    position="popper"
+                    sideOffset={4}
+                    style={{
+                      background: '#1a1535',
+                      border: `1px solid ${colors.border}`,
+                      width: 'var(--radix-select-trigger-width)',
+                      zIndex: 20,
+                      
+                    }}
+                  >
+                    <Select.Viewport>
+                      {bypassModes.map((m) => (
+                        <Select.Item
+                          key={m.value}
+                          value={m.value}
+                          style={{
+                            padding: '0.35rem 0.5rem',
+                            fontSize: '1rem',
+                            color: colors.text,
+                            cursor: 'pointer',
+                            outline: 'none',
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.background = `${colors.border}88`;
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.background = 'transparent';
+                          }}
+                        >
+                          <Select.ItemText>{m.label}</Select.ItemText>
+                        </Select.Item>
+                      ))}
+                    </Select.Viewport>
+                  </Select.Content>
+                </Select.Portal>
+              </Select.Root>
             </div>
           )}
 

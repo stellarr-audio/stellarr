@@ -40,7 +40,7 @@ function App() {
       style={{
         background: colors.bg,
         color: colors.text,
-        fontFamily: 'system-ui, -apple-system, sans-serif',
+        fontFamily: "'Satoshi', system-ui, -apple-system, sans-serif",
         letterSpacing: '0.02em',
         height: '100vh',
         boxSizing: 'border-box',

@@ -9,7 +9,7 @@ enum class BlockType
     input,
     output,
     gain, // test-only
-    vst
+    plugin
 };
 
 enum class BypassMode
@@ -47,7 +47,7 @@ inline juce::String blockTypeToString(BlockType type)
         case BlockType::input:   return "input";
         case BlockType::output:  return "output";
         case BlockType::gain:    return "gain";
-        case BlockType::vst:     return "vst";
+        case BlockType::plugin:   return "plugin";
     }
     return "unknown";
 }
@@ -57,8 +57,8 @@ inline BlockType blockTypeFromString(const juce::String& str)
     if (str == "input")   return BlockType::input;
     if (str == "output")  return BlockType::output;
     if (str == "gain")    return BlockType::gain;
-    if (str == "vst")     return BlockType::vst;
-    return BlockType::vst;
+    if (str == "plugin" || str == "vst")  return BlockType::plugin;
+    return BlockType::plugin;
 }
 
 class Block : public juce::AudioProcessor

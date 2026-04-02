@@ -1,20 +1,40 @@
+import { FiChevronLeft, FiChevronRight, FiSave, FiUpload } from 'react-icons/fi';
 import { useStore } from '../store';
 import {
   requestSaveSession,
   requestLoadSession,
-  requestPickPresetDirectory,
   requestLoadPresetByIndex,
 } from '../bridge';
 import { colors } from './colors';
 
+const hoverBg = '#2a2545';
+
+function hoverHandlers() {
+  return {
+    onMouseEnter: (e: React.MouseEvent<HTMLButtonElement>) => {
+      e.currentTarget.style.background = hoverBg;
+    },
+    onMouseLeave: (e: React.MouseEvent<HTMLButtonElement>) => {
+      e.currentTarget.style.background = 'transparent';
+    },
+  };
+}
+
+const iconBtnStyle: React.CSSProperties = {
+  background: 'transparent',
+  border: `1px solid ${colors.border}`,
+  color: colors.muted,
+  padding: '0.3rem',
+  cursor: 'pointer',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  transition: 'background 0.1s ease',
+};
+
 export function PresetBrowser() {
-  const presetDirectory = useStore((s) => s.presetDirectory);
   const presetFiles = useStore((s) => s.presetFiles);
   const currentPresetIndex = useStore((s) => s.currentPresetIndex);
-
-  const dirName = presetDirectory
-    ? presetDirectory.split('/').pop() ?? presetDirectory
-    : '';
 
   const currentName =
     currentPresetIndex >= 0 && currentPresetIndex < presetFiles.length
@@ -33,113 +53,97 @@ export function PresetBrowser() {
         gap: '0.4rem',
       }}
     >
-      {/* Directory picker */}
-      <button
-        onClick={requestPickPresetDirectory}
-        title={presetDirectory || 'Select preset directory'}
+      {/* Preset input group: prev | name | next */}
+      <div
         style={{
-          background: 'transparent',
+          display: 'flex',
+          alignItems: 'stretch',
           border: `1px solid ${colors.border}`,
-          color: dirName ? colors.text : colors.muted,
-          padding: '0.2rem 0.4rem',
-          fontSize: '0.55rem',
-          fontWeight: 600,
-          letterSpacing: '0.05em',
-          textTransform: 'uppercase',
-          cursor: 'pointer',
-          maxWidth: 80,
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-          whiteSpace: 'nowrap',
         }}
       >
-        {dirName || 'Folder'}
-      </button>
+        {/* Prev */}
+        <button
+          onClick={() => canPrev && requestLoadPresetByIndex(currentPresetIndex - 1)}
+          title="Previous preset"
+          {...hoverHandlers()}
+          style={{
+            background: 'transparent',
+            border: 'none',
+            borderRight: `1px solid ${colors.border}`,
+            color: colors.muted,
+            padding: '0.3rem 0.4rem',
+            cursor: canPrev ? 'pointer' : 'default',
+            opacity: canPrev ? 1 : 0.3,
+            display: 'flex',
+            alignItems: 'center',
+            transition: 'background 0.1s ease',
+          }}
+        >
+          <FiChevronLeft size={16} />
+        </button>
 
-      {/* Prev arrow */}
-      <button
-        onClick={() => canPrev && requestLoadPresetByIndex(currentPresetIndex - 1)}
-        style={{
-          background: 'transparent',
-          border: 'none',
-          color: canPrev ? colors.text : colors.muted,
-          fontSize: '0.7rem',
-          cursor: canPrev ? 'pointer' : 'default',
-          padding: '0 0.15rem',
-          opacity: canPrev ? 1 : 0.3,
-        }}
-      >
-        ‹
-      </button>
+        {/* Preset name */}
+        <span
+          style={{
+            fontSize: '1rem',
+            fontWeight: 600,
+            color: currentPresetIndex >= 0 ? colors.text : colors.muted,
+            letterSpacing: '0.05em',
+            minWidth: 100,
+            textAlign: 'center',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+            maxWidth: 250,
+            padding: '0.3rem 1rem',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          {currentName}
+        </span>
 
-      {/* Current preset name */}
-      <span
-        style={{
-          fontSize: '0.6rem',
-          fontWeight: 600,
-          color: currentPresetIndex >= 0 ? colors.text : colors.muted,
-          letterSpacing: '0.05em',
-          minWidth: 60,
-          textAlign: 'center',
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-          whiteSpace: 'nowrap',
-          maxWidth: 120,
-        }}
-      >
-        {currentName}
-      </span>
+        {/* Next */}
+        <button
+          onClick={() => canNext && requestLoadPresetByIndex(currentPresetIndex + 1)}
+          title="Next preset"
+          {...hoverHandlers()}
+          style={{
+            background: 'transparent',
+            border: 'none',
+            borderLeft: `1px solid ${colors.border}`,
+            color: colors.muted,
+            padding: '0.3rem 0.4rem',
+            cursor: canNext ? 'pointer' : 'default',
+            opacity: canNext ? 1 : 0.3,
+            display: 'flex',
+            alignItems: 'center',
+            transition: 'background 0.1s ease',
+          }}
+        >
+          <FiChevronRight size={16} />
+        </button>
+      </div>
 
-      {/* Next arrow */}
-      <button
-        onClick={() => canNext && requestLoadPresetByIndex(currentPresetIndex + 1)}
-        style={{
-          background: 'transparent',
-          border: 'none',
-          color: canNext ? colors.text : colors.muted,
-          fontSize: '0.7rem',
-          cursor: canNext ? 'pointer' : 'default',
-          padding: '0 0.15rem',
-          opacity: canNext ? 1 : 0.3,
-        }}
-      >
-        ›
-      </button>
-
-      {/* Save button */}
+      {/* Save */}
       <button
         onClick={requestSaveSession}
-        style={{
-          background: 'transparent',
-          border: `1px solid ${colors.border}`,
-          color: colors.muted,
-          padding: '0.2rem 0.4rem',
-          fontSize: '0.5rem',
-          fontWeight: 600,
-          letterSpacing: '0.06em',
-          textTransform: 'uppercase',
-          cursor: 'pointer',
-        }}
+        title="Save preset"
+        {...hoverHandlers()}
+        style={iconBtnStyle}
       >
-        Save
+        <FiSave size={16} />
       </button>
 
-      {/* Load button */}
+      {/* Load */}
       <button
         onClick={requestLoadSession}
-        style={{
-          background: 'transparent',
-          border: `1px solid ${colors.border}`,
-          color: colors.muted,
-          padding: '0.2rem 0.4rem',
-          fontSize: '0.5rem',
-          fontWeight: 600,
-          letterSpacing: '0.06em',
-          textTransform: 'uppercase',
-          cursor: 'pointer',
-        }}
+        title="Load preset"
+        {...hoverHandlers()}
+        style={iconBtnStyle}
       >
-        Load
+        <FiUpload size={16} />
       </button>
     </div>
   );

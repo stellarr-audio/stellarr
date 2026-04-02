@@ -17,6 +17,7 @@ public:
 
     juce::var serialiseSession() const;
     void restoreSession(const juce::var& session);
+    void sendSystemStats(double cpuPercent, double memoryMB, double totalMemoryMB);
 
 private:
     void handleEvent(const juce::String& eventName, const juce::var& payload);

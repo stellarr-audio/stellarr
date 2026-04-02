@@ -49,6 +49,9 @@ interface StellarrState {
   presetDirectory: string;
   presetFiles: string[];
   currentPresetIndex: number;
+  cpuPercent: number;
+  memoryMB: number;
+  totalMemoryMB: number;
 
   setLoading: (loading: boolean) => void;
   setLoadingStatus: (status: string, progress: number) => void;
@@ -60,6 +63,7 @@ interface StellarrState {
   setAvailablePlugins: (plugins: PluginInfo[]) => void;
   setBlockPlugin: (blockId: string, pluginId: string, pluginName: string, hasEditor: boolean) => void;
   setPresetList: (directory: string, files: string[], currentIndex: number) => void;
+  setSystemStats: (cpu: number, memory: number, totalMemory: number) => void;
 
   addBlock: (block: GridBlock) => void;
   removeBlock: (blockId: string) => void;
@@ -101,6 +105,9 @@ export const useStore = create<StellarrState>((set) => ({
   presetDirectory: '',
   presetFiles: [],
   currentPresetIndex: -1,
+  cpuPercent: 0,
+  memoryMB: 0,
+  totalMemoryMB: 1,
   selectedBlockId: null,
   draggingConnection: null,
 
@@ -130,6 +137,9 @@ export const useStore = create<StellarrState>((set) => ({
 
   setPresetList: (directory, files, currentIndex) =>
     set({ presetDirectory: directory, presetFiles: files, currentPresetIndex: currentIndex }),
+
+  setSystemStats: (cpu, memory, totalMemory) =>
+    set({ cpuPercent: cpu, memoryMB: memory, totalMemoryMB: totalMemory }),
 
   addBlock: (block) =>
     set((s) => ({ blocks: [...s.blocks, block] })),

@@ -48,6 +48,8 @@ public:
 
     PluginManager& getPluginManager() { return pluginManager; }
 
+    double getCpuUsagePercent() const { return cpuUsagePercent.load(std::memory_order_relaxed); }
+
     void setAppProperties(juce::ApplicationProperties* props) { appProperties = props; }
     juce::ApplicationProperties* getAppProperties() const { return appProperties; }
 
@@ -59,4 +61,5 @@ private:
 
     PluginManager pluginManager;
     juce::ApplicationProperties* appProperties = nullptr;
+    std::atomic<double> cpuUsagePercent { 0.0 };
 };

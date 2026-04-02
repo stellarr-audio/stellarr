@@ -18,19 +18,6 @@ export function Settings() {
         overflow: 'auto',
       }}
     >
-      <h2
-        style={{
-          fontSize: '0.8rem',
-          fontWeight: 700,
-          color: colors.text,
-          letterSpacing: '0.1em',
-          textTransform: 'uppercase',
-          margin: '0 0 1.5rem 0',
-        }}
-      >
-        Settings
-      </h2>
-
       {/* Libraries section */}
       <Section title="Libraries">
         <div
@@ -56,7 +43,7 @@ export function Settings() {
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <span
                   style={{
-                    fontSize: '0.65rem',
+                    fontSize: '1rem',
                     color: colors.text,
                     wordBreak: 'break-all',
                   }}
@@ -66,7 +53,7 @@ export function Settings() {
                 {dir.isDefault && (
                   <span
                     style={{
-                      fontSize: '0.5rem',
+                      fontSize: '1rem',
                       fontWeight: 600,
                       color: colors.secondary,
                       letterSpacing: '0.08em',
@@ -87,7 +74,7 @@ export function Settings() {
                     background: 'transparent',
                     border: 'none',
                     color: colors.muted,
-                    fontSize: '0.7rem',
+                    fontSize: '1rem',
                     cursor: 'pointer',
                     padding: '0 0.25rem',
                     flexShrink: 0,
@@ -115,7 +102,7 @@ export function Settings() {
         {availablePlugins.length === 0 ? (
           <div
             style={{
-              fontSize: '0.65rem',
+              fontSize: '1rem',
               color: colors.muted,
               fontStyle: 'italic',
             }}
@@ -147,7 +134,7 @@ export function Settings() {
                 <div>
                   <div
                     style={{
-                      fontSize: '0.65rem',
+                      fontSize: '1rem',
                       fontWeight: 600,
                       color: colors.text,
                     }}
@@ -156,7 +143,7 @@ export function Settings() {
                   </div>
                   <div
                     style={{
-                      fontSize: '0.5rem',
+                      fontSize: '1rem',
                       color: colors.muted,
                     }}
                   >
@@ -165,7 +152,7 @@ export function Settings() {
                 </div>
                 <span
                   style={{
-                    fontSize: '0.5rem',
+                    fontSize: '1rem',
                     color: colors.muted,
                     letterSpacing: '0.06em',
                     textTransform: 'uppercase',
@@ -193,7 +180,7 @@ function Section({
     <div style={{ marginBottom: '2rem' }}>
       <h3
         style={{
-          fontSize: '0.65rem',
+          fontSize: '1rem',
           fontWeight: 600,
           color: colors.secondary,
           letterSpacing: '0.1em',
@@ -223,7 +210,7 @@ function ActionButton({
         color: colors.text,
         border: `1px solid ${colors.border}`,
         padding: '0.35rem 0.75rem',
-        fontSize: '0.6rem',
+        fontSize: '1rem',
         fontWeight: 600,
         letterSpacing: '0.06em',
         textTransform: 'uppercase',

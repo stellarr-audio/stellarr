@@ -49,6 +49,7 @@ interface StellarrState {
   setGridSize: (columns: number, rows: number) => void;
   setScanDirectories: (dirs: ScanDirectory[]) => void;
   setAvailablePlugins: (plugins: PluginInfo[]) => void;
+  setBlockPlugin: (blockId: string, pluginId: string, pluginName: string) => void;
 
   addBlock: (block: GridBlock) => void;
   removeBlock: (blockId: string) => void;
@@ -100,6 +101,13 @@ export const useStore = create<StellarrState>((set) => ({
   setGridSize: (columns, rows) => set({ grid: { columns, rows } }),
   setScanDirectories: (dirs) => set({ scanDirectories: dirs }),
   setAvailablePlugins: (plugins) => set({ availablePlugins: plugins }),
+
+  setBlockPlugin: (blockId, pluginId, pluginName) =>
+    set((s) => ({
+      blocks: s.blocks.map((b) =>
+        b.id === blockId ? { ...b, pluginId, pluginName } : b,
+      ),
+    })),
 
   addBlock: (block) =>
     set((s) => ({ blocks: [...s.blocks, block] })),

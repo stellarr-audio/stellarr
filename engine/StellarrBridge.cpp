@@ -44,6 +44,8 @@ void StellarrBridge::handleEvent(const juce::String& eventName, const juce::var&
     else if (eventName == "moveBlock")           handleMoveBlock(json);
     else if (eventName == "addConnection")       handleAddConnection(json);
     else if (eventName == "removeConnection")    handleRemoveConnection(json);
+    else if (eventName == "setBlockPlugin")      handleSetBlockPlugin(json);
+    else if (eventName == "openPluginEditor")    handleOpenPluginEditor(json);
     else if (eventName == "scanPlugins")         handleScanPlugins();
     else if (eventName == "getScanDirectories")  handleGetScanDirectories();
     else if (eventName == "pickScanDirectory")   handlePickScanDirectory();
@@ -247,6 +249,66 @@ void StellarrBridge::handleRemoveConnection(const juce::var& json)
     detail->setProperty("sourceId", sourceId);
     detail->setProperty("destId", destId);
     emitToJs("connectionRemoved", detail);
+}
+
+void StellarrBridge::handleSetBlockPlugin(const juce::var& json)
+{
+    if (processor == nullptr) return;
+
+    auto* obj = json.getDynamicObject();
+    if (obj == nullptr) return;
+
+    auto blockId  = obj->getProperty("blockId").toString();
+    auto pluginId = obj->getProperty("pluginId").toString();
+
+    auto nodeIt = blockNodeMap.find(blockId);
+    if (nodeIt == blockNodeMap.end()) return;
+
+    auto* node = processor->getGraph().getNodeForId(nodeIt->second);
+    if (node == nullptr) return;
+
+    auto* vstBlock = dynamic_cast<stellarr::VstBlock*>(node->getProcessor());
+    if (vstBlock == nullptr) return;
+
+    juce::String errorMessage;
+    auto instance = processor->getPluginManager().createPluginInstance(
+        pluginId, processor->getSampleRate(),
+        processor->getBlockSize(), errorMessage);
+
+    if (instance == nullptr) return;
+
+    auto pluginName = instance->getName();
+    vstBlock->setPlugin(std::move(instance), pluginId);
+
+    auto* detail = new juce::DynamicObject();
+    detail->setProperty("blockId", blockId);
+    detail->setProperty("pluginId", pluginId);
+    detail->setProperty("pluginName", pluginName);
+    emitToJs("blockPluginSet", detail);
+}
+
+void StellarrBridge::handleOpenPluginEditor(const juce::var& json)
+{
+    if (processor == nullptr) return;
+
+    auto* obj = json.getDynamicObject();
+    if (obj == nullptr) return;
+
+    auto blockId = obj->getProperty("blockId").toString();
+    auto nodeIt = blockNodeMap.find(blockId);
+    if (nodeIt == blockNodeMap.end()) return;
+
+    auto* node = processor->getGraph().getNodeForId(nodeIt->second);
+    if (node == nullptr) return;
+
+    auto* vstBlock = dynamic_cast<stellarr::VstBlock*>(node->getProcessor());
+    if (vstBlock == nullptr || !vstBlock->hasPlugin()) return;
+
+    // Defer to message thread in case called from within native function handler
+    juce::MessageManager::callAsync([vstBlock]()
+    {
+        vstBlock->openPluginEditor();
+    });
 }
 
 // -- Plugin management -------------------------------------------------------

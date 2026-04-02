@@ -68,6 +68,14 @@ export function requestToggleTestTone(blockId: string): void {
   sendEvent('toggleTestTone', JSON.stringify({ blockId }));
 }
 
+export function requestSetBlockPlugin(blockId: string, pluginId: string): void {
+  sendEvent('setBlockPlugin', JSON.stringify({ blockId, pluginId }));
+}
+
+export function requestOpenPluginEditor(blockId: string): void {
+  sendEvent('openPluginEditor', JSON.stringify({ blockId }));
+}
+
 export function requestScanPlugins(): void {
   sendEvent('scanPlugins', '');
 }
@@ -156,6 +164,16 @@ export function initBridge(): void {
     const d = asRecord(detail);
     console.log('[Bridge] RX connectionRemoved:', d);
     useStore.getState().removeConnection(String(d.sourceId), String(d.destId));
+  });
+
+  juce.backend.addEventListener('blockPluginSet', (detail: unknown) => {
+    const d = asRecord(detail);
+    console.log('[Bridge] RX blockPluginSet:', d);
+    useStore.getState().setBlockPlugin(
+      String(d.blockId),
+      String(d.pluginId),
+      String(d.pluginName),
+    );
   });
 
   juce.backend.addEventListener('graphState', (detail: unknown) => {

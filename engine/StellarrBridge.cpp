@@ -98,21 +98,51 @@ void StellarrBridge::emitToJs(const juce::String& eventName, juce::DynamicObject
     });
 }
 
+void StellarrBridge::sendStartupProgress(const juce::String& status, int progress)
+{
+    auto* detail = new juce::DynamicObject();
+    detail->setProperty("status", status);
+    detail->setProperty("progress", progress);
+    emitToJs("startupProgress", detail);
+}
+
 void StellarrBridge::handleBridgeReady()
 {
+    // Startup runs as a chain of deferred steps so that progress events
+    // are delivered to JS between each step.
+    sendStartupProgress("Connecting to engine...", 10);
     sendWelcome();
 
-    // Create default Input and Output blocks if the graph is empty
-    if (blockNodeMap.empty())
+    juce::MessageManager::callAsync([this]()
     {
-        auto inputJson = juce::JSON::parse(R"({"type":"input","col":0,"row":2})");
-        auto outputJson = juce::JSON::parse(R"({"type":"output","col":11,"row":2})");
-        handleAddBlock(inputJson);
-        handleAddBlock(outputJson);
-    }
+        sendStartupProgress("Setting up default graph...", 30);
+        if (blockNodeMap.empty())
+        {
+            auto inputJson = juce::JSON::parse(R"({"type":"input","col":0,"row":2})");
+            auto outputJson = juce::JSON::parse(R"({"type":"output","col":11,"row":2})");
+            handleAddBlock(inputJson);
+            handleAddBlock(outputJson);
+        }
+        sendGraphState();
 
-    sendGraphState();
-    sendScanDirectories();
+        juce::MessageManager::callAsync([this]()
+        {
+            sendStartupProgress("Scanning plugin libraries...", 50);
+            sendScanDirectories();
+
+            juce::MessageManager::callAsync([this]()
+            {
+                if (processor != nullptr)
+                {
+                    processor->getPluginManager().scanPlugins();
+                    sendPluginList();
+                }
+
+                sendStartupProgress("Ready", 100);
+                emitToJs("startupComplete", new juce::DynamicObject());
+            });
+        });
+    });
 }
 
 // -- Graph event handlers ----------------------------------------------------

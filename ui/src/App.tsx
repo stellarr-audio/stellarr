@@ -2,6 +2,7 @@ import { useStore } from './store';
 import { Grid } from './grid/Grid';
 import { OptionsPanel } from './grid/OptionsPanel';
 import { Settings } from './grid/Settings';
+import { LoadingScreen } from './grid/LoadingScreen';
 import { colors } from './grid/colors';
 import { Logo } from './grid/Logo';
 
@@ -38,6 +39,7 @@ function TabButton({
 }
 
 function App() {
+  const loading = useStore((s) => s.loading);
   const connected = useStore((s) => s.connected);
   const selectBlock = useStore((s) => s.selectBlock);
   const showSettings = useStore((s) => s.showSettings);
@@ -46,6 +48,8 @@ function App() {
   const activeTab: Tab = showSettings ? 'settings' : 'grid';
 
   const setTab = (tab: Tab) => setShowSettings(tab === 'settings');
+
+  if (loading) return <LoadingScreen />;
 
   return (
     <div

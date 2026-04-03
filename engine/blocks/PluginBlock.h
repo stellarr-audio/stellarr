@@ -92,10 +92,14 @@ public:
             name = plugin->getName();
         }
 
-        if (pluginWindow != nullptr && pluginWindow->isVisible())
+        if (pluginWindow != nullptr)
         {
-            pluginWindow->toFront(true);
-            return;
+            if (pluginWindow->isVisible())
+            {
+                pluginWindow->toFront(true);
+                return;
+            }
+            pluginWindow = nullptr;
         }
 
         auto format = p->getPluginDescription().pluginFormatName;

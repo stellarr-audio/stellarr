@@ -26,6 +26,8 @@ public:
     juce::var serialiseSession() const;
     void restoreSession(const juce::var& session);
     void sendSystemStats(double cpuPercent, double memoryMB, double totalMemoryMB);
+    void sendTunerData();
+    bool isTunerActive() const { return tunerActive; }
     void setOnStartupComplete(std::function<void()> callback) { onStartupComplete = std::move(callback); }
 
 private:
@@ -93,6 +95,7 @@ private:
     int currentPresetIndex = -1;
     juce::File lastPresetFile;
     std::function<void()> onStartupComplete;
+    bool tunerActive = false;
 
     std::vector<Scene> scenes;
     int activeSceneIndex = -1;

@@ -54,7 +54,7 @@ interface StellarrState {
   loadingStatus: string;
   loadingProgress: number;
   connected: boolean;
-  showSettings: boolean;
+  activeTab: string;
   blocks: GridBlock[];
   connections: Connection[];
   grid: GridSettings;
@@ -73,7 +73,21 @@ interface StellarrState {
   setLoading: (loading: boolean) => void;
   setLoadingStatus: (status: string, progress: number) => void;
   setConnected: (value: boolean) => void;
-  setShowSettings: (value: boolean) => void;
+  setActiveTab: (tab: string) => void;
+
+  // Tuner
+  tunerNote: string | null;
+  tunerOctave: number;
+  tunerCents: number;
+  tunerFrequency: number;
+  tunerConfidence: number;
+  setTunerData: (
+    note: string | null,
+    octave: number,
+    cents: number,
+    frequency: number,
+    confidence: number,
+  ) => void;
   setBlockTestTone: (blockId: string, enabled: boolean) => void;
   setGridSize: (columns: number, rows: number) => void;
   setScanDirectories: (dirs: ScanDirectory[]) => void;
@@ -132,7 +146,12 @@ export const useStore = create<StellarrState>((set) => ({
   loadingStatus: 'Initialising...',
   loadingProgress: 0,
   connected: false,
-  showSettings: false,
+  activeTab: 'grid',
+  tunerNote: null,
+  tunerOctave: 0,
+  tunerCents: 0,
+  tunerFrequency: 0,
+  tunerConfidence: 0,
   blocks: [],
   connections: [],
   grid: { columns: 12, rows: 6 },
@@ -153,7 +172,16 @@ export const useStore = create<StellarrState>((set) => ({
   setLoading: (loading) => set({ loading }),
   setLoadingStatus: (status, progress) => set({ loadingStatus: status, loadingProgress: progress }),
   setConnected: (value) => set({ connected: value }),
-  setShowSettings: (value) => set({ showSettings: value }),
+  setActiveTab: (tab) => set({ activeTab: tab }),
+
+  setTunerData: (note, octave, cents, frequency, confidence) =>
+    set({
+      tunerNote: note,
+      tunerOctave: octave,
+      tunerCents: cents,
+      tunerFrequency: frequency,
+      tunerConfidence: confidence,
+    }),
 
   setBlockTestTone: (blockId, enabled) =>
     set((s) => ({

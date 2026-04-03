@@ -26,5 +26,6 @@ private:
     StellarrBridge bridge;
     std::unique_ptr<juce::WebBrowserComponent> webView;
     std::unique_ptr<juce::DrawableComposite> splashLogo;
+    int timerTick = 0;
     bool devToolsEnabled = false;
 };

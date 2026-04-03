@@ -172,6 +172,10 @@ export function requestDeleteScene(index: number): void {
   sendEvent('deleteScene', JSON.stringify({ index }));
 }
 
+export function requestSetTunerEnabled(enabled: boolean): void {
+  sendEvent('setTunerEnabled', JSON.stringify({ enabled }));
+}
+
 export function requestScanPlugins(): void {
   sendEvent('scanPlugins', '');
 }
@@ -404,6 +408,19 @@ export function initBridge(): void {
       return { name: String(r.name), blockStateMap } satisfies Scene;
     });
     useStore.getState().setScenes(scenes, Number(d.activeSceneIndex));
+  });
+
+  juce.backend.addEventListener('tunerData', (detail: unknown) => {
+    const d = asRecord(detail);
+    useStore
+      .getState()
+      .setTunerData(
+        d.note ? String(d.note) : null,
+        Number(d.octave),
+        Number(d.cents),
+        Number(d.frequency),
+        Number(d.confidence),
+      );
   });
 
   juce.backend.addEventListener('systemStats', (detail: unknown) => {

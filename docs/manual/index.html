@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stellarr Manual</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/docsify-themeable@0/dist/css/theme-simple-dark.css">
+  <style>
+    @font-face {
+      font-family: 'Switzer';
+      src: url('_media/switzer-variable.woff2') format('woff2');
+      font-weight: 300 900;
+      font-style: normal;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'Switzer';
+      src: url('_media/switzer-variable-italic.woff2') format('woff2');
+      font-weight: 300 900;
+      font-style: italic;
+      font-display: swap;
+    }
+    :root {
+      --theme-color: #ff2d7b;
+      --base-background-color: #0d0b1a;
+      --sidebar-background: #161229;
+      --sidebar-border-color: #2a2545;
+      --base-font-family: 'Switzer', system-ui, -apple-system, sans-serif;
+      --heading-font-family: 'Switzer', system-ui, -apple-system, sans-serif;
+    }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+  <script>
+    window.$docsify = {
+      name: '<img src="_media/logo.svg" width="20" style="vertical-align: middle; margin-right: 6px;">Stellarr',
+      loadSidebar: true,
+      subMaxLevel: 2,
+      search: 'auto',
+      auto2top: true,
+    };
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/docsify@4/lib/docsify.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/docsify@4/lib/plugins/search.min.js"></script>
+</body>
+</html>

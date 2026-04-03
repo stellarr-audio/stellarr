@@ -5,6 +5,7 @@ import { GridOverlay } from './components/grid/GridOverlay';
 import { OptionsPanel } from './components/options/OptionsPanel';
 import { Settings } from './components/settings/Settings';
 import { Tuner } from './components/tuner/Tuner';
+import { MidiPage } from './components/midi/MidiPage';
 import { LoadingScreen } from './components/header/LoadingScreen';
 import { PresetBrowser } from './components/header/PresetBrowser';
 import { SystemStats } from './components/header/SystemStats';
@@ -103,6 +104,9 @@ function App() {
             <Tabs.Trigger value="tuner" style={tabStyle(activeTab === 'tuner')}>
               Tuner
             </Tabs.Trigger>
+            <Tabs.Trigger value="midi" style={tabStyle(activeTab === 'midi')}>
+              MIDI
+            </Tabs.Trigger>
             <Tabs.Trigger value="settings" style={tabStyle(activeTab === 'settings')}>
               Settings
             </Tabs.Trigger>
@@ -154,6 +158,15 @@ function App() {
           style={{ flex: 1, display: activeTab === 'tuner' ? 'flex' : 'none' }}
         >
           <Tuner />
+        </Tabs.Content>
+
+        <Tabs.Content
+          value="midi"
+          forceMount
+          hidden={activeTab !== 'midi'}
+          style={{ flex: 1, display: activeTab === 'midi' ? 'flex' : 'none' }}
+        >
+          <MidiPage />
         </Tabs.Content>
 
         <Tabs.Content

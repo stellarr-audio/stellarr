@@ -156,10 +156,22 @@ export function GridBlockComponent({ block }: Props) {
         padding: '4px 2px',
       }}
     >
-      {/* Top region — status icons */}
+      {/* Top region — status icons / format tag */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         {block.type === 'input' && block.testTone && (
           <SpeakerLoudIcon width={12} height={12} color={colors.green} />
+        )}
+        {block.type === 'plugin' && block.pluginFormat && (
+          <span
+            style={{
+              fontSize: '0.6rem',
+              fontWeight: 700,
+              color: colors.muted,
+              letterSpacing: '0.06em',
+            }}
+          >
+            {block.pluginFormat === 'AudioUnit' ? 'AU' : block.pluginFormat}
+          </span>
         )}
       </div>
 

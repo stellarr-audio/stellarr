@@ -835,6 +835,7 @@ void StellarrBridge::handleSetBlockPlugin(const juce::var& json)
     detail->setProperty("blockId", blockId);
     detail->setProperty("pluginId", pluginId);
     detail->setProperty("pluginName", pluginName);
+    detail->setProperty("pluginFormat", pluginBlock->getPluginFormat());
     detail->setProperty("hasEditor", true);
     emitToJs("blockPluginSet", detail);
 }
@@ -1030,6 +1031,7 @@ void StellarrBridge::sendGraphState()
                 {
                     blockObj->setProperty("pluginId", pluginBlock->getPluginIdentifier());
                     blockObj->setProperty("pluginName", pluginBlock->getPluginName());
+                    blockObj->setProperty("pluginFormat", pluginBlock->getPluginFormat());
                     blockObj->setProperty("numStates", pluginBlock->getNumStates());
                     blockObj->setProperty("activeStateIndex", pluginBlock->getActiveStateIndex());
                     juce::Array<juce::var> dirtyArr;

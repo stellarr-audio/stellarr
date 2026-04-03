@@ -74,6 +74,14 @@ public:
         return {};
     }
 
+    juce::String getPluginFormat() const
+    {
+        juce::SpinLock::ScopedLockType lock(pluginLock);
+        if (plugin != nullptr)
+            return plugin->getPluginDescription().pluginFormatName;
+        return {};
+    }
+
     bool hasPlugin() const
     {
         juce::SpinLock::ScopedLockType lock(pluginLock);
@@ -102,17 +110,18 @@ public:
             pluginWindow = nullptr;
         }
 
-        auto format = p->getPluginDescription().pluginFormatName;
-
-        if (format == "VST3")
+        if (p->hasEditor())
         {
-            if (auto* editor = p->createEditorAndMakeActive())
+            if (auto* editor = p->createEditorIfNecessary())
                 pluginWindow = std::make_unique<PluginWindow>(editor, name);
+            else
+                pluginWindow = std::make_unique<PluginWindow>(
+                    new juce::GenericAudioProcessorEditor(*p), name);
         }
         else
         {
-            auto* generic = new juce::GenericAudioProcessorEditor(*p);
-            pluginWindow = std::make_unique<PluginWindow>(generic, name);
+            pluginWindow = std::make_unique<PluginWindow>(
+                new juce::GenericAudioProcessorEditor(*p), name);
         }
     }
 

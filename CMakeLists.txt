@@ -17,15 +17,10 @@ FetchContent_MakeAvailable(JUCE)
 
 juce_add_plugin(Stellarr
     COMPANY_NAME "Stellarr"
-    IS_SYNTH FALSE
     NEEDS_MIDI_INPUT TRUE
     NEEDS_MIDI_OUTPUT TRUE
-    IS_MIDI_EFFECT FALSE
     EDITOR_WANTS_KEYBOARD_FOCUS TRUE
-    COPY_PLUGIN_AFTER_BUILD TRUE
-    PLUGIN_MANUFACTURER_CODE Stlr
-    PLUGIN_CODE Stl1
-    FORMATS Standalone VST3 AU
+    FORMATS Standalone
     PRODUCT_NAME "Stellarr"
     ICON_BIG "${CMAKE_SOURCE_DIR}/assets/icon.png"
     ICON_SMALL "${CMAKE_SOURCE_DIR}/assets/icon.png"
@@ -51,7 +46,6 @@ target_compile_definitions(Stellarr
     PUBLIC
         JUCE_WEB_BROWSER=1
         JUCE_USE_CURL=0
-        JUCE_VST3_CAN_REPLACE_VST2=0
         JUCE_USE_CUSTOM_PLUGIN_STANDALONE_APP=1
         JUCE_PLUGINHOST_VST3=1
         JUCE_PLUGINHOST_AU=1

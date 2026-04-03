@@ -22,10 +22,19 @@ const targetLabels: Record<string, string> = {
 export function MidiPage() {
   const mappings = useStore((s) => s.midiMappings);
   const blocks = useStore((s) => s.blocks);
+  const activity = useStore((s) => s.midiMappingActivity);
   const [editIndex, setEditIndex] = useState<number | null>(null);
+
+  const [, setTick] = useState(0);
 
   useEffect(() => {
     requestGetMidiMappings();
+  }, []);
+
+  // Re-render periodically to fade activity dots
+  useEffect(() => {
+    const interval = setInterval(() => setTick((t) => t + 1), 200);
+    return () => clearInterval(interval);
   }, []);
 
   const blockName = (id?: string) => {
@@ -134,6 +143,7 @@ export function MidiPage() {
                 letterSpacing: '0.06em',
               }}
             >
+              <span style={{ width: 32, textAlign: 'center' }}>In</span>
               <span style={{ minWidth: '6ch' }}>CC</span>
               <span style={{ minWidth: '5ch' }}>Ch</span>
               <span style={{ margin: '0 0.4rem', visibility: 'hidden' }}>→</span>
@@ -144,6 +154,9 @@ export function MidiPage() {
             {/* Rows */}
             {sortedIndices.map((i) => {
               const m = mappings[i];
+              const lastActive = activity[i] ?? 0;
+              const isActive = Date.now() - lastActive < 500;
+
               return (
                 <div
                   key={i}
@@ -165,6 +178,9 @@ export function MidiPage() {
                     e.currentTarget.style.background = colors.cell;
                   }}
                 >
+                  <span style={{ width: 32, display: 'flex', justifyContent: 'center' }}>
+                    <ActivityDot active={isActive} />
+                  </span>
                   <span
                     style={{
                       color: colors.text,
@@ -221,5 +237,21 @@ export function MidiPage() {
         />
       )}
     </div>
+  );
+}
+
+function ActivityDot({ active }: { active: boolean }) {
+  return (
+    <div
+      style={{
+        width: 10,
+        height: 10,
+        transform: 'rotate(45deg)',
+        background: active ? colors.green : colors.muted,
+        opacity: active ? 1 : 0.3,
+        transition: 'background 0.1s ease, opacity 0.4s ease',
+        boxShadow: active ? `0 0 4px ${colors.green}88` : 'none',
+      }}
+    />
   );
 }

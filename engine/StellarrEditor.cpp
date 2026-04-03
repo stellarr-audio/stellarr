@@ -115,6 +115,9 @@ void StellarrEditor::timerCallback()
     // Tuner data at ~20Hz
     if (bridge.isTunerActive())
         bridge.sendTunerData();
+
+    // MIDI monitor at ~20Hz
+    bridge.sendMidiMonitorData();
 }
 
 void StellarrEditor::toggleDevTools()

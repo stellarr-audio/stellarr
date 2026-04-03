@@ -52,6 +52,13 @@ export interface MidiMapping {
   blockId?: string;
 }
 
+export interface MidiMonitorEvent {
+  type: string;
+  channel: number;
+  data1: number;
+  data2: number;
+}
+
 export interface Scene {
   name: string;
   blockStateMap: Record<string, number>;
@@ -79,6 +86,8 @@ interface StellarrState {
   activeSceneIndex: number;
   midiMappings: MidiMapping[];
   midiLearning: boolean;
+  midiMonitorEvents: MidiMonitorEvent[];
+  midiMonitorEnabled: boolean;
 
   setLoading: (loading: boolean) => void;
   setLoadingStatus: (status: string, progress: number) => void;
@@ -126,6 +135,9 @@ interface StellarrState {
   setJustSaved: (value: boolean) => void;
   setScenes: (scenes: Scene[], activeSceneIndex: number) => void;
   setMidiMappings: (mappings: MidiMapping[], learning: boolean) => void;
+  appendMidiMonitorEvents: (events: MidiMonitorEvent[]) => void;
+  clearMidiMonitor: () => void;
+  setMidiMonitorEnabled: (enabled: boolean) => void;
 
   addBlock: (block: GridBlock) => void;
   removeBlock: (blockId: string) => void;
@@ -180,6 +192,8 @@ export const useStore = create<StellarrState>((set) => ({
   activeSceneIndex: -1,
   midiMappings: [],
   midiLearning: false,
+  midiMonitorEvents: [],
+  midiMonitorEnabled: false,
   selectedBlockId: null,
   draggingConnection: null,
 
@@ -261,6 +275,15 @@ export const useStore = create<StellarrState>((set) => ({
   setScenes: (scenes, activeSceneIndex) => set({ scenes, activeSceneIndex }),
 
   setMidiMappings: (mappings, learning) => set({ midiMappings: mappings, midiLearning: learning }),
+
+  appendMidiMonitorEvents: (events) =>
+    set((s) => ({
+      midiMonitorEvents: [...s.midiMonitorEvents, ...events].slice(-200),
+    })),
+
+  clearMidiMonitor: () => set({ midiMonitorEvents: [] }),
+
+  setMidiMonitorEnabled: (enabled) => set({ midiMonitorEnabled: enabled }),
 
   addBlock: (block) => set((s) => ({ blocks: [...s.blocks, block] })),
 

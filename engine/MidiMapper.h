@@ -2,6 +2,7 @@
 #include <juce_audio_basics/juce_audio_basics.h>
 #include <juce_core/juce_core.h>
 #include <vector>
+#include <array>
 #include <functional>
 
 class MidiMapper
@@ -69,7 +70,37 @@ public:
     static juce::String targetToString(Target t);
     static Target targetFromString(const juce::String& s);
 
+    // Monitor: ring buffer of recent MIDI events for UI display
+    struct MonitorEvent
+    {
+        juce::String type;   // "CC", "Note On", "Note Off", "PC", "Other"
+        int channel = 0;
+        int data1 = 0;       // CC number, note number, or PC number
+        int data2 = 0;       // CC value, velocity, or 0
+    };
+
+    static constexpr int monitorBufferSize = 64;
+    std::array<MonitorEvent, monitorBufferSize> monitorBuffer {};
+    std::atomic<int> monitorWritePos { 0 };
+    std::atomic<int> monitorReadPos { 0 };
+    std::atomic<bool> monitorEnabled { false };
+
+    void pushMonitorEvent(const juce::MidiMessage& msg);
+
+public:
+    void setMonitorEnabled(bool enabled) { monitorEnabled.store(enabled, std::memory_order_relaxed); }
+    bool isMonitorEnabled() const { return monitorEnabled.load(std::memory_order_relaxed); }
+
+    // Drain events since last read (called from message thread timer)
+    std::vector<MonitorEvent> drainMonitorEvents();
+
+    // Inject a MIDI message into the next process buffer
+    void injectMidi(const juce::MidiMessage& msg);
+    void drainInjected(juce::MidiBuffer& dest);
+
 private:
+    std::vector<juce::MidiMessage> injectedMessages;
+    juce::SpinLock injectLock;
 
     // Scale CC 0-127 to parameter ranges
     static float ccToMix(int value)     { return static_cast<float>(value) / 127.0f; }

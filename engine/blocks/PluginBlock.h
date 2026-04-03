@@ -43,8 +43,12 @@ public:
     {
         juce::SpinLock::ScopedTryLockType lock(pluginLock);
 
-        if (lock.isLocked() && plugin != nullptr)
+        if (lock.isLocked() && plugin != nullptr
+            && plugin->getTotalNumInputChannels() <= buffer.getNumChannels()
+            && plugin->getTotalNumOutputChannels() <= buffer.getNumChannels())
+        {
             plugin->processBlock(buffer, midi);
+        }
     }
 
     void setPlugin(std::unique_ptr<juce::AudioPluginInstance> newPlugin,
@@ -53,7 +57,12 @@ public:
         pluginWindow = nullptr;
 
         if (newPlugin != nullptr)
+        {
+            newPlugin->setPlayConfigDetails(
+                getTotalNumInputChannels(), getTotalNumOutputChannels(),
+                currentSampleRate, currentBlockSize);
             newPlugin->prepareToPlay(currentSampleRate, currentBlockSize);
+        }
 
         {
             juce::SpinLock::ScopedLockType lock(pluginLock);

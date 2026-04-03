@@ -1,4 +1,4 @@
-.PHONY: setup build build-ui build-cpp test run clean
+.PHONY: setup build build-ui build-cpp test run docs clean
 
 .DEFAULT_GOAL := build
 
@@ -19,6 +19,9 @@ test: build
 
 run: build
 	open build/Stellarr_artefacts/Debug/Standalone/Stellarr.app
+
+docs:
+	npx serve docs/manual -p 3001
 
 clean:
 	rm -rf build ui/dist ui/node_modules

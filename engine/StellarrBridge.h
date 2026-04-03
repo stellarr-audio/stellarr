@@ -61,6 +61,10 @@ private:
     void handleLoadPresetByIndex(const juce::var& json);
     void handleGetPresetList();
 
+    // MIDI mapping
+    void setupMidiMapper();
+    void emitMidiMappings();
+
     // Scene management
     void handleAddScene();
     void handleRecallScene(const juce::var& json);

@@ -2,6 +2,7 @@
 #include <juce_audio_processors/juce_audio_processors.h>
 #include "blocks/Block.h"
 #include "PluginManager.h"
+#include "MidiMapper.h"
 
 class StellarrProcessor final : public juce::AudioProcessor
 {
@@ -49,6 +50,7 @@ public:
     juce::AudioProcessorGraph::NodeID getMidiOutputNodeId() const  { return midiOutputNodeId; }
 
     PluginManager& getPluginManager() { return pluginManager; }
+    MidiMapper& getMidiMapper() { return midiMapper; }
 
     double getCpuUsagePercent() const { return cpuUsagePercent.load(std::memory_order_relaxed); }
 
@@ -64,6 +66,7 @@ private:
     juce::AudioProcessorGraph::NodeID midiOutputNodeId;
 
     PluginManager pluginManager;
+    MidiMapper midiMapper;
     juce::ApplicationProperties* appProperties = nullptr;
     std::atomic<double> cpuUsagePercent { 0.0 };
 };

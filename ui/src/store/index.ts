@@ -45,6 +45,13 @@ export interface PluginInfo {
   format: string;
 }
 
+export interface MidiMapping {
+  channel: number;
+  cc: number;
+  target: string;
+  blockId?: string;
+}
+
 export interface Scene {
   name: string;
   blockStateMap: Record<string, number>;
@@ -70,6 +77,8 @@ interface StellarrState {
   totalMemoryMB: number;
   scenes: Scene[];
   activeSceneIndex: number;
+  midiMappings: MidiMapping[];
+  midiLearning: boolean;
 
   setLoading: (loading: boolean) => void;
   setLoadingStatus: (status: string, progress: number) => void;
@@ -116,6 +125,7 @@ interface StellarrState {
   setSystemStats: (cpu: number, memory: number, totalMemory: number) => void;
   setJustSaved: (value: boolean) => void;
   setScenes: (scenes: Scene[], activeSceneIndex: number) => void;
+  setMidiMappings: (mappings: MidiMapping[], learning: boolean) => void;
 
   addBlock: (block: GridBlock) => void;
   removeBlock: (blockId: string) => void;
@@ -168,6 +178,8 @@ export const useStore = create<StellarrState>((set) => ({
   totalMemoryMB: 1,
   scenes: [],
   activeSceneIndex: -1,
+  midiMappings: [],
+  midiLearning: false,
   selectedBlockId: null,
   draggingConnection: null,
 
@@ -247,6 +259,8 @@ export const useStore = create<StellarrState>((set) => ({
   setJustSaved: (value) => set({ justSaved: value }),
 
   setScenes: (scenes, activeSceneIndex) => set({ scenes, activeSceneIndex }),
+
+  setMidiMappings: (mappings, learning) => set({ midiMappings: mappings, midiLearning: learning }),
 
   addBlock: (block) => set((s) => ({ blocks: [...s.blocks, block] })),
 

@@ -1,5 +1,12 @@
 import { useStore } from '../store';
-import type { GridBlock, Connection, ScanDirectory, PluginInfo, Scene } from '../store';
+import type {
+  GridBlock,
+  Connection,
+  ScanDirectory,
+  PluginInfo,
+  Scene,
+  MidiMapping,
+} from '../store';
 
 declare global {
   interface Window {
@@ -174,6 +181,37 @@ export function requestRenameScene(index: number, name: string): void {
 
 export function requestDeleteScene(index: number): void {
   sendEvent('deleteScene', JSON.stringify({ index }));
+}
+
+// -- MIDI mapping commands ----------------------------------------------------
+
+export function requestAddMidiMapping(
+  channel: number,
+  cc: number,
+  target: string,
+  blockId?: string,
+): void {
+  sendEvent('addMidiMapping', JSON.stringify({ channel, cc, target, blockId: blockId ?? '' }));
+}
+
+export function requestRemoveMidiMapping(index: number): void {
+  sendEvent('removeMidiMapping', JSON.stringify({ index }));
+}
+
+export function requestClearMidiMappings(): void {
+  sendEvent('clearMidiMappings', '');
+}
+
+export function requestGetMidiMappings(): void {
+  sendEvent('getMidiMappings', '');
+}
+
+export function requestStartMidiLearn(target: string, blockId?: string): void {
+  sendEvent('startMidiLearn', JSON.stringify({ target, blockId: blockId ?? '' }));
+}
+
+export function requestCancelMidiLearn(): void {
+  sendEvent('cancelMidiLearn', '');
 }
 
 export function requestSetTunerEnabled(enabled: boolean): void {
@@ -418,6 +456,24 @@ export function initBridge(): void {
       return { name: String(r.name), blockStateMap } satisfies Scene;
     });
     useStore.getState().setScenes(scenes, Number(d.activeSceneIndex));
+  });
+
+  juce.backend.addEventListener('midiMappingsChanged', (detail: unknown) => {
+    const d = asRecord(detail);
+    const mappings = (Array.isArray(d.mappings) ? d.mappings : []).map((m: unknown) => {
+      const r = asRecord(m);
+      return {
+        channel: Number(r.channel),
+        cc: Number(r.cc),
+        target: String(r.target),
+        blockId: r.blockId ? String(r.blockId) : undefined,
+      } satisfies MidiMapping;
+    });
+    useStore.getState().setMidiMappings(mappings, Boolean(d.learning));
+  });
+
+  juce.backend.addEventListener('midiLearnComplete', () => {
+    // mappingsChanged will follow with the updated list
   });
 
   juce.backend.addEventListener('tunerData', (detail: unknown) => {

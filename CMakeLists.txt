@@ -40,6 +40,8 @@ target_sources(Stellarr
         engine/bridge/ParamHandler.cpp
         engine/bridge/SceneHandler.cpp
         engine/bridge/PresetHandler.cpp
+        engine/bridge/MidiHandler.cpp
+        engine/MidiMapper.cpp
         engine/PluginManager.cpp
         engine/StellarrPlatform.mm
         engine/StellarrStandaloneApp.cpp

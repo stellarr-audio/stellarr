@@ -7,9 +7,59 @@ import {
   requestSetBlockBalance,
   requestSetBlockLevel,
   requestSetBlockBypassMode,
+  requestStartMidiLearn,
+  requestCancelMidiLearn,
 } from '../../bridge';
 import { colors } from '../common/colors';
 import type { GridBlock } from '../../store';
+
+function ParamLabel({
+  label,
+  blockId,
+  target,
+}: {
+  label: string;
+  blockId: string;
+  target: string;
+}) {
+  const learning = useStore((s) => s.midiLearning);
+
+  return (
+    <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+      <span
+        style={{
+          fontSize: '1rem',
+          color: colors.text,
+          letterSpacing: '0.05em',
+          textTransform: 'uppercase',
+        }}
+      >
+        {label}
+      </span>
+      <button
+        onClick={() => {
+          if (learning) requestCancelMidiLearn();
+          else requestStartMidiLearn(target, blockId);
+        }}
+        title={learning ? 'Cancel MIDI learn' : `MIDI learn: ${label}`}
+        style={{
+          background: 'transparent',
+          border: 'none',
+          color: learning ? colors.primary : colors.muted,
+          fontSize: '0.65rem',
+          fontWeight: 600,
+          letterSpacing: '0.06em',
+          textTransform: 'uppercase',
+          cursor: 'pointer',
+          padding: 0,
+          opacity: 0.6,
+        }}
+      >
+        {learning ? '...' : 'MIDI'}
+      </button>
+    </span>
+  );
+}
 
 const bypassModes = [
   { value: 'thru', label: 'Thru' },
@@ -47,16 +97,7 @@ export function ParametersSection({ block }: Props) {
               marginBottom: '0.4rem',
             }}
           >
-            <span
-              style={{
-                fontSize: '1rem',
-                color: colors.text,
-                letterSpacing: '0.05em',
-                textTransform: 'uppercase',
-              }}
-            >
-              Mix
-            </span>
+            <ParamLabel label="Mix" blockId={block.id} target="blockMix" />
             <span
               style={{
                 fontSize: '1rem',
@@ -90,16 +131,7 @@ export function ParametersSection({ block }: Props) {
               marginBottom: '0.4rem',
             }}
           >
-            <span
-              style={{
-                fontSize: '1rem',
-                color: colors.text,
-                letterSpacing: '0.05em',
-                textTransform: 'uppercase',
-              }}
-            >
-              Balance
-            </span>
+            <ParamLabel label="Balance" blockId={block.id} target="blockBalance" />
             <span
               style={{
                 fontSize: '1rem',
@@ -138,16 +170,7 @@ export function ParametersSection({ block }: Props) {
               marginBottom: '0.4rem',
             }}
           >
-            <span
-              style={{
-                fontSize: '1rem',
-                color: colors.text,
-                letterSpacing: '0.05em',
-                textTransform: 'uppercase',
-              }}
-            >
-              Level
-            </span>
+            <ParamLabel label="Level" blockId={block.id} target="blockLevel" />
             <span
               style={{
                 fontSize: '1rem',

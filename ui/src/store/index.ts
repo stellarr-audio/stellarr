@@ -42,6 +42,11 @@ export interface PluginInfo {
   format: string;
 }
 
+export interface Scene {
+  name: string;
+  blockStateMap: Record<string, number>;
+}
+
 interface StellarrState {
   loading: boolean;
   loadingStatus: string;
@@ -60,6 +65,8 @@ interface StellarrState {
   memoryMB: number;
   justSaved: boolean;
   totalMemoryMB: number;
+  scenes: Scene[];
+  activeSceneIndex: number;
 
   setLoading: (loading: boolean) => void;
   setLoadingStatus: (status: string, progress: number) => void;
@@ -69,15 +76,26 @@ interface StellarrState {
   setGridSize: (columns: number, rows: number) => void;
   setScanDirectories: (dirs: ScanDirectory[]) => void;
   setAvailablePlugins: (plugins: PluginInfo[]) => void;
-  setBlockPlugin: (blockId: string, pluginId: string, pluginName: string, hasEditor: boolean) => void;
+  setBlockPlugin: (
+    blockId: string,
+    pluginId: string,
+    pluginName: string,
+    hasEditor: boolean,
+  ) => void;
   setBlockMix: (blockId: string, mix: number) => void;
   setBlockBalance: (blockId: string, balance: number) => void;
   setBlockBypassed: (blockId: string, bypassed: boolean) => void;
   setBlockBypassMode: (blockId: string, mode: string) => void;
-  setBlockStates: (blockId: string, numStates: number, activeStateIndex: number, dirtyStates: number[]) => void;
+  setBlockStates: (
+    blockId: string,
+    numStates: number,
+    activeStateIndex: number,
+    dirtyStates: number[],
+  ) => void;
   setPresetList: (directory: string, files: string[], currentIndex: number) => void;
   setSystemStats: (cpu: number, memory: number, totalMemory: number) => void;
   setJustSaved: (value: boolean) => void;
+  setScenes: (scenes: Scene[], activeSceneIndex: number) => void;
 
   addBlock: (block: GridBlock) => void;
   removeBlock: (blockId: string) => void;
@@ -123,20 +141,19 @@ export const useStore = create<StellarrState>((set) => ({
   memoryMB: 0,
   justSaved: false,
   totalMemoryMB: 1,
+  scenes: [],
+  activeSceneIndex: -1,
   selectedBlockId: null,
   draggingConnection: null,
 
   setLoading: (loading) => set({ loading }),
-  setLoadingStatus: (status, progress) =>
-    set({ loadingStatus: status, loadingProgress: progress }),
+  setLoadingStatus: (status, progress) => set({ loadingStatus: status, loadingProgress: progress }),
   setConnected: (value) => set({ connected: value }),
   setShowSettings: (value) => set({ showSettings: value }),
 
   setBlockTestTone: (blockId, enabled) =>
     set((s) => ({
-      blocks: s.blocks.map((b) =>
-        b.id === blockId ? { ...b, testTone: enabled } : b,
-      ),
+      blocks: s.blocks.map((b) => (b.id === blockId ? { ...b, testTone: enabled } : b)),
     })),
 
   setGridSize: (columns, rows) => set({ grid: { columns, rows } }),
@@ -152,30 +169,22 @@ export const useStore = create<StellarrState>((set) => ({
 
   setBlockMix: (blockId, mix) =>
     set((s) => ({
-      blocks: s.blocks.map((b) =>
-        b.id === blockId ? { ...b, mix } : b,
-      ),
+      blocks: s.blocks.map((b) => (b.id === blockId ? { ...b, mix } : b)),
     })),
 
   setBlockBalance: (blockId, balance) =>
     set((s) => ({
-      blocks: s.blocks.map((b) =>
-        b.id === blockId ? { ...b, balance } : b,
-      ),
+      blocks: s.blocks.map((b) => (b.id === blockId ? { ...b, balance } : b)),
     })),
 
   setBlockBypassed: (blockId, bypassed) =>
     set((s) => ({
-      blocks: s.blocks.map((b) =>
-        b.id === blockId ? { ...b, bypassed } : b,
-      ),
+      blocks: s.blocks.map((b) => (b.id === blockId ? { ...b, bypassed } : b)),
     })),
 
   setBlockBypassMode: (blockId, bypassMode) =>
     set((s) => ({
-      blocks: s.blocks.map((b) =>
-        b.id === blockId ? { ...b, bypassMode } : b,
-      ),
+      blocks: s.blocks.map((b) => (b.id === blockId ? { ...b, bypassMode } : b)),
     })),
 
   setBlockStates: (blockId, numStates, activeStateIndex, dirtyStates) =>
@@ -193,34 +202,27 @@ export const useStore = create<StellarrState>((set) => ({
 
   setJustSaved: (value) => set({ justSaved: value }),
 
-  addBlock: (block) =>
-    set((s) => ({ blocks: [...s.blocks, block] })),
+  setScenes: (scenes, activeSceneIndex) => set({ scenes, activeSceneIndex }),
+
+  addBlock: (block) => set((s) => ({ blocks: [...s.blocks, block] })),
 
   removeBlock: (blockId) =>
     set((s) => ({
       blocks: s.blocks.filter((b) => b.id !== blockId),
-      connections: s.connections.filter(
-        (c) => c.sourceId !== blockId && c.destId !== blockId,
-      ),
-      selectedBlockId:
-        s.selectedBlockId === blockId ? null : s.selectedBlockId,
+      connections: s.connections.filter((c) => c.sourceId !== blockId && c.destId !== blockId),
+      selectedBlockId: s.selectedBlockId === blockId ? null : s.selectedBlockId,
     })),
 
   moveBlock: (blockId, col, row) =>
     set((s) => ({
-      blocks: s.blocks.map((b) =>
-        b.id === blockId ? { ...b, col, row } : b,
-      ),
+      blocks: s.blocks.map((b) => (b.id === blockId ? { ...b, col, row } : b)),
     })),
 
-  addConnection: (conn) =>
-    set((s) => ({ connections: [...s.connections, conn] })),
+  addConnection: (conn) => set((s) => ({ connections: [...s.connections, conn] })),
 
   removeConnection: (sourceId, destId) =>
     set((s) => ({
-      connections: s.connections.filter(
-        (c) => !(c.sourceId === sourceId && c.destId === destId),
-      ),
+      connections: s.connections.filter((c) => !(c.sourceId === sourceId && c.destId === destId)),
     })),
 
   syncGraph: (blocks, connections) => set({ blocks, connections }),

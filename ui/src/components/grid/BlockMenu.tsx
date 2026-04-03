@@ -16,10 +16,13 @@ interface Props {
 
 export function BlockMenu({ open, onSelect, onClose, children }: Props) {
   return (
-    <DropdownMenu.Root open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
-      <DropdownMenu.Trigger asChild>
-        {children}
-      </DropdownMenu.Trigger>
+    <DropdownMenu.Root
+      open={open}
+      onOpenChange={(o) => {
+        if (!o) onClose();
+      }}
+    >
+      <DropdownMenu.Trigger asChild>{children}</DropdownMenu.Trigger>
 
       <DropdownMenu.Portal>
         <DropdownMenu.Content
@@ -30,7 +33,6 @@ export function BlockMenu({ open, onSelect, onClose, children }: Props) {
             padding: '0.25rem 0',
             minWidth: 120,
             zIndex: 10,
-            
           }}
         >
           {menuItems.map((item) => (

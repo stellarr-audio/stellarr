@@ -1,11 +1,7 @@
 import { useCallback, useRef, useState } from 'react';
 import { Cross2Icon, SpeakerLoudIcon } from '@radix-ui/react-icons';
 import type { GridBlock as GridBlockData } from '../../store';
-import {
-  requestRemoveBlock,
-  requestRemoveConnection,
-  requestOpenPluginEditor,
-} from '../../bridge';
+import { requestRemoveBlock, requestRemoveConnection, requestOpenPluginEditor } from '../../bridge';
 import { useStore } from '../../store';
 import { colors } from '../common/colors';
 import { CELL_SIZE, cellLeft, cellTop } from './layout';
@@ -129,11 +125,12 @@ export function GridBlockComponent({ block }: Props) {
       onDragStart={handleDragStart}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      onMouseDown={() => { portActive.current = false; }}
+      onMouseDown={() => {
+        portActive.current = false;
+      }}
       onClick={() => selectBlock(block.id)}
       onDoubleClick={() => {
-        if (block.type === 'plugin' && block.pluginId)
-          requestOpenPluginEditor(block.id);
+        if (block.type === 'plugin' && block.pluginId) requestOpenPluginEditor(block.id);
       }}
       style={{
         position: 'absolute',

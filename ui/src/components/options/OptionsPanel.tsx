@@ -68,7 +68,7 @@ export function OptionsPanel() {
                 textTransform: 'uppercase',
               }}
             >
-              {block.name}
+              Active
             </div>
 
             {/* Bypass toggle — non-I/O blocks only */}

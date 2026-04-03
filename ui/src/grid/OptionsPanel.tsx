@@ -2,7 +2,7 @@ import { useStore } from '../store';
 import { PluginSelect } from './PluginSelect';
 import { Slider } from './Slider';
 import { Select } from 'radix-ui';
-import { GearIcon, ChevronDownIcon } from '@radix-ui/react-icons';
+import { GearIcon, ChevronDownIcon, PlusIcon, Cross2Icon } from '@radix-ui/react-icons';
 import {
   requestToggleTestTone,
   requestSetBlockPlugin,
@@ -11,6 +11,9 @@ import {
   requestToggleBlockBypass,
   requestSetBlockBypassMode,
   requestOpenPluginEditor,
+  requestAddBlockState,
+  requestRecallBlockState,
+  requestDeleteBlockState,
 } from '../bridge';
 import { colors } from './colors';
 
@@ -218,89 +221,6 @@ export function OptionsPanel() {
             </div>
           )}
 
-          {/* Bypass mode — non-I/O blocks */}
-          {block.type !== 'input' && block.type !== 'output' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-              <div
-                style={{
-                  fontSize: '1rem',
-                  fontWeight: 600,
-                  color: colors.secondary,
-                  letterSpacing: '0.08em',
-                  textTransform: 'uppercase',
-                }}
-              >
-                Bypass Mode
-              </div>
-              <Select.Root
-                value={block.bypassMode ?? 'thru'}
-                onValueChange={(v) => {
-                  useStore.getState().setBlockBypassMode(block.id, v);
-                  requestSetBlockBypassMode(block.id, v);
-                }}
-              >
-                <Select.Trigger
-                  style={{
-                    width: '100%',
-                    textAlign: 'left',
-                    background: colors.cell,
-                    color: colors.text,
-                    border: `1px solid ${colors.border}`,
-                    padding: '0.35rem 0.5rem',
-                    fontSize: '1rem',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    outline: 'none',
-                  }}
-                >
-                  <Select.Value />
-                  <Select.Icon>
-                    <ChevronDownIcon />
-                  </Select.Icon>
-                </Select.Trigger>
-                <Select.Portal>
-                  <Select.Content
-                    position="popper"
-                    sideOffset={4}
-                    style={{
-                      background: '#1a1535',
-                      border: `1px solid ${colors.border}`,
-                      width: 'var(--radix-select-trigger-width)',
-                      zIndex: 20,
-                      
-                    }}
-                  >
-                    <Select.Viewport>
-                      {bypassModes.map((m) => (
-                        <Select.Item
-                          key={m.value}
-                          value={m.value}
-                          style={{
-                            padding: '0.35rem 0.5rem',
-                            fontSize: '1rem',
-                            color: colors.text,
-                            cursor: 'pointer',
-                            outline: 'none',
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.background = `${colors.border}88`;
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.background = 'transparent';
-                          }}
-                        >
-                          <Select.ItemText>{m.label}</Select.ItemText>
-                        </Select.Item>
-                      ))}
-                    </Select.Viewport>
-                  </Select.Content>
-                </Select.Portal>
-              </Select.Root>
-            </div>
-          )}
-
           {/* Output block — no options */}
           {block.type === 'output' && (
             <div
@@ -420,10 +340,230 @@ export function OptionsPanel() {
                     }}
                   />
                 </div>
+
+                {/* Bypass Mode */}
+                <div>
+                  <div
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      marginBottom: '0.4rem',
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontSize: '1rem',
+                        color: colors.text,
+                        letterSpacing: '0.05em',
+                        textTransform: 'uppercase',
+                      }}
+                    >
+                      Bypass Mode
+                    </span>
+                  </div>
+                  <Select.Root
+                    value={block.bypassMode ?? 'thru'}
+                    onValueChange={(v) => {
+                      useStore.getState().setBlockBypassMode(block.id, v);
+                      requestSetBlockBypassMode(block.id, v);
+                    }}
+                  >
+                    <Select.Trigger
+                      style={{
+                        width: '100%',
+                        textAlign: 'left',
+                        background: colors.cell,
+                        color: colors.text,
+                        border: `1px solid ${colors.border}`,
+                        padding: '0.35rem 0.5rem',
+                        fontSize: '1rem',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        outline: 'none',
+                      }}
+                    >
+                      <Select.Value />
+                      <Select.Icon>
+                        <ChevronDownIcon />
+                      </Select.Icon>
+                    </Select.Trigger>
+                    <Select.Portal>
+                      <Select.Content
+                        position="popper"
+                        sideOffset={4}
+                        style={{
+                          background: '#1a1535',
+                          border: `1px solid ${colors.border}`,
+                          width: 'var(--radix-select-trigger-width)',
+                          zIndex: 20,
+                        }}
+                      >
+                        <Select.Viewport>
+                          {bypassModes.map((m) => (
+                            <Select.Item
+                              key={m.value}
+                              value={m.value}
+                              style={{
+                                padding: '0.35rem 0.5rem',
+                                fontSize: '1rem',
+                                color: colors.text,
+                                cursor: 'pointer',
+                                outline: 'none',
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.background = `${colors.border}88`;
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.background = 'transparent';
+                              }}
+                            >
+                              <Select.ItemText>{m.label}</Select.ItemText>
+                            </Select.Item>
+                          ))}
+                        </Select.Viewport>
+                      </Select.Content>
+                    </Select.Portal>
+                  </Select.Root>
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* States — plugin blocks only, at the bottom */}
+          {block.type === 'plugin' && (
+            <>
+              <div style={{ height: 1, background: colors.border }} />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                <div
+                  style={{
+                    fontSize: '1rem',
+                    fontWeight: 600,
+                    color: colors.secondary,
+                    letterSpacing: '0.08em',
+                    textTransform: 'uppercase',
+                  }}
+                >
+                  States
+                </div>
+
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
+                  {Array.from({ length: block.numStates ?? 1 }, (_, i) => {
+                    const isActive = i === (block.activeStateIndex ?? 0);
+                    const isDirty = (block.dirtyStates ?? []).includes(i);
+                    return (
+                      <StateSquare
+                        key={i}
+                        index={i}
+                        isActive={isActive}
+                        isDirty={isDirty}
+                        canDelete={(block.numStates ?? 1) > 1}
+                        onRecall={() => requestRecallBlockState(block.id, i)}
+                        onDelete={() => requestDeleteBlockState(block.id, i)}
+                      />
+                    );
+                  })}
+
+                  {/* Add state button */}
+                  {(block.numStates ?? 1) < 16 && (
+                    <button
+                      onClick={() => requestAddBlockState(block.id)}
+                      title="Add new state"
+                      style={{
+                        width: 32,
+                        height: 32,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        background: 'transparent',
+                        border: `1px dashed ${colors.border}`,
+                        color: colors.muted,
+                        cursor: 'pointer',
+                        padding: 0,
+                      }}
+                    >
+                      <PlusIcon width={14} height={14} />
+                    </button>
+                  )}
+                </div>
               </div>
             </>
           )}
         </div>
+      )}
+    </div>
+  );
+}
+
+function StateSquare({
+  index,
+  isActive,
+  isDirty,
+  canDelete,
+  onRecall,
+  onDelete,
+}: {
+  index: number;
+  isActive: boolean;
+  isDirty: boolean;
+  canDelete: boolean;
+  onRecall: () => void;
+  onDelete: () => void;
+}) {
+  const borderStyle = isActive
+    ? `2px solid #ffffff`
+    : `1px solid ${colors.border}`;
+
+  return (
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'stretch',
+        border: borderStyle,
+      }}
+    >
+      <button
+        onClick={() => {
+          if (!isActive) onRecall();
+        }}
+        title={isActive ? `State ${index + 1} (active)` : `Recall state ${index + 1}`}
+        style={{
+          width: 28,
+          height: 28,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: isDirty ? '#ffaa004d' : isActive ? `${colors.secondary}22` : 'transparent',
+          border: 'none',
+          color: '#ffffff',
+          fontSize: '0.9rem',
+          fontWeight: 700,
+          cursor: 'pointer',
+          padding: 0,
+        }}
+      >
+        {index + 1}
+      </button>
+      {canDelete && (
+        <button
+          onClick={onDelete}
+          title={`Delete State ${index + 1}`}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'transparent',
+            border: 'none',
+            borderLeft: `1px solid ${colors.border}`,
+            color: colors.muted,
+            padding: '0 0.2rem',
+            cursor: 'pointer',
+          }}
+        >
+          <Cross2Icon width={10} height={10} />
+        </button>
       )}
     </div>
   );

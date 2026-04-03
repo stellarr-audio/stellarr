@@ -814,6 +814,130 @@ static bool testLoadEmptyPresetClearsAll()
     return true;
 }
 
+// -- Monitor & Inject ---------------------------------------------------------
+
+static bool testMonitorCapturesEvents()
+{
+    printf("Test: monitor captures CC, Note, and PC events... ");
+
+    MidiMapper mapper;
+    mapper.setMonitorEnabled(true);
+
+    juce::MidiBuffer buf;
+    buf.addEvent(juce::MidiMessage::controllerEvent(1, 7, 100), 0);
+    buf.addEvent(juce::MidiMessage::noteOn(2, 60, (juce::uint8)90), 10);
+    buf.addEvent(juce::MidiMessage::programChange(3, 5), 20);
+    mapper.processMidi(buf);
+
+    auto events = mapper.drainMonitorEvents();
+
+    if (events.size() != 3)
+    {
+        fprintf(stderr, "  expected 3 events, got %d\n", static_cast<int>(events.size()));
+        printf("FAIL\n");
+        return false;
+    }
+
+    if (events[0].type != "CC" || events[0].data1 != 7 || events[0].data2 != 100)
+    { printf("FAIL (CC)\n"); return false; }
+
+    if (events[1].type != "Note On" || events[1].data1 != 60 || events[1].data2 != 90)
+    { printf("FAIL (NoteOn)\n"); return false; }
+
+    if (events[2].type != "PC" || events[2].data1 != 5)
+    { printf("FAIL (PC)\n"); return false; }
+
+    printf("PASS\n");
+    return true;
+}
+
+static bool testMonitorDisabledNoCapture()
+{
+    printf("Test: monitor disabled captures nothing... ");
+
+    MidiMapper mapper;
+    // monitorEnabled is false by default
+
+    juce::MidiBuffer buf;
+    buf.addEvent(juce::MidiMessage::controllerEvent(1, 7, 64), 0);
+    mapper.processMidi(buf);
+
+    auto events = mapper.drainMonitorEvents();
+
+    if (!events.empty())
+    {
+        fprintf(stderr, "  expected 0 events, got %d\n", static_cast<int>(events.size()));
+        printf("FAIL\n");
+        return false;
+    }
+
+    printf("PASS\n");
+    return true;
+}
+
+static bool testInjectMidi()
+{
+    printf("Test: injected MIDI CC appears in process buffer... ");
+
+    MidiMapper mapper;
+    mapper.setMonitorEnabled(true);
+
+    // Inject a CC
+    mapper.injectMidi(juce::MidiMessage::controllerEvent(1, 42, 99));
+
+    // Process an empty buffer — injected event should appear
+    juce::MidiBuffer buf;
+    mapper.processMidi(buf);
+
+    // The injected CC should have been added to the buffer and captured by monitor
+    auto events = mapper.drainMonitorEvents();
+
+    if (events.empty())
+    {
+        fprintf(stderr, "  no events captured\n");
+        printf("FAIL\n");
+        return false;
+    }
+
+    bool foundInjected = false;
+    for (auto& e : events)
+    {
+        if (e.type == "CC" && e.data1 == 42 && e.data2 == 99)
+            foundInjected = true;
+    }
+
+    if (!foundInjected)
+    {
+        fprintf(stderr, "  injected CC42=99 not found\n");
+        printf("FAIL\n");
+        return false;
+    }
+
+    printf("PASS\n");
+    return true;
+}
+
+static bool testMonitorDrainClears()
+{
+    printf("Test: drainMonitorEvents clears buffer... ");
+
+    MidiMapper mapper;
+    mapper.setMonitorEnabled(true);
+
+    juce::MidiBuffer buf;
+    buf.addEvent(juce::MidiMessage::controllerEvent(1, 1, 1), 0);
+    mapper.processMidi(buf);
+
+    auto first = mapper.drainMonitorEvents();
+    if (first.empty()) { printf("FAIL (no first events)\n"); return false; }
+
+    auto second = mapper.drainMonitorEvents();
+    if (!second.empty()) { printf("FAIL (should be empty after drain)\n"); return false; }
+
+    printf("PASS\n");
+    return true;
+}
+
 int main()
 {
     int failures = 0;
@@ -851,6 +975,12 @@ int main()
     // Preset switch regression
     if (!testLoadPresetClearsOldPresetKeepsGlobal()) ++failures;
     if (!testLoadEmptyPresetClearsAll()) ++failures;
+
+    // Monitor & Inject
+    if (!testMonitorCapturesEvents())   ++failures;
+    if (!testMonitorDisabledNoCapture()) ++failures;
+    if (!testInjectMidi())              ++failures;
+    if (!testMonitorDrainClears())      ++failures;
 
     // Edge Cases
     if (!testNoCallbackNoCrash())       ++failures;

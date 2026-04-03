@@ -6,6 +6,7 @@ import { OptionsPanel } from './components/options/OptionsPanel';
 import { Settings } from './components/settings/Settings';
 import { Tuner } from './components/tuner/Tuner';
 import { MidiPage } from './components/midi/MidiPage';
+import { MidiMonitor } from './components/midi/MidiMonitor';
 import { LoadingScreen } from './components/header/LoadingScreen';
 import { PresetBrowser } from './components/header/PresetBrowser';
 import { SystemStats } from './components/header/SystemStats';
@@ -167,6 +168,7 @@ function App() {
           style={{ flex: 1, display: activeTab === 'midi' ? 'flex' : 'none' }}
         >
           <MidiPage />
+          <MidiMonitor />
         </Tabs.Content>
 
         <Tabs.Content

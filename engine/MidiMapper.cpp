@@ -2,6 +2,9 @@
 
 void MidiMapper::processMidi(juce::MidiBuffer& midi)
 {
+    // Inject any queued test messages
+    drainInjected(midi);
+
     juce::SpinLock::ScopedLockType scopedLock(lock);
 
     juce::MidiBuffer filtered;
@@ -10,6 +13,10 @@ void MidiMapper::processMidi(juce::MidiBuffer& midi)
     {
         auto msg = metadata.getMessage();
         bool consumed = false;
+
+        // Push to monitor ring buffer
+        if (monitorEnabled.load(std::memory_order_relaxed))
+            pushMonitorEvent(msg);
 
         // MIDI Learn — first CC received creates the mapping
         if (learning && msg.isController())
@@ -295,4 +302,79 @@ void MidiMapper::loadGlobalMappings(const juce::var& json)
     mappings = presets;
     for (auto& m : parseMappingsArray(json))
         mappings.push_back(m);
+}
+
+// -- Monitor ------------------------------------------------------------------
+
+void MidiMapper::pushMonitorEvent(const juce::MidiMessage& msg)
+{
+    MonitorEvent evt;
+    evt.channel = msg.getChannel() - 1;
+
+    if (msg.isController())
+    {
+        evt.type = "CC";
+        evt.data1 = msg.getControllerNumber();
+        evt.data2 = msg.getControllerValue();
+    }
+    else if (msg.isNoteOn())
+    {
+        evt.type = "Note On";
+        evt.data1 = msg.getNoteNumber();
+        evt.data2 = msg.getVelocity();
+    }
+    else if (msg.isNoteOff())
+    {
+        evt.type = "Note Off";
+        evt.data1 = msg.getNoteNumber();
+        evt.data2 = 0;
+    }
+    else if (msg.isProgramChange())
+    {
+        evt.type = "PC";
+        evt.data1 = msg.getProgramChangeNumber();
+        evt.data2 = 0;
+    }
+    else
+    {
+        evt.type = "Other";
+        evt.data1 = msg.getRawData()[0];
+        evt.data2 = msg.getRawDataSize() > 1 ? msg.getRawData()[1] : 0;
+    }
+
+    int pos = monitorWritePos.load(std::memory_order_relaxed);
+    monitorBuffer[static_cast<size_t>(pos)] = evt;
+    monitorWritePos.store((pos + 1) % monitorBufferSize, std::memory_order_release);
+}
+
+std::vector<MidiMapper::MonitorEvent> MidiMapper::drainMonitorEvents()
+{
+    std::vector<MonitorEvent> events;
+    int read = monitorReadPos.load(std::memory_order_relaxed);
+    int write = monitorWritePos.load(std::memory_order_acquire);
+
+    while (read != write)
+    {
+        events.push_back(monitorBuffer[static_cast<size_t>(read)]);
+        read = (read + 1) % monitorBufferSize;
+    }
+
+    monitorReadPos.store(read, std::memory_order_relaxed);
+    return events;
+}
+
+// -- Inject -------------------------------------------------------------------
+
+void MidiMapper::injectMidi(const juce::MidiMessage& msg)
+{
+    juce::SpinLock::ScopedLockType scopedLock(injectLock);
+    injectedMessages.push_back(msg);
+}
+
+void MidiMapper::drainInjected(juce::MidiBuffer& dest)
+{
+    juce::SpinLock::ScopedLockType scopedLock(injectLock);
+    for (auto& msg : injectedMessages)
+        dest.addEvent(msg, 0);
+    injectedMessages.clear();
 }

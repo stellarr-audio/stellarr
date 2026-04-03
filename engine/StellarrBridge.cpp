@@ -85,6 +85,26 @@ void StellarrBridge::handleEvent(const juce::String& eventName, const juce::var&
             }
         }
     }
+    else if (eventName == "setTunerEnabled" && processor != nullptr)
+    {
+        auto* obj = json.getDynamicObject();
+        if (obj == nullptr) return;
+
+        bool enabled = static_cast<bool>(obj->getProperty("enabled"));
+        tunerActive = enabled;
+
+        // Enable/disable tuner on input blocks, mute/unmute output blocks
+        for (auto& [blockId, nodeId] : blockNodeMap)
+        {
+            if (auto* node = processor->getGraph().getNodeForId(nodeId))
+            {
+                if (auto* inputBlock = dynamic_cast<stellarr::InputBlock*>(node->getProcessor()))
+                    inputBlock->setTunerEnabled(enabled);
+                if (auto* outputBlock = dynamic_cast<stellarr::OutputBlock*>(node->getProcessor()))
+                    outputBlock->setTunerMute(enabled);
+            }
+        }
+    }
     else if (eventName == "setBlockMix" && processor != nullptr)
     {
         auto* obj = json.getDynamicObject();
@@ -905,6 +925,35 @@ void StellarrBridge::sendSystemStats(double cpuPercent, double memoryMB, double 
     detail->setProperty("memory", memoryMB);
     detail->setProperty("totalMemory", totalMemoryMB);
     emitToJs("systemStats", detail);
+}
+
+void StellarrBridge::sendTunerData()
+{
+    if (processor == nullptr || webView == nullptr) return;
+
+    static const char* noteNames[] = {"C","C#","D","D#","E","F","F#","G","G#","A","A#","B"};
+
+    for (auto& [blockId, nodeId] : blockNodeMap)
+    {
+        if (auto* node = processor->getGraph().getNodeForId(nodeId))
+        {
+            if (auto* inputBlock = dynamic_cast<stellarr::InputBlock*>(node->getProcessor()))
+            {
+                if (!inputBlock->isTunerEnabled()) continue;
+
+                auto noteIdx = inputBlock->getTunerNoteIndex();
+                auto* detail = new juce::DynamicObject();
+                detail->setProperty("note", noteIdx >= 0 && noteIdx < 12
+                    ? juce::String(noteNames[noteIdx]) : juce::String());
+                detail->setProperty("octave", inputBlock->getTunerOctave());
+                detail->setProperty("cents", static_cast<double>(inputBlock->getTunerCents()));
+                detail->setProperty("frequency", static_cast<double>(inputBlock->getTunerFrequency()));
+                detail->setProperty("confidence", static_cast<double>(inputBlock->getTunerConfidence()));
+                emitToJs("tunerData", detail);
+                return; // only one input block
+            }
+        }
+    }
 }
 
 // -- State persistence -------------------------------------------------------

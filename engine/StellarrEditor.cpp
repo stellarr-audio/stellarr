@@ -72,7 +72,7 @@ StellarrEditor::StellarrEditor(StellarrProcessor& p)
                     stellarrMakeWebViewInspectable(peer->getNativeHandle());
         });
 
-    startTimerHz(2);
+    startTimerHz(20);
 }
 
 StellarrEditor::~StellarrEditor()
@@ -101,10 +101,20 @@ void StellarrEditor::resized()
 
 void StellarrEditor::timerCallback()
 {
-    auto& proc = dynamic_cast<StellarrProcessor&>(processor);
-    bridge.sendSystemStats(proc.getCpuUsagePercent(),
-                           stellarrGetProcessMemoryMB(),
-                           stellarrGetTotalMemoryMB());
+    ++timerTick;
+
+    // System stats at ~2Hz (every 10th tick)
+    if (timerTick % 10 == 0)
+    {
+        auto& proc = dynamic_cast<StellarrProcessor&>(processor);
+        bridge.sendSystemStats(proc.getCpuUsagePercent(),
+                               stellarrGetProcessMemoryMB(),
+                               stellarrGetTotalMemoryMB());
+    }
+
+    // Tuner data at ~20Hz
+    if (bridge.isTunerActive())
+        bridge.sendTunerData();
 }
 
 void StellarrEditor::toggleDevTools()

@@ -45,6 +45,8 @@ public:
 
     juce::AudioProcessorGraph::NodeID getAudioInputNodeId() const  { return audioInputNodeId; }
     juce::AudioProcessorGraph::NodeID getAudioOutputNodeId() const { return audioOutputNodeId; }
+    juce::AudioProcessorGraph::NodeID getMidiInputNodeId() const   { return midiInputNodeId; }
+    juce::AudioProcessorGraph::NodeID getMidiOutputNodeId() const  { return midiOutputNodeId; }
 
     PluginManager& getPluginManager() { return pluginManager; }
 
@@ -58,6 +60,8 @@ private:
 
     juce::AudioProcessorGraph::NodeID audioInputNodeId;
     juce::AudioProcessorGraph::NodeID audioOutputNodeId;
+    juce::AudioProcessorGraph::NodeID midiInputNodeId;
+    juce::AudioProcessorGraph::NodeID midiOutputNodeId;
 
     PluginManager pluginManager;
     juce::ApplicationProperties* appProperties = nullptr;

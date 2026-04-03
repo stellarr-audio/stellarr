@@ -35,11 +35,21 @@ void StellarrBridge::handleAddBlock(const juce::var& json)
     {
         processor->disconnectBlocks(processor->getAudioInputNodeId(), processor->getAudioOutputNodeId());
         processor->connectBlocks(processor->getAudioInputNodeId(), nodeId);
+        // Connect MIDI system input to this input block
+        processor->getGraph().addConnection({
+            {processor->getMidiInputNodeId(), juce::AudioProcessorGraph::midiChannelIndex},
+            {nodeId, juce::AudioProcessorGraph::midiChannelIndex}
+        });
     }
     else if (type == "output")
     {
         processor->disconnectBlocks(processor->getAudioInputNodeId(), processor->getAudioOutputNodeId());
         processor->connectBlocks(nodeId, processor->getAudioOutputNodeId());
+        // Connect this output block to MIDI system output
+        processor->getGraph().addConnection({
+            {nodeId, juce::AudioProcessorGraph::midiChannelIndex},
+            {processor->getMidiOutputNodeId(), juce::AudioProcessorGraph::midiChannelIndex}
+        });
     }
 
     // Splice: insert the new block into an existing connection

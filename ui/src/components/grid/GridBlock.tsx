@@ -1,13 +1,13 @@
 import { useCallback, useRef, useState } from 'react';
 import { Cross2Icon, SpeakerLoudIcon } from '@radix-ui/react-icons';
-import type { GridBlock as GridBlockData } from '../store';
+import type { GridBlock as GridBlockData } from '../../store';
 import {
   requestRemoveBlock,
   requestRemoveConnection,
   requestOpenPluginEditor,
-} from '../bridge';
-import { useStore } from '../store';
-import { colors } from './colors';
+} from '../../bridge';
+import { useStore } from '../../store';
+import { colors } from '../common/colors';
 import { CELL_SIZE, cellLeft, cellTop } from './layout';
 
 interface Props {

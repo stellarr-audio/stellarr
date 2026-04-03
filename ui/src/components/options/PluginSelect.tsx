@@ -1,8 +1,8 @@
 import { useState, useMemo } from 'react';
 import { Select } from 'radix-ui';
 import { ChevronDownIcon, ChevronUpIcon } from '@radix-ui/react-icons';
-import type { PluginInfo } from '../store';
-import { colors } from './colors';
+import type { PluginInfo } from '../../store';
+import { colors } from '../common/colors';
 
 const formatColors: Record<string, string> = {
   VST3: '#00b4ff',

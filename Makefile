@@ -10,13 +10,13 @@ build-ui: setup
 
 build-cpp:
 	cmake -B build -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
-	cmake --build build
+	cmake --build build -j
 
 build: build-ui build-cpp
 
 release-cpp:
 	cmake -B build-release -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF
-	cmake --build build-release --config Release
+	cmake --build build-release --config Release -j
 
 release: build-ui release-cpp
 	@echo "Release build: build-release/Stellarr_artefacts/Release/Standalone/Stellarr.app"

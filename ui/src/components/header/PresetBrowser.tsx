@@ -8,15 +8,15 @@ import {
   BookmarkIcon,
   ChevronDownIcon,
 } from '@radix-ui/react-icons';
-import { useStore } from '../store';
+import { useStore } from '../../store';
 import {
   requestNewSession,
   requestSaveSession,
   requestSaveSessionQuiet,
   requestLoadSession,
   requestLoadPresetByIndex,
-} from '../bridge';
-import { colors } from './colors';
+} from '../../bridge';
+import { colors } from '../common/colors';
 
 const hoverBg = '#2a2545';
 

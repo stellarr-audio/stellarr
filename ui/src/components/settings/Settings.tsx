@@ -1,10 +1,10 @@
-import { useStore } from '../store';
+import { useStore } from '../../store';
 import {
   requestScanPlugins,
   requestPickScanDirectory,
   requestRemoveScanDirectory,
-} from '../bridge';
-import { colors } from './colors';
+} from '../../bridge';
+import { colors } from '../common/colors';
 
 export function Settings() {
   const scanDirectories = useStore((s) => s.scanDirectories);

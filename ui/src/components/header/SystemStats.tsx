@@ -1,5 +1,5 @@
-import { useStore } from '../store';
-import { colors } from './colors';
+import { useStore } from '../../store';
+import { colors } from '../common/colors';
 
 function barColor(percent: number): string {
   if (percent < 40) return colors.green;

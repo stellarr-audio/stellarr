@@ -1,5 +1,6 @@
 #pragma once
 #include "Block.h"
+#include "../utils/ToneGenerator.h"
 #include <atomic>
 #include <vector>
 #include <cmath>
@@ -17,7 +18,7 @@ public:
     void prepareBlock(double sampleRate, int) override
     {
         currentSampleRate = sampleRate;
-        samplesPerBeat = sampleRate * 60.0 / bpm;
+        toneGenerator.prepareToPlay(sampleRate);
 
         // Tuner buffers
         tunerBuffer.resize(tunerBufferSize, 0.0f);
@@ -31,46 +32,11 @@ public:
         // Test tone generation
         if (!testToneEnabled.load(std::memory_order_relaxed))
         {
-            // Tuner analysis on real input (no test tone)
             analyzeTunerBuffer(buffer);
             return;
         }
 
-        for (int i = 0; i < buffer.getNumSamples(); ++i)
-        {
-            auto noteLength = melody[melodyIndex].beats * samplesPerBeat;
-            if (sampleInNote >= noteLength)
-            {
-                sampleInNote = 0.0;
-                melodyIndex = (melodyIndex + 1) % melodySize;
-                phase = 0.0;
-            }
-
-            auto freq = melody[melodyIndex].frequency;
-            float sample = 0.0f;
-
-            if (freq > 0.0)
-            {
-                auto noteProgress = sampleInNote / noteLength;
-                auto envelope = static_cast<float>(
-                    noteProgress < 0.02 ? noteProgress / 0.02
-                    : 1.0 - noteProgress * 0.4);
-                if (envelope < 0.0f) envelope = 0.0f;
-
-                sample = envelope * amplitude * static_cast<float>(
-                    std::sin(phase * juce::MathConstants<double>::twoPi));
-
-                phase += freq / currentSampleRate;
-                if (phase >= 1.0) phase -= 1.0;
-            }
-
-            for (int ch = 0; ch < buffer.getNumChannels(); ++ch)
-                buffer.setSample(ch, i, sample);
-
-            sampleInNote += 1.0;
-        }
-
-        // Tuner analysis on test tone output
+        toneGenerator.fillBuffer(buffer);
         analyzeTunerBuffer(buffer);
     }
 
@@ -85,11 +51,7 @@ public:
     {
         testToneEnabled.store(enabled, std::memory_order_relaxed);
         if (!enabled)
-        {
-            phase = 0.0;
-            melodyIndex = 0;
-            sampleInNote = 0.0;
-        }
+            toneGenerator.reset();
     }
 
     bool isTestToneEnabled() const
@@ -163,6 +125,7 @@ private:
         // Linearize circular buffer (reuses member to avoid allocation)
         if (static_cast<int>(linearBuffer.size()) != tunerBufferSize)
             linearBuffer.resize(tunerBufferSize);
+
         for (int i = 0; i < tunerBufferSize; ++i)
             linearBuffer[i] = tunerBuffer[(tunerBufferWritePos + i) % tunerBufferSize];
 
@@ -185,7 +148,7 @@ private:
                 : 1.0f;
         }
 
-        // Step 3: Absolute threshold -- find first dip below threshold
+        // Step 3: Absolute threshold — find first dip below threshold
         constexpr float threshold = 0.15f;
         int tauEstimate = -1;
 
@@ -193,7 +156,6 @@ private:
         {
             if (yinBuffer[tau] < threshold)
             {
-                // Find the local minimum
                 while (tau + 1 < halfSize && yinBuffer[tau + 1] < yinBuffer[tau])
                     ++tau;
                 tauEstimate = tau;
@@ -203,7 +165,6 @@ private:
 
         if (tauEstimate < 0)
         {
-            // No pitch detected
             detectedNoteIndex.store(-1, std::memory_order_relaxed);
             detectedConfidence.store(0.0f, std::memory_order_relaxed);
             return;
@@ -249,44 +210,18 @@ private:
         detectedConfidence.store(confidence, std::memory_order_relaxed);
     }
 
-    // -- Test tone data -------------------------------------------------------
+    // -- Members --------------------------------------------------------------
 
-    struct Note { double frequency; double beats; };
-
-    static constexpr int melodySize = 12;
-    static constexpr Note melody[melodySize] = {
-        {329.63, 0.5},   // E4
-        {392.00, 0.5},   // G4
-        {440.00, 0.5},   // A4
-        {493.88, 1.0},   // B4
-        {440.00, 0.5},   // A4
-        {392.00, 0.5},   // G4
-        {329.63, 1.0},   // E4
-        {0.0,    0.5},   // rest
-        {293.66, 0.5},   // D4
-        {329.63, 0.5},   // E4
-        {392.00, 1.0},   // G4
-        {0.0,    1.0},   // rest
-    };
-
-    static constexpr double bpm = 120.0;
-    static constexpr float amplitude = 0.45f;
-
+    ToneGenerator toneGenerator;
     std::atomic<bool> testToneEnabled { false };
-    double phase = 0.0;
     double currentSampleRate = 44100.0;
-    double samplesPerBeat = 44100.0 * 60.0 / 120.0;
-    int melodyIndex = 0;
-    double sampleInNote = 0.0;
 
-    // -- Tuner data -----------------------------------------------------------
-
+    // Tuner
     static constexpr int tunerBufferSize = 2048;
-
     std::atomic<bool> tunerEnabled { false };
     std::atomic<float> detectedFrequency { 0.0f };
     std::atomic<float> detectedCents { 0.0f };
-    std::atomic<int> detectedNoteIndex { -1 };  // 0=C, 1=C#, ... 11=B
+    std::atomic<int> detectedNoteIndex { -1 };
     std::atomic<int> detectedOctave { -1 };
     std::atomic<float> detectedConfidence { 0.0f };
 

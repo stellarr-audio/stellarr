@@ -101,6 +101,11 @@ void StellarrBridge::handleEvent(const juce::String& eventName, const juce::var&
             if (auto* block = dynamic_cast<stellarr::Block*>(node->getProcessor()))
             {
                 block->setMix(mixVal);
+                if (auto* pb = dynamic_cast<stellarr::PluginBlock*>(node->getProcessor()))
+                {
+                    pb->markDirty();
+                    emitBlockStates(blockId, pb);
+                }
 
                 auto* detail = new juce::DynamicObject();
                 detail->setProperty("blockId", blockId);
@@ -125,6 +130,11 @@ void StellarrBridge::handleEvent(const juce::String& eventName, const juce::var&
             if (auto* block = dynamic_cast<stellarr::Block*>(node->getProcessor()))
             {
                 block->setBalance(balVal);
+                if (auto* pb = dynamic_cast<stellarr::PluginBlock*>(node->getProcessor()))
+                {
+                    pb->markDirty();
+                    emitBlockStates(blockId, pb);
+                }
 
                 auto* detail = new juce::DynamicObject();
                 detail->setProperty("blockId", blockId);
@@ -149,6 +159,11 @@ void StellarrBridge::handleEvent(const juce::String& eventName, const juce::var&
             {
                 bool newState = !block->isBypassed();
                 block->setBypassed(newState);
+                if (auto* pb = dynamic_cast<stellarr::PluginBlock*>(node->getProcessor()))
+                {
+                    pb->markDirty();
+                    emitBlockStates(blockId, pb);
+                }
 
                 auto* detail = new juce::DynamicObject();
                 detail->setProperty("blockId", blockId);
@@ -173,11 +188,97 @@ void StellarrBridge::handleEvent(const juce::String& eventName, const juce::var&
             if (auto* block = dynamic_cast<stellarr::Block*>(node->getProcessor()))
             {
                 block->setBypassMode(stellarr::bypassModeFromString(modeStr));
+                if (auto* pb = dynamic_cast<stellarr::PluginBlock*>(node->getProcessor()))
+                {
+                    pb->markDirty();
+                    emitBlockStates(blockId, pb);
+                }
 
                 auto* detail = new juce::DynamicObject();
                 detail->setProperty("blockId", blockId);
                 detail->setProperty("bypassMode", modeStr);
                 emitToJs("blockBypassModeChanged", detail);
+            }
+        }
+    }
+    else if (eventName == "saveBlockState" && processor != nullptr)
+    {
+        auto* obj = json.getDynamicObject();
+        if (obj == nullptr) return;
+
+        auto blockId = obj->getProperty("blockId").toString();
+        auto nodeIt = blockNodeMap.find(blockId);
+        if (nodeIt == blockNodeMap.end()) return;
+
+        if (auto* node = processor->getGraph().getNodeForId(nodeIt->second))
+        {
+            if (auto* pluginBlock = dynamic_cast<stellarr::PluginBlock*>(node->getProcessor()))
+            {
+                pluginBlock->saveCurrentState();
+                emitBlockStates(blockId, pluginBlock);
+            }
+        }
+    }
+    else if (eventName == "addBlockState" && processor != nullptr)
+    {
+        auto* obj = json.getDynamicObject();
+        if (obj == nullptr) return;
+
+        auto blockId = obj->getProperty("blockId").toString();
+        auto nodeIt = blockNodeMap.find(blockId);
+        if (nodeIt == blockNodeMap.end()) return;
+
+        if (auto* node = processor->getGraph().getNodeForId(nodeIt->second))
+        {
+            if (auto* pluginBlock = dynamic_cast<stellarr::PluginBlock*>(node->getProcessor()))
+            {
+                pluginBlock->addState();
+                emitBlockStates(blockId, pluginBlock);
+            }
+        }
+    }
+    else if (eventName == "recallBlockState" && processor != nullptr)
+    {
+        auto* obj = json.getDynamicObject();
+        if (obj == nullptr) return;
+
+        auto blockId = obj->getProperty("blockId").toString();
+        auto index = static_cast<int>(obj->getProperty("index"));
+        auto nodeIt = blockNodeMap.find(blockId);
+        if (nodeIt == blockNodeMap.end()) return;
+
+        if (auto* node = processor->getGraph().getNodeForId(nodeIt->second))
+        {
+            if (auto* pluginBlock = dynamic_cast<stellarr::PluginBlock*>(node->getProcessor()))
+            {
+                if (pluginBlock->recallState(index))
+                {
+                    emitBlockStates(blockId, pluginBlock);
+                    // Emit param changes so UI sliders update
+                    emitBlockParams(blockId, pluginBlock);
+                }
+            }
+        }
+    }
+    else if (eventName == "deleteBlockState" && processor != nullptr)
+    {
+        auto* obj = json.getDynamicObject();
+        if (obj == nullptr) return;
+
+        auto blockId = obj->getProperty("blockId").toString();
+        auto index = static_cast<int>(obj->getProperty("index"));
+        auto nodeIt = blockNodeMap.find(blockId);
+        if (nodeIt == blockNodeMap.end()) return;
+
+        if (auto* node = processor->getGraph().getNodeForId(nodeIt->second))
+        {
+            if (auto* pluginBlock = dynamic_cast<stellarr::PluginBlock*>(node->getProcessor()))
+            {
+                if (pluginBlock->deleteState(index))
+                {
+                    emitBlockStates(blockId, pluginBlock);
+                    emitBlockParams(blockId, pluginBlock);
+                }
             }
         }
     }
@@ -204,6 +305,59 @@ void StellarrBridge::emitToJs(const juce::String& eventName, juce::DynamicObject
         if (webView != nullptr)
             webView->emitEventIfBrowserIsVisible(eventId, data);
     });
+}
+
+void StellarrBridge::clearAllDirtyStates()
+{
+    for (auto& [blockId, nodeId] : blockNodeMap)
+    {
+        if (auto* node = processor->getGraph().getNodeForId(nodeId))
+        {
+            if (auto* pluginBlock = dynamic_cast<stellarr::PluginBlock*>(node->getProcessor()))
+            {
+                pluginBlock->saveCurrentState();
+                emitBlockStates(blockId, pluginBlock);
+            }
+        }
+    }
+}
+
+void StellarrBridge::emitBlockStates(const juce::String& blockId, stellarr::PluginBlock* pluginBlock)
+{
+    auto* detail = new juce::DynamicObject();
+    detail->setProperty("blockId", blockId);
+    detail->setProperty("numStates", pluginBlock->getNumStates());
+    detail->setProperty("activeStateIndex", pluginBlock->getActiveStateIndex());
+
+    juce::Array<juce::var> dirtyArr;
+    for (int d : pluginBlock->getDirtyStates())
+        dirtyArr.add(d);
+    detail->setProperty("dirtyStates", dirtyArr);
+
+    emitToJs("blockStatesChanged", detail);
+}
+
+void StellarrBridge::emitBlockParams(const juce::String& blockId, stellarr::Block* block)
+{
+    auto* mixDetail = new juce::DynamicObject();
+    mixDetail->setProperty("blockId", blockId);
+    mixDetail->setProperty("mix", static_cast<double>(block->getMix()));
+    emitToJs("blockMixChanged", mixDetail);
+
+    auto* balDetail = new juce::DynamicObject();
+    balDetail->setProperty("blockId", blockId);
+    balDetail->setProperty("balance", static_cast<double>(block->getBalance()));
+    emitToJs("blockBalanceChanged", balDetail);
+
+    auto* bypDetail = new juce::DynamicObject();
+    bypDetail->setProperty("blockId", blockId);
+    bypDetail->setProperty("bypassed", block->isBypassed());
+    emitToJs("blockBypassChanged", bypDetail);
+
+    auto* modeDetail = new juce::DynamicObject();
+    modeDetail->setProperty("blockId", blockId);
+    modeDetail->setProperty("bypassMode", stellarr::bypassModeToString(block->getBypassMode()));
+    emitToJs("blockBypassModeChanged", modeDetail);
 }
 
 void StellarrBridge::sendStartupProgress(const juce::String& status, int progress)
@@ -699,6 +853,12 @@ void StellarrBridge::sendGraphState()
                 {
                     blockObj->setProperty("pluginId", pluginBlock->getPluginIdentifier());
                     blockObj->setProperty("pluginName", pluginBlock->getPluginName());
+                    blockObj->setProperty("numStates", pluginBlock->getNumStates());
+                    blockObj->setProperty("activeStateIndex", pluginBlock->getActiveStateIndex());
+                    juce::Array<juce::var> dirtyArr;
+                    for (int d : pluginBlock->getDirtyStates())
+                        dirtyArr.add(d);
+                    blockObj->setProperty("dirtyStates", dirtyArr);
                 }
 
                 blockObj->setProperty("mix", static_cast<double>(block->getMix()));
@@ -948,6 +1108,7 @@ void StellarrBridge::handleSaveSession()
         file.replaceWithText(jsonStr);
 
         setPresetFromFile(file);
+        clearAllDirtyStates();
         emitToJs("sessionSaved", new juce::DynamicObject());
     });
 }
@@ -962,6 +1123,7 @@ void StellarrBridge::handleSaveSessionQuiet()
         auto jsonStr = juce::JSON::toString(session);
         lastPresetFile.replaceWithText(jsonStr);
 
+        clearAllDirtyStates();
         emitToJs("sessionSaved", new juce::DynamicObject());
     }
     else

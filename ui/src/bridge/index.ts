@@ -127,6 +127,22 @@ export function requestLoadPresetByIndex(index: number): void {
   sendEvent('loadPresetByIndex', JSON.stringify({ index }));
 }
 
+export function requestSaveBlockState(blockId: string): void {
+  sendEvent('saveBlockState', JSON.stringify({ blockId }));
+}
+
+export function requestAddBlockState(blockId: string): void {
+  sendEvent('addBlockState', JSON.stringify({ blockId }));
+}
+
+export function requestRecallBlockState(blockId: string, index: number): void {
+  sendEvent('recallBlockState', JSON.stringify({ blockId, index }));
+}
+
+export function requestDeleteBlockState(blockId: string, index: number): void {
+  sendEvent('deleteBlockState', JSON.stringify({ blockId, index }));
+}
+
 export function requestScanPlugins(): void {
   sendEvent('scanPlugins', '');
 }
@@ -283,6 +299,11 @@ export function initBridge(): void {
           balance: r.balance !== undefined ? Number(r.balance) : undefined,
           bypassed: r.bypassed ? Boolean(r.bypassed) : undefined,
           bypassMode: r.bypassMode ? String(r.bypassMode) : undefined,
+          numStates: r.numStates !== undefined ? Number(r.numStates) : undefined,
+          activeStateIndex: r.activeStateIndex !== undefined ? Number(r.activeStateIndex) : undefined,
+          dirtyStates: Array.isArray(r.dirtyStates)
+            ? (r.dirtyStates as unknown[]).map(Number)
+            : undefined,
         } satisfies GridBlock;
       },
     );
@@ -338,6 +359,19 @@ export function initBridge(): void {
       String(d.directory),
       files,
       Number(d.currentIndex),
+    );
+  });
+
+  juce.backend.addEventListener('blockStatesChanged', (detail: unknown) => {
+    const d = asRecord(detail);
+    const dirty = Array.isArray(d.dirtyStates)
+      ? (d.dirtyStates as unknown[]).map(Number)
+      : [];
+    useStore.getState().setBlockStates(
+      String(d.blockId),
+      Number(d.numStates),
+      Number(d.activeStateIndex),
+      dirty,
     );
   });
 

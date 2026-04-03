@@ -335,6 +335,11 @@ void StellarrBridge::handleBridgeReady()
                 {
                     auto* settings = appProperties->getUserSettings();
 
+                    // Restore global MIDI mappings
+                    auto globalMidi = settings->getValue("globalMidiMappings", "");
+                    if (globalMidi.isNotEmpty() && processor != nullptr)
+                        processor->getMidiMapper().loadGlobalMappings(juce::JSON::parse(globalMidi));
+
                     auto savedDir = settings->getValue("lastPresetDirectory", "");
                     auto savedIndex = settings->getIntValue("lastPresetIndex", -1);
                     if (savedDir.isNotEmpty())

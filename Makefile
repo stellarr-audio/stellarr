@@ -1,4 +1,4 @@
-.PHONY: setup build build-ui build-cpp test run docs clean
+.PHONY: setup build build-ui build-cpp release release-cpp run run-release test docs clean
 
 .DEFAULT_GOAL := build
 
@@ -14,6 +14,16 @@ build-cpp:
 
 build: build-ui build-cpp
 
+release-cpp:
+	cmake -B build-release -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF
+	cmake --build build-release --config Release
+
+release: build-ui release-cpp
+	@echo "Release build: build-release/Stellarr_artefacts/Release/Standalone/Stellarr.app"
+
+run-release: release
+	open build-release/Stellarr_artefacts/Release/Standalone/Stellarr.app
+
 test: build
 	ctest --test-dir build --output-on-failure
 
@@ -24,4 +34,4 @@ docs:
 	npx serve docs/manual -p 3001
 
 clean:
-	rm -rf build ui/dist ui/node_modules
+	rm -rf build build-release ui/dist ui/node_modules

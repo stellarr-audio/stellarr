@@ -17,7 +17,15 @@ StellarrProcessor::StellarrProcessor()
     audioInputNodeId  = inputNode->nodeID;
     audioOutputNodeId = outputNode->nodeID;
 
-    // Default chain: input → output
+    auto midiInNode  = graph.addNode(std::make_unique<juce::AudioProcessorGraph::AudioGraphIOProcessor>(
+        juce::AudioProcessorGraph::AudioGraphIOProcessor::midiInputNode));
+    auto midiOutNode = graph.addNode(std::make_unique<juce::AudioProcessorGraph::AudioGraphIOProcessor>(
+        juce::AudioProcessorGraph::AudioGraphIOProcessor::midiOutputNode));
+
+    midiInputNodeId  = midiInNode->nodeID;
+    midiOutputNodeId = midiOutNode->nodeID;
+
+    // Default chain: input → output (audio + MIDI)
     connectBlocks(audioInputNodeId, audioOutputNodeId);
 }
 
@@ -64,7 +72,8 @@ juce::AudioProcessorGraph::NodeID StellarrProcessor::addBlock(
 void StellarrProcessor::removeBlock(juce::AudioProcessorGraph::NodeID nodeId)
 {
     // Prevent removal of the graph's built-in I/O nodes
-    if (nodeId == audioInputNodeId || nodeId == audioOutputNodeId)
+    if (nodeId == audioInputNodeId || nodeId == audioOutputNodeId ||
+        nodeId == midiInputNodeId || nodeId == midiOutputNodeId)
         return;
 
     graph.removeNode(nodeId);
@@ -79,6 +88,12 @@ bool StellarrProcessor::connectBlocks(
 
     for (int ch = 0; ch < numChannels; ++ch)
         ok &= graph.addConnection({{source, ch}, {dest, ch}});
+
+    // Also connect MIDI channel
+    graph.addConnection({
+        {source, juce::AudioProcessorGraph::midiChannelIndex},
+        {dest, juce::AudioProcessorGraph::midiChannelIndex}
+    });
 
     return ok;
 }
@@ -101,8 +116,8 @@ juce::AudioProcessorEditor* StellarrProcessor::createEditor()
 
 bool StellarrProcessor::hasEditor() const { return true; }
 const juce::String StellarrProcessor::getName() const { return JucePlugin_Name; }
-bool StellarrProcessor::acceptsMidi() const { return false; }
-bool StellarrProcessor::producesMidi() const { return false; }
+bool StellarrProcessor::acceptsMidi() const { return true; }
+bool StellarrProcessor::producesMidi() const { return true; }
 double StellarrProcessor::getTailLengthSeconds() const { return 0.0; }
 int StellarrProcessor::getNumPrograms() { return 1; }
 int StellarrProcessor::getCurrentProgram() { return 0; }

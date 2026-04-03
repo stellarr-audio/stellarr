@@ -295,8 +295,8 @@ public:
 
     // AudioProcessor boilerplate shared by all blocks
     const juce::String getName() const override { return blockName; }
-    bool acceptsMidi() const override { return false; }
-    bool producesMidi() const override { return false; }
+    bool acceptsMidi() const override { return true; }
+    bool producesMidi() const override { return true; }
     double getTailLengthSeconds() const override { return 0.0; }
     int getNumPrograms() override { return 1; }
     int getCurrentProgram() override { return 0; }

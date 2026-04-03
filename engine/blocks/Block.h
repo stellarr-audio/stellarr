@@ -173,7 +173,6 @@ public:
                     buffer.clear(); // total silence
                     return;
             }
-            return;
         }
 
         auto mixVal = mix.load(std::memory_order_relaxed);

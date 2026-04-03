@@ -160,10 +160,11 @@ private:
     {
         auto halfSize = tunerBufferSize / 2;
 
-        // Linearize circular buffer
-        std::vector<float> linear(tunerBufferSize);
+        // Linearize circular buffer (reuses member to avoid allocation)
+        if (static_cast<int>(linearBuffer.size()) != tunerBufferSize)
+            linearBuffer.resize(tunerBufferSize);
         for (int i = 0; i < tunerBufferSize; ++i)
-            linear[i] = tunerBuffer[(tunerBufferWritePos + i) % tunerBufferSize];
+            linearBuffer[i] = tunerBuffer[(tunerBufferWritePos + i) % tunerBufferSize];
 
         // Step 1 & 2: Difference function + cumulative mean normalized
         yinBuffer[0] = 1.0f;
@@ -172,9 +173,9 @@ private:
         for (int tau = 1; tau < halfSize; ++tau)
         {
             float sum = 0.0f;
-            for (int j = 0; j < halfSize; ++j)
+            for (int j = 0; j < halfSize && j + tau < tunerBufferSize; ++j)
             {
-                float delta = linear[j] - linear[j + tau];
+                float delta = linearBuffer[j] - linearBuffer[j + tau];
                 sum += delta * delta;
             }
 
@@ -291,6 +292,7 @@ private:
 
     std::vector<float> tunerBuffer;
     std::vector<float> yinBuffer;
+    std::vector<float> linearBuffer;
     int tunerBufferWritePos = 0;
     int tunerSamplesAccumulated = 0;
 };

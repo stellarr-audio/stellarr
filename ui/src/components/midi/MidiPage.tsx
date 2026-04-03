@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useStore } from '../../store';
 import { Cross2Icon } from '@radix-ui/react-icons';
 import { MidiAssignDialog } from '../common/MidiAssignDialog';
@@ -34,15 +34,18 @@ export function MidiPage() {
     return block ? block.displayName || block.name : id.slice(0, 8);
   };
 
-  // Sort by CC ascending, then channel ascending, preserving original indices
-  const sortedIndices = mappings
-    .map((_, i) => i)
-    .sort((a, b) => {
-      const ma = mappings[a],
-        mb = mappings[b];
-      if (ma.cc !== mb.cc) return ma.cc - mb.cc;
-      return ma.channel - mb.channel;
-    });
+  const sortedIndices = useMemo(
+    () =>
+      mappings
+        .map((_, i) => i)
+        .sort((a, b) => {
+          const ma = mappings[a],
+            mb = mappings[b];
+          if (ma.cc !== mb.cc) return ma.cc - mb.cc;
+          return ma.channel - mb.channel;
+        }),
+    [mappings],
+  );
 
   const editMapping =
     editIndex !== null && editIndex < mappings.length ? mappings[editIndex] : null;

@@ -15,4 +15,6 @@ export const colors = {
   connectionLine: '#00b4ff88',
   dropdownBg: '#1a1535',
   danger: '#cc4444',
+  warning: '#ffcc00',
+  dangerBright: '#ff4444',
 };

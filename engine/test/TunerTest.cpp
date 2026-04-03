@@ -1,12 +1,6 @@
 #include "TestUtils.h"
 #include "blocks/InputBlock.h"
 
-static void fillSine(std::vector<float>& buf, float freq, double sampleRate)
-{
-    for (int i = 0; i < static_cast<int>(buf.size()); ++i)
-        buf[i] = std::sin(kTwoPi * freq * static_cast<float>(i) / static_cast<float>(sampleRate));
-}
-
 static bool testTunerDetects440()
 {
     printf("Test: tuner detects 440 Hz as A4... ");

@@ -3,10 +3,10 @@
 PluginManager::PluginManager()
 {
 #if JUCE_PLUGINHOST_VST3
-    formatManager.addFormat(new juce::VST3PluginFormat());
+    formatManager.addFormat(std::make_unique<juce::VST3PluginFormat>());
 #endif
 #if JUCE_PLUGINHOST_AU
-    formatManager.addFormat(new juce::AudioUnitPluginFormat());
+    formatManager.addFormat(std::make_unique<juce::AudioUnitPluginFormat>());
 #endif
     addDefaultDirectories();
 }

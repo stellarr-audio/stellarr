@@ -88,6 +88,7 @@ interface StellarrState {
   midiLearning: boolean;
   midiMonitorEvents: MidiMonitorEvent[];
   midiMonitorEnabled: boolean;
+  midiMappingActivity: Record<number, number>; // mapping index → timestamp of last activity
 
   setLoading: (loading: boolean) => void;
   setLoadingStatus: (status: string, progress: number) => void;
@@ -138,6 +139,7 @@ interface StellarrState {
   appendMidiMonitorEvents: (events: MidiMonitorEvent[]) => void;
   clearMidiMonitor: () => void;
   setMidiMonitorEnabled: (enabled: boolean) => void;
+  updateMidiActivity: (events: MidiMonitorEvent[]) => void;
 
   addBlock: (block: GridBlock) => void;
   removeBlock: (blockId: string) => void;
@@ -194,6 +196,7 @@ export const useStore = create<StellarrState>((set) => ({
   midiLearning: false,
   midiMonitorEvents: [],
   midiMonitorEnabled: false,
+  midiMappingActivity: {},
   selectedBlockId: null,
   draggingConnection: null,
 
@@ -284,6 +287,31 @@ export const useStore = create<StellarrState>((set) => ({
   clearMidiMonitor: () => set({ midiMonitorEvents: [] }),
 
   setMidiMonitorEnabled: (enabled) => set({ midiMonitorEnabled: enabled }),
+
+  updateMidiActivity: (events) =>
+    set((s) => {
+      const activity = { ...s.midiMappingActivity };
+      const now = Date.now();
+      let changed = false;
+
+      for (const evt of events) {
+        for (let i = 0; i < s.midiMappings.length; i++) {
+          const m = s.midiMappings[i];
+          const channelMatch = m.channel === -1 || m.channel === evt.channel;
+          if (!channelMatch) continue;
+
+          if (evt.type === 'CC' && m.cc === evt.data1) {
+            activity[i] = now;
+            changed = true;
+          } else if (evt.type === 'PC' && m.cc === -1 && m.target === 'presetChange') {
+            activity[i] = now;
+            changed = true;
+          }
+        }
+      }
+
+      return changed ? { midiMappingActivity: activity } : {};
+    }),
 
   addBlock: (block) => set((s) => ({ blocks: [...s.blocks, block] })),
 

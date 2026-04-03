@@ -1,5 +1,5 @@
 import { Slider as RadixSlider } from 'radix-ui';
-import { colors } from './colors';
+import styles from './Slider.module.css';
 
 interface Props {
   value: number;
@@ -19,47 +19,12 @@ export function Slider({ value, min = 0, max = 100, step = 1, defaultValue = 0, 
       min={min}
       max={max}
       step={step}
-      style={{
-        position: 'relative',
-        display: 'flex',
-        alignItems: 'center',
-        width: '100%',
-        height: 20,
-        userSelect: 'none',
-        touchAction: 'none',
-      }}
+      className={styles.root}
     >
-      <RadixSlider.Track
-        style={{
-          position: 'relative',
-          flexGrow: 1,
-          height: 4,
-          borderRadius: 9999,
-          background: colors.border,
-          overflow: 'hidden',
-        }}
-      >
-        <RadixSlider.Range
-          style={{
-            position: 'absolute',
-            height: '100%',
-            borderRadius: 9999,
-            background: colors.primary,
-          }}
-        />
+      <RadixSlider.Track className={styles.track}>
+        <RadixSlider.Range className={styles.range} />
       </RadixSlider.Track>
-      <RadixSlider.Thumb
-        style={{
-          display: 'block',
-          width: 16,
-          height: 16,
-          borderRadius: 9999,
-          background: colors.secondary,
-          boxShadow: `0 0 4px ${colors.secondary}44`,
-          outline: 'none',
-          cursor: 'grab',
-        }}
-      />
+      <RadixSlider.Thumb className={styles.thumb} />
     </RadixSlider.Root>
   );
 }

@@ -1,0 +1,20 @@
+:root {
+  --color-bg: #0d0b1a;
+  --color-surface: #161229;
+  --color-cell: #1a1530;
+  --color-cell-hover: #221d40;
+  --color-border: #2a2545;
+  --color-primary: #ff2d7b;
+  --color-secondary: #00b4ff;
+  --color-text: #e0dff0;
+  --color-muted: #5a5478;
+  --color-green: #00ff9d;
+  --color-block-bg: #1e1940;
+  --color-block-border: #3a3560;
+  --color-port: #00b4ff;
+  --color-connection: #00b4ff88;
+  --color-dropdown-bg: #1a1535;
+  --color-danger: #cc4444;
+  --color-warning: #ffcc00;
+  --color-danger-bright: #ff4444;
+}

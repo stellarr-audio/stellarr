@@ -1,5 +1,6 @@
 import { useStore } from '../../store';
 import { colors } from '../common/colors';
+import styles from './Tuner.module.css';
 
 export function Tuner() {
   const note = useStore((s) => s.tunerNote);
@@ -14,38 +15,17 @@ export function Tuner() {
     Math.abs(cents) < 5 ? colors.green : Math.abs(cents) < 15 ? '#ffaa00' : colors.primary;
 
   return (
-    <div
-      style={{
-        flex: 1,
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: '2.5rem',
-        background: colors.bg,
-      }}
-    >
+    <div className={styles.container}>
       {/* Note + Octave */}
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
+      <div className={styles.noteRow}>
         <span
-          style={{
-            fontSize: '12rem',
-            fontWeight: 700,
-            color: hasSignal ? centsColor : `${colors.muted}22`,
-            letterSpacing: '0.04em',
-            lineHeight: 1,
-            transition: 'color 0.2s ease',
-          }}
+          className={`${styles.note} ${!hasSignal ? styles.noteInactive : ''}`}
+          style={hasSignal ? { color: centsColor } : undefined}
         >
           {hasSignal ? note : '--'}
         </span>
         <span
-          style={{
-            fontSize: '4rem',
-            fontWeight: 600,
-            color: hasSignal ? colors.muted : `${colors.muted}22`,
-            lineHeight: 1,
-          }}
+          className={`${styles.octave} ${hasSignal ? styles.octaveActive : styles.octaveInactive}`}
         >
           {hasSignal ? octave : ''}
         </span>
@@ -53,58 +33,25 @@ export function Tuner() {
 
       {/* Frequency */}
       <span
-        style={{
-          fontSize: '1.8rem',
-          color: hasSignal ? colors.muted : `${colors.muted}22`,
-          fontVariantNumeric: 'tabular-nums',
-          letterSpacing: '0.04em',
-        }}
+        className={`${styles.frequency} ${hasSignal ? styles.frequencyActive : styles.frequencyInactive}`}
       >
         {hasSignal ? `${frequency.toFixed(1)} Hz` : '-- Hz'}
       </span>
 
       {/* Cents bar */}
-      <div
-        style={{
-          width: 600,
-          maxWidth: '80%',
-          position: 'relative',
-        }}
-      >
+      <div className={styles.centsBar}>
         {/* Track */}
-        <div
-          style={{
-            width: '100%',
-            height: 6,
-            background: colors.border,
-            position: 'relative',
-          }}
-        >
+        <div className={styles.track}>
           {/* Center mark */}
-          <div
-            style={{
-              position: 'absolute',
-              left: '50%',
-              top: -10,
-              width: 3,
-              height: 26,
-              background: colors.muted,
-              transform: 'translateX(-50%)',
-            }}
-          />
+          <div className={styles.centerMark} />
 
           {/* Needle */}
           {hasSignal && (
             <div
+              className={styles.needle}
               style={{
-                position: 'absolute',
                 left: `${50 + cents}%`,
-                top: -12,
-                width: 6,
-                height: 30,
                 background: centsColor,
-                transform: 'translateX(-50%)',
-                transition: 'left 0.05s ease, background 0.2s ease',
                 boxShadow: `0 0 12px ${centsColor}88`,
               }}
             />
@@ -112,16 +59,7 @@ export function Tuner() {
         </div>
 
         {/* Labels */}
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            marginTop: '1rem',
-            fontSize: '1rem',
-            color: colors.muted,
-            letterSpacing: '0.06em',
-          }}
-        >
+        <div className={styles.labels}>
           <span>-50</span>
           <span>-25</span>
           <span>0</span>

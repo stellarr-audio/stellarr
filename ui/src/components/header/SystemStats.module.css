@@ -1,0 +1,40 @@
+.container {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-shrink: 0;
+}
+
+.statBar {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.label {
+  font-size: 1rem;
+  color: var(--color-muted);
+  letter-spacing: 0.06em;
+}
+
+.track {
+  width: 50px;
+  height: 6px;
+  background: var(--color-border);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s ease, background 0.3s ease;
+}
+
+.percent {
+  font-size: 1rem;
+  font-weight: 600;
+  width: 3ch;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}

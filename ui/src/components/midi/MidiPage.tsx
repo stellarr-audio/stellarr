@@ -7,7 +7,7 @@ import {
   requestClearMidiMappings,
   requestGetMidiMappings,
 } from '../../bridge';
-import { colors } from '../common/colors';
+import styles from './MidiPage.module.css';
 
 const targetLabels: Record<string, string> = {
   presetChange: 'Preset Change (Global)',
@@ -60,95 +60,33 @@ export function MidiPage() {
     editIndex !== null && editIndex < mappings.length ? mappings[editIndex] : null;
 
   return (
-    <div
-      style={{
-        flex: 1,
-        display: 'flex',
-        flexDirection: 'column',
-        background: colors.bg,
-        padding: '2rem',
-        overflow: 'auto',
-      }}
-    >
-      <div
-        style={{
-          maxWidth: 700,
-          width: '100%',
-          margin: '0 auto',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '1.5rem',
-        }}
-      >
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-          }}
-        >
-          <div
-            style={{
-              fontSize: '1.2rem',
-              fontWeight: 700,
-              color: colors.text,
-              letterSpacing: '0.08em',
-              textTransform: 'uppercase',
-            }}
-          >
-            MIDI Mappings
-          </div>
+    <div className={styles.container}>
+      <div className={styles.inner}>
+        <div className={styles.titleRow}>
+          <div className={styles.title}>MIDI Mappings</div>
           {mappings.length > 0 && (
-            <button
-              onClick={requestClearMidiMappings}
-              style={{
-                background: 'transparent',
-                border: `1px solid ${colors.border}`,
-                color: colors.muted,
-                padding: '0.3rem 0.6rem',
-                fontSize: '0.85rem',
-                cursor: 'pointer',
-              }}
-            >
+            <button onClick={requestClearMidiMappings} className={styles.clearBtn}>
               Clear All
             </button>
           )}
         </div>
 
         {mappings.length === 0 ? (
-          <div
-            style={{
-              color: colors.muted,
-              fontStyle: 'italic',
-              fontSize: '1rem',
-              textAlign: 'center',
-              padding: '3rem 0',
-            }}
-          >
+          <div className={styles.emptyState}>
             No MIDI mappings configured.
             <br />
             Use the MIDI buttons next to block parameters to assign CC controls.
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+          <div className={styles.table}>
             {/* Header */}
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                padding: '0.35rem 0.5rem',
-                fontSize: '0.8rem',
-                color: colors.muted,
-                textTransform: 'uppercase',
-                letterSpacing: '0.06em',
-              }}
-            >
-              <span style={{ width: 32, textAlign: 'center' }}>In</span>
-              <span style={{ minWidth: '6ch' }}>CC</span>
-              <span style={{ minWidth: '5ch' }}>Ch</span>
-              <span style={{ margin: '0 0.4rem', visibility: 'hidden' }}>→</span>
-              <span style={{ flex: 1 }}>Target</span>
-              <span style={{ width: 20 }} />
+            <div className={styles.tableHeader}>
+              <span className={styles.colActivity}>In</span>
+              <span className={styles.colCc}>CC</span>
+              <span className={styles.colCh}>Ch</span>
+              <span className={styles.colArrowHidden}>&rarr;</span>
+              <span className={styles.colTarget}>Target</span>
+              <span className={styles.colRemove} />
             </div>
 
             {/* Rows */}
@@ -158,44 +96,14 @@ export function MidiPage() {
               const isActive = Date.now() - lastActive < 500;
 
               return (
-                <div
-                  key={i}
-                  onClick={() => setEditIndex(i)}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    padding: '0.45rem 0.5rem',
-                    background: colors.cell,
-                    border: `1px solid ${colors.border}`,
-                    fontSize: '0.95rem',
-                    cursor: 'pointer',
-                    transition: 'background 0.1s ease',
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = colors.border;
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = colors.cell;
-                  }}
-                >
-                  <span style={{ width: 32, display: 'flex', justifyContent: 'center' }}>
+                <div key={i} onClick={() => setEditIndex(i)} className={styles.row}>
+                  <span className={styles.activityCol}>
                     <ActivityDot active={isActive} />
                   </span>
-                  <span
-                    style={{
-                      color: colors.text,
-                      fontWeight: 600,
-                      fontVariantNumeric: 'tabular-nums',
-                      minWidth: '6ch',
-                    }}
-                  >
-                    {m.cc >= 0 ? m.cc : 'PC'}
-                  </span>
-                  <span style={{ color: colors.muted, minWidth: '5ch' }}>
-                    {m.channel >= 0 ? m.channel + 1 : 'Any'}
-                  </span>
-                  <span style={{ color: colors.muted, margin: '0 0.4rem' }}>→</span>
-                  <span style={{ color: colors.secondary, flex: 1 }}>
+                  <span className={styles.ccValue}>{m.cc >= 0 ? m.cc : 'PC'}</span>
+                  <span className={styles.chValue}>{m.channel >= 0 ? m.channel + 1 : 'Any'}</span>
+                  <span className={styles.arrow}>&rarr;</span>
+                  <span className={styles.target}>
                     {targetLabels[m.target] || m.target}
                     {m.blockId ? ` (${blockName(m.blockId)})` : ''}
                   </span>
@@ -204,15 +112,7 @@ export function MidiPage() {
                       e.stopPropagation();
                       requestRemoveMidiMapping(i);
                     }}
-                    style={{
-                      background: 'transparent',
-                      border: 'none',
-                      color: colors.muted,
-                      cursor: 'pointer',
-                      padding: '0.2rem',
-                      display: 'flex',
-                      alignItems: 'center',
-                    }}
+                    className={styles.removeBtn}
                   >
                     <Cross2Icon width={14} height={14} />
                   </button>
@@ -241,17 +141,5 @@ export function MidiPage() {
 }
 
 function ActivityDot({ active }: { active: boolean }) {
-  return (
-    <div
-      style={{
-        width: 10,
-        height: 10,
-        transform: 'rotate(45deg)',
-        background: active ? colors.green : colors.muted,
-        opacity: active ? 1 : 0.3,
-        transition: 'background 0.1s ease, opacity 0.4s ease',
-        boxShadow: active ? `0 0 4px ${colors.green}88` : 'none',
-      }}
-    />
-  );
+  return <div className={`${styles.activityDot} ${active ? styles.activityDotActive : ''}`} />;
 }

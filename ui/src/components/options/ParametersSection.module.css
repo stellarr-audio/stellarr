@@ -1,0 +1,112 @@
+.divider {
+  height: 1px;
+  background: var(--color-border);
+}
+
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.sectionTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-secondary);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.paramRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.4rem;
+}
+
+.paramValue {
+  font-size: 1rem;
+  color: var(--color-secondary);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  min-width: 4ch;
+  text-align: right;
+}
+
+.paramValueWide {
+  min-width: 5ch;
+}
+
+/* ParamLabel */
+.paramLabelContainer {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.paramLabelText {
+  font-size: 1rem;
+  color: var(--color-text);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.midiButton {
+  background: transparent;
+  border: 1px solid var(--color-border);
+  color: var(--color-muted);
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+  padding: 0.1rem 0.3rem;
+}
+
+.midiButtonAssigned {
+  background: rgba(0, 180, 255, 0.094);
+  border-color: var(--color-secondary);
+  color: var(--color-secondary);
+}
+
+/* Bypass Mode */
+.bypassModeLabel {
+  font-size: 1rem;
+  color: var(--color-text);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.selectTrigger {
+  width: 100%;
+  text-align: left;
+  background: var(--color-cell);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  padding: 0.35rem 0.5rem;
+  font-size: 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  outline: none;
+}
+
+.selectContent {
+  background: var(--color-dropdown-bg);
+  border: 1px solid var(--color-border);
+  width: var(--radix-select-trigger-width);
+  z-index: 20;
+}
+
+.selectItem {
+  padding: 0.35rem 0.5rem;
+  font-size: 1rem;
+  color: var(--color-text);
+  cursor: pointer;
+  outline: none;
+}
+
+.selectItem:hover {
+  background: rgba(42, 37, 69, 0.53);
+}

@@ -1,0 +1,48 @@
+.wrapper {
+  display: flex;
+  align-items: stretch;
+  border: 1px solid var(--color-border);
+}
+
+.wrapperActive {
+  border: 2px solid #ffffff;
+}
+
+.button {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: #ffffff;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+}
+
+.buttonActive {
+  background: rgba(0, 180, 255, 0.133);
+}
+
+.buttonDirty {
+  background: rgba(255, 170, 0, 0.302);
+}
+
+.deleteButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-left: 1px solid var(--color-border);
+  color: var(--color-muted);
+  padding: 0 0.2rem;
+  cursor: pointer;
+}
+
+.deleteButton:hover {
+  color: var(--color-danger);
+}

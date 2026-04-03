@@ -6,6 +6,7 @@ import type {
   PluginInfo,
   Scene,
   MidiMapping,
+  MidiMonitorEvent,
 } from '../store';
 
 declare global {
@@ -212,6 +213,14 @@ export function requestStartMidiLearn(target: string, blockId?: string): void {
 
 export function requestCancelMidiLearn(): void {
   sendEvent('cancelMidiLearn', '');
+}
+
+export function requestSetMidiMonitorEnabled(enabled: boolean): void {
+  sendEvent('setMidiMonitorEnabled', JSON.stringify({ enabled }));
+}
+
+export function requestInjectMidiCC(channel: number, cc: number, value: number): void {
+  sendEvent('injectMidiCC', JSON.stringify({ channel, cc, value }));
 }
 
 export function requestSetTunerEnabled(enabled: boolean): void {
@@ -470,6 +479,20 @@ export function initBridge(): void {
       } satisfies MidiMapping;
     });
     useStore.getState().setMidiMappings(mappings, Boolean(d.learning));
+  });
+
+  juce.backend.addEventListener('midiMonitorData', (detail: unknown) => {
+    const d = asRecord(detail);
+    const events = (Array.isArray(d.events) ? d.events : []).map((e: unknown) => {
+      const r = asRecord(e);
+      return {
+        type: String(r.type),
+        channel: Number(r.channel),
+        data1: Number(r.data1),
+        data2: Number(r.data2),
+      } satisfies MidiMonitorEvent;
+    });
+    if (events.length > 0) useStore.getState().appendMidiMonitorEvents(events);
   });
 
   juce.backend.addEventListener('midiLearnComplete', () => {

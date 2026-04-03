@@ -120,6 +120,21 @@ void StellarrBridge::handleEvent(const juce::String& eventName, const juce::var&
         processor->getMidiMapper().cancelLearn();
         emitMidiMappings();
     }
+    else if (eventName == "setMidiMonitorEnabled" && processor != nullptr)
+    {
+        auto* obj = json.getDynamicObject();
+        if (obj == nullptr) return;
+        processor->getMidiMapper().setMonitorEnabled(static_cast<bool>(obj->getProperty("enabled")));
+    }
+    else if (eventName == "injectMidiCC" && processor != nullptr)
+    {
+        auto* obj = json.getDynamicObject();
+        if (obj == nullptr) return;
+        int ch = static_cast<int>(obj->getProperty("channel")) + 1; // 0-indexed → 1-indexed
+        int cc = static_cast<int>(obj->getProperty("cc"));
+        int val = static_cast<int>(obj->getProperty("value"));
+        processor->getMidiMapper().injectMidi(juce::MidiMessage::controllerEvent(ch, cc, val));
+    }
 
     // Plugin management
     else if (eventName == "scanPlugins")            handleScanPlugins();
@@ -523,6 +538,29 @@ void StellarrBridge::sendTunerData()
             }
         }
     }
+}
+
+void StellarrBridge::sendMidiMonitorData()
+{
+    if (processor == nullptr || webView == nullptr) return;
+
+    auto events = processor->getMidiMapper().drainMonitorEvents();
+    if (events.empty()) return;
+
+    juce::Array<juce::var> arr;
+    for (auto& evt : events)
+    {
+        auto* obj = new juce::DynamicObject();
+        obj->setProperty("type", evt.type);
+        obj->setProperty("channel", evt.channel);
+        obj->setProperty("data1", evt.data1);
+        obj->setProperty("data2", evt.data2);
+        arr.add(juce::var(obj));
+    }
+
+    auto* detail = new juce::DynamicObject();
+    detail->setProperty("events", arr);
+    emitToJs("midiMonitorData", detail);
 }
 
 // -- Plugin management --------------------------------------------------------

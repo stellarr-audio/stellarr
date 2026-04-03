@@ -27,6 +27,7 @@ public:
     void restoreSession(const juce::var& session);
     void sendSystemStats(double cpuPercent, double memoryMB, double totalMemoryMB);
     void sendTunerData();
+    void sendMidiMonitorData();
     bool isTunerActive() const { return tunerActive; }
     void setOnStartupComplete(std::function<void()> callback) { onStartupComplete = std::move(callback); }
 

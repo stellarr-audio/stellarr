@@ -102,6 +102,10 @@ export function requestToggleTestTone(blockId: string): void {
   sendEvent('toggleTestTone', JSON.stringify({ blockId }));
 }
 
+export function requestRenameBlock(blockId: string, name: string): void {
+  sendEvent('renameBlock', JSON.stringify({ blockId, name }));
+}
+
 export function requestSetBlockPlugin(blockId: string, pluginId: string): void {
   sendEvent('setBlockPlugin', JSON.stringify({ blockId, pluginId }));
 }
@@ -304,6 +308,11 @@ export function initBridge(): void {
     useStore.getState().removeConnection(String(d.sourceId), String(d.destId));
   });
 
+  juce.backend.addEventListener('blockRenamed', (detail: unknown) => {
+    const d = asRecord(detail);
+    useStore.getState().setBlockDisplayName(String(d.blockId), String(d.displayName));
+  });
+
   juce.backend.addEventListener('blockPluginSet', (detail: unknown) => {
     const d = asRecord(detail);
     console.log('[Bridge] RX blockPluginSet:', d);
@@ -330,6 +339,7 @@ export function initBridge(): void {
         col: Number(r.col),
         row: Number(r.row),
         nodeId: Number(r.nodeId),
+        displayName: r.displayName ? String(r.displayName) : undefined,
         pluginId: r.pluginId ? String(r.pluginId) : undefined,
         pluginName: r.pluginName ? String(r.pluginName) : undefined,
         pluginFormat: r.pluginFormat ? String(r.pluginFormat) : undefined,

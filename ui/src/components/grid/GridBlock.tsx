@@ -184,7 +184,7 @@ export function GridBlockComponent({ block }: Props) {
           letterSpacing: '0.12em',
         }}
       >
-        {typeAbbreviations[block.type] ?? block.type.slice(0, 3).toUpperCase()}
+        {block.displayName || typeAbbreviations[block.type] || block.type.slice(0, 3).toUpperCase()}
       </div>
 
       {/* Bottom region — subtitle */}

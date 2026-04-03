@@ -1,7 +1,9 @@
+import { useState } from 'react';
 import { useStore } from '../../store';
 import { OptionRow } from '../common/OptionRow';
 import { Slider } from '../common/Slider';
 import { ToggleSwitch } from '../common/ToggleSwitch';
+import { Pencil1Icon } from '@radix-ui/react-icons';
 import { PluginSection } from './PluginSection';
 import { ParametersSection } from './ParametersSection';
 import { StatesSection } from './StatesSection';
@@ -9,6 +11,7 @@ import {
   requestToggleTestTone,
   requestToggleBlockBypass,
   requestSetBlockLevel,
+  requestRenameBlock,
 } from '../../bridge';
 import { colors } from '../common/colors';
 
@@ -58,37 +61,7 @@ export function OptionsPanel() {
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-            }}
-          >
-            <div
-              style={{
-                fontSize: '1rem',
-                fontWeight: 700,
-                color: block.bypassed ? colors.muted : colors.text,
-                letterSpacing: '0.08em',
-                textTransform: 'uppercase',
-              }}
-            >
-              Active
-            </div>
-
-            {/* Bypass toggle — non-I/O blocks only */}
-            {block.type !== 'input' && block.type !== 'output' && (
-              <ToggleSwitch
-                enabled={!block.bypassed}
-                onToggle={() => {
-                  useStore.getState().setBlockBypassed(block.id, !block.bypassed);
-                  requestToggleBlockBypass(block.id);
-                }}
-                title={block.bypassed ? 'Enable block' : 'Bypass block'}
-              />
-            )}
-          </div>
+          <BlockHeader block={block} />
 
           <div style={{ height: 1, background: colors.border }} />
 
@@ -168,6 +141,101 @@ export function OptionsPanel() {
           {/* States — plugin blocks only */}
           {block.type === 'plugin' && <StatesSection block={block} />}
         </div>
+      )}
+    </div>
+  );
+}
+
+function BlockHeader({ block }: { block: import('../../store').GridBlock }) {
+  const [editing, setEditing] = useState(false);
+  const [editValue, setEditValue] = useState('');
+
+  const typeAbbreviations: Record<string, string> = {
+    input: 'INP',
+    output: 'OUT',
+    plugin: 'PLG',
+  };
+  const abbreviation = typeAbbreviations[block.type] || block.type.slice(0, 3).toUpperCase();
+  const displayName = block.displayName || abbreviation;
+
+  const startEdit = () => {
+    setEditValue(displayName);
+    setEditing(true);
+  };
+
+  const submitEdit = () => {
+    setEditing(false);
+    const trimmed = editValue.trim();
+    if (trimmed && trimmed !== displayName) {
+      requestRenameBlock(block.id, trimmed);
+    }
+  };
+
+  return (
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+      }}
+    >
+      {editing ? (
+        <input
+          autoFocus
+          maxLength={3}
+          value={editValue}
+          onChange={(e) => setEditValue(e.target.value)}
+          onBlur={submitEdit}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') submitEdit();
+            if (e.key === 'Escape') setEditing(false);
+          }}
+          style={{
+            background: 'transparent',
+            border: `1px solid ${colors.primary}`,
+            color: colors.text,
+            fontSize: '1rem',
+            fontWeight: 700,
+            letterSpacing: '0.08em',
+            textTransform: 'uppercase',
+            padding: '0.1rem 0.3rem',
+            outline: 'none',
+            width: 60,
+          }}
+        />
+      ) : (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+          <span
+            style={{
+              fontSize: '1rem',
+              fontWeight: 700,
+              color: block.bypassed ? colors.muted : colors.text,
+              letterSpacing: '0.08em',
+              textTransform: 'uppercase',
+            }}
+          >
+            {displayName}
+          </span>
+          <Pencil1Icon
+            width={14}
+            height={14}
+            color={colors.muted}
+            style={{ cursor: 'pointer' }}
+            onClick={startEdit}
+          />
+        </div>
+      )}
+
+      {/* Bypass toggle — non-I/O blocks only */}
+      {block.type !== 'input' && block.type !== 'output' && (
+        <ToggleSwitch
+          enabled={!block.bypassed}
+          onToggle={() => {
+            useStore.getState().setBlockBypassed(block.id, !block.bypassed);
+            requestToggleBlockBypass(block.id);
+          }}
+          title={block.bypassed ? 'Enable block' : 'Bypass block'}
+        />
       )}
     </div>
   );

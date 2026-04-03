@@ -49,6 +49,9 @@ void StellarrProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::Mid
 {
     juce::ScopedNoDenormals noDenormals;
 
+    // Intercept Stellarr-mapped MIDI before graph processing
+    midiMapper.processMidi(midi);
+
     auto start = juce::Time::getHighResolutionTicks();
     graph.processBlock(buffer, midi);
     auto end = juce::Time::getHighResolutionTicks();

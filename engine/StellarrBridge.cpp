@@ -9,6 +9,7 @@ StellarrBridge::StellarrBridge() = default;
 void StellarrBridge::setProcessor(StellarrProcessor* proc)
 {
     processor = proc;
+    setupMidiMapper();
 }
 
 void StellarrBridge::setAppProperties(juce::ApplicationProperties* props)
@@ -71,6 +72,53 @@ void StellarrBridge::handleEvent(const juce::String& eventName, const juce::var&
         detail->setProperty("blockId", blockId);
         detail->setProperty("displayName", name);
         emitToJs("blockRenamed", detail);
+    }
+
+    // MIDI mappings
+    else if (eventName == "addMidiMapping" && processor != nullptr)
+    {
+        auto* obj = json.getDynamicObject();
+        if (obj == nullptr) return;
+
+        MidiMapper::Mapping m;
+        m.channel = static_cast<int>(obj->getProperty("channel"));
+        m.ccNumber = static_cast<int>(obj->getProperty("cc"));
+        m.target = MidiMapper::targetFromString(obj->getProperty("target").toString());
+        m.blockId = obj->getProperty("blockId").toString();
+        processor->getMidiMapper().addMapping(m);
+        emitMidiMappings();
+    }
+    else if (eventName == "removeMidiMapping" && processor != nullptr)
+    {
+        auto* obj = json.getDynamicObject();
+        if (obj == nullptr) return;
+
+        processor->getMidiMapper().removeMapping(static_cast<int>(obj->getProperty("index")));
+        emitMidiMappings();
+    }
+    else if (eventName == "clearMidiMappings" && processor != nullptr)
+    {
+        processor->getMidiMapper().clearAll();
+        emitMidiMappings();
+    }
+    else if (eventName == "getMidiMappings")
+    {
+        emitMidiMappings();
+    }
+    else if (eventName == "startMidiLearn" && processor != nullptr)
+    {
+        auto* obj = json.getDynamicObject();
+        if (obj == nullptr) return;
+
+        auto target = MidiMapper::targetFromString(obj->getProperty("target").toString());
+        auto blockId = obj->getProperty("blockId").toString();
+        processor->getMidiMapper().startLearn(target, blockId);
+        emitMidiMappings();
+    }
+    else if (eventName == "cancelMidiLearn" && processor != nullptr)
+    {
+        processor->getMidiMapper().cancelLearn();
+        emitMidiMappings();
     }
 
     // Plugin management

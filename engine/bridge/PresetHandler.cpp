@@ -121,6 +121,10 @@ juce::var StellarrBridge::serialiseSession() const
     session->setProperty("scenes", scenesArray);
     session->setProperty("activeSceneIndex", activeSceneIndex);
 
+    // MIDI mappings
+    if (processor != nullptr)
+        session->setProperty("midiMappings", processor->getMidiMapper().toJson());
+
     return juce::var(session);
 }
 
@@ -283,6 +287,10 @@ void StellarrBridge::restoreSession(const juce::var& session)
         scenes.push_back(defaultScene);
         activeSceneIndex = 0;
     }
+
+    // Restore MIDI mappings
+    if (processor != nullptr && obj->hasProperty("midiMappings"))
+        processor->getMidiMapper().fromJson(obj->getProperty("midiMappings"));
 
     sendGraphState();
 }

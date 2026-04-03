@@ -492,7 +492,11 @@ export function initBridge(): void {
         data2: Number(r.data2),
       } satisfies MidiMonitorEvent;
     });
-    if (events.length > 0) useStore.getState().appendMidiMonitorEvents(events);
+    if (events.length > 0) {
+      const store = useStore.getState();
+      store.appendMidiMonitorEvents(events);
+      store.updateMidiActivity(events);
+    }
   });
 
   juce.backend.addEventListener('midiLearnComplete', () => {

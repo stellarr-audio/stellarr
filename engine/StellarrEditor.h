@@ -12,10 +12,12 @@ public:
     explicit StellarrEditor(StellarrProcessor&);
     ~StellarrEditor() override;
 
+    void paint(juce::Graphics& g) override;
     void resized() override;
 
     void toggleDevTools();
     bool isDevToolsEnabled() const;
+    void hideSplash();
 
 private:
     static juce::String getMimeType(const juce::File& file);
@@ -23,5 +25,6 @@ private:
 
     StellarrBridge bridge;
     std::unique_ptr<juce::WebBrowserComponent> webView;
+    std::unique_ptr<juce::DrawableComposite> splashLogo;
     bool devToolsEnabled = false;
 };

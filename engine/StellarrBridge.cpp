@@ -451,6 +451,8 @@ void StellarrBridge::handleBridgeReady()
 
                 sendStartupProgress("Ready", 100);
                 emitToJs("startupComplete", new juce::DynamicObject());
+                if (onStartupComplete)
+                    onStartupComplete();
             });
         });
     });

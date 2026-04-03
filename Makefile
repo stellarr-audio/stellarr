@@ -1,5 +1,7 @@
 .PHONY: setup build build-ui build-cpp test run clean
 
+.DEFAULT_GOAL := build
+
 setup:
 	cd ui && npm install
 

@@ -4,3 +4,5 @@ ui/dist/
 .claude/
 .DS_Store
 *.user
+.vscode/
+!.vscode/c_cpp_properties.json

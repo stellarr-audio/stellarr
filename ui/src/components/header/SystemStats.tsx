@@ -1,8 +1,8 @@
 import { useStore } from '../../store';
-import { colors } from '../common/colors';
+import styles from './SystemStats.module.css';
 
 function barColor(percent: number): string {
-  if (percent < 40) return colors.green;
+  if (percent < 40) return 'var(--color-green)';
   if (percent < 70) return '#ffcc00';
   return '#ff4444';
 }
@@ -12,45 +12,12 @@ function StatBar({ label, percent }: { label: string; percent: number }) {
   const color = barColor(clamped);
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-      <span
-        style={{
-          fontSize: '1rem',
-          color: colors.muted,
-          letterSpacing: '0.06em',
-        }}
-      >
-        {label}
-      </span>
-      <div
-        style={{
-          width: 50,
-          height: 6,
-          background: colors.border,
-          borderRadius: 3,
-          overflow: 'hidden',
-        }}
-      >
-        <div
-          style={{
-            width: `${clamped}%`,
-            height: '100%',
-            background: color,
-            borderRadius: 3,
-            transition: 'width 0.3s ease, background 0.3s ease',
-          }}
-        />
+    <div className={styles.statBar}>
+      <span className={styles.label}>{label}</span>
+      <div className={styles.track}>
+        <div className={styles.fill} style={{ width: `${clamped}%`, background: color }} />
       </div>
-      <span
-        style={{
-          fontSize: '1rem',
-          color,
-          fontWeight: 600,
-          width: '3ch',
-          textAlign: 'right',
-          fontVariantNumeric: 'tabular-nums',
-        }}
-      >
+      <span className={styles.percent} style={{ color }}>
         {clamped.toFixed(0)}%
       </span>
     </div>
@@ -65,14 +32,7 @@ export function SystemStats() {
   const memPercent = totalMemory > 0 ? (memory / totalMemory) * 100 : 0;
 
   return (
-    <div
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: '1rem',
-        flexShrink: 0,
-      }}
-    >
+    <div className={styles.container}>
       <StatBar label="CPU" percent={cpu} />
       <StatBar label="MEM" percent={memPercent} />
     </div>

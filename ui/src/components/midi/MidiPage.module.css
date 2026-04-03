@@ -1,0 +1,162 @@
+.container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-bg);
+  padding: 2rem;
+  overflow: auto;
+}
+
+.inner {
+  max-width: 700px;
+  width: 100%;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.titleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--color-text);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.clearBtn {
+  background: transparent;
+  border: 1px solid var(--color-border);
+  color: var(--color-muted);
+  padding: 0.3rem 0.6rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.emptyState {
+  color: var(--color-muted);
+  font-style: italic;
+  font-size: 1rem;
+  text-align: center;
+  padding: 3rem 0;
+}
+
+.table {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.tableHeader {
+  display: flex;
+  align-items: center;
+  padding: 0.35rem 0.5rem;
+  font-size: 0.8rem;
+  color: var(--color-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.colActivity {
+  width: 32px;
+  text-align: center;
+}
+
+.colCc {
+  min-width: 6ch;
+}
+
+.colCh {
+  min-width: 5ch;
+}
+
+.colArrow {
+  margin: 0 0.4rem;
+}
+
+.colArrowHidden {
+  margin: 0 0.4rem;
+  visibility: hidden;
+}
+
+.colTarget {
+  flex: 1;
+}
+
+.colRemove {
+  width: 20px;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  padding: 0.45rem 0.5rem;
+  background: var(--color-cell);
+  border: 1px solid var(--color-border);
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: background 0.1s ease;
+}
+
+.row:hover {
+  background: var(--color-border);
+}
+
+.activityCol {
+  width: 32px;
+  display: flex;
+  justify-content: center;
+}
+
+.ccValue {
+  color: var(--color-text);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  min-width: 6ch;
+}
+
+.chValue {
+  color: var(--color-muted);
+  min-width: 5ch;
+}
+
+.arrow {
+  color: var(--color-muted);
+  margin: 0 0.4rem;
+}
+
+.target {
+  color: var(--color-secondary);
+  flex: 1;
+}
+
+.removeBtn {
+  background: transparent;
+  border: none;
+  color: var(--color-muted);
+  cursor: pointer;
+  padding: 0.2rem;
+  display: flex;
+  align-items: center;
+}
+
+.activityDot {
+  width: 10px;
+  height: 10px;
+  transform: rotate(45deg);
+  background: var(--color-muted);
+  opacity: 0.3;
+  transition: background 0.1s ease, opacity 0.4s ease;
+}
+
+.activityDotActive {
+  background: var(--color-green);
+  opacity: 1;
+  box-shadow: 0 0 4px color-mix(in srgb, var(--color-green) 53%, transparent);
+}

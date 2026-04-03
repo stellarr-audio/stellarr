@@ -2,6 +2,7 @@ import type { RefObject } from 'react';
 import { useStore } from '../../store';
 import { colors } from '../common/colors';
 import { CELL_SIZE, GAP, outputPortX, inputPortX, portY, gridWidth, gridHeight } from './layout';
+import styles from './ConnectionLayer.module.css';
 
 const wireColors = [
   '#00b4ff',
@@ -60,17 +61,7 @@ export function ConnectionLayer(_props: Props) {
   const gh = gridHeight(grid.rows);
 
   return (
-    <svg
-      style={{
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        width: gw,
-        height: gh,
-        pointerEvents: 'none',
-        zIndex: 1,
-      }}
-    >
+    <svg className={styles.svg} style={{ width: gw, height: gh }}>
       {connections.map((conn, i) => {
         const src = blockMap.get(conn.sourceId);
         const dst = blockMap.get(conn.destId);

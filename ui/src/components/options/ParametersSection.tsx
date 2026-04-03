@@ -10,7 +10,7 @@ import {
   requestSetBlockLevel,
   requestSetBlockBypassMode,
 } from '../../bridge';
-import { colors } from '../common/colors';
+import styles from './ParametersSection.module.css';
 import type { GridBlock } from '../../store';
 
 function ParamLabel({
@@ -36,31 +36,12 @@ function ParamLabel({
 
   return (
     <>
-      <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-        <span
-          style={{
-            fontSize: '1rem',
-            color: colors.text,
-            letterSpacing: '0.05em',
-            textTransform: 'uppercase',
-          }}
-        >
-          {label}
-        </span>
+      <span className={styles.paramLabelContainer}>
+        <span className={styles.paramLabelText}>{label}</span>
         <button
           onClick={() => setDialogOpen(true)}
           title={existing ? `MIDI: CC ${existing.cc}` : `Assign MIDI CC to ${label}`}
-          style={{
-            background: existing ? `${colors.secondary}18` : 'transparent',
-            border: `1px solid ${existing ? colors.secondary : colors.border}`,
-            color: existing ? colors.secondary : colors.muted,
-            fontSize: '0.65rem',
-            fontWeight: 600,
-            letterSpacing: '0.04em',
-            textTransform: 'uppercase',
-            cursor: 'pointer',
-            padding: '0.1rem 0.3rem',
-          }}
+          className={`${styles.midiButton} ${existing ? styles.midiButtonAssigned : ''}`}
         >
           {midiLabel}
         </button>
@@ -90,43 +71,15 @@ interface Props {
 export function ParametersSection({ block }: Props) {
   return (
     <>
-      <div style={{ height: 1, background: colors.border }} />
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-        <div
-          style={{
-            fontSize: '1rem',
-            fontWeight: 600,
-            color: colors.secondary,
-            letterSpacing: '0.08em',
-            textTransform: 'uppercase',
-          }}
-        >
-          Parameters
-        </div>
+      <div className={styles.divider} />
+      <div className={styles.container}>
+        <div className={styles.sectionTitle}>Parameters</div>
 
         {/* Mix */}
         <div>
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: '0.4rem',
-            }}
-          >
+          <div className={styles.paramRow}>
             <ParamLabel label="Mix" blockId={block.id} target="blockMix" />
-            <span
-              style={{
-                fontSize: '1rem',
-                color: colors.secondary,
-                fontWeight: 600,
-                fontVariantNumeric: 'tabular-nums',
-                minWidth: '4ch',
-                textAlign: 'right',
-              }}
-            >
-              {Math.round((block.mix ?? 1) * 100)}%
-            </span>
+            <span className={styles.paramValue}>{Math.round((block.mix ?? 1) * 100)}%</span>
           </div>
           <Slider
             value={Math.round((block.mix ?? 1) * 100)}
@@ -140,25 +93,9 @@ export function ParametersSection({ block }: Props) {
 
         {/* Balance */}
         <div>
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: '0.4rem',
-            }}
-          >
+          <div className={styles.paramRow}>
             <ParamLabel label="Balance" blockId={block.id} target="blockBalance" />
-            <span
-              style={{
-                fontSize: '1rem',
-                color: colors.secondary,
-                fontWeight: 600,
-                fontVariantNumeric: 'tabular-nums',
-                minWidth: '4ch',
-                textAlign: 'right',
-              }}
-            >
+            <span className={styles.paramValue}>
               {(() => {
                 const bal = Math.round((block.balance ?? 0) * 100);
                 if (bal === 0) return 'C';
@@ -179,25 +116,9 @@ export function ParametersSection({ block }: Props) {
 
         {/* Level */}
         <div>
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: '0.4rem',
-            }}
-          >
+          <div className={styles.paramRow}>
             <ParamLabel label="Level" blockId={block.id} target="blockLevel" />
-            <span
-              style={{
-                fontSize: '1rem',
-                color: colors.secondary,
-                fontWeight: 600,
-                fontVariantNumeric: 'tabular-nums',
-                minWidth: '5ch',
-                textAlign: 'right',
-              }}
-            >
+            <span className={`${styles.paramValue} ${styles.paramValueWide}`}>
               {(() => {
                 const db = block.level ?? 0;
                 if (db <= -60) return '-∞ dB';
@@ -219,24 +140,8 @@ export function ParametersSection({ block }: Props) {
 
         {/* Bypass Mode */}
         <div>
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: '0.4rem',
-            }}
-          >
-            <span
-              style={{
-                fontSize: '1rem',
-                color: colors.text,
-                letterSpacing: '0.05em',
-                textTransform: 'uppercase',
-              }}
-            >
-              Bypass Mode
-            </span>
+          <div className={styles.paramRow}>
+            <span className={styles.bypassModeLabel}>Bypass Mode</span>
           </div>
           <Select.Root
             value={block.bypassMode ?? 'thru'}
@@ -245,57 +150,17 @@ export function ParametersSection({ block }: Props) {
               requestSetBlockBypassMode(block.id, v);
             }}
           >
-            <Select.Trigger
-              style={{
-                width: '100%',
-                textAlign: 'left',
-                background: colors.cell,
-                color: colors.text,
-                border: `1px solid ${colors.border}`,
-                padding: '0.35rem 0.5rem',
-                fontSize: '1rem',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                outline: 'none',
-              }}
-            >
+            <Select.Trigger className={styles.selectTrigger}>
               <Select.Value />
               <Select.Icon>
                 <ChevronDownIcon />
               </Select.Icon>
             </Select.Trigger>
             <Select.Portal>
-              <Select.Content
-                position="popper"
-                sideOffset={4}
-                style={{
-                  background: colors.dropdownBg,
-                  border: `1px solid ${colors.border}`,
-                  width: 'var(--radix-select-trigger-width)',
-                  zIndex: 20,
-                }}
-              >
+              <Select.Content position="popper" sideOffset={4} className={styles.selectContent}>
                 <Select.Viewport>
                   {bypassModes.map((m) => (
-                    <Select.Item
-                      key={m.value}
-                      value={m.value}
-                      style={{
-                        padding: '0.35rem 0.5rem',
-                        fontSize: '1rem',
-                        color: colors.text,
-                        cursor: 'pointer',
-                        outline: 'none',
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.background = `${colors.border}88`;
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.background = 'transparent';
-                      }}
-                    >
+                    <Select.Item key={m.value} value={m.value} className={styles.selectItem}>
                       <Select.ItemText>{m.label}</Select.ItemText>
                     </Select.Item>
                   ))}

@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useStore } from '../../store';
 import { Slider } from '../common/Slider';
 import { requestSetMidiMonitorEnabled, requestInjectMidiCC } from '../../bridge';
-import { colors } from '../common/colors';
+import styles from './MidiMonitor.module.css';
 
 export function MidiMonitor() {
   const events = useStore((s) => s.midiMonitorEvents);
@@ -26,76 +26,25 @@ export function MidiMonitor() {
   }, [events]);
 
   return (
-    <div
-      style={{
-        width: 280,
-        flexShrink: 0,
-        boxSizing: 'border-box',
-        background: '#0f0d1e',
-        borderLeft: `1px solid ${colors.border}`,
-        padding: '1rem',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '1rem',
-        overflow: 'hidden',
-      }}
-    >
+    <div className={styles.container}>
       {/* Monitor */}
-      <div
-        style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', flex: 1, minHeight: 0 }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <span
-            style={{
-              fontSize: '1rem',
-              fontWeight: 600,
-              color: colors.muted,
-              letterSpacing: '0.12em',
-              textTransform: 'uppercase',
-            }}
-          >
-            Monitor
-          </span>
-          <button
-            onClick={clearMonitor}
-            style={{
-              background: 'transparent',
-              border: `1px solid ${colors.border}`,
-              color: colors.muted,
-              padding: '0.15rem 0.4rem',
-              fontSize: '0.75rem',
-              cursor: 'pointer',
-            }}
-          >
+      <div className={styles.monitorSection}>
+        <div className={styles.sectionHeader}>
+          <span className={styles.sectionTitle}>Monitor</span>
+          <button onClick={clearMonitor} className={styles.clearBtn}>
             Clear
           </button>
         </div>
 
-        <div
-          ref={logRef}
-          style={{
-            flex: 1,
-            overflow: 'auto',
-            background: colors.bg,
-            border: `1px solid ${colors.border}`,
-            padding: '0.3rem',
-            fontSize: '0.75rem',
-            fontFamily: 'monospace',
-            color: colors.text,
-            minHeight: 120,
-          }}
-        >
+        <div ref={logRef} className={styles.log}>
           {events.length === 0 ? (
-            <span style={{ color: colors.muted, fontStyle: 'italic' }}>Waiting for MIDI...</span>
+            <span className={styles.logEmpty}>Waiting for MIDI...</span>
           ) : (
             events.map((e, i) => (
-              <div
-                key={i}
-                style={{ padding: '0.1rem 0', borderBottom: `1px solid ${colors.border}22` }}
-              >
-                <span style={{ color: colors.secondary }}>{e.type}</span>{' '}
-                <span style={{ color: colors.muted }}>Ch{e.channel + 1}</span>{' '}
-                <span style={{ color: colors.text }}>
+              <div key={i} className={styles.logEntry}>
+                <span className={styles.logType}>{e.type}</span>{' '}
+                <span className={styles.logChannel}>Ch{e.channel + 1}</span>{' '}
+                <span className={styles.logData}>
                   {e.type === 'CC'
                     ? `CC${e.data1}=${e.data2}`
                     : e.type === 'Note On' || e.type === 'Note Off'
@@ -111,18 +60,8 @@ export function MidiMonitor() {
       </div>
 
       {/* Sender */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-        <span
-          style={{
-            fontSize: '1rem',
-            fontWeight: 600,
-            color: colors.muted,
-            letterSpacing: '0.12em',
-            textTransform: 'uppercase',
-          }}
-        >
-          Send CC
-        </span>
+      <div className={styles.senderSection}>
+        <span className={styles.sectionTitle}>Send CC</span>
         <CcSender />
       </div>
     </div>
@@ -137,34 +76,21 @@ function CcSender() {
   const send = () => requestInjectMidiCC(channel, cc, value);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-      <div style={{ display: 'flex', gap: '0.3rem' }}>
-        <div style={{ flex: 1 }}>
-          <label style={{ fontSize: '0.7rem', color: colors.muted, textTransform: 'uppercase' }}>
-            CC#
-          </label>
+    <div className={styles.senderFields}>
+      <div className={styles.fieldRow}>
+        <div className={styles.fieldCol}>
+          <label className={styles.fieldLabel}>CC#</label>
           <input
             type="number"
             min={0}
             max={127}
             value={cc}
             onChange={(e) => setCc(Math.max(0, Math.min(127, parseInt(e.target.value) || 0)))}
-            style={{
-              width: '100%',
-              background: colors.bg,
-              border: `1px solid ${colors.border}`,
-              color: colors.text,
-              fontSize: '0.85rem',
-              padding: '0.25rem 0.3rem',
-              outline: 'none',
-              boxSizing: 'border-box',
-            }}
+            className={styles.fieldInput}
           />
         </div>
-        <div style={{ flex: 1 }}>
-          <label style={{ fontSize: '0.7rem', color: colors.muted, textTransform: 'uppercase' }}>
-            Ch
-          </label>
+        <div className={styles.fieldCol}>
+          <label className={styles.fieldLabel}>Ch</label>
           <input
             type="number"
             min={1}
@@ -173,51 +99,20 @@ function CcSender() {
             onChange={(e) =>
               setChannel(Math.max(0, Math.min(15, (parseInt(e.target.value) || 1) - 1)))
             }
-            style={{
-              width: '100%',
-              background: colors.bg,
-              border: `1px solid ${colors.border}`,
-              color: colors.text,
-              fontSize: '0.85rem',
-              padding: '0.25rem 0.3rem',
-              outline: 'none',
-              boxSizing: 'border-box',
-            }}
+            className={styles.fieldInput}
           />
         </div>
       </div>
 
       <div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.2rem' }}>
-          <label style={{ fontSize: '0.7rem', color: colors.muted, textTransform: 'uppercase' }}>
-            Value
-          </label>
-          <span
-            style={{
-              fontSize: '0.75rem',
-              color: colors.secondary,
-              fontVariantNumeric: 'tabular-nums',
-            }}
-          >
-            {value}
-          </span>
+        <div className={styles.sliderHeader}>
+          <label className={styles.fieldLabel}>Value</label>
+          <span className={styles.sliderValue}>{value}</span>
         </div>
         <Slider min={0} max={127} value={value} onChange={setValue} />
       </div>
 
-      <button
-        onClick={send}
-        style={{
-          background: colors.primary,
-          border: 'none',
-          color: '#ffffff',
-          padding: '0.35rem',
-          fontSize: '0.85rem',
-          fontWeight: 600,
-          cursor: 'pointer',
-          width: '100%',
-        }}
-      >
+      <button onClick={send} className={styles.sendBtn}>
         Send
       </button>
     </div>

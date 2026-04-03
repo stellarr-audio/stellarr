@@ -8,7 +8,7 @@ import {
   requestAddMidiMapping,
   requestRemoveMidiMapping,
 } from '../../bridge';
-import { colors } from './colors';
+import styles from './MidiAssignDialog.module.css';
 
 interface Props {
   open: boolean;
@@ -62,56 +62,15 @@ export function MidiAssignDialog({
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
-        <Dialog.Overlay
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(0,0,0,0.5)',
-            zIndex: 50,
-          }}
-        />
-        <Dialog.Content
-          style={{
-            position: 'fixed',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            background: colors.dropdownBg,
-            border: `1px solid ${colors.border}`,
-            padding: '1.5rem',
-            zIndex: 51,
-            minWidth: 300,
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '1rem',
-          }}
-        >
-          <Dialog.Title
-            style={{
-              fontSize: '1rem',
-              fontWeight: 700,
-              color: colors.text,
-              letterSpacing: '0.06em',
-              textTransform: 'uppercase',
-              margin: 0,
-            }}
-          >
-            {title}
-          </Dialog.Title>
+        <Dialog.Overlay className={styles.overlay} />
+        <Dialog.Content className={styles.content}>
+          <Dialog.Title className={styles.title}>{title}</Dialog.Title>
 
-          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-end' }}>
+          <div className={styles.fieldRow}>
             {/* CC Number with Learn icon button */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', flex: 1 }}>
-              <span style={{ fontSize: '0.8rem', color: colors.muted, textTransform: 'uppercase' }}>
-                CC Number
-              </span>
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'stretch',
-                  border: `1px solid ${learning ? colors.primary : colors.border}`,
-                }}
-              >
+            <div className={styles.fieldGroupFlex}>
+              <span className={styles.fieldLabel}>CC Number</span>
+              <div className={`${styles.ccInputWrap} ${learning ? styles.learning : ''}`}>
                 <button
                   onClick={() => {
                     if (learning) requestCancelMidiLearn();
@@ -122,18 +81,7 @@ export function MidiAssignDialog({
                       ? 'Cancel MIDI learn'
                       : 'Learn — send a CC from your controller to auto-detect'
                   }
-                  style={{
-                    background: learning ? colors.primary : 'transparent',
-                    border: 'none',
-                    borderRight: `1px solid ${learning ? colors.primary : colors.border}`,
-                    color: learning ? '#ffffff' : colors.muted,
-                    padding: '0.4rem',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    transition: 'background 0.15s ease',
-                  }}
+                  className={`${styles.learnButton} ${learning ? styles.learning : ''}`}
                 >
                   <MixerHorizontalIcon width={16} height={16} />
                 </button>
@@ -145,83 +93,29 @@ export function MidiAssignDialog({
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') submit();
                   }}
-                  style={{
-                    flex: 1,
-                    background: colors.bg,
-                    border: 'none',
-                    color: colors.text,
-                    fontSize: '1rem',
-                    padding: '0.4rem 0.5rem',
-                    outline: 'none',
-                  }}
+                  className={styles.ccInput}
                 />
               </div>
             </div>
 
             {/* Channel */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-              <span style={{ fontSize: '0.8rem', color: colors.muted, textTransform: 'uppercase' }}>
-                Channel
-              </span>
+            <div className={styles.fieldGroup}>
+              <span className={styles.fieldLabel}>Channel</span>
               <Select.Root value={channel} onValueChange={setChannel}>
-                <Select.Trigger
-                  style={{
-                    background: colors.bg,
-                    border: `1px solid ${colors.border}`,
-                    color: colors.text,
-                    fontSize: '1rem',
-                    padding: '0.4rem 0.5rem',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    gap: '0.3rem',
-                    outline: 'none',
-                    minWidth: 70,
-                  }}
-                >
+                <Select.Trigger className={styles.selectTrigger}>
                   <Select.Value />
                   <Select.Icon>
                     <ChevronDownIcon />
                   </Select.Icon>
                 </Select.Trigger>
                 <Select.Portal>
-                  <Select.Content
-                    position="popper"
-                    sideOffset={4}
-                    style={{
-                      background: colors.dropdownBg,
-                      border: `1px solid ${colors.border}`,
-                      maxHeight: 200,
-                      overflowY: 'auto',
-                      zIndex: 52,
-                    }}
-                  >
+                  <Select.Content position="popper" sideOffset={4} className={styles.selectContent}>
                     <Select.Viewport>
-                      <Select.Item
-                        value="-1"
-                        style={{
-                          padding: '0.35rem 0.5rem',
-                          fontSize: '1rem',
-                          color: colors.text,
-                          cursor: 'pointer',
-                          outline: 'none',
-                        }}
-                      >
+                      <Select.Item value="-1" className={styles.selectItem}>
                         <Select.ItemText>Any</Select.ItemText>
                       </Select.Item>
                       {Array.from({ length: 16 }, (_, i) => (
-                        <Select.Item
-                          key={i}
-                          value={String(i)}
-                          style={{
-                            padding: '0.35rem 0.5rem',
-                            fontSize: '1rem',
-                            color: colors.text,
-                            cursor: 'pointer',
-                            outline: 'none',
-                          }}
-                        >
+                        <Select.Item key={i} value={String(i)} className={styles.selectItem}>
                           <Select.ItemText>Ch {i + 1}</Select.ItemText>
                         </Select.Item>
                       ))}
@@ -233,50 +127,19 @@ export function MidiAssignDialog({
           </div>
 
           {/* Buttons: Clear (left) | Cancel + Save (right) */}
-          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+          <div className={styles.buttonRow}>
             <div>
               {existing && (
-                <button
-                  onClick={clear}
-                  style={{
-                    background: 'transparent',
-                    border: `1px solid ${colors.danger}`,
-                    color: colors.danger,
-                    padding: '0.35rem 0.75rem',
-                    fontSize: '0.85rem',
-                    cursor: 'pointer',
-                  }}
-                >
+                <button onClick={clear} className={styles.clearButton}>
                   Clear
                 </button>
               )}
             </div>
-            <div style={{ display: 'flex', gap: '0.5rem' }}>
-              <button
-                onClick={() => onOpenChange(false)}
-                style={{
-                  background: 'transparent',
-                  border: `1px solid ${colors.border}`,
-                  color: colors.muted,
-                  padding: '0.35rem 0.75rem',
-                  fontSize: '0.85rem',
-                  cursor: 'pointer',
-                }}
-              >
+            <div className={styles.buttonGroup}>
+              <button onClick={() => onOpenChange(false)} className={styles.cancelButton}>
                 Cancel
               </button>
-              <button
-                onClick={submit}
-                style={{
-                  background: colors.primary,
-                  border: 'none',
-                  color: '#ffffff',
-                  padding: '0.35rem 0.75rem',
-                  fontSize: '0.85rem',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                }}
-              >
+              <button onClick={submit} className={styles.saveButton}>
                 Save
               </button>
             </div>

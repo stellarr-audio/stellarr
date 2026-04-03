@@ -1,0 +1,96 @@
+.container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2.5rem;
+  background: var(--color-bg);
+}
+
+.noteRow {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.note {
+  font-size: 12rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  transition: color 0.2s ease;
+}
+
+.noteInactive {
+  color: color-mix(in srgb, var(--color-muted) 13%, transparent);
+}
+
+.octave {
+  font-size: 4rem;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.octaveActive {
+  color: var(--color-muted);
+}
+
+.octaveInactive {
+  color: color-mix(in srgb, var(--color-muted) 13%, transparent);
+}
+
+.frequency {
+  font-size: 1.8rem;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+}
+
+.frequencyActive {
+  color: var(--color-muted);
+}
+
+.frequencyInactive {
+  color: color-mix(in srgb, var(--color-muted) 13%, transparent);
+}
+
+.centsBar {
+  width: 600px;
+  max-width: 80%;
+  position: relative;
+}
+
+.track {
+  width: 100%;
+  height: 6px;
+  background: var(--color-border);
+  position: relative;
+}
+
+.centerMark {
+  position: absolute;
+  left: 50%;
+  top: -10px;
+  width: 3px;
+  height: 26px;
+  background: var(--color-muted);
+  transform: translateX(-50%);
+}
+
+.needle {
+  position: absolute;
+  top: -12px;
+  width: 6px;
+  height: 30px;
+  transform: translateX(-50%);
+  transition: left 0.05s ease, background 0.2s ease;
+}
+
+.labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 1rem;
+  font-size: 1rem;
+  color: var(--color-muted);
+  letter-spacing: 0.06em;
+}

@@ -1,7 +1,7 @@
 import { GearIcon } from '@radix-ui/react-icons';
 import { PluginSelect } from './PluginSelect';
 import { requestSetBlockPlugin, requestOpenPluginEditor } from '../../bridge';
-import { colors } from '../common/colors';
+import styles from './PluginSection.module.css';
 import type { GridBlock, PluginInfo } from '../../store';
 
 interface Props {
@@ -11,21 +11,11 @@ interface Props {
 
 export function PluginSection({ block, availablePlugins }: Props) {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-      <div
-        style={{
-          fontSize: '1rem',
-          fontWeight: 600,
-          color: colors.secondary,
-          letterSpacing: '0.08em',
-          textTransform: 'uppercase',
-        }}
-      >
-        Plugin
-      </div>
+    <div className={styles.container}>
+      <div className={styles.sectionTitle}>Plugin</div>
 
-      <div style={{ display: 'flex', gap: '0.3rem', alignItems: 'stretch' }}>
-        <div style={{ flex: 1 }}>
+      <div className={styles.row}>
+        <div className={styles.selectWrapper}>
           <PluginSelect
             plugins={availablePlugins}
             selectedId={block.pluginId ?? ''}
@@ -36,16 +26,7 @@ export function PluginSection({ block, availablePlugins }: Props) {
           <button
             onClick={() => requestOpenPluginEditor(block.id)}
             title="Plugin Options"
-            style={{
-              background: 'transparent',
-              border: `1px solid ${colors.border}`,
-              color: colors.muted,
-              padding: '0.3rem',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
+            className={styles.optionsButton}
           >
             <GearIcon width={16} height={16} />
           </button>
@@ -53,15 +34,7 @@ export function PluginSection({ block, availablePlugins }: Props) {
       </div>
 
       {availablePlugins.length === 0 && (
-        <div
-          style={{
-            fontSize: '1rem',
-            color: colors.muted,
-            fontStyle: 'italic',
-          }}
-        >
-          No plugins found. Scan libraries in Settings.
-        </div>
+        <div className={styles.emptyMessage}>No plugins found. Scan libraries in Settings.</div>
       )}
     </div>
   );

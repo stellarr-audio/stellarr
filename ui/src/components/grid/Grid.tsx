@@ -9,8 +9,8 @@ import {
 import { GridBlockComponent } from './GridBlock';
 import { ConnectionLayer } from './ConnectionLayer';
 import { BlockMenu } from './BlockMenu';
-import { colors } from '../common/colors';
 import { CELL_SIZE, STEP, cellLeft, cellTop, gridWidth, gridHeight } from './layout';
+import styles from './Grid.module.css';
 
 export function Grid() {
   const grid = useStore((s) => s.grid);
@@ -168,13 +168,8 @@ export function Grid() {
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
       onMouseLeave={() => setHoveredCell(null)}
-      style={{
-        position: 'relative',
-        width: gw,
-        height: gh,
-        background: colors.bg,
-        overflow: 'visible',
-      }}
+      className={styles.grid}
+      style={{ width: gw, height: gh }}
     >
       {/* Cell backgrounds */}
       {Array.from({ length: grid.rows }, (_, row) =>
@@ -183,6 +178,8 @@ export function Grid() {
           const occupied = occupiedSet.has(key);
           const isHovered = !occupied && hoveredCell?.col === col && hoveredCell?.row === row;
           const isMenuOpen = menuCell?.col === col && menuCell?.row === row;
+
+          const cellClassName = `${styles.cell} ${occupied ? styles.cellOccupied : ''} ${isMenuOpen ? styles.cellActive : ''}`;
 
           const cellContent = (
             <div
@@ -194,34 +191,15 @@ export function Grid() {
                 if (hoveredCell?.col === col && hoveredCell?.row === row) setHoveredCell(null);
               }}
               onClick={() => handleCellClick(col, row)}
+              className={cellClassName}
               style={{
-                position: 'absolute',
                 left: cellLeft(col),
                 top: cellTop(row),
                 width: CELL_SIZE,
                 height: CELL_SIZE,
-                background: isHovered || isMenuOpen ? colors.cellHover : colors.cell,
-                border: `1px solid ${isHovered || isMenuOpen ? colors.muted : colors.border}`,
-                boxSizing: 'border-box',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: occupied ? 'default' : 'pointer',
-                transition: 'background 0.1s ease, border-color 0.1s ease',
               }}
             >
-              {(isHovered || isMenuOpen) && (
-                <span
-                  style={{
-                    fontSize: '1.2rem',
-                    fontWeight: 300,
-                    color: colors.muted,
-                    lineHeight: 1,
-                  }}
-                >
-                  +
-                </span>
-              )}
+              {(isHovered || isMenuOpen) && <span className={styles.cellPlus}>+</span>}
             </div>
           );
 

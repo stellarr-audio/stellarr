@@ -1,10 +1,11 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useRef } from 'react';
 import { Cross2Icon, SpeakerLoudIcon } from '@radix-ui/react-icons';
 import type { GridBlock as GridBlockData } from '../../store';
 import { requestRemoveBlock, requestRemoveConnection, requestOpenPluginEditor } from '../../bridge';
 import { useStore } from '../../store';
 import { colors } from '../common/colors';
 import { CELL_SIZE, cellLeft, cellTop } from './layout';
+import styles from './GridBlock.module.css';
 
 interface Props {
   block: GridBlockData;
@@ -31,12 +32,10 @@ function Port({
   blockId: string;
   connected: boolean;
 }) {
-  const [hovered, setHovered] = useState(false);
   const connections = useStore((s) => s.connections);
   const setDraggingConnection = useStore((s) => s.setDraggingConnection);
 
   const isLeft = side === 'input';
-  const showDisconnect = connected && hovered;
 
   const handleClick = useCallback(() => {
     if (!connected) return;
@@ -63,6 +62,8 @@ function Port({
     [blockId, side, connected, setDraggingConnection],
   );
 
+  const portClassName = `${styles.port} ${isLeft ? styles.portLeft : styles.portRight} ${connected ? styles.portConnected : styles.portDisconnected}`;
+
   return (
     <div
       draggable={false}
@@ -70,25 +71,8 @@ function Port({
       data-port-type={side}
       onMouseDown={handleMouseDown}
       onDragStart={(e) => e.preventDefault()}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
       onClick={handleClick}
-      style={{
-        position: 'absolute',
-        [isLeft ? 'left' : 'right']: -6,
-        top: '50%',
-        transform: 'translateY(-50%) rotate(45deg)',
-        width: 12,
-        height: 12,
-        background: showDisconnect
-          ? '#ff4444'
-          : !connected && hovered
-            ? '#ffcc00'
-            : colors.portColor,
-        cursor: connected ? 'pointer' : 'crosshair',
-        zIndex: 3,
-        transition: 'background 0.15s ease',
-      }}
+      className={portClassName}
     />
   );
 }
@@ -97,7 +81,6 @@ export function GridBlockComponent({ block }: Props) {
   const connections = useStore((s) => s.connections);
   const selectedBlockId = useStore((s) => s.selectedBlockId);
   const selectBlock = useStore((s) => s.selectBlock);
-  const [hovered, setHovered] = useState(false);
   const portActive = useRef(false);
 
   const isSelected = selectedBlockId === block.id;
@@ -119,12 +102,17 @@ export function GridBlockComponent({ block }: Props) {
 
   const accentColor = typeColors[block.type] ?? colors.secondary;
 
+  // Border must stay inline — it depends on multiple dynamic values (isSelected, bypassed, accentColor)
+  const borderStyle = isSelected
+    ? `2px ${block.bypassed ? 'dashed' : 'solid'} #ffffff`
+    : block.bypassed
+      ? `2px dashed ${accentColor}44`
+      : `1px solid ${accentColor}55`;
+
   return (
     <div
       draggable
       onDragStart={handleDragStart}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
       onMouseDown={() => {
         portActive.current = false;
       }}
@@ -132,88 +120,36 @@ export function GridBlockComponent({ block }: Props) {
       onDoubleClick={() => {
         if (block.type === 'plugin' && block.pluginId) requestOpenPluginEditor(block.id);
       }}
+      className={styles.block}
       style={{
-        position: 'absolute',
         left: cellLeft(block.col),
         top: cellTop(block.row),
         width: CELL_SIZE,
         height: CELL_SIZE,
-        background: colors.blockBg,
-        border: isSelected
-          ? `2px ${block.bypassed ? 'dashed' : 'solid'} #ffffff`
-          : block.bypassed
-            ? `2px dashed ${accentColor}44`
-            : `1px solid ${accentColor}55`,
-        boxSizing: 'border-box',
-        display: 'grid',
-        gridTemplateRows: '1fr auto 1fr',
-        alignItems: 'center',
-        justifyItems: 'center',
-        overflow: 'hidden',
-        userSelect: 'none',
-        cursor: 'grab',
-        zIndex: 2,
-        padding: '4px 2px',
+        border: borderStyle,
       }}
     >
       {/* Top region — status icons / format tag */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div className={styles.topRegion}>
         {block.type === 'input' && block.testTone && (
           <SpeakerLoudIcon width={12} height={12} color={colors.green} />
         )}
         {block.type === 'plugin' && block.pluginFormat && (
-          <span
-            style={{
-              fontSize: '0.6rem',
-              fontWeight: 700,
-              color: colors.muted,
-              letterSpacing: '0.06em',
-            }}
-          >
+          <span className={styles.formatTag}>
             {block.pluginFormat === 'AudioUnit' ? 'AU' : block.pluginFormat}
           </span>
         )}
       </div>
 
       {/* Middle region — block type */}
-      <div
-        style={{
-          fontSize: '1rem',
-          fontWeight: 700,
-          color: accentColor,
-          letterSpacing: '0.12em',
-        }}
-      >
+      <div className={styles.blockType} style={{ color: accentColor }}>
         {block.displayName || typeAbbreviations[block.type] || block.type.slice(0, 3).toUpperCase()}
       </div>
 
       {/* Bottom region — subtitle */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          minHeight: 16,
-          width: '100%',
-          overflow: 'hidden',
-        }}
-      >
+      <div className={styles.bottomRegion}>
         {block.type === 'plugin' && (
-          <div
-            style={{
-              fontSize: '0.6rem',
-              fontWeight: 700,
-              color: colors.muted,
-              letterSpacing: '0.06em',
-              textTransform: 'uppercase',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-              textAlign: 'center',
-            }}
-          >
-            {block.pluginName ?? 'No plugin'}
-          </div>
+          <div className={styles.pluginName}>{block.pluginName ?? 'No plugin'}</div>
         )}
       </div>
 
@@ -227,25 +163,16 @@ export function GridBlockComponent({ block }: Props) {
         <Port side="output" blockId={block.id} connected={hasOutputConnection} />
       )}
 
-      {/* Remove button — hover only, floats above top-right corner */}
-      {hovered && (
-        <div
-          onClick={(e) => {
-            e.stopPropagation();
-            requestRemoveBlock(block.id);
-          }}
-          style={{
-            position: 'absolute',
-            top: 3,
-            right: 3,
-            color: '#cc2222',
-            cursor: 'pointer',
-            zIndex: 5,
-          }}
-        >
-          <Cross2Icon width={14} height={14} />
-        </div>
-      )}
+      {/* Remove button — visible on block hover via CSS */}
+      <div
+        className={styles.removeButton}
+        onClick={(e) => {
+          e.stopPropagation();
+          requestRemoveBlock(block.id);
+        }}
+      >
+        <Cross2Icon width={14} height={14} />
+      </div>
     </div>
   );
 }

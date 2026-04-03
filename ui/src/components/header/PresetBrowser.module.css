@@ -1,0 +1,225 @@
+.container {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+/* Icon buttons (open, save icon) */
+.iconBtn {
+  background: transparent;
+  border: 1px solid var(--color-border);
+  color: var(--color-muted);
+  padding: 0.3rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.1s ease;
+}
+
+.iconBtn:hover {
+  background: #2a2545;
+}
+
+/* Dropdown trigger (preset / scene selectors) */
+.dropdownTrigger {
+  display: flex;
+  align-items: stretch;
+  background: transparent;
+  border: 1px solid var(--color-border);
+  padding: 0;
+  cursor: pointer;
+  outline: none;
+}
+
+/* Label part of trigger (e.g. "Preset", "Scene") */
+.triggerLabel {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-muted);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background: color-mix(in srgb, var(--color-border) 53%, transparent);
+  padding: 0.3rem 0.5rem;
+  display: flex;
+  align-items: center;
+}
+
+/* Value part of trigger */
+.triggerValue {
+  width: 140px;
+  padding: 0.3rem 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.3rem;
+}
+
+.triggerValueText {
+  font-size: 0.85rem;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.triggerValueText.hasValue {
+  color: var(--color-text);
+}
+
+.triggerValueText.noValue {
+  color: var(--color-muted);
+}
+
+.triggerChevron {
+  flex-shrink: 0;
+  color: var(--color-muted);
+}
+
+/* Dropdown content */
+.dropdownContent {
+  background: var(--color-dropdown-bg);
+  border: 1px solid var(--color-border);
+  padding: 0.25rem 0;
+  min-width: var(--radix-dropdown-menu-trigger-width);
+  z-index: 20;
+}
+
+.dropdownContentScrollable {
+  composes: dropdownContent;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.dropdownContentNarrow {
+  composes: dropdownContent;
+  min-width: 100px;
+}
+
+.subContent {
+  composes: dropdownContent;
+  min-width: 100px;
+  z-index: 21;
+}
+
+/* Menu item */
+.menuItem {
+  padding: 0.35rem 0.75rem;
+  font-size: 1rem;
+  color: var(--color-text);
+  cursor: pointer;
+  outline: none;
+}
+
+.menuItem:hover {
+  background: var(--color-border);
+}
+
+.menuItemFlex {
+  composes: menuItem;
+  flex: 1;
+}
+
+.menuItemActive {
+  composes: menuItem;
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.menuItemActiveFlex {
+  composes: menuItemActive;
+  flex: 1;
+}
+
+.menuItemMuted {
+  composes: menuItem;
+  color: var(--color-muted);
+}
+
+.menuItemDanger {
+  composes: menuItem;
+  color: var(--color-danger);
+}
+
+/* Empty state */
+.emptyState {
+  padding: 0.35rem 0.75rem;
+  font-size: 1rem;
+  color: var(--color-muted);
+  font-style: italic;
+}
+
+/* Separator */
+.separator {
+  height: 1px;
+  background: var(--color-border);
+  margin: 0.25rem 0;
+}
+
+/* Scene row */
+.sceneRow {
+  display: flex;
+  align-items: center;
+}
+
+/* Sub-trigger (dots icon) */
+.subTrigger {
+  padding: 0.35rem 0.5rem;
+  color: var(--color-muted);
+  cursor: pointer;
+  outline: none;
+  display: flex;
+  align-items: center;
+}
+
+.subTrigger:hover {
+  background: var(--color-border);
+}
+
+/* Save split button */
+.saveSplit {
+  display: flex;
+  align-items: stretch;
+  border: 1px solid var(--color-border);
+}
+
+.saveBtn {
+  background: transparent;
+  border: none;
+  padding: 0.3rem 0.4rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  transition: color 0.2s ease, background 0.1s ease;
+}
+
+.saveBtn:hover {
+  background: #2a2545;
+}
+
+.saveBtnDefault {
+  composes: saveBtn;
+  color: var(--color-muted);
+}
+
+.saveBtnSaved {
+  composes: saveBtn;
+  color: var(--color-green);
+}
+
+.saveChevron {
+  background: transparent;
+  border: none;
+  border-left: 1px solid var(--color-border);
+  color: var(--color-muted);
+  padding: 0.3rem 0.2rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  transition: background 0.1s ease;
+  outline: none;
+}
+
+.saveChevron:hover {
+  background: #2a2545;
+}

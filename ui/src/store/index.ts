@@ -12,6 +12,7 @@ export interface GridBlock {
   pluginName?: string;
   pluginFormat?: string;
   displayName?: string;
+  blockColor?: string;
   mix?: number;
   balance?: number;
   level?: number; // dB
@@ -123,6 +124,7 @@ interface StellarrState {
   setBlockBalance: (blockId: string, balance: number) => void;
   setBlockLevel: (blockId: string, level: number) => void;
   setBlockDisplayName: (blockId: string, displayName: string) => void;
+  setBlockColor: (blockId: string, blockColor: string) => void;
   setBlockBypassed: (blockId: string, bypassed: boolean) => void;
   setBlockBypassMode: (blockId: string, mode: string) => void;
   setBlockStates: (
@@ -248,6 +250,11 @@ export const useStore = create<StellarrState>((set) => ({
   setBlockDisplayName: (blockId, displayName) =>
     set((s) => ({
       blocks: s.blocks.map((b) => (b.id === blockId ? { ...b, displayName } : b)),
+    })),
+
+  setBlockColor: (blockId, blockColor) =>
+    set((s) => ({
+      blocks: s.blocks.map((b) => (b.id === blockId ? { ...b, blockColor } : b)),
     })),
 
   setBlockBypassed: (blockId, bypassed) =>

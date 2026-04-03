@@ -110,6 +110,10 @@ export function requestToggleTestTone(blockId: string): void {
   sendEvent('toggleTestTone', JSON.stringify({ blockId }));
 }
 
+export function requestSetBlockColor(blockId: string, color: string): void {
+  sendEvent('setBlockColor', JSON.stringify({ blockId, color }));
+}
+
 export function requestRenameBlock(blockId: string, name: string): void {
   sendEvent('renameBlock', JSON.stringify({ blockId, name }));
 }
@@ -355,6 +359,11 @@ export function initBridge(): void {
     useStore.getState().removeConnection(String(d.sourceId), String(d.destId));
   });
 
+  juce.backend.addEventListener('blockColorChanged', (detail: unknown) => {
+    const d = asRecord(detail);
+    useStore.getState().setBlockColor(String(d.blockId), String(d.blockColor));
+  });
+
   juce.backend.addEventListener('blockRenamed', (detail: unknown) => {
     const d = asRecord(detail);
     useStore.getState().setBlockDisplayName(String(d.blockId), String(d.displayName));
@@ -387,6 +396,7 @@ export function initBridge(): void {
         row: Number(r.row),
         nodeId: Number(r.nodeId),
         displayName: r.displayName ? String(r.displayName) : undefined,
+        blockColor: r.blockColor ? String(r.blockColor) : undefined,
         pluginId: r.pluginId ? String(r.pluginId) : undefined,
         pluginName: r.pluginName ? String(r.pluginName) : undefined,
         pluginFormat: r.pluginFormat ? String(r.pluginFormat) : undefined,

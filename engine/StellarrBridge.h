@@ -19,6 +19,7 @@ public:
     juce::var serialiseSession() const;
     void restoreSession(const juce::var& session);
     void sendSystemStats(double cpuPercent, double memoryMB, double totalMemoryMB);
+    void setOnStartupComplete(std::function<void()> callback) { onStartupComplete = std::move(callback); }
 
 private:
     void handleEvent(const juce::String& eventName, const juce::var& payload);
@@ -76,4 +77,5 @@ private:
     juce::StringArray presetFiles;
     int currentPresetIndex = -1;
     juce::File lastPresetFile;
+    std::function<void()> onStartupComplete;
 };

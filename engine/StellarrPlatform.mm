@@ -30,8 +30,15 @@ void stellarrMakeWebViewInspectable(void* nativeView)
     NSView* view = (__bridge NSView*)nativeView;
     WKWebView* webView = findWebView(view);
 
-    if (webView != nil && [webView respondsToSelector:@selector(setInspectable:)])
-        [webView setInspectable:YES];
+    if (webView != nil)
+    {
+        if ([webView respondsToSelector:@selector(setInspectable:)])
+            [webView setInspectable:YES];
+
+        // Prevent white flash while page loads
+        [webView setValue:@NO forKey:@"drawsBackground"];
+        webView.enclosingScrollView.backgroundColor = [NSColor colorWithRed:0.05 green:0.04 blue:0.1 alpha:1.0];
+    }
 }
 
 double stellarrGetProcessMemoryMB()

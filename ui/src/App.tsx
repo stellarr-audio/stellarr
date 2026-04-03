@@ -71,7 +71,6 @@ function App() {
           >
             <Logo
               size={22}
-              color={colors.primary}
               style={{ filter: `drop-shadow(0 0 4px ${colors.primary}88)` }}
             />
             <span

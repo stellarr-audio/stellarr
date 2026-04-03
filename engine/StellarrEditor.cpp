@@ -39,8 +39,26 @@ StellarrEditor::StellarrEditor(StellarrProcessor& p)
     bridge.setProcessor(&p);
     bridge.setAppProperties(p.getAppProperties());
     bridge.setWebView(webView.get());
+    bridge.setOnStartupComplete([this]() { hideSplash(); });
 
     webView->goToURL(juce::WebBrowserComponent::getResourceProviderRoot());
+
+    // Show logo on top of WebView until page loads
+    auto svgFile = uiDir.getChildFile("logo.svg");
+    if (svgFile.existsAsFile())
+    {
+        auto xml = juce::XmlDocument::parse(svgFile);
+        if (xml != nullptr)
+        {
+            if (auto drawable = juce::Drawable::createFromSVG(*xml))
+            {
+                splashLogo = std::make_unique<juce::DrawableComposite>();
+                splashLogo->addAndMakeVisible(drawable.release());
+                addAndMakeVisible(*splashLogo);
+                splashLogo->setAlwaysOnTop(true);
+            }
+        }
+    }
 
     setResizable(true, true);
     setSize(1440, 700);
@@ -62,9 +80,23 @@ StellarrEditor::~StellarrEditor()
     stopTimer();
 }
 
+void StellarrEditor::paint(juce::Graphics& g)
+{
+    g.fillAll(juce::Colour(82, 77, 115));
+}
+
 void StellarrEditor::resized()
 {
     webView->setBounds(getLocalBounds());
+
+    if (splashLogo != nullptr)
+    {
+        int logoSize = 48;
+        auto area = getLocalBounds();
+        splashLogo->setBounds(area.getCentreX() - logoSize / 2,
+                              area.getCentreY() - logoSize / 2,
+                              logoSize, logoSize);
+    }
 }
 
 void StellarrEditor::timerCallback()
@@ -86,6 +118,15 @@ void StellarrEditor::toggleDevTools()
 }
 
 bool StellarrEditor::isDevToolsEnabled() const { return devToolsEnabled; }
+
+void StellarrEditor::hideSplash()
+{
+    if (splashLogo != nullptr)
+    {
+        removeChildComponent(splashLogo.get());
+        splashLogo = nullptr;
+    }
+}
 
 juce::String StellarrEditor::getMimeType(const juce::File& file)
 {

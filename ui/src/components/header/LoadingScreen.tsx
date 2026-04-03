@@ -11,7 +11,7 @@ export function LoadingScreen() {
       style={{
         background: colors.bg,
         color: colors.text,
-        
+
         height: '100vh',
         display: 'flex',
         flexDirection: 'column',
@@ -20,10 +20,7 @@ export function LoadingScreen() {
         gap: '1.5rem',
       }}
     >
-      <Logo
-        size={48}
-        style={{ filter: `drop-shadow(0 0 8px ${colors.primary}66)` }}
-      />
+      <Logo size={48} style={{ filter: `drop-shadow(0 0 8px ${colors.primary}66)` }} />
 
       <span
         style={{

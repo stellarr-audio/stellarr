@@ -1,6 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useStore } from '../../store';
-import { requestAddBlock, requestAddConnection, requestMoveBlock, requestToggleBlockBypass } from '../../bridge';
+import {
+  requestAddBlock,
+  requestAddConnection,
+  requestMoveBlock,
+  requestToggleBlockBypass,
+} from '../../bridge';
 import { GridBlockComponent } from './GridBlock';
 import { ConnectionLayer } from './ConnectionLayer';
 import { BlockMenu } from './BlockMenu';
@@ -176,12 +181,8 @@ export function Grid() {
         Array.from({ length: grid.columns }, (_, col) => {
           const key = `${col},${row}`;
           const occupied = occupiedSet.has(key);
-          const isHovered =
-            !occupied &&
-            hoveredCell?.col === col &&
-            hoveredCell?.row === row;
-          const isMenuOpen =
-            menuCell?.col === col && menuCell?.row === row;
+          const isHovered = !occupied && hoveredCell?.col === col && hoveredCell?.row === row;
+          const isMenuOpen = menuCell?.col === col && menuCell?.row === row;
 
           const cellContent = (
             <div
@@ -190,8 +191,7 @@ export function Grid() {
                 if (!occupied) setHoveredCell({ col, row });
               }}
               onMouseLeave={() => {
-                if (hoveredCell?.col === col && hoveredCell?.row === row)
-                  setHoveredCell(null);
+                if (hoveredCell?.col === col && hoveredCell?.row === row) setHoveredCell(null);
               }}
               onClick={() => handleCellClick(col, row)}
               style={{
@@ -200,12 +200,8 @@ export function Grid() {
                 top: cellTop(row),
                 width: CELL_SIZE,
                 height: CELL_SIZE,
-                background: isHovered || isMenuOpen
-                  ? colors.cellHover
-                  : colors.cell,
-                border: `1px solid ${
-                  isHovered || isMenuOpen ? colors.muted : colors.border
-                }`,
+                background: isHovered || isMenuOpen ? colors.cellHover : colors.cell,
+                border: `1px solid ${isHovered || isMenuOpen ? colors.muted : colors.border}`,
                 boxSizing: 'border-box',
                 display: 'flex',
                 alignItems: 'center',
@@ -251,7 +247,6 @@ export function Grid() {
       {blocks.map((block) => (
         <GridBlockComponent key={block.id} block={block} />
       ))}
-
     </div>
   );
 }

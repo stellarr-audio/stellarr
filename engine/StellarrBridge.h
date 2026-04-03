@@ -2,6 +2,7 @@
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <juce_gui_extra/juce_gui_extra.h>
 #include <map>
+#include <vector>
 
 class StellarrProcessor;
 namespace stellarr { class Block; class PluginBlock; }
@@ -52,6 +53,14 @@ private:
     void handleLoadPresetByIndex(const juce::var& json);
     void handleGetPresetList();
 
+    // Scene management
+    void handleAddScene();
+    void handleRecallScene(const juce::var& json);
+    void handleSaveScene(const juce::var& json);
+    void handleRenameScene(const juce::var& json);
+    void handleDeleteScene(const juce::var& json);
+    void emitScenes();
+
     void sendPluginList();
     void sendScanDirectories();
     void sendPresetList();
@@ -78,4 +87,13 @@ private:
     int currentPresetIndex = -1;
     juce::File lastPresetFile;
     std::function<void()> onStartupComplete;
+
+    // Scenes
+    struct Scene {
+        juce::String name;
+        std::map<juce::String, int> blockStateMap;
+    };
+    std::vector<Scene> scenes;
+    int activeSceneIndex = -1;
+    static constexpr int maxScenes = 16;
 };

@@ -11,9 +11,7 @@ export function OptionsPanel() {
   const blocks = useStore((s) => s.blocks);
   const availablePlugins = useStore((s) => s.availablePlugins);
 
-  const block = selectedBlockId
-    ? blocks.find((b) => b.id === selectedBlockId)
-    : null;
+  const block = selectedBlockId ? blocks.find((b) => b.id === selectedBlockId) : null;
 
   return (
     <div
@@ -164,9 +162,7 @@ export function OptionsPanel() {
           )}
 
           {/* Parameters — for non-I/O blocks */}
-          {block.type !== 'input' && block.type !== 'output' && (
-            <ParametersSection block={block} />
-          )}
+          {block.type !== 'input' && block.type !== 'output' && <ParametersSection block={block} />}
 
           {/* States — plugin blocks only */}
           {block.type === 'plugin' && <StatesSection block={block} />}

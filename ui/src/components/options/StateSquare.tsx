@@ -10,17 +10,8 @@ interface Props {
   onDelete: () => void;
 }
 
-export function StateSquare({
-  index,
-  isActive,
-  isDirty,
-  canDelete,
-  onRecall,
-  onDelete,
-}: Props) {
-  const borderStyle = isActive
-    ? `2px solid #ffffff`
-    : `1px solid ${colors.border}`;
+export function StateSquare({ index, isActive, isDirty, canDelete, onRecall, onDelete }: Props) {
+  const borderStyle = isActive ? `2px solid #ffffff` : `1px solid ${colors.border}`;
 
   return (
     <div

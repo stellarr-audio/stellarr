@@ -1,7 +1,6 @@
 import { useState } from 'react';
-import { DropdownMenu, Dialog } from 'radix-ui';
+import { DropdownMenu } from 'radix-ui';
 import {
-  PlusIcon,
   CheckIcon,
   UploadIcon,
   BookmarkIcon,
@@ -21,6 +20,7 @@ import {
   requestDeleteScene,
 } from '../../bridge';
 import { colors } from '../common/colors';
+import { SceneRenameDialog } from './SceneRenameDialog';
 
 const hoverBg = '#2a2545';
 
@@ -55,12 +55,108 @@ const menuItemStyle: React.CSSProperties = {
   outline: 'none',
 };
 
-function menuItemHover(e: React.MouseEvent<HTMLDivElement>) {
-  e.currentTarget.style.background = colors.border;
+const menuHover = {
+  onMouseEnter: (e: React.MouseEvent<HTMLDivElement>) => {
+    e.currentTarget.style.background = colors.border;
+  },
+  onMouseLeave: (e: React.MouseEvent<HTMLDivElement>) => {
+    e.currentTarget.style.background = 'transparent';
+  },
+};
+
+const dropdownContentStyle: React.CSSProperties = {
+  background: '#1a1535',
+  border: `1px solid ${colors.border}`,
+  padding: '0.25rem 0',
+  minWidth: 'var(--radix-dropdown-menu-trigger-width)',
+  zIndex: 20,
+};
+
+// -- Shared trigger button for preset/scene dropdowns -------------------------
+
+function DropdownTriggerButton({
+  label,
+  value,
+  hasValue,
+}: {
+  label: string;
+  value: string;
+  hasValue: boolean;
+}) {
+  return (
+    <button
+      style={{
+        display: 'flex',
+        alignItems: 'stretch',
+        background: 'transparent',
+        border: `1px solid ${colors.border}`,
+        padding: 0,
+        cursor: 'pointer',
+        outline: 'none',
+      }}
+    >
+      <span
+        style={{
+          fontSize: '0.85rem',
+          fontWeight: 600,
+          color: colors.muted,
+          letterSpacing: '0.06em',
+          textTransform: 'uppercase',
+          background: `${colors.border}88`,
+          padding: '0.3rem 0.5rem',
+          display: 'flex',
+          alignItems: 'center',
+        }}
+      >
+        {label}
+      </span>
+      <span
+        style={{
+          width: 140,
+          padding: '0.3rem 0.5rem',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '0.3rem',
+        }}
+      >
+        <span
+          style={{
+            fontSize: '0.85rem',
+            fontWeight: 600,
+            color: hasValue ? colors.text : colors.muted,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {value}
+        </span>
+        <ChevronDownIcon width={12} height={12} color={colors.muted} style={{ flexShrink: 0 }} />
+      </span>
+    </button>
+  );
 }
-function menuItemUnhover(e: React.MouseEvent<HTMLDivElement>) {
-  e.currentTarget.style.background = 'transparent';
+
+// -- Menu item wrapper --------------------------------------------------------
+
+function MenuItem({
+  onSelect,
+  style,
+  children,
+}: {
+  onSelect: (e: Event) => void;
+  style?: React.CSSProperties;
+  children: React.ReactNode;
+}) {
+  return (
+    <DropdownMenu.Item onSelect={onSelect} style={{ ...menuItemStyle, ...style }} {...menuHover}>
+      {children}
+    </DropdownMenu.Item>
+  );
 }
+
+// -- Main component -----------------------------------------------------------
 
 export function PresetBrowser() {
   const presetFiles = useStore((s) => s.presetFiles);
@@ -80,23 +176,7 @@ export function PresetBrowser() {
       : 'No Scene';
 
   return (
-    <div
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: '0.4rem',
-      }}
-    >
-      {/* New */}
-      <button
-        onClick={requestNewSession}
-        title="New preset"
-        {...hoverHandlers()}
-        style={iconBtnStyle}
-      >
-        <PlusIcon width={16} height={16} />
-      </button>
-
+    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
       {/* Open */}
       <button
         onClick={requestLoadSession}
@@ -109,7 +189,6 @@ export function PresetBrowser() {
 
       {/* Preset dropdown */}
       <PresetDropdown
-        label="Preset"
         currentName={currentName}
         presetFiles={presetFiles}
         currentPresetIndex={currentPresetIndex}
@@ -117,7 +196,6 @@ export function PresetBrowser() {
 
       {/* Scene dropdown */}
       <SceneDropdown
-        label="Scene"
         currentName={currentSceneName}
         scenes={scenes}
         activeSceneIndex={activeSceneIndex}
@@ -178,30 +256,10 @@ export function PresetBrowser() {
             <DropdownMenu.Content
               sideOffset={4}
               align="end"
-              style={{
-                background: '#1a1535',
-                border: `1px solid ${colors.border}`,
-                padding: '0.25rem 0',
-                minWidth: 100,
-                zIndex: 20,
-              }}
+              style={{ ...dropdownContentStyle, minWidth: 100 }}
             >
-              <DropdownMenu.Item
-                onSelect={requestSaveSessionQuiet}
-                style={menuItemStyle}
-                onMouseEnter={menuItemHover}
-                onMouseLeave={menuItemUnhover}
-              >
-                Save
-              </DropdownMenu.Item>
-              <DropdownMenu.Item
-                onSelect={requestSaveSession}
-                style={menuItemStyle}
-                onMouseEnter={menuItemHover}
-                onMouseLeave={menuItemUnhover}
-              >
-                Save As...
-              </DropdownMenu.Item>
+              <MenuItem onSelect={requestSaveSessionQuiet}>Save</MenuItem>
+              <MenuItem onSelect={requestSaveSession}>Save As...</MenuItem>
             </DropdownMenu.Content>
           </DropdownMenu.Portal>
         </DropdownMenu.Root>
@@ -210,13 +268,13 @@ export function PresetBrowser() {
   );
 }
 
+// -- Preset dropdown ----------------------------------------------------------
+
 function PresetDropdown({
-  label,
   currentName,
   presetFiles,
   currentPresetIndex,
 }: {
-  label: string;
   currentName: string;
   presetFiles: string[];
   currentPresetIndex: number;
@@ -224,64 +282,16 @@ function PresetDropdown({
   return (
     <DropdownMenu.Root>
       <DropdownMenu.Trigger asChild>
-        <button
-          style={{
-            display: 'flex',
-            alignItems: 'stretch',
-            background: 'transparent',
-            border: `1px solid ${colors.border}`,
-            padding: 0,
-            cursor: 'pointer',
-            outline: 'none',
-          }}
-        >
-          <span
-            style={{
-              fontSize: '0.85rem',
-              fontWeight: 600,
-              color: colors.muted,
-              letterSpacing: '0.06em',
-              textTransform: 'uppercase',
-              background: `${colors.border}88`,
-              padding: '0.3rem 0.5rem',
-              display: 'flex',
-              alignItems: 'center',
-            }}
-          >
-            {label}
-          </span>
-          <span
-            style={{
-              fontSize: '0.85rem',
-              fontWeight: 600,
-              color: currentPresetIndex >= 0 ? colors.text : colors.muted,
-              maxWidth: 180,
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-              padding: '0.3rem 0.5rem',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.3rem',
-            }}
-          >
-            {currentName}
-            <ChevronDownIcon width={12} height={12} color={colors.muted} />
-          </span>
-        </button>
+        <DropdownTriggerButton
+          label="Preset"
+          value={currentName}
+          hasValue={currentPresetIndex >= 0}
+        />
       </DropdownMenu.Trigger>
       <DropdownMenu.Portal>
         <DropdownMenu.Content
           sideOffset={4}
-          style={{
-            background: '#1a1535',
-            border: `1px solid ${colors.border}`,
-            padding: '0.25rem 0',
-            minWidth: 160,
-            maxHeight: 300,
-            overflowY: 'auto',
-            zIndex: 20,
-          }}
+          style={{ ...dropdownContentStyle, maxHeight: 300, overflowY: 'auto' }}
         >
           {presetFiles.length === 0 ? (
             <div
@@ -296,34 +306,37 @@ function PresetDropdown({
             </div>
           ) : (
             presetFiles.map((file, i) => (
-              <DropdownMenu.Item
+              <MenuItem
                 key={i}
                 onSelect={() => requestLoadPresetByIndex(i)}
                 style={{
-                  ...menuItemStyle,
                   fontWeight: i === currentPresetIndex ? 700 : 400,
                   color: i === currentPresetIndex ? colors.primary : colors.text,
                 }}
-                onMouseEnter={menuItemHover}
-                onMouseLeave={menuItemUnhover}
               >
                 {file.replace('.stellarr', '')}
-              </DropdownMenu.Item>
+              </MenuItem>
             ))
           )}
+          <DropdownMenu.Separator
+            style={{ height: 1, background: colors.border, margin: '0.25rem 0' }}
+          />
+          <MenuItem onSelect={requestNewSession} style={{ color: colors.muted }}>
+            + New Preset
+          </MenuItem>
         </DropdownMenu.Content>
       </DropdownMenu.Portal>
     </DropdownMenu.Root>
   );
 }
 
+// -- Scene dropdown -----------------------------------------------------------
+
 function SceneDropdown({
-  label,
   currentName,
   scenes,
   activeSceneIndex,
 }: {
-  label: string;
   currentName: string;
   scenes: { name: string }[];
   activeSceneIndex: number;
@@ -347,172 +360,35 @@ function SceneDropdown({
 
   return (
     <>
-      <Dialog.Root open={renameOpen} onOpenChange={setRenameOpen}>
-        <Dialog.Portal>
-          <Dialog.Overlay
-            style={{
-              position: 'fixed',
-              inset: 0,
-              background: 'rgba(0,0,0,0.5)',
-              zIndex: 50,
-            }}
-          />
-          <Dialog.Content
-            style={{
-              position: 'fixed',
-              top: '50%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)',
-              background: '#1a1535',
-              border: `1px solid ${colors.border}`,
-              padding: '1.5rem',
-              zIndex: 51,
-              minWidth: 280,
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '1rem',
-            }}
-          >
-            <Dialog.Title
-              style={{
-                fontSize: '1rem',
-                fontWeight: 700,
-                color: colors.text,
-                letterSpacing: '0.06em',
-                textTransform: 'uppercase',
-                margin: 0,
-              }}
-            >
-              Rename Scene
-            </Dialog.Title>
-            <input
-              autoFocus
-              value={renameValue}
-              onChange={(e) => setRenameValue(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') submitRename();
-              }}
-              style={{
-                background: colors.bg,
-                border: `1px solid ${colors.border}`,
-                color: colors.text,
-                fontSize: '1rem',
-                padding: '0.5rem',
-                outline: 'none',
-              }}
-            />
-            <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
-              <button
-                onClick={() => setRenameOpen(false)}
-                style={{
-                  background: 'transparent',
-                  border: `1px solid ${colors.border}`,
-                  color: colors.muted,
-                  padding: '0.35rem 0.75rem',
-                  fontSize: '0.85rem',
-                  cursor: 'pointer',
-                }}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={submitRename}
-                style={{
-                  background: colors.primary,
-                  border: 'none',
-                  color: '#ffffff',
-                  padding: '0.35rem 0.75rem',
-                  fontSize: '0.85rem',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                }}
-              >
-                Rename
-              </button>
-            </div>
-          </Dialog.Content>
-        </Dialog.Portal>
-      </Dialog.Root>
+      <SceneRenameDialog
+        open={renameOpen}
+        onOpenChange={setRenameOpen}
+        value={renameValue}
+        onChange={setRenameValue}
+        onSubmit={submitRename}
+      />
       <DropdownMenu.Root>
         <DropdownMenu.Trigger asChild>
-          <button
-            style={{
-              display: 'flex',
-              alignItems: 'stretch',
-              background: 'transparent',
-              border: `1px solid ${colors.border}`,
-              padding: 0,
-              cursor: 'pointer',
-              outline: 'none',
-            }}
-          >
-            <span
-              style={{
-                fontSize: '0.85rem',
-                fontWeight: 600,
-                color: colors.muted,
-                letterSpacing: '0.06em',
-                textTransform: 'uppercase',
-                background: `${colors.border}88`,
-                padding: '0.3rem 0.5rem',
-                display: 'flex',
-                alignItems: 'center',
-              }}
-            >
-              {label}
-            </span>
-            <span
-              style={{
-                fontSize: '0.85rem',
-                fontWeight: 600,
-                color: activeSceneIndex >= 0 ? colors.text : colors.muted,
-                maxWidth: 150,
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-                padding: '0.3rem 0.5rem',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.3rem',
-              }}
-            >
-              {currentName}
-              <ChevronDownIcon width={12} height={12} color={colors.muted} />
-            </span>
-          </button>
+          <DropdownTriggerButton
+            label="Scene"
+            value={currentName}
+            hasValue={activeSceneIndex >= 0}
+          />
         </DropdownMenu.Trigger>
         <DropdownMenu.Portal>
-          <DropdownMenu.Content
-            sideOffset={4}
-            style={{
-              background: '#1a1535',
-              border: `1px solid ${colors.border}`,
-              padding: '0.25rem 0',
-              minWidth: 140,
-              zIndex: 20,
-            }}
-          >
+          <DropdownMenu.Content sideOffset={4} style={dropdownContentStyle}>
             {scenes.map((scene, i) => (
-              <div
-                key={i}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                }}
-              >
-                <DropdownMenu.Item
+              <div key={i} style={{ display: 'flex', alignItems: 'center' }}>
+                <MenuItem
                   onSelect={() => requestRecallScene(i)}
                   style={{
-                    ...menuItemStyle,
                     flex: 1,
                     fontWeight: i === activeSceneIndex ? 700 : 400,
                     color: i === activeSceneIndex ? colors.primary : colors.text,
                   }}
-                  onMouseEnter={menuItemHover}
-                  onMouseLeave={menuItemUnhover}
                 >
                   {scene.name}
-                </DropdownMenu.Item>
+                </MenuItem>
                 <DropdownMenu.Sub>
                   <DropdownMenu.SubTrigger
                     style={{
@@ -523,42 +399,30 @@ function SceneDropdown({
                       display: 'flex',
                       alignItems: 'center',
                     }}
-                    onMouseEnter={menuItemHover}
-                    onMouseLeave={menuItemUnhover}
+                    {...menuHover}
                   >
                     <DotsHorizontalIcon width={14} height={14} />
                   </DropdownMenu.SubTrigger>
                   <DropdownMenu.Portal>
                     <DropdownMenu.SubContent
                       sideOffset={4}
-                      style={{
-                        background: '#1a1535',
-                        border: `1px solid ${colors.border}`,
-                        padding: '0.25rem 0',
-                        minWidth: 100,
-                        zIndex: 21,
-                      }}
+                      style={{ ...dropdownContentStyle, minWidth: 100, zIndex: 21 }}
                     >
-                      <DropdownMenu.Item
+                      <MenuItem
                         onSelect={(e) => {
                           e.preventDefault();
                           startRename(i);
                         }}
-                        style={menuItemStyle}
-                        onMouseEnter={menuItemHover}
-                        onMouseLeave={menuItemUnhover}
                       >
                         Rename
-                      </DropdownMenu.Item>
+                      </MenuItem>
                       {scenes.length > 1 && (
-                        <DropdownMenu.Item
+                        <MenuItem
                           onSelect={() => requestDeleteScene(i)}
-                          style={{ ...menuItemStyle, color: '#cc4444' }}
-                          onMouseEnter={menuItemHover}
-                          onMouseLeave={menuItemUnhover}
+                          style={{ color: '#cc4444' }}
                         >
                           Delete
-                        </DropdownMenu.Item>
+                        </MenuItem>
                       )}
                     </DropdownMenu.SubContent>
                   </DropdownMenu.Portal>
@@ -573,14 +437,9 @@ function SceneDropdown({
             )}
 
             {scenes.length < 16 && (
-              <DropdownMenu.Item
-                onSelect={requestAddScene}
-                style={{ ...menuItemStyle, color: colors.muted }}
-                onMouseEnter={menuItemHover}
-                onMouseLeave={menuItemUnhover}
-              >
+              <MenuItem onSelect={requestAddScene} style={{ color: colors.muted }}>
                 + Add Scene
-              </DropdownMenu.Item>
+              </MenuItem>
             )}
           </DropdownMenu.Content>
         </DropdownMenu.Portal>

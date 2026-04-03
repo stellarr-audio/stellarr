@@ -349,29 +349,50 @@ void StellarrBridge::emitScenes()
     emitToJs("scenesChanged", detail);
 }
 
-static std::map<juce::String, int> StellarrBridge_captureSceneMap(
+struct SceneCapture {
+    std::map<juce::String, int> stateMap;
+    std::map<juce::String, bool> bypassMap;
+};
+
+static SceneCapture StellarrBridge_captureScene(
     const std::map<juce::String, juce::AudioProcessorGraph::NodeID>& blockNodeMap,
     juce::AudioProcessorGraph& graph)
 {
-    std::map<juce::String, int> map;
+    SceneCapture cap;
     for (auto& [blockId, nodeId] : blockNodeMap)
     {
         if (auto* node = graph.getNodeForId(nodeId))
         {
             if (auto* pb = dynamic_cast<stellarr::PluginBlock*>(node->getProcessor()))
-                map[blockId] = pb->getActiveStateIndex();
+            {
+                cap.stateMap[blockId] = pb->getActiveStateIndex();
+                cap.bypassMap[blockId] = pb->isBypassed();
+            }
         }
     }
-    return map;
+    return cap;
+}
+
+static void captureIntoScene(StellarrBridge::Scene& scene,
+                             const std::map<juce::String, juce::AudioProcessorGraph::NodeID>& blockNodeMap,
+                             juce::AudioProcessorGraph& graph)
+{
+    auto cap = StellarrBridge_captureScene(blockNodeMap, graph);
+    scene.blockStateMap = cap.stateMap;
+    scene.blockBypassMap = cap.bypassMap;
 }
 
 void StellarrBridge::handleAddScene()
 {
     if (processor == nullptr || static_cast<int>(scenes.size()) >= maxScenes) return;
 
+    // Update outgoing scene before adding new one
+    if (activeSceneIndex >= 0 && activeSceneIndex < static_cast<int>(scenes.size()))
+        captureIntoScene(scenes[static_cast<size_t>(activeSceneIndex)], blockNodeMap, processor->getGraph());
+
     Scene scene;
     scene.name = "Scene " + juce::String(static_cast<int>(scenes.size()) + 1);
-    scene.blockStateMap = StellarrBridge_captureSceneMap(blockNodeMap, processor->getGraph());
+    captureIntoScene(scene, blockNodeMap, processor->getGraph());
 
     scenes.push_back(scene);
     activeSceneIndex = static_cast<int>(scenes.size()) - 1;
@@ -387,13 +408,16 @@ void StellarrBridge::handleRecallScene(const juce::var& json)
     auto index = static_cast<int>(obj->getProperty("index"));
     if (index < 0 || index >= static_cast<int>(scenes.size())) return;
 
-    // Save current live states before switching
+    // Save current live states and update outgoing scene's block map
     for (auto& [blockId, nodeId] : blockNodeMap)
     {
         if (auto* node = processor->getGraph().getNodeForId(nodeId))
             if (auto* pb = dynamic_cast<stellarr::PluginBlock*>(node->getProcessor()))
                 pb->saveCurrentState();
     }
+
+    if (activeSceneIndex >= 0 && activeSceneIndex < static_cast<int>(scenes.size()))
+        captureIntoScene(scenes[static_cast<size_t>(activeSceneIndex)], blockNodeMap, processor->getGraph());
 
     activeSceneIndex = index;
     auto& scene = scenes[static_cast<size_t>(index)];
@@ -411,6 +435,12 @@ void StellarrBridge::handleRecallScene(const juce::var& json)
                 if (clampedIdx >= 0)
                 {
                     pb->recallState(clampedIdx);
+
+                    // Restore bypass from scene
+                    auto bypassIt = scene.blockBypassMap.find(blockId);
+                    if (bypassIt != scene.blockBypassMap.end())
+                        pb->setBypassed(bypassIt->second);
+
                     emitBlockStates(blockId, pb);
                     emitBlockParams(blockId, pb);
                 }
@@ -430,8 +460,7 @@ void StellarrBridge::handleSaveScene(const juce::var& json)
     auto index = static_cast<int>(obj->getProperty("index"));
     if (index < 0 || index >= static_cast<int>(scenes.size())) return;
 
-    scenes[static_cast<size_t>(index)].blockStateMap =
-        StellarrBridge_captureSceneMap(blockNodeMap, processor->getGraph());
+    captureIntoScene(scenes[static_cast<size_t>(index)], blockNodeMap, processor->getGraph());
     emitScenes();
 }
 
@@ -1105,6 +1134,11 @@ juce::var StellarrBridge::serialiseSession() const
     }
     session->setProperty("connections", connectionsArray);
 
+    // Update active scene before serialising
+    if (activeSceneIndex >= 0 && activeSceneIndex < static_cast<int>(scenes.size()))
+        captureIntoScene(const_cast<StellarrBridge*>(this)->scenes[static_cast<size_t>(activeSceneIndex)],
+                         blockNodeMap, processor->getGraph());
+
     // Scenes
     juce::Array<juce::var> scenesArray;
     for (auto& scene : scenes)
@@ -1115,6 +1149,10 @@ juce::var StellarrBridge::serialiseSession() const
         for (auto& [bid, si] : scene.blockStateMap)
             mapObj->setProperty(bid, si);
         sceneObj->setProperty("blockStateMap", juce::var(mapObj));
+        auto* bypassObj = new juce::DynamicObject();
+        for (auto& [bid, bp] : scene.blockBypassMap)
+            bypassObj->setProperty(bid, bp);
+        sceneObj->setProperty("blockBypassMap", juce::var(bypassObj));
         scenesArray.add(juce::var(sceneObj));
     }
     session->setProperty("scenes", scenesArray);
@@ -1250,6 +1288,12 @@ void StellarrBridge::restoreSession(const juce::var& session)
                     for (auto& prop : mapObj->getProperties())
                         scene.blockStateMap[prop.name.toString()] = static_cast<int>(prop.value);
                 }
+                auto bypassVar = so->getProperty("blockBypassMap");
+                if (auto* bypassObj = bypassVar.getDynamicObject())
+                {
+                    for (auto& prop : bypassObj->getProperties())
+                        scene.blockBypassMap[prop.name.toString()] = static_cast<bool>(prop.value);
+                }
                 scenes.push_back(scene);
             }
         }
@@ -1263,7 +1307,7 @@ void StellarrBridge::restoreSession(const juce::var& session)
     {
         Scene defaultScene;
         defaultScene.name = "Scene 1";
-        defaultScene.blockStateMap = StellarrBridge_captureSceneMap(blockNodeMap, processor->getGraph());
+        captureIntoScene(defaultScene, blockNodeMap, processor->getGraph());
         scenes.push_back(defaultScene);
         activeSceneIndex = 0;
     }
@@ -1289,7 +1333,11 @@ void StellarrBridge::handleNewSession()
     scenes.clear();
     Scene defaultScene;
     defaultScene.name = "Scene 1";
-    defaultScene.blockStateMap = StellarrBridge_captureSceneMap(blockNodeMap, processor->getGraph());
+    {
+        auto cap = StellarrBridge_captureScene(blockNodeMap, processor->getGraph());
+        defaultScene.blockStateMap = cap.stateMap;
+        defaultScene.blockBypassMap = cap.bypassMap;
+    }
     scenes.push_back(defaultScene);
     activeSceneIndex = 0;
     persistPresetInfo();

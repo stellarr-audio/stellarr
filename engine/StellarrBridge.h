@@ -17,6 +17,12 @@ public:
     juce::WebBrowserComponent::Options configureOptions(juce::WebBrowserComponent::Options options);
     void setWebView(juce::WebBrowserComponent* browser);
 
+    struct Scene {
+        juce::String name;
+        std::map<juce::String, int> blockStateMap;
+        std::map<juce::String, bool> blockBypassMap;
+    };
+
     juce::var serialiseSession() const;
     void restoreSession(const juce::var& session);
     void sendSystemStats(double cpuPercent, double memoryMB, double totalMemoryMB);
@@ -88,11 +94,6 @@ private:
     juce::File lastPresetFile;
     std::function<void()> onStartupComplete;
 
-    // Scenes
-    struct Scene {
-        juce::String name;
-        std::map<juce::String, int> blockStateMap;
-    };
     std::vector<Scene> scenes;
     int activeSceneIndex = -1;
     static constexpr int maxScenes = 16;

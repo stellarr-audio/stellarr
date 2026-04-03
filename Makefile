@@ -7,7 +7,7 @@ build-ui: setup
 	cd ui && npm run build
 
 build-cpp:
-	cmake -B build -DCMAKE_BUILD_TYPE=Debug
+	cmake -B build -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
 	cmake --build build
 
 build: build-ui build-cpp

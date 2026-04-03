@@ -1258,6 +1258,16 @@ void StellarrBridge::restoreSession(const juce::var& session)
             activeSceneIndex = scenes.empty() ? -1 : 0;
     }
 
+    // Ensure at least one scene exists
+    if (scenes.empty())
+    {
+        Scene defaultScene;
+        defaultScene.name = "Scene 1";
+        defaultScene.blockStateMap = StellarrBridge_captureSceneMap(blockNodeMap, processor->getGraph());
+        scenes.push_back(defaultScene);
+        activeSceneIndex = 0;
+    }
+
     sendGraphState();
 }
 
@@ -1273,11 +1283,15 @@ void StellarrBridge::handleNewSession()
     handleAddBlock(inputJson);
     handleAddBlock(outputJson);
 
-    // Clear preset and scene info
+    // Clear preset info and create default scene
     lastPresetFile = juce::File{};
     currentPresetIndex = -1;
     scenes.clear();
-    activeSceneIndex = -1;
+    Scene defaultScene;
+    defaultScene.name = "Scene 1";
+    defaultScene.blockStateMap = StellarrBridge_captureSceneMap(blockNodeMap, processor->getGraph());
+    scenes.push_back(defaultScene);
+    activeSceneIndex = 0;
     persistPresetInfo();
 
     sendGraphState();

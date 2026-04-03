@@ -181,9 +181,21 @@ void StellarrBridge::restoreSession(const juce::var& session)
             blockPositions[blockId] = {col, row};
 
             if (type == "input")
+            {
                 processor->connectBlocks(processor->getAudioInputNodeId(), nodeId);
+                processor->getGraph().addConnection({
+                    {processor->getMidiInputNodeId(), juce::AudioProcessorGraph::midiChannelIndex},
+                    {nodeId, juce::AudioProcessorGraph::midiChannelIndex}
+                });
+            }
             else if (type == "output")
+            {
                 processor->connectBlocks(nodeId, processor->getAudioOutputNodeId());
+                processor->getGraph().addConnection({
+                    {nodeId, juce::AudioProcessorGraph::midiChannelIndex},
+                    {processor->getMidiOutputNodeId(), juce::AudioProcessorGraph::midiChannelIndex}
+                });
+            }
 
             // Restore plugin
             if (type == "plugin" || type == "vst")

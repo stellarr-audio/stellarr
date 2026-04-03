@@ -1,6 +1,6 @@
-import { useStore } from '../store';
+import { useStore } from '../../store';
 import { Logo } from './Logo';
-import { colors } from './colors';
+import { colors } from '../common/colors';
 
 export function LoadingScreen() {
   const loadingStatus = useStore((s) => s.loadingStatus);

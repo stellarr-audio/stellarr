@@ -1,5 +1,5 @@
 import { DropdownMenu } from 'radix-ui';
-import { colors } from './colors';
+import { colors } from '../common/colors';
 
 const menuItems = [
   { type: 'input', label: 'Input' },

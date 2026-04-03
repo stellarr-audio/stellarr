@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useStore } from '../store';
-import { requestAddBlock, requestAddConnection, requestMoveBlock, requestToggleBlockBypass } from '../bridge';
+import { useStore } from '../../store';
+import { requestAddBlock, requestAddConnection, requestMoveBlock, requestToggleBlockBypass } from '../../bridge';
 import { GridBlockComponent } from './GridBlock';
 import { ConnectionLayer } from './ConnectionLayer';
 import { BlockMenu } from './BlockMenu';
-import { colors } from './colors';
+import { colors } from '../common/colors';
 import { CELL_SIZE, STEP, cellLeft, cellTop, gridWidth, gridHeight } from './layout';
 
 export function Grid() {

@@ -1,13 +1,13 @@
 import { Tabs } from 'radix-ui';
 import { useStore } from './store';
-import { Grid } from './grid/Grid';
-import { OptionsPanel } from './grid/OptionsPanel';
-import { Settings } from './grid/Settings';
-import { LoadingScreen } from './grid/LoadingScreen';
-import { PresetBrowser } from './grid/PresetBrowser';
-import { SystemStats } from './grid/SystemStats';
-import { colors } from './grid/colors';
-import { Logo } from './grid/Logo';
+import { Grid } from './components/grid/Grid';
+import { OptionsPanel } from './components/options/OptionsPanel';
+import { Settings } from './components/settings/Settings';
+import { LoadingScreen } from './components/header/LoadingScreen';
+import { PresetBrowser } from './components/header/PresetBrowser';
+import { SystemStats } from './components/header/SystemStats';
+import { colors } from './components/common/colors';
+import { Logo } from './components/header/Logo';
 
 const tabStyle = (active: boolean): React.CSSProperties => ({
   background: active ? colors.border : 'transparent',

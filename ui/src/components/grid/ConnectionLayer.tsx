@@ -1,6 +1,6 @@
 import type { RefObject } from 'react';
-import { useStore } from '../store';
-import { colors } from './colors';
+import { useStore } from '../../store';
+import { colors } from '../common/colors';
 import { CELL_SIZE, GAP, outputPortX, inputPortX, portY, gridWidth, gridHeight } from './layout';
 
 const wireColors = [

@@ -1,5 +1,5 @@
 import { DropdownMenu } from 'radix-ui';
-import { colors } from '../common/colors';
+import styles from './BlockMenu.module.css';
 
 const menuItems = [
   { type: 'input', label: 'Input' },
@@ -25,36 +25,12 @@ export function BlockMenu({ open, onSelect, onClose, children }: Props) {
       <DropdownMenu.Trigger asChild>{children}</DropdownMenu.Trigger>
 
       <DropdownMenu.Portal>
-        <DropdownMenu.Content
-          sideOffset={4}
-          style={{
-            background: colors.dropdownBg,
-            border: `1px solid ${colors.border}`,
-            padding: '0.25rem 0',
-            minWidth: 120,
-            zIndex: 10,
-          }}
-        >
+        <DropdownMenu.Content sideOffset={4} className={styles.content}>
           {menuItems.map((item) => (
             <DropdownMenu.Item
               key={item.type}
               onSelect={() => onSelect(item.type)}
-              style={{
-                padding: '0.35rem 0.75rem',
-                fontSize: '1rem',
-                fontWeight: 600,
-                letterSpacing: '0.06em',
-                textTransform: 'uppercase',
-                color: colors.text,
-                cursor: 'pointer',
-                outline: 'none',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = colors.border;
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'transparent';
-              }}
+              className={styles.item}
             >
               {item.label}
             </DropdownMenu.Item>

@@ -5,7 +5,7 @@ import {
   requestRecallBlockState,
   requestDeleteBlockState,
 } from '../../bridge';
-import { colors } from '../common/colors';
+import styles from './StatesSection.module.css';
 import type { GridBlock } from '../../store';
 
 interface Props {
@@ -15,21 +15,11 @@ interface Props {
 export function StatesSection({ block }: Props) {
   return (
     <>
-      <div style={{ height: 1, background: colors.border }} />
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-        <div
-          style={{
-            fontSize: '1rem',
-            fontWeight: 600,
-            color: colors.secondary,
-            letterSpacing: '0.08em',
-            textTransform: 'uppercase',
-          }}
-        >
-          States
-        </div>
+      <div className={styles.divider} />
+      <div className={styles.container}>
+        <div className={styles.sectionTitle}>States</div>
 
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
+        <div className={styles.grid}>
           {Array.from({ length: block.numStates ?? 1 }, (_, i) => {
             const isActive = i === (block.activeStateIndex ?? 0);
             const isDirty = (block.dirtyStates ?? []).includes(i);
@@ -50,18 +40,7 @@ export function StatesSection({ block }: Props) {
             <button
               onClick={() => requestAddBlockState(block.id)}
               title="Add new state"
-              style={{
-                width: 32,
-                height: 32,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                background: 'transparent',
-                border: `1px dashed ${colors.border}`,
-                color: colors.muted,
-                cursor: 'pointer',
-                padding: 0,
-              }}
+              className={styles.addButton}
             >
               <PlusIcon width={14} height={14} />
             </button>

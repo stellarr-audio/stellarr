@@ -1,6 +1,7 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import './assets/fonts/fonts.css';
+import './styles/variables.css';
 import { initBridge } from './bridge';
 import App from './App';
 

@@ -1,0 +1,92 @@
+.trigger {
+  width: 100%;
+  text-align: left;
+  background: var(--color-cell);
+  border: 1px solid var(--color-border);
+  padding: 0.35rem 0.5rem;
+  font-size: 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.25rem;
+  outline: none;
+}
+
+.triggerSelected {
+  color: var(--color-text);
+}
+
+.triggerPlaceholder {
+  color: var(--color-muted);
+}
+
+.content {
+  background: var(--color-dropdown-bg);
+  border: 1px solid var(--color-border);
+  max-height: 240px;
+  overflow: auto;
+  width: var(--radix-select-trigger-width);
+  z-index: 20;
+}
+
+.scrollButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 20px;
+  color: var(--color-muted);
+}
+
+.searchWrapper {
+  padding: 0.25rem 0.5rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.searchInput {
+  background: var(--color-cell);
+  color: var(--color-text);
+  border: none;
+  width: 100%;
+  padding: 0.25rem 0;
+  font-size: 1rem;
+  outline: none;
+}
+
+.emptyMessage {
+  padding: 0.5rem;
+  font-size: 1rem;
+  color: var(--color-muted);
+  font-style: italic;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.35rem 0.5rem;
+  cursor: pointer;
+  outline: none;
+  font-size: 1rem;
+  color: var(--color-text);
+}
+
+.item:hover {
+  background: rgba(42, 37, 69, 0.53);
+}
+
+.itemManufacturer {
+  font-size: 0.85rem;
+  color: var(--color-muted);
+  margin-top: 0.1rem;
+}
+
+.formatBadge {
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 0.1rem 0.25rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  flex-shrink: 0;
+  margin-left: 0.5rem;
+}

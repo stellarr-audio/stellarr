@@ -19,58 +19,8 @@ import {
   requestRenameScene,
   requestDeleteScene,
 } from '../../bridge';
-import { colors } from '../common/colors';
 import { SceneRenameDialog } from './SceneRenameDialog';
-
-const hoverBg = '#2a2545';
-
-function hoverHandlers() {
-  return {
-    onMouseEnter: (e: React.MouseEvent<HTMLButtonElement>) => {
-      e.currentTarget.style.background = hoverBg;
-    },
-    onMouseLeave: (e: React.MouseEvent<HTMLButtonElement>) => {
-      e.currentTarget.style.background = 'transparent';
-    },
-  };
-}
-
-const iconBtnStyle: React.CSSProperties = {
-  background: 'transparent',
-  border: `1px solid ${colors.border}`,
-  color: colors.muted,
-  padding: '0.3rem',
-  cursor: 'pointer',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  transition: 'background 0.1s ease',
-};
-
-const menuItemStyle: React.CSSProperties = {
-  padding: '0.35rem 0.75rem',
-  fontSize: '1rem',
-  color: colors.text,
-  cursor: 'pointer',
-  outline: 'none',
-};
-
-const menuHover = {
-  onMouseEnter: (e: React.MouseEvent<HTMLDivElement>) => {
-    e.currentTarget.style.background = colors.border;
-  },
-  onMouseLeave: (e: React.MouseEvent<HTMLDivElement>) => {
-    e.currentTarget.style.background = 'transparent';
-  },
-};
-
-const dropdownContentStyle: React.CSSProperties = {
-  background: colors.dropdownBg,
-  border: `1px solid ${colors.border}`,
-  padding: '0.25rem 0',
-  minWidth: 'var(--radix-dropdown-menu-trigger-width)',
-  zIndex: 20,
-};
+import styles from './PresetBrowser.module.css';
 
 // -- Shared trigger content for preset/scene dropdowns ------------------------
 
@@ -85,44 +35,14 @@ function DropdownTriggerContent({
 }) {
   return (
     <>
-      <span
-        style={{
-          fontSize: '0.85rem',
-          fontWeight: 600,
-          color: colors.muted,
-          letterSpacing: '0.06em',
-          textTransform: 'uppercase',
-          background: `${colors.border}88`,
-          padding: '0.3rem 0.5rem',
-          display: 'flex',
-          alignItems: 'center',
-        }}
-      >
-        {label}
-      </span>
-      <span
-        style={{
-          width: 140,
-          padding: '0.3rem 0.5rem',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: '0.3rem',
-        }}
-      >
+      <span className={styles.triggerLabel}>{label}</span>
+      <span className={styles.triggerValue}>
         <span
-          style={{
-            fontSize: '0.85rem',
-            fontWeight: 600,
-            color: hasValue ? colors.text : colors.muted,
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
-          }}
+          className={`${styles.triggerValueText} ${hasValue ? styles.hasValue : styles.noValue}`}
         >
           {value}
         </span>
-        <ChevronDownIcon width={12} height={12} color={colors.muted} style={{ flexShrink: 0 }} />
+        <ChevronDownIcon width={12} height={12} className={styles.triggerChevron} />
       </span>
     </>
   );
@@ -132,15 +52,15 @@ function DropdownTriggerContent({
 
 function MenuItem({
   onSelect,
-  style,
+  className,
   children,
 }: {
   onSelect: (e: Event) => void;
-  style?: React.CSSProperties;
+  className?: string;
   children: React.ReactNode;
 }) {
   return (
-    <DropdownMenu.Item onSelect={onSelect} style={{ ...menuItemStyle, ...style }} {...menuHover}>
+    <DropdownMenu.Item onSelect={onSelect} className={className ?? styles.menuItem}>
       {children}
     </DropdownMenu.Item>
   );
@@ -166,14 +86,9 @@ export function PresetBrowser() {
       : 'No Scene';
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+    <div className={styles.container}>
       {/* Open */}
-      <button
-        onClick={requestLoadSession}
-        title="Open preset"
-        {...hoverHandlers()}
-        style={iconBtnStyle}
-      >
+      <button onClick={requestLoadSession} title="Open preset" className={styles.iconBtn}>
         <UploadIcon width={16} height={16} />
       </button>
 
@@ -192,27 +107,11 @@ export function PresetBrowser() {
       />
 
       {/* Save split button */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'stretch',
-          border: `1px solid ${colors.border}`,
-        }}
-      >
+      <div className={styles.saveSplit}>
         <button
           onClick={requestSaveSessionQuiet}
           title="Save preset"
-          {...hoverHandlers()}
-          style={{
-            background: 'transparent',
-            border: 'none',
-            color: justSaved ? colors.green : colors.muted,
-            padding: '0.3rem 0.4rem',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            transition: 'color 0.2s ease, background 0.1s ease',
-          }}
+          className={justSaved ? styles.saveBtnSaved : styles.saveBtnDefault}
         >
           {justSaved ? (
             <CheckIcon width={16} height={16} />
@@ -223,22 +122,7 @@ export function PresetBrowser() {
 
         <DropdownMenu.Root>
           <DropdownMenu.Trigger asChild>
-            <button
-              title="Save options"
-              {...hoverHandlers()}
-              style={{
-                background: 'transparent',
-                border: 'none',
-                borderLeft: `1px solid ${colors.border}`,
-                color: colors.muted,
-                padding: '0.3rem 0.2rem',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                transition: 'background 0.1s ease',
-                outline: 'none',
-              }}
-            >
+            <button title="Save options" className={styles.saveChevron}>
               <ChevronDownIcon width={12} height={12} />
             </button>
           </DropdownMenu.Trigger>
@@ -246,7 +130,7 @@ export function PresetBrowser() {
             <DropdownMenu.Content
               sideOffset={4}
               align="end"
-              style={{ ...dropdownContentStyle, minWidth: 100 }}
+              className={styles.dropdownContentNarrow}
             >
               <MenuItem onSelect={requestSaveSessionQuiet}>Save</MenuItem>
               <MenuItem onSelect={requestSaveSession}>Save As...</MenuItem>
@@ -271,17 +155,7 @@ function PresetDropdown({
 }) {
   return (
     <DropdownMenu.Root>
-      <DropdownMenu.Trigger
-        style={{
-          display: 'flex',
-          alignItems: 'stretch',
-          background: 'transparent',
-          border: `1px solid ${colors.border}`,
-          padding: 0,
-          cursor: 'pointer',
-          outline: 'none',
-        }}
-      >
+      <DropdownMenu.Trigger className={styles.dropdownTrigger}>
         <DropdownTriggerContent
           label="Preset"
           value={currentName}
@@ -289,39 +163,22 @@ function PresetDropdown({
         />
       </DropdownMenu.Trigger>
       <DropdownMenu.Portal>
-        <DropdownMenu.Content
-          sideOffset={4}
-          style={{ ...dropdownContentStyle, maxHeight: 300, overflowY: 'auto' }}
-        >
+        <DropdownMenu.Content sideOffset={4} className={styles.dropdownContentScrollable}>
           {presetFiles.length === 0 ? (
-            <div
-              style={{
-                padding: '0.35rem 0.75rem',
-                fontSize: '1rem',
-                color: colors.muted,
-                fontStyle: 'italic',
-              }}
-            >
-              No presets
-            </div>
+            <div className={styles.emptyState}>No presets</div>
           ) : (
             presetFiles.map((file, i) => (
               <MenuItem
                 key={i}
                 onSelect={() => requestLoadPresetByIndex(i)}
-                style={{
-                  fontWeight: i === currentPresetIndex ? 700 : 400,
-                  color: i === currentPresetIndex ? colors.primary : colors.text,
-                }}
+                className={i === currentPresetIndex ? styles.menuItemActive : styles.menuItem}
               >
                 {file.replace('.stellarr', '')}
               </MenuItem>
             ))
           )}
-          <DropdownMenu.Separator
-            style={{ height: 1, background: colors.border, margin: '0.25rem 0' }}
-          />
-          <MenuItem onSelect={requestNewSession} style={{ color: colors.muted }}>
+          <DropdownMenu.Separator className={styles.separator} />
+          <MenuItem onSelect={requestNewSession} className={styles.menuItemMuted}>
             + New Preset
           </MenuItem>
         </DropdownMenu.Content>
@@ -368,17 +225,7 @@ function SceneDropdown({
         onSubmit={submitRename}
       />
       <DropdownMenu.Root>
-        <DropdownMenu.Trigger
-          style={{
-            display: 'flex',
-            alignItems: 'stretch',
-            background: 'transparent',
-            border: `1px solid ${colors.border}`,
-            padding: 0,
-            cursor: 'pointer',
-            outline: 'none',
-          }}
-        >
+        <DropdownMenu.Trigger className={styles.dropdownTrigger}>
           <DropdownTriggerContent
             label="Scene"
             value={currentName}
@@ -386,38 +233,23 @@ function SceneDropdown({
           />
         </DropdownMenu.Trigger>
         <DropdownMenu.Portal>
-          <DropdownMenu.Content sideOffset={4} style={dropdownContentStyle}>
+          <DropdownMenu.Content sideOffset={4} className={styles.dropdownContent}>
             {scenes.map((scene, i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'center' }}>
+              <div key={i} className={styles.sceneRow}>
                 <MenuItem
                   onSelect={() => requestRecallScene(i)}
-                  style={{
-                    flex: 1,
-                    fontWeight: i === activeSceneIndex ? 700 : 400,
-                    color: i === activeSceneIndex ? colors.primary : colors.text,
-                  }}
+                  className={
+                    i === activeSceneIndex ? styles.menuItemActiveFlex : styles.menuItemFlex
+                  }
                 >
                   {scene.name}
                 </MenuItem>
                 <DropdownMenu.Sub>
-                  <DropdownMenu.SubTrigger
-                    style={{
-                      padding: '0.35rem 0.5rem',
-                      color: colors.muted,
-                      cursor: 'pointer',
-                      outline: 'none',
-                      display: 'flex',
-                      alignItems: 'center',
-                    }}
-                    {...menuHover}
-                  >
+                  <DropdownMenu.SubTrigger className={styles.subTrigger}>
                     <DotsHorizontalIcon width={14} height={14} />
                   </DropdownMenu.SubTrigger>
                   <DropdownMenu.Portal>
-                    <DropdownMenu.SubContent
-                      sideOffset={4}
-                      style={{ ...dropdownContentStyle, minWidth: 100, zIndex: 21 }}
-                    >
+                    <DropdownMenu.SubContent sideOffset={4} className={styles.subContent}>
                       <MenuItem
                         onSelect={(e) => {
                           e.preventDefault();
@@ -429,7 +261,7 @@ function SceneDropdown({
                       {scenes.length > 1 && (
                         <MenuItem
                           onSelect={() => requestDeleteScene(i)}
-                          style={{ color: colors.danger }}
+                          className={styles.menuItemDanger}
                         >
                           Delete
                         </MenuItem>
@@ -440,14 +272,10 @@ function SceneDropdown({
               </div>
             ))}
 
-            {scenes.length > 0 && (
-              <DropdownMenu.Separator
-                style={{ height: 1, background: colors.border, margin: '0.25rem 0' }}
-              />
-            )}
+            {scenes.length > 0 && <DropdownMenu.Separator className={styles.separator} />}
 
             {scenes.length < 16 && (
-              <MenuItem onSelect={requestAddScene} style={{ color: colors.muted }}>
+              <MenuItem onSelect={requestAddScene} className={styles.menuItemMuted}>
                 + Add Scene
               </MenuItem>
             )}

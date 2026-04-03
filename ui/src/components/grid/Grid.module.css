@@ -1,0 +1,39 @@
+.grid {
+  position: relative;
+  background: var(--color-bg);
+  overflow: visible;
+}
+
+.cell {
+  position: absolute;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-cell);
+  border: 1px solid var(--color-border);
+  cursor: pointer;
+  transition: background 0.1s ease, border-color 0.1s ease;
+}
+
+.cell:hover {
+  background: var(--color-cell-hover);
+  border-color: var(--color-muted);
+}
+
+.cellOccupied {
+  cursor: default;
+  pointer-events: none;
+}
+
+.cellActive {
+  background: var(--color-cell-hover);
+  border-color: var(--color-muted);
+}
+
+.cellPlus {
+  font-size: 1.2rem;
+  font-weight: 300;
+  color: var(--color-muted);
+  line-height: 1;
+}

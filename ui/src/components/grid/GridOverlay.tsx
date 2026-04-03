@@ -1,5 +1,5 @@
 import { useStore } from '../../store';
-import { colors } from '../common/colors';
+import styles from './GridOverlay.module.css';
 
 export function GridOverlay() {
   const presetFiles = useStore((s) => s.presetFiles);
@@ -20,29 +20,12 @@ export function GridOverlay() {
   if (!presetName && !sceneName) return null;
 
   return (
-    <div
-      style={{
-        width: '100%',
-        maxWidth: 1040,
-        textAlign: 'center',
-        padding: '0.5rem 0',
-        borderBottom: `1px solid ${colors.border}`,
-        flexShrink: 0,
-      }}
-    >
-      <span
-        style={{
-          fontSize: '1.8rem',
-          fontWeight: 700,
-          letterSpacing: '0.08em',
-          textTransform: 'uppercase',
-          color: `${colors.primary}`,
-        }}
-      >
+    <div className={styles.overlay}>
+      <span className={styles.title}>
         {presetName ?? 'Untitled'}
         {sceneName && (
           <>
-            <span style={{ margin: '0 0.6rem' }}>✦</span>
+            <span className={styles.separator}>&#10022;</span>
             {sceneName}
           </>
         )}

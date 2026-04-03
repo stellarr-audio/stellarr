@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { Select } from 'radix-ui';
 import { ChevronDownIcon, ChevronUpIcon } from '@radix-ui/react-icons';
 import type { PluginInfo } from '../../store';
-import { colors } from '../common/colors';
+import styles from './PluginSelect.module.css';
 
 const formatColors: Record<string, string> = {
   VST3: '#00b4ff',
@@ -35,21 +35,7 @@ export function PluginSelect({ plugins, selectedId, onSelect }: Props) {
   return (
     <Select.Root value={selectedId} onValueChange={onSelect}>
       <Select.Trigger
-        style={{
-          width: '100%',
-          textAlign: 'left',
-          background: colors.cell,
-          color: selected ? colors.text : colors.muted,
-          border: `1px solid ${colors.border}`,
-          padding: '0.35rem 0.5rem',
-          fontSize: '1rem',
-          cursor: 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: '0.25rem',
-          outline: 'none',
-        }}
+        className={`${styles.trigger} ${selected ? styles.triggerSelected : styles.triggerPlaceholder}`}
       >
         <Select.Value placeholder="Select a plugin..." />
         <Select.Icon>
@@ -58,33 +44,14 @@ export function PluginSelect({ plugins, selectedId, onSelect }: Props) {
       </Select.Trigger>
 
       <Select.Portal>
-        <Select.Content
-          position="popper"
-          sideOffset={4}
-          style={{
-            background: colors.dropdownBg,
-            border: `1px solid ${colors.border}`,
-            maxHeight: 240,
-            overflow: 'auto',
-            width: 'var(--radix-select-trigger-width)',
-            zIndex: 20,
-          }}
-        >
-          <Select.ScrollUpButton
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              height: 20,
-              color: colors.muted,
-            }}
-          >
+        <Select.Content position="popper" sideOffset={4} className={styles.content}>
+          <Select.ScrollUpButton className={styles.scrollButton}>
             <ChevronUpIcon />
           </Select.ScrollUpButton>
 
           <Select.Viewport>
             {/* Search — using a div so it doesn't interfere with Select keyboard nav */}
-            <div style={{ padding: '0.25rem 0.5rem', borderBottom: `1px solid ${colors.border}` }}>
+            <div className={styles.searchWrapper}>
               <input
                 type="text"
                 placeholder="Search..."
@@ -92,79 +59,29 @@ export function PluginSelect({ plugins, selectedId, onSelect }: Props) {
                 onChange={(e) => setSearch(e.target.value)}
                 onClick={(e) => e.stopPropagation()}
                 onKeyDown={(e) => e.stopPropagation()}
-                style={{
-                  background: colors.cell,
-                  color: colors.text,
-                  border: 'none',
-                  width: '100%',
-                  padding: '0.25rem 0',
-                  fontSize: '1rem',
-                  outline: 'none',
-                }}
+                className={styles.searchInput}
               />
             </div>
 
             {filtered.length === 0 ? (
-              <div
-                style={{
-                  padding: '0.5rem',
-                  fontSize: '1rem',
-                  color: colors.muted,
-                  fontStyle: 'italic',
-                }}
-              >
-                No plugins found
-              </div>
+              <div className={styles.emptyMessage}>No plugins found</div>
             ) : (
               filtered.map((p) => {
                 const formatLabel =
                   p.format === 'AudioUnit' ? 'AU' : p.format === 'VST3' ? 'VST3' : p.format;
-                const formatColor = formatColors[p.format] ?? colors.muted;
+                const formatColor = formatColors[p.format] ?? '#5a5478';
 
                 return (
-                  <Select.Item
-                    key={p.id}
-                    value={p.id}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      padding: '0.35rem 0.5rem',
-                      cursor: 'pointer',
-                      outline: 'none',
-                      fontSize: '1rem',
-                      color: colors.text,
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = `${colors.border}88`;
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = 'transparent';
-                    }}
-                  >
+                  <Select.Item key={p.id} value={p.id} className={styles.item}>
                     <div>
                       <Select.ItemText>{p.name}</Select.ItemText>
-                      <div
-                        style={{
-                          fontSize: '0.85rem',
-                          color: colors.muted,
-                          marginTop: '0.1rem',
-                        }}
-                      >
-                        {p.manufacturer}
-                      </div>
+                      <div className={styles.itemManufacturer}>{p.manufacturer}</div>
                     </div>
                     <span
+                      className={styles.formatBadge}
                       style={{
-                        fontSize: '0.85rem',
-                        fontWeight: 700,
                         color: formatColor,
                         border: `1px solid ${formatColor}55`,
-                        padding: '0.1rem 0.25rem',
-                        letterSpacing: '0.06em',
-                        textTransform: 'uppercase',
-                        flexShrink: 0,
-                        marginLeft: '0.5rem',
                       }}
                     >
                       {formatLabel}
@@ -175,15 +92,7 @@ export function PluginSelect({ plugins, selectedId, onSelect }: Props) {
             )}
           </Select.Viewport>
 
-          <Select.ScrollDownButton
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              height: 20,
-              color: colors.muted,
-            }}
-          >
+          <Select.ScrollDownButton className={styles.scrollButton}>
             <ChevronDownIcon />
           </Select.ScrollDownButton>
         </Select.Content>

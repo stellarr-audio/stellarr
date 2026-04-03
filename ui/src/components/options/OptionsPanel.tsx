@@ -14,7 +14,7 @@ import {
   requestSetBlockLevel,
   requestRenameBlock,
 } from '../../bridge';
-import { colors } from '../common/colors';
+import styles from './OptionsPanel.module.css';
 
 export function OptionsPanel() {
   const selectedBlockId = useStore((s) => s.selectedBlockId);
@@ -24,47 +24,16 @@ export function OptionsPanel() {
   const block = selectedBlockId ? blocks.find((b) => b.id === selectedBlockId) : null;
 
   return (
-    <div
-      style={{
-        width: 280,
-        flexShrink: 0,
-        boxSizing: 'border-box',
-        background: '#0f0d1e',
-        borderLeft: `1px solid ${colors.border}`,
-        padding: '1rem',
-        display: 'flex',
-        flexDirection: 'column',
-        overflow: 'hidden',
-      }}
-    >
-      <div
-        style={{
-          fontSize: '1rem',
-          fontWeight: 600,
-          color: colors.muted,
-          letterSpacing: '0.12em',
-          textTransform: 'uppercase',
-          marginBottom: '1rem',
-        }}
-      >
-        Options
-      </div>
+    <div className={styles.panel}>
+      <div className={styles.title}>Options</div>
 
       {!block ? (
-        <div
-          style={{
-            fontSize: '1rem',
-            color: colors.muted,
-            fontStyle: 'italic',
-          }}
-        >
-          Select a block to view options
-        </div>
+        <div className={styles.emptyMessage}>Select a block to view options</div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+        <div className={styles.content}>
           <BlockHeader block={block} />
 
-          <div style={{ height: 1, background: colors.border }} />
+          <div className={styles.divider} />
 
           {/* Input block options */}
           {block.type === 'input' && (
@@ -85,36 +54,11 @@ export function OptionsPanel() {
           {/* Level — for I/O blocks (plugin blocks get it via ParametersSection) */}
           {(block.type === 'input' || block.type === 'output') && (
             <>
-              <div style={{ height: 1, background: colors.border }} />
+              <div className={styles.divider} />
               <div>
-                <div
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    marginBottom: '0.4rem',
-                  }}
-                >
-                  <span
-                    style={{
-                      fontSize: '1rem',
-                      color: colors.text,
-                      letterSpacing: '0.05em',
-                      textTransform: 'uppercase',
-                    }}
-                  >
-                    Level
-                  </span>
-                  <span
-                    style={{
-                      fontSize: '1rem',
-                      color: colors.secondary,
-                      fontWeight: 600,
-                      fontVariantNumeric: 'tabular-nums',
-                      minWidth: '5ch',
-                      textAlign: 'right',
-                    }}
-                  >
+                <div className={styles.levelRow}>
+                  <span className={styles.levelLabel}>Level</span>
+                  <span className={styles.levelValue}>
                     {(() => {
                       const db = block.level ?? 0;
                       if (db <= -60) return '-∞ dB';
@@ -173,13 +117,7 @@ function BlockHeader({ block }: { block: import('../../store').GridBlock }) {
   };
 
   return (
-    <div
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-      }}
-    >
+    <div className={styles.blockHeader}>
       {editing ? (
         <input
           autoFocus
@@ -191,39 +129,14 @@ function BlockHeader({ block }: { block: import('../../store').GridBlock }) {
             if (e.key === 'Enter') submitEdit();
             if (e.key === 'Escape') setEditing(false);
           }}
-          style={{
-            background: 'transparent',
-            border: `1px solid ${colors.primary}`,
-            color: colors.text,
-            fontSize: '1rem',
-            fontWeight: 700,
-            letterSpacing: '0.08em',
-            textTransform: 'uppercase',
-            padding: '0.1rem 0.3rem',
-            outline: 'none',
-            width: 60,
-          }}
+          className={styles.editInput}
         />
       ) : (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-          <span
-            style={{
-              fontSize: '1rem',
-              fontWeight: 700,
-              color: block.bypassed ? colors.muted : colors.text,
-              letterSpacing: '0.08em',
-              textTransform: 'uppercase',
-            }}
-          >
+        <div className={styles.nameRow}>
+          <span className={`${styles.blockName} ${block.bypassed ? styles.blockNameBypassed : ''}`}>
             {displayName}
           </span>
-          <Pencil1Icon
-            width={14}
-            height={14}
-            color={colors.muted}
-            style={{ cursor: 'pointer' }}
-            onClick={startEdit}
-          />
+          <Pencil1Icon width={14} height={14} className={styles.editIcon} onClick={startEdit} />
         </div>
       )}
 
@@ -247,21 +160,11 @@ function BypassControl({ block }: { block: import('../../store').GridBlock }) {
     : 'MIDI';
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+    <div className={styles.bypassControl}>
       <button
         onClick={() => setDialogOpen(true)}
         title={existing ? `Bypass MIDI: CC ${existing.cc}` : 'Assign MIDI CC to bypass'}
-        style={{
-          background: existing ? `${colors.secondary}18` : 'transparent',
-          border: `1px solid ${existing ? colors.secondary : colors.border}`,
-          color: existing ? colors.secondary : colors.muted,
-          fontSize: '0.65rem',
-          fontWeight: 600,
-          letterSpacing: '0.04em',
-          textTransform: 'uppercase',
-          cursor: 'pointer',
-          padding: '0.1rem 0.3rem',
-        }}
+        className={`${styles.midiButton} ${existing ? styles.midiButtonAssigned : ''}`}
       >
         {midiLabel}
       </button>

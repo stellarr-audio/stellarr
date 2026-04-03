@@ -85,6 +85,10 @@ public:
     juce::String getDisplayName() const { return displayName; }
     void setDisplayName(const juce::String& name) { displayName = name; }
 
+    // User-chosen block color (empty = use default type color)
+    juce::String getBlockColor() const { return blockColor; }
+    void setBlockColor(const juce::String& color) { blockColor = color; }
+
     // Mix parameter (0.0 = fully dry, 1.0 = fully wet)
     float getMix() const { return mix.load(std::memory_order_relaxed); }
 
@@ -250,6 +254,8 @@ public:
         obj->setProperty("name", blockName);
         if (displayName.isNotEmpty())
             obj->setProperty("displayName", displayName);
+        if (blockColor.isNotEmpty())
+            obj->setProperty("blockColor", blockColor);
 
         obj->setProperty("level", static_cast<double>(getLevelDb()));
 
@@ -274,6 +280,8 @@ public:
 
             if (obj->hasProperty("displayName"))
                 displayName = obj->getProperty("displayName").toString();
+            if (obj->hasProperty("blockColor"))
+                blockColor = obj->getProperty("blockColor").toString();
 
             if (obj->hasProperty("level"))
                 setLevelDb(static_cast<float>(obj->getProperty("level")));
@@ -326,6 +334,7 @@ private:
     juce::Uuid blockId;
     juce::String blockName;
     juce::String displayName;
+    juce::String blockColor;
     bool hasMix;
     std::atomic<float> mix { 1.0f };
     std::atomic<float> balance { 0.0f };

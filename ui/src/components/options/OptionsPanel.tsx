@@ -5,6 +5,7 @@ import { Slider } from '../common/Slider';
 import { ToggleSwitch } from '../common/ToggleSwitch';
 import { MidiAssignDialog } from '../common/MidiAssignDialog';
 import { Pencil1Icon } from '@radix-ui/react-icons';
+import { ColorPicker } from './ColorPicker';
 import { PluginSection } from './PluginSection';
 import { ParametersSection } from './ParametersSection';
 import { StatesSection } from './StatesSection';
@@ -13,6 +14,7 @@ import {
   requestToggleBlockBypass,
   requestSetBlockLevel,
   requestRenameBlock,
+  requestSetBlockColor,
 } from '../../bridge';
 import styles from './OptionsPanel.module.css';
 
@@ -133,6 +135,10 @@ function BlockHeader({ block }: { block: import('../../store').GridBlock }) {
         />
       ) : (
         <div className={styles.nameRow}>
+          <ColorPicker
+            color={block.blockColor}
+            onChange={(color) => requestSetBlockColor(block.id, color)}
+          />
           <span className={`${styles.blockName} ${block.bypassed ? styles.blockNameBypassed : ''}`}>
             {displayName}
           </span>

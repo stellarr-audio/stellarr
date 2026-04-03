@@ -1,0 +1,75 @@
+# The Grid
+
+The Grid is where you build your signal chain. It's a visual workspace where blocks are placed and connected with wires.
+
+## Adding Blocks
+
+Click any empty cell on the grid. A menu appears with three options:
+
+- **Input** -- Audio input from your interface
+- **Output** -- Audio output to your speakers
+- **Plugin** -- Hosts a VST3 or AU plugin
+
+Each block appears as a square on the grid showing its type abbreviation (INP, OUT, PLG) or a custom name you assign.
+
+## Moving Blocks
+
+Drag any block to reposition it on the grid.
+
+## Connecting Blocks
+
+Audio and MIDI flow through connections between blocks:
+
+1. Click and drag from a block's **right port** (output).
+2. Release on another block's **left port** (input).
+
+A wire appears showing the connection. Audio and MIDI both travel through the same connection.
+
+### Splice Insertion
+
+If you place a new block directly on an existing connection wire, Stellarr automatically:
+1. Removes the original connection.
+2. Connects the source to your new block.
+3. Connects your new block to the destination.
+
+This saves you from manually rewiring.
+
+### Disconnecting
+
+Click on a connected port to remove that connection.
+
+## Removing Blocks
+
+Hover over a block and click the **X** icon that appears in the corner.
+
+## Block Appearance
+
+Each block displays:
+
+| Area | Content |
+|------|---------|
+| Top | Plugin format badge (VST3, AU) or test tone icon |
+| Middle | Block name (INP, OUT, PLG, or custom 3-char name) |
+| Bottom | Plugin name (if a plugin is loaded) |
+
+### Block Colors
+
+Each block has a colour that tints its border. By default:
+- Input and Output blocks are **slate**
+- Plugin blocks are **blue**
+
+You can change a block's colour from the Options panel using the colour picker.
+
+### Bypass Indicator
+
+When a block is bypassed, its border changes to a **dashed line**.
+
+## Preset and Scene Display
+
+Above the grid, the current preset name and active scene name are shown in large text, separated by a diamond. This is visible from across the room during a performance.
+
+## Keyboard Shortcuts
+
+| Key | Action |
+|-----|--------|
+| Space | Toggle bypass on the selected block |

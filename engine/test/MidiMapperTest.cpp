@@ -703,6 +703,117 @@ static bool testTunerToggleCallback()
     return true;
 }
 
+static bool testLoadPresetClearsOldPresetKeepsGlobal()
+{
+    printf("Test: loadPresetMappings clears old preset mappings, keeps globals... ");
+
+    MidiMapper mapper;
+
+    // Add a global mapping
+    MidiMapper::Mapping global;
+    global.channel = -1;
+    global.ccNumber = -1;
+    global.target = MidiMapper::Target::presetChange;
+    mapper.addMapping(global);
+
+    // Add preset-level mappings (simulating preset 1)
+    MidiMapper::Mapping preset1;
+    preset1.channel = -1;
+    preset1.ccNumber = 7;
+    preset1.target = MidiMapper::Target::blockMix;
+    preset1.blockId = "old-block";
+    mapper.addMapping(preset1);
+
+    if (mapper.getNumMappings() != 2) { printf("FAIL (setup)\n"); return false; }
+
+    // Load new preset mappings (simulating preset 2)
+    MidiMapper newPreset;
+    MidiMapper::Mapping preset2;
+    preset2.channel = 0;
+    preset2.ccNumber = 10;
+    preset2.target = MidiMapper::Target::blockBalance;
+    preset2.blockId = "new-block";
+    newPreset.addMapping(preset2);
+
+    mapper.loadPresetMappings(newPreset.presetMappingsToJson());
+
+    // Should have: 1 global + 1 new preset = 2
+    if (mapper.getNumMappings() != 2)
+    {
+        fprintf(stderr, "  expected 2, got %d\n", mapper.getNumMappings());
+        printf("FAIL\n");
+        return false;
+    }
+
+    // Verify old preset mapping gone, new one present
+    bool foundOld = false, foundNew = false, foundGlobal = false;
+    for (int i = 0; i < mapper.getNumMappings(); ++i)
+    {
+        auto& m = mapper.getMapping(i);
+        if (m.blockId == "old-block") foundOld = true;
+        if (m.blockId == "new-block") foundNew = true;
+        if (m.target == MidiMapper::Target::presetChange) foundGlobal = true;
+    }
+
+    if (foundOld) { fprintf(stderr, "  old preset mapping should be gone\n"); printf("FAIL\n"); return false; }
+    if (!foundNew) { fprintf(stderr, "  new preset mapping missing\n"); printf("FAIL\n"); return false; }
+    if (!foundGlobal) { fprintf(stderr, "  global mapping should persist\n"); printf("FAIL\n"); return false; }
+
+    printf("PASS\n");
+    return true;
+}
+
+static bool testLoadEmptyPresetClearsAll()
+{
+    printf("Test: loadPresetMappings with empty var clears preset mappings... ");
+
+    MidiMapper mapper;
+
+    // Add global + preset mappings
+    MidiMapper::Mapping global;
+    global.channel = -1;
+    global.ccNumber = 64;
+    global.target = MidiMapper::Target::tunerToggle;
+    mapper.addMapping(global);
+
+    MidiMapper::Mapping preset;
+    preset.channel = -1;
+    preset.ccNumber = 7;
+    preset.target = MidiMapper::Target::blockMix;
+    preset.blockId = "block-1";
+    mapper.addMapping(preset);
+
+    MidiMapper::Mapping preset2;
+    preset2.channel = 0;
+    preset2.ccNumber = 20;
+    preset2.target = MidiMapper::Target::blockBypass;
+    preset2.blockId = "block-2";
+    mapper.addMapping(preset2);
+
+    if (mapper.getNumMappings() != 3) { printf("FAIL (setup)\n"); return false; }
+
+    // Load empty — simulates switching to a preset with no midiMappings key
+    mapper.loadPresetMappings(juce::var());
+
+    // Should only have the global mapping left
+    if (mapper.getNumMappings() != 1)
+    {
+        fprintf(stderr, "  expected 1 (global only), got %d\n", mapper.getNumMappings());
+        printf("FAIL\n");
+        return false;
+    }
+
+    if (mapper.getMapping(0).target != MidiMapper::Target::tunerToggle)
+    {
+        fprintf(stderr, "  remaining mapping should be tunerToggle\n");
+        printf("FAIL\n");
+        return false;
+    }
+
+    printf("PASS\n");
+    return true;
+}
+
 int main()
 {
     int failures = 0;
@@ -736,6 +847,10 @@ int main()
     if (!testSerialisationRoundtrip())  ++failures;
     if (!testFromJsonClearsOld())       ++failures;
     if (!testPresetGlobalSplit())       ++failures;
+
+    // Preset switch regression
+    if (!testLoadPresetClearsOldPresetKeepsGlobal()) ++failures;
+    if (!testLoadEmptyPresetClearsAll()) ++failures;
 
     // Edge Cases
     if (!testNoCallbackNoCrash())       ++failures;

@@ -1,0 +1,10 @@
+{
+  "configurations": [
+    {
+      "name": "Mac",
+      "compileCommands": "${workspaceFolder}/build/compile_commands.json",
+      "intelliSenseMode": "macos-clang-arm64"
+    }
+  ],
+  "version": 4
+}

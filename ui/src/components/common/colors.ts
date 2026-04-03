@@ -13,4 +13,6 @@ export const colors = {
   blockBorder: '#3a3560',
   portColor: '#00b4ff',
   connectionLine: '#00b4ff88',
+  dropdownBg: '#1a1535',
+  danger: '#cc4444',
 };

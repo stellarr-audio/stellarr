@@ -28,7 +28,7 @@ export function BlockMenu({ open, onSelect, onClose, children }: Props) {
         <DropdownMenu.Content
           sideOffset={4}
           style={{
-            background: '#1a1535',
+            background: colors.dropdownBg,
             border: `1px solid ${colors.border}`,
             padding: '0.25rem 0',
             minWidth: 120,

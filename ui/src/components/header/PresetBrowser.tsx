@@ -65,7 +65,7 @@ const menuHover = {
 };
 
 const dropdownContentStyle: React.CSSProperties = {
-  background: '#1a1535',
+  background: colors.dropdownBg,
   border: `1px solid ${colors.border}`,
   padding: '0.25rem 0',
   minWidth: 'var(--radix-dropdown-menu-trigger-width)',
@@ -429,7 +429,7 @@ function SceneDropdown({
                       {scenes.length > 1 && (
                         <MenuItem
                           onSelect={() => requestDeleteScene(i)}
-                          style={{ color: '#cc4444' }}
+                          style={{ color: colors.danger }}
                         >
                           Delete
                         </MenuItem>

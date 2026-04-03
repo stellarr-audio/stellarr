@@ -62,7 +62,7 @@ export function PluginSelect({ plugins, selectedId, onSelect }: Props) {
           position="popper"
           sideOffset={4}
           style={{
-            background: '#1a1535',
+            background: colors.dropdownBg,
             border: `1px solid ${colors.border}`,
             maxHeight: 240,
             overflow: 'auto',

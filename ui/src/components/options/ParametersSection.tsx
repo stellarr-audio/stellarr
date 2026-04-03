@@ -231,7 +231,7 @@ export function ParametersSection({ block }: Props) {
                 position="popper"
                 sideOffset={4}
                 style={{
-                  background: '#1a1535',
+                  background: colors.dropdownBg,
                   border: `1px solid ${colors.border}`,
                   width: 'var(--radix-select-trigger-width)',
                   zIndex: 20,

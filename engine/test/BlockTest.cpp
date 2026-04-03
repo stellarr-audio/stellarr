@@ -2,6 +2,7 @@
 #include "blocks/GainBlock.h"
 #include "blocks/InputBlock.h"
 #include "blocks/PluginBlock.h"
+#include "utils/ToneGenerator.h"
 
 static bool testPluginBlockPassThrough()
 {
@@ -855,6 +856,58 @@ static bool testDisplayNameEmpty()
     return true;
 }
 
+// -- ToneGenerator test -------------------------------------------------------
+
+static bool testToneGeneratorOutput()
+{
+    printf("Test: ToneGenerator produces non-zero output... ");
+
+    stellarr::ToneGenerator gen;
+    gen.prepareToPlay(kSampleRate);
+
+    juce::AudioBuffer<float> buffer(2, kBlockSize);
+    buffer.clear();
+    gen.fillBuffer(buffer);
+
+    float peak = 0.0f;
+    for (int i = 0; i < buffer.getNumSamples(); ++i)
+        peak = std::max(peak, std::abs(buffer.getSample(0, i)));
+
+    if (peak < 0.01f)
+    {
+        fprintf(stderr, "  no signal produced\n");
+        printf("FAIL\n");
+        return false;
+    }
+
+    if (peak > 0.5f)
+    {
+        fprintf(stderr, "  peak %f too high\n", static_cast<double>(peak));
+        printf("FAIL\n");
+        return false;
+    }
+
+    // Reset and verify it restarts
+    gen.reset();
+    juce::AudioBuffer<float> buffer2(2, kBlockSize);
+    buffer2.clear();
+    gen.fillBuffer(buffer2);
+
+    float peak2 = 0.0f;
+    for (int i = 0; i < buffer2.getNumSamples(); ++i)
+        peak2 = std::max(peak2, std::abs(buffer2.getSample(0, i)));
+
+    if (peak2 < 0.01f)
+    {
+        fprintf(stderr, "  no signal after reset\n");
+        printf("FAIL\n");
+        return false;
+    }
+
+    printf("PASS\n");
+    return true;
+}
+
 int main()
 {
     int failures = 0;
@@ -889,6 +942,9 @@ int main()
     // Display name
     if (!testDisplayNameSerialisation()) ++failures;
     if (!testDisplayNameEmpty())         ++failures;
+
+    // ToneGenerator
+    if (!testToneGeneratorOutput())      ++failures;
 
     printf("\n%d test(s) failed\n", failures);
     return failures;

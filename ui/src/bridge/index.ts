@@ -82,6 +82,10 @@ export function requestSetBlockMix(blockId: string, mix: number): void {
   sendEvent('setBlockMix', JSON.stringify({ blockId, mix }));
 }
 
+export function requestSetBlockLevel(blockId: string, level: number): void {
+  sendEvent('setBlockLevel', JSON.stringify({ blockId, level }));
+}
+
 export function requestSetBlockBalance(blockId: string, balance: number): void {
   sendEvent('setBlockBalance', JSON.stringify({ blockId, balance }));
 }
@@ -233,6 +237,11 @@ export function initBridge(): void {
     useStore.getState().setBlockMix(String(d.blockId), Number(d.mix));
   });
 
+  juce.backend.addEventListener('blockLevelChanged', (detail: unknown) => {
+    const d = asRecord(detail);
+    useStore.getState().setBlockLevel(String(d.blockId), Number(d.level));
+  });
+
   juce.backend.addEventListener('blockBalanceChanged', (detail: unknown) => {
     const d = asRecord(detail);
     useStore.getState().setBlockBalance(String(d.blockId), Number(d.balance));
@@ -322,6 +331,7 @@ export function initBridge(): void {
         pluginFormat: r.pluginFormat ? String(r.pluginFormat) : undefined,
         mix: r.mix !== undefined ? Number(r.mix) : undefined,
         balance: r.balance !== undefined ? Number(r.balance) : undefined,
+        level: r.level !== undefined ? Number(r.level) : undefined,
         bypassed: r.bypassed ? Boolean(r.bypassed) : undefined,
         bypassMode: r.bypassMode ? String(r.bypassMode) : undefined,
         numStates: r.numStates !== undefined ? Number(r.numStates) : undefined,

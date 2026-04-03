@@ -5,6 +5,7 @@ import { useStore } from '../../store';
 import {
   requestSetBlockMix,
   requestSetBlockBalance,
+  requestSetBlockLevel,
   requestSetBlockBypassMode,
 } from '../../bridge';
 import { colors } from '../common/colors';
@@ -71,6 +72,7 @@ export function ParametersSection({ block }: Props) {
           </div>
           <Slider
             value={Math.round((block.mix ?? 1) * 100)}
+            defaultValue={100}
             onChange={(v) => {
               useStore.getState().setBlockMix(block.id, v / 100);
               requestSetBlockMix(block.id, v / 100);
@@ -122,6 +124,55 @@ export function ParametersSection({ block }: Props) {
             onChange={(v) => {
               useStore.getState().setBlockBalance(block.id, v / 100);
               requestSetBlockBalance(block.id, v / 100);
+            }}
+          />
+        </div>
+
+        {/* Level */}
+        <div>
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '0.4rem',
+            }}
+          >
+            <span
+              style={{
+                fontSize: '1rem',
+                color: colors.text,
+                letterSpacing: '0.05em',
+                textTransform: 'uppercase',
+              }}
+            >
+              Level
+            </span>
+            <span
+              style={{
+                fontSize: '1rem',
+                color: colors.secondary,
+                fontWeight: 600,
+                fontVariantNumeric: 'tabular-nums',
+                minWidth: '5ch',
+                textAlign: 'right',
+              }}
+            >
+              {(() => {
+                const db = block.level ?? 0;
+                if (db <= -60) return '-∞ dB';
+                return `${db >= 0 ? '+' : ''}${db.toFixed(1)} dB`;
+              })()}
+            </span>
+          </div>
+          <Slider
+            min={-60}
+            max={12}
+            step={0.1}
+            value={block.level ?? 0}
+            onChange={(v) => {
+              useStore.getState().setBlockLevel(block.id, v);
+              requestSetBlockLevel(block.id, v);
             }}
           />
         </div>

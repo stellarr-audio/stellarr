@@ -55,6 +55,23 @@ void StellarrBridge::handleEvent(const juce::String& eventName, const juce::var&
     else if (eventName == "removeConnection")       handleRemoveConnection(json);
     else if (eventName == "setBlockPlugin")         handleSetBlockPlugin(json);
     else if (eventName == "openPluginEditor")       handleOpenPluginEditor(json);
+    else if (eventName == "renameBlock" && processor != nullptr)
+    {
+        auto* obj = json.getDynamicObject();
+        if (obj == nullptr) return;
+
+        auto blockId = obj->getProperty("blockId").toString();
+        auto name = obj->getProperty("name").toString();
+        auto* block = findBlock(blockId);
+        if (block == nullptr) return;
+
+        block->setDisplayName(name);
+
+        auto* detail = new juce::DynamicObject();
+        detail->setProperty("blockId", blockId);
+        detail->setProperty("displayName", name);
+        emitToJs("blockRenamed", detail);
+    }
 
     // Plugin management
     else if (eventName == "scanPlugins")            handleScanPlugins();
@@ -362,6 +379,8 @@ void StellarrBridge::sendGraphState()
             {
                 blockObj->setProperty("type", stellarr::blockTypeToString(block->getBlockType()));
                 blockObj->setProperty("name", block->getName());
+                if (block->getDisplayName().isNotEmpty())
+                    blockObj->setProperty("displayName", block->getDisplayName());
 
                 if (auto* pluginBlock = dynamic_cast<stellarr::PluginBlock*>(node->getProcessor()))
                 {

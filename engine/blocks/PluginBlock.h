@@ -13,6 +13,7 @@ struct PluginBlockState
     juce::String pluginStateBase64;
     float mix = 1.0f;
     float balance = 0.0f;
+    float levelDb = 0.0f;
     bool bypassed = false;
     BypassMode bypassMode = BypassMode::thru;
 };
@@ -144,6 +145,7 @@ public:
         PluginBlockState s;
         s.mix = getMix();
         s.balance = getBalance();
+        s.levelDb = getLevelDb();
         s.bypassed = isBypassed();
         s.bypassMode = getBypassMode();
 
@@ -162,6 +164,7 @@ public:
     {
         setMix(s.mix);
         setBalance(s.balance);
+        setLevelDb(s.levelDb);
         setBypassed(s.bypassed);
         setBypassMode(s.bypassMode);
 
@@ -260,6 +263,7 @@ public:
                 stateObj->setProperty("pluginState", s.pluginStateBase64);
                 stateObj->setProperty("mix", static_cast<double>(s.mix));
                 stateObj->setProperty("balance", static_cast<double>(s.balance));
+                stateObj->setProperty("level", static_cast<double>(s.levelDb));
                 stateObj->setProperty("bypassed", s.bypassed);
                 stateObj->setProperty("bypassMode", bypassModeToString(s.bypassMode));
                 statesArray.add(juce::var(stateObj));
@@ -294,6 +298,7 @@ public:
                         s.pluginStateBase64 = so->getProperty("pluginState").toString();
                         s.mix = static_cast<float>(so->getProperty("mix"));
                         s.balance = static_cast<float>(so->getProperty("balance"));
+                        s.levelDb = so->hasProperty("level") ? static_cast<float>(so->getProperty("level")) : 0.0f;
                         s.bypassed = static_cast<bool>(so->getProperty("bypassed"));
                         s.bypassMode = bypassModeFromString(so->getProperty("bypassMode").toString());
                         states.push_back(s);
@@ -313,6 +318,7 @@ public:
                 s.pluginStateBase64 = obj->getProperty("pluginState").toString();
                 s.mix = getMix();
                 s.balance = getBalance();
+                s.levelDb = getLevelDb();
                 s.bypassed = isBypassed();
                 s.bypassMode = getBypassMode();
                 states.push_back(s);

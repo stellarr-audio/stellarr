@@ -6,12 +6,14 @@ interface Props {
   min?: number;
   max?: number;
   step?: number;
+  defaultValue?: number;
   onChange: (value: number) => void;
 }
 
-export function Slider({ value, min = 0, max = 100, step = 1, onChange }: Props) {
+export function Slider({ value, min = 0, max = 100, step = 1, defaultValue = 0, onChange }: Props) {
   return (
     <RadixSlider.Root
+      onDoubleClick={() => onChange(defaultValue)}
       value={[value]}
       onValueChange={([v]) => onChange(v)}
       min={min}

@@ -81,6 +81,10 @@ public:
     int getNumAudioInputs() const  { return getTotalNumInputChannels(); }
     int getNumAudioOutputs() const { return getTotalNumOutputChannels(); }
 
+    // User-editable display name (empty = use default blockName)
+    juce::String getDisplayName() const { return displayName; }
+    void setDisplayName(const juce::String& name) { displayName = name; }
+
     // Mix parameter (0.0 = fully dry, 1.0 = fully wet)
     float getMix() const { return mix.load(std::memory_order_relaxed); }
 
@@ -245,6 +249,8 @@ public:
         obj->setProperty("id", blockId.toString());
         obj->setProperty("type", blockTypeToString(getBlockType()));
         obj->setProperty("name", blockName);
+        if (displayName.isNotEmpty())
+            obj->setProperty("displayName", displayName);
 
         obj->setProperty("level", static_cast<double>(getLevelDb()));
 
@@ -266,6 +272,9 @@ public:
             auto idStr = obj->getProperty("id").toString();
             if (idStr.isNotEmpty())
                 blockId = juce::Uuid(idStr);
+
+            if (obj->hasProperty("displayName"))
+                displayName = obj->getProperty("displayName").toString();
 
             if (obj->hasProperty("level"))
                 setLevelDb(static_cast<float>(obj->getProperty("level")));
@@ -317,6 +326,7 @@ private:
 
     juce::Uuid blockId;
     juce::String blockName;
+    juce::String displayName;
     bool hasMix;
     std::atomic<float> mix { 1.0f };
     std::atomic<float> balance { 0.0f };

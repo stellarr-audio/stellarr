@@ -1,6 +1,7 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useStore } from '../../store';
 import { Cross2Icon } from '@radix-ui/react-icons';
+import { MidiAssignDialog } from '../common/MidiAssignDialog';
 import {
   requestRemoveMidiMapping,
   requestClearMidiMappings,
@@ -21,6 +22,7 @@ const targetLabels: Record<string, string> = {
 export function MidiPage() {
   const mappings = useStore((s) => s.midiMappings);
   const blocks = useStore((s) => s.blocks);
+  const [editIndex, setEditIndex] = useState<number | null>(null);
 
   useEffect(() => {
     requestGetMidiMappings();
@@ -31,6 +33,9 @@ export function MidiPage() {
     const block = blocks.find((b) => b.id === id);
     return block ? block.displayName || block.name : id.slice(0, 8);
   };
+
+  const editMapping =
+    editIndex !== null && editIndex < mappings.length ? mappings[editIndex] : null;
 
   return (
     <div
@@ -127,6 +132,7 @@ export function MidiPage() {
             {mappings.map((m, i) => (
               <div
                 key={i}
+                onClick={() => setEditIndex(i)}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -134,6 +140,14 @@ export function MidiPage() {
                   background: colors.cell,
                   border: `1px solid ${colors.border}`,
                   fontSize: '0.95rem',
+                  cursor: 'pointer',
+                  transition: 'background 0.1s ease',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = colors.border;
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = colors.cell;
                 }}
               >
                 <span
@@ -155,7 +169,10 @@ export function MidiPage() {
                   {m.blockId ? ` (${blockName(m.blockId)})` : ''}
                 </span>
                 <button
-                  onClick={() => requestRemoveMidiMapping(i)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    requestRemoveMidiMapping(i);
+                  }}
                   style={{
                     background: 'transparent',
                     border: 'none',
@@ -173,6 +190,20 @@ export function MidiPage() {
           </div>
         )}
       </div>
+
+      {/* Edit dialog */}
+      {editMapping && (
+        <MidiAssignDialog
+          open={editIndex !== null}
+          onOpenChange={(open) => {
+            if (!open) setEditIndex(null);
+          }}
+          title={`Edit — ${targetLabels[editMapping.target] || editMapping.target}`}
+          target={editMapping.target}
+          blockId={editMapping.blockId}
+          existingIndex={editIndex ?? undefined}
+        />
+      )}
     </div>
   );
 }

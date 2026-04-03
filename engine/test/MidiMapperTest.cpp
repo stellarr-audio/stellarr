@@ -569,6 +569,34 @@ static bool testActivityCallbackOnUnmapped()
     return true;
 }
 
+static bool testTunerToggleCallback()
+{
+    printf("Test: tunerToggle callback with threshold... ");
+
+    MidiMapper mapper;
+    MidiMapper::Mapping m;
+    m.channel = -1;
+    m.ccNumber = 64;
+    m.target = MidiMapper::Target::tunerToggle;
+    mapper.addMapping(m);
+
+    bool lastState = false;
+    mapper.onTunerToggle = [&](bool state) { lastState = state; };
+
+    juce::MidiBuffer buf;
+    buf.addEvent(juce::MidiMessage::controllerEvent(1, 64, 63), 0);
+    mapper.processMidi(buf);
+    if (lastState != false) { printf("FAIL (63 should be off)\n"); return false; }
+
+    buf.clear();
+    buf.addEvent(juce::MidiMessage::controllerEvent(1, 64, 64), 0);
+    mapper.processMidi(buf);
+    if (lastState != true) { printf("FAIL (64 should be on)\n"); return false; }
+
+    printf("PASS\n");
+    return true;
+}
+
 int main()
 {
     int failures = 0;
@@ -584,6 +612,7 @@ int main()
     if (!testBlockLevelScaling())       ++failures;
     if (!testSceneSwitchCallback())     ++failures;
     if (!testPresetChangeFromPC())      ++failures;
+    if (!testTunerToggleCallback())     ++failures;
 
     // MIDI Learn
     if (!testMidiLearn())               ++failures;

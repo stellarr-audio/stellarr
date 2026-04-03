@@ -282,6 +282,11 @@ void StellarrBridge::handleEvent(const juce::String& eventName, const juce::var&
             }
         }
     }
+    else if (eventName == "addScene")              handleAddScene();
+    else if (eventName == "recallScene")           handleRecallScene(json);
+    else if (eventName == "saveScene")             handleSaveScene(json);
+    else if (eventName == "renameScene")           handleRenameScene(json);
+    else if (eventName == "deleteScene")           handleDeleteScene(json);
     else if (eventName == "uiAction" && webView != nullptr)
     {
         auto* response = new juce::DynamicObject();
@@ -321,6 +326,147 @@ void StellarrBridge::clearAllDirtyStates()
         }
     }
 }
+
+// -- Scene management ---------------------------------------------------------
+
+void StellarrBridge::emitScenes()
+{
+    auto* detail = new juce::DynamicObject();
+
+    juce::Array<juce::var> arr;
+    for (auto& scene : scenes)
+    {
+        auto* so = new juce::DynamicObject();
+        so->setProperty("name", scene.name);
+        auto* mapObj = new juce::DynamicObject();
+        for (auto& [bid, si] : scene.blockStateMap)
+            mapObj->setProperty(bid, si);
+        so->setProperty("blockStateMap", juce::var(mapObj));
+        arr.add(juce::var(so));
+    }
+    detail->setProperty("scenes", arr);
+    detail->setProperty("activeSceneIndex", activeSceneIndex);
+    emitToJs("scenesChanged", detail);
+}
+
+static std::map<juce::String, int> StellarrBridge_captureSceneMap(
+    const std::map<juce::String, juce::AudioProcessorGraph::NodeID>& blockNodeMap,
+    juce::AudioProcessorGraph& graph)
+{
+    std::map<juce::String, int> map;
+    for (auto& [blockId, nodeId] : blockNodeMap)
+    {
+        if (auto* node = graph.getNodeForId(nodeId))
+        {
+            if (auto* pb = dynamic_cast<stellarr::PluginBlock*>(node->getProcessor()))
+                map[blockId] = pb->getActiveStateIndex();
+        }
+    }
+    return map;
+}
+
+void StellarrBridge::handleAddScene()
+{
+    if (processor == nullptr || static_cast<int>(scenes.size()) >= maxScenes) return;
+
+    Scene scene;
+    scene.name = "Scene " + juce::String(static_cast<int>(scenes.size()) + 1);
+    scene.blockStateMap = StellarrBridge_captureSceneMap(blockNodeMap, processor->getGraph());
+
+    scenes.push_back(scene);
+    activeSceneIndex = static_cast<int>(scenes.size()) - 1;
+    emitScenes();
+}
+
+void StellarrBridge::handleRecallScene(const juce::var& json)
+{
+    if (processor == nullptr) return;
+    auto* obj = json.getDynamicObject();
+    if (obj == nullptr) return;
+
+    auto index = static_cast<int>(obj->getProperty("index"));
+    if (index < 0 || index >= static_cast<int>(scenes.size())) return;
+
+    // Save current live states before switching
+    for (auto& [blockId, nodeId] : blockNodeMap)
+    {
+        if (auto* node = processor->getGraph().getNodeForId(nodeId))
+            if (auto* pb = dynamic_cast<stellarr::PluginBlock*>(node->getProcessor()))
+                pb->saveCurrentState();
+    }
+
+    activeSceneIndex = index;
+    auto& scene = scenes[static_cast<size_t>(index)];
+
+    for (auto& [blockId, stateIdx] : scene.blockStateMap)
+    {
+        auto nodeIt = blockNodeMap.find(blockId);
+        if (nodeIt == blockNodeMap.end()) continue;
+
+        if (auto* node = processor->getGraph().getNodeForId(nodeIt->second))
+        {
+            if (auto* pb = dynamic_cast<stellarr::PluginBlock*>(node->getProcessor()))
+            {
+                int clampedIdx = std::min(stateIdx, pb->getNumStates() - 1);
+                if (clampedIdx >= 0)
+                {
+                    pb->recallState(clampedIdx);
+                    emitBlockStates(blockId, pb);
+                    emitBlockParams(blockId, pb);
+                }
+            }
+        }
+    }
+
+    emitScenes();
+}
+
+void StellarrBridge::handleSaveScene(const juce::var& json)
+{
+    if (processor == nullptr) return;
+    auto* obj = json.getDynamicObject();
+    if (obj == nullptr) return;
+
+    auto index = static_cast<int>(obj->getProperty("index"));
+    if (index < 0 || index >= static_cast<int>(scenes.size())) return;
+
+    scenes[static_cast<size_t>(index)].blockStateMap =
+        StellarrBridge_captureSceneMap(blockNodeMap, processor->getGraph());
+    emitScenes();
+}
+
+void StellarrBridge::handleRenameScene(const juce::var& json)
+{
+    auto* obj = json.getDynamicObject();
+    if (obj == nullptr) return;
+
+    auto index = static_cast<int>(obj->getProperty("index"));
+    auto name = obj->getProperty("name").toString();
+    if (index < 0 || index >= static_cast<int>(scenes.size())) return;
+
+    scenes[static_cast<size_t>(index)].name = name;
+    emitScenes();
+}
+
+void StellarrBridge::handleDeleteScene(const juce::var& json)
+{
+    auto* obj = json.getDynamicObject();
+    if (obj == nullptr) return;
+
+    auto index = static_cast<int>(obj->getProperty("index"));
+    if (index < 0 || index >= static_cast<int>(scenes.size()) || scenes.size() <= 1) return;
+
+    scenes.erase(scenes.begin() + index);
+
+    if (activeSceneIndex >= static_cast<int>(scenes.size()))
+        activeSceneIndex = static_cast<int>(scenes.size()) - 1;
+    else if (index < activeSceneIndex)
+        activeSceneIndex--;
+
+    emitScenes();
+}
+
+// -- Block state helpers ------------------------------------------------------
 
 void StellarrBridge::emitBlockStates(const juce::String& blockId, stellarr::PluginBlock* pluginBlock)
 {
@@ -897,6 +1043,7 @@ void StellarrBridge::sendGraphState()
     state->setProperty("blocks", blocksArray);
     state->setProperty("connections", connectionsArray);
     emitToJs("graphState", state);
+    emitScenes();
 }
 
 // -- Session serialisation ---------------------------------------------------
@@ -957,6 +1104,21 @@ juce::var StellarrBridge::serialiseSession() const
         connectionsArray.add(juce::var(connObj));
     }
     session->setProperty("connections", connectionsArray);
+
+    // Scenes
+    juce::Array<juce::var> scenesArray;
+    for (auto& scene : scenes)
+    {
+        auto* sceneObj = new juce::DynamicObject();
+        sceneObj->setProperty("name", scene.name);
+        auto* mapObj = new juce::DynamicObject();
+        for (auto& [bid, si] : scene.blockStateMap)
+            mapObj->setProperty(bid, si);
+        sceneObj->setProperty("blockStateMap", juce::var(mapObj));
+        scenesArray.add(juce::var(sceneObj));
+    }
+    session->setProperty("scenes", scenesArray);
+    session->setProperty("activeSceneIndex", activeSceneIndex);
 
     return juce::var(session);
 }
@@ -1070,6 +1232,32 @@ void StellarrBridge::restoreSession(const juce::var& session)
         }
     }
 
+    // Restore scenes
+    scenes.clear();
+    activeSceneIndex = -1;
+    auto scenesVar = obj->getProperty("scenes");
+    if (auto* scenesArr = scenesVar.getArray())
+    {
+        for (auto& sv : *scenesArr)
+        {
+            if (auto* so = sv.getDynamicObject())
+            {
+                Scene scene;
+                scene.name = so->getProperty("name").toString();
+                auto mapVar = so->getProperty("blockStateMap");
+                if (auto* mapObj = mapVar.getDynamicObject())
+                {
+                    for (auto& prop : mapObj->getProperties())
+                        scene.blockStateMap[prop.name.toString()] = static_cast<int>(prop.value);
+                }
+                scenes.push_back(scene);
+            }
+        }
+        activeSceneIndex = static_cast<int>(obj->getProperty("activeSceneIndex"));
+        if (activeSceneIndex >= static_cast<int>(scenes.size()))
+            activeSceneIndex = scenes.empty() ? -1 : 0;
+    }
+
     sendGraphState();
 }
 
@@ -1085,9 +1273,11 @@ void StellarrBridge::handleNewSession()
     handleAddBlock(inputJson);
     handleAddBlock(outputJson);
 
-    // Clear preset info
+    // Clear preset and scene info
     lastPresetFile = juce::File{};
     currentPresetIndex = -1;
+    scenes.clear();
+    activeSceneIndex = -1;
     persistPresetInfo();
 
     sendGraphState();

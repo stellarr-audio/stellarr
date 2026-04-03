@@ -9,6 +9,56 @@ import { SystemStats } from './components/header/SystemStats';
 import { colors } from './components/common/colors';
 import { Logo } from './components/header/Logo';
 
+function GridOverlay() {
+  const presetFiles = useStore((s) => s.presetFiles);
+  const currentPresetIndex = useStore((s) => s.currentPresetIndex);
+  const scenes = useStore((s) => s.scenes);
+  const activeSceneIndex = useStore((s) => s.activeSceneIndex);
+
+  const presetName =
+    currentPresetIndex >= 0 && currentPresetIndex < presetFiles.length
+      ? presetFiles[currentPresetIndex].replace('.stellarr', '')
+      : null;
+
+  const sceneName =
+    activeSceneIndex >= 0 && activeSceneIndex < scenes.length
+      ? scenes[activeSceneIndex].name
+      : null;
+
+  if (!presetName && !sceneName) return null;
+
+  return (
+    <div
+      style={{
+        width: '100%',
+        maxWidth: 1040,
+        textAlign: 'center',
+        padding: '0.5rem 0',
+        borderBottom: `1px solid ${colors.border}`,
+        flexShrink: 0,
+      }}
+    >
+      <span
+        style={{
+          fontSize: '1.8rem',
+          fontWeight: 700,
+          letterSpacing: '0.08em',
+          textTransform: 'uppercase',
+          color: `${colors.primary}`,
+        }}
+      >
+        {presetName ?? 'Untitled'}
+        {sceneName && (
+          <>
+            <span style={{ margin: '0 0.6rem' }}>✦</span>
+            {sceneName}
+          </>
+        )}
+      </span>
+    </div>
+  );
+}
+
 const tabStyle = (active: boolean): React.CSSProperties => ({
   background: active ? colors.border : 'transparent',
   border: 'none',
@@ -69,10 +119,7 @@ function App() {
               padding: '0.5rem 0',
             }}
           >
-            <Logo
-              size={22}
-              style={{ filter: `drop-shadow(0 0 4px ${colors.primary}88)` }}
-            />
+            <Logo size={22} style={{ filter: `drop-shadow(0 0 4px ${colors.primary}88)` }} />
             <span
               style={{
                 fontSize: '1rem',
@@ -137,11 +184,14 @@ function App() {
               flex: 1,
               overflow: 'auto',
               display: 'flex',
+              flexDirection: 'column',
               alignItems: 'center',
               justifyContent: 'center',
               padding: '1rem',
+              gap: '1rem',
             }}
           >
+            <GridOverlay />
             <Grid />
           </div>
           <OptionsPanel />

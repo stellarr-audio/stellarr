@@ -18,12 +18,7 @@ interface Props {
   gridRef: RefObject<HTMLDivElement | null>;
 }
 
-function orthogonalPath(
-  x1: number,
-  y1: number,
-  x2: number,
-  y2: number,
-): string {
+function orthogonalPath(x1: number, y1: number, x2: number, y2: number): string {
   // Route through the gap space:
   // 1. Exit source going right into the gap
   // 2. Travel vertically to destination row
@@ -103,9 +98,7 @@ export function ConnectionLayer(_props: Props) {
         (() => {
           const blk = blockMap.get(dragging.blockId);
           if (!blk) return null;
-          const x1 = dragging.portType === 'output'
-            ? outputPortX(blk.col)
-            : inputPortX(blk.col);
+          const x1 = dragging.portType === 'output' ? outputPortX(blk.col) : inputPortX(blk.col);
           const y1 = portY(blk.row);
           return (
             <line

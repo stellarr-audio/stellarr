@@ -1,12 +1,6 @@
 import { colors } from './colors';
 
-export function OptionRow({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) {
+export function OptionRow({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div
       style={{

@@ -21,21 +21,16 @@ export function PluginSelect({ plugins, selectedId, onSelect }: Props) {
 
   const selected = plugins.find((p) => p.id === selectedId);
 
-  const filtered = useMemo(
-    () => {
-      const sorted = [...plugins].sort((a, b) =>
-        a.name.localeCompare(b.name),
-      );
-      return search
-        ? sorted.filter(
-            (p) =>
-              p.name.toLowerCase().includes(search.toLowerCase()) ||
-              p.manufacturer.toLowerCase().includes(search.toLowerCase()),
-          )
-        : sorted;
-    },
-    [plugins, search],
-  );
+  const filtered = useMemo(() => {
+    const sorted = [...plugins].sort((a, b) => a.name.localeCompare(b.name));
+    return search
+      ? sorted.filter(
+          (p) =>
+            p.name.toLowerCase().includes(search.toLowerCase()) ||
+            p.manufacturer.toLowerCase().includes(search.toLowerCase()),
+        )
+      : sorted;
+  }, [plugins, search]);
 
   return (
     <Select.Root value={selectedId} onValueChange={onSelect}>
@@ -123,11 +118,7 @@ export function PluginSelect({ plugins, selectedId, onSelect }: Props) {
             ) : (
               filtered.map((p) => {
                 const formatLabel =
-                  p.format === 'AudioUnit'
-                    ? 'AU'
-                    : p.format === 'VST3'
-                      ? 'VST3'
-                      : p.format;
+                  p.format === 'AudioUnit' ? 'AU' : p.format === 'VST3' ? 'VST3' : p.format;
                 const formatColor = formatColors[p.format] ?? colors.muted;
 
                 return (

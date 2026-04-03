@@ -1,5 +1,5 @@
 import { useStore } from '../store';
-import type { GridBlock, Connection, ScanDirectory, PluginInfo } from '../store';
+import type { GridBlock, Connection, ScanDirectory, PluginInfo, Scene } from '../store';
 
 declare global {
   interface Window {
@@ -51,12 +51,15 @@ export function requestAddBlock(
   spliceSourceId?: string,
   spliceDestId?: string,
 ): void {
-  sendEvent('addBlock', JSON.stringify({
-    type, col, row,
-    ...(spliceSourceId && spliceDestId
-      ? { spliceSourceId, spliceDestId }
-      : {}),
-  }));
+  sendEvent(
+    'addBlock',
+    JSON.stringify({
+      type,
+      col,
+      row,
+      ...(spliceSourceId && spliceDestId ? { spliceSourceId, spliceDestId } : {}),
+    }),
+  );
 }
 
 export function requestRemoveBlock(blockId: string): void {
@@ -143,6 +146,28 @@ export function requestDeleteBlockState(blockId: string, index: number): void {
   sendEvent('deleteBlockState', JSON.stringify({ blockId, index }));
 }
 
+// -- Scene commands -----------------------------------------------------------
+
+export function requestAddScene(): void {
+  sendEvent('addScene', '{}');
+}
+
+export function requestRecallScene(index: number): void {
+  sendEvent('recallScene', JSON.stringify({ index }));
+}
+
+export function requestSaveScene(index: number): void {
+  sendEvent('saveScene', JSON.stringify({ index }));
+}
+
+export function requestRenameScene(index: number, name: string): void {
+  sendEvent('renameScene', JSON.stringify({ index, name }));
+}
+
+export function requestDeleteScene(index: number): void {
+  sendEvent('deleteScene', JSON.stringify({ index }));
+}
+
 export function requestScanPlugins(): void {
   sendEvent('scanPlugins', '');
 }
@@ -179,10 +204,7 @@ export function initBridge(): void {
   // Startup progress
   juce.backend.addEventListener('startupProgress', (detail: unknown) => {
     const d = asRecord(detail);
-    useStore.getState().setLoadingStatus(
-      String(d.status),
-      Number(d.progress),
-    );
+    useStore.getState().setLoadingStatus(String(d.status), Number(d.progress));
   });
 
   juce.backend.addEventListener('startupComplete', () => {
@@ -272,44 +294,42 @@ export function initBridge(): void {
   juce.backend.addEventListener('blockPluginSet', (detail: unknown) => {
     const d = asRecord(detail);
     console.log('[Bridge] RX blockPluginSet:', d);
-    useStore.getState().setBlockPlugin(
-      String(d.blockId),
-      String(d.pluginId),
-      String(d.pluginName),
-      Boolean(d.hasEditor),
-    );
+    useStore
+      .getState()
+      .setBlockPlugin(
+        String(d.blockId),
+        String(d.pluginId),
+        String(d.pluginName),
+        Boolean(d.hasEditor),
+      );
   });
 
   juce.backend.addEventListener('graphState', (detail: unknown) => {
     const d = asRecord(detail);
     console.log('[Bridge] RX graphState');
-    const blocks = (Array.isArray(d.blocks) ? d.blocks : []).map(
-      (b: unknown) => {
-        const r = asRecord(b);
-        return {
-          id: String(r.id),
-          type: String(r.type),
-          name: String(r.name),
-          col: Number(r.col),
-          row: Number(r.row),
-          nodeId: Number(r.nodeId),
-          pluginId: r.pluginId ? String(r.pluginId) : undefined,
-          pluginName: r.pluginName ? String(r.pluginName) : undefined,
-          mix: r.mix !== undefined ? Number(r.mix) : undefined,
-          balance: r.balance !== undefined ? Number(r.balance) : undefined,
-          bypassed: r.bypassed ? Boolean(r.bypassed) : undefined,
-          bypassMode: r.bypassMode ? String(r.bypassMode) : undefined,
-          numStates: r.numStates !== undefined ? Number(r.numStates) : undefined,
-          activeStateIndex: r.activeStateIndex !== undefined ? Number(r.activeStateIndex) : undefined,
-          dirtyStates: Array.isArray(r.dirtyStates)
-            ? (r.dirtyStates as unknown[]).map(Number)
-            : undefined,
-        } satisfies GridBlock;
-      },
-    );
-    const connections = (
-      Array.isArray(d.connections) ? d.connections : []
-    ).map((c: unknown) => {
+    const blocks = (Array.isArray(d.blocks) ? d.blocks : []).map((b: unknown) => {
+      const r = asRecord(b);
+      return {
+        id: String(r.id),
+        type: String(r.type),
+        name: String(r.name),
+        col: Number(r.col),
+        row: Number(r.row),
+        nodeId: Number(r.nodeId),
+        pluginId: r.pluginId ? String(r.pluginId) : undefined,
+        pluginName: r.pluginName ? String(r.pluginName) : undefined,
+        mix: r.mix !== undefined ? Number(r.mix) : undefined,
+        balance: r.balance !== undefined ? Number(r.balance) : undefined,
+        bypassed: r.bypassed ? Boolean(r.bypassed) : undefined,
+        bypassMode: r.bypassMode ? String(r.bypassMode) : undefined,
+        numStates: r.numStates !== undefined ? Number(r.numStates) : undefined,
+        activeStateIndex: r.activeStateIndex !== undefined ? Number(r.activeStateIndex) : undefined,
+        dirtyStates: Array.isArray(r.dirtyStates)
+          ? (r.dirtyStates as unknown[]).map(Number)
+          : undefined,
+      } satisfies GridBlock;
+    });
+    const connections = (Array.isArray(d.connections) ? d.connections : []).map((c: unknown) => {
       const r = asRecord(c);
       return {
         sourceId: String(r.sourceId),
@@ -322,32 +342,28 @@ export function initBridge(): void {
   juce.backend.addEventListener('pluginListUpdated', (detail: unknown) => {
     const d = asRecord(detail);
     console.log('[Bridge] RX pluginListUpdated');
-    const plugins = (Array.isArray(d.plugins) ? d.plugins : []).map(
-      (p: unknown) => {
-        const r = asRecord(p);
-        return {
-          id: String(r.id),
-          name: String(r.name),
-          manufacturer: String(r.manufacturer),
-          format: String(r.format),
-        } satisfies PluginInfo;
-      },
-    );
+    const plugins = (Array.isArray(d.plugins) ? d.plugins : []).map((p: unknown) => {
+      const r = asRecord(p);
+      return {
+        id: String(r.id),
+        name: String(r.name),
+        manufacturer: String(r.manufacturer),
+        format: String(r.format),
+      } satisfies PluginInfo;
+    });
     useStore.getState().setAvailablePlugins(plugins);
   });
 
   juce.backend.addEventListener('scanDirectoriesUpdated', (detail: unknown) => {
     const d = asRecord(detail);
     console.log('[Bridge] RX scanDirectoriesUpdated');
-    const dirs = (Array.isArray(d.directories) ? d.directories : []).map(
-      (dir: unknown) => {
-        const r = asRecord(dir);
-        return {
-          path: String(r.path),
-          isDefault: Boolean(r.isDefault),
-        } satisfies ScanDirectory;
-      },
-    );
+    const dirs = (Array.isArray(d.directories) ? d.directories : []).map((dir: unknown) => {
+      const r = asRecord(dir);
+      return {
+        path: String(r.path),
+        isDefault: Boolean(r.isDefault),
+      } satisfies ScanDirectory;
+    });
     useStore.getState().setScanDirectories(dirs);
   });
 
@@ -355,24 +371,27 @@ export function initBridge(): void {
     const d = asRecord(detail);
     console.log('[Bridge] RX presetListUpdated');
     const files = (Array.isArray(d.files) ? d.files : []).map(String);
-    useStore.getState().setPresetList(
-      String(d.directory),
-      files,
-      Number(d.currentIndex),
-    );
+    useStore.getState().setPresetList(String(d.directory), files, Number(d.currentIndex));
   });
 
   juce.backend.addEventListener('blockStatesChanged', (detail: unknown) => {
     const d = asRecord(detail);
-    const dirty = Array.isArray(d.dirtyStates)
-      ? (d.dirtyStates as unknown[]).map(Number)
-      : [];
-    useStore.getState().setBlockStates(
-      String(d.blockId),
-      Number(d.numStates),
-      Number(d.activeStateIndex),
-      dirty,
-    );
+    const dirty = Array.isArray(d.dirtyStates) ? (d.dirtyStates as unknown[]).map(Number) : [];
+    useStore
+      .getState()
+      .setBlockStates(String(d.blockId), Number(d.numStates), Number(d.activeStateIndex), dirty);
+  });
+
+  juce.backend.addEventListener('scenesChanged', (detail: unknown) => {
+    const d = asRecord(detail);
+    const scenes = (Array.isArray(d.scenes) ? d.scenes : []).map((s: unknown) => {
+      const r = asRecord(s);
+      const mapRaw = asRecord(r.blockStateMap);
+      const blockStateMap: Record<string, number> = {};
+      for (const [k, v] of Object.entries(mapRaw)) blockStateMap[k] = Number(v);
+      return { name: String(r.name), blockStateMap } satisfies Scene;
+    });
+    useStore.getState().setScenes(scenes, Number(d.activeSceneIndex));
   });
 
   juce.backend.addEventListener('systemStats', (detail: unknown) => {

@@ -4,13 +4,5 @@ interface Props {
 }
 
 export function Logo({ size = 20, style }: Props) {
-  return (
-    <img
-      src="/logo.svg"
-      width={size}
-      height={size}
-      alt="Stellarr"
-      style={style}
-    />
-  );
+  return <img src="/logo.svg" width={size} height={size} alt="Stellarr" style={style} />;
 }

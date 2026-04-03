@@ -15,6 +15,9 @@ export interface GridBlock {
   bypassed?: boolean;
   bypassMode?: string;
   hasEditor?: boolean;
+  numStates?: number;
+  activeStateIndex?: number;
+  dirtyStates?: number[];
 }
 
 export interface Connection {
@@ -71,6 +74,7 @@ interface StellarrState {
   setBlockBalance: (blockId: string, balance: number) => void;
   setBlockBypassed: (blockId: string, bypassed: boolean) => void;
   setBlockBypassMode: (blockId: string, mode: string) => void;
+  setBlockStates: (blockId: string, numStates: number, activeStateIndex: number, dirtyStates: number[]) => void;
   setPresetList: (directory: string, files: string[], currentIndex: number) => void;
   setSystemStats: (cpu: number, memory: number, totalMemory: number) => void;
   setJustSaved: (value: boolean) => void;
@@ -171,6 +175,13 @@ export const useStore = create<StellarrState>((set) => ({
     set((s) => ({
       blocks: s.blocks.map((b) =>
         b.id === blockId ? { ...b, bypassMode } : b,
+      ),
+    })),
+
+  setBlockStates: (blockId, numStates, activeStateIndex, dirtyStates) =>
+    set((s) => ({
+      blocks: s.blocks.map((b) =>
+        b.id === blockId ? { ...b, numStates, activeStateIndex, dirtyStates } : b,
       ),
     })),
 

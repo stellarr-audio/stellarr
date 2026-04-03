@@ -4,6 +4,7 @@
 #include <map>
 
 class StellarrProcessor;
+namespace stellarr { class Block; class PluginBlock; }
 
 class StellarrBridge
 {
@@ -59,6 +60,9 @@ private:
     void persistPresetInfo();
 
     void emitToJs(const juce::String& eventName, juce::DynamicObject* detail);
+    void emitBlockStates(const juce::String& blockId, stellarr::PluginBlock* pluginBlock);
+    void emitBlockParams(const juce::String& blockId, stellarr::Block* block);
+    void clearAllDirtyStates();
 
     juce::WebBrowserComponent* webView = nullptr;
     StellarrProcessor* processor = nullptr;

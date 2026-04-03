@@ -312,7 +312,7 @@ stellarr::PluginBlock* StellarrBridge::findPluginBlock(const juce::String& block
     return dynamic_cast<stellarr::PluginBlock*>(node->getProcessor());
 }
 
-void StellarrBridge::markDirtyAndEmit(const juce::String& blockId, stellarr::Block* block)
+void StellarrBridge::markDirtyAndEmit(const juce::String& blockId, stellarr::Block* /*block*/)
 {
     if (processor == nullptr) return;
 

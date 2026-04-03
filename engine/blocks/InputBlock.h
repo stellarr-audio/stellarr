@@ -104,7 +104,7 @@ private:
         const float* input = buffer.getReadPointer(0);
         for (int i = 0; i < buffer.getNumSamples(); ++i)
         {
-            tunerBuffer[tunerBufferWritePos] = input[i];
+            tunerBuffer[static_cast<size_t>(tunerBufferWritePos)] = input[i];
             tunerBufferWritePos = (tunerBufferWritePos + 1) % tunerBufferSize;
         }
         tunerSamplesAccumulated += buffer.getNumSamples();
@@ -120,23 +120,24 @@ private:
 
     void runYinDetection()
     {
-        auto halfSize = tunerBufferSize / 2;
+        const size_t bufSize = static_cast<size_t>(tunerBufferSize);
+        const size_t halfSize = bufSize / 2;
 
         // Linearize circular buffer (reuses member to avoid allocation)
-        if (static_cast<int>(linearBuffer.size()) != tunerBufferSize)
-            linearBuffer.resize(tunerBufferSize);
+        if (linearBuffer.size() != bufSize)
+            linearBuffer.resize(bufSize);
 
-        for (int i = 0; i < tunerBufferSize; ++i)
-            linearBuffer[i] = tunerBuffer[(tunerBufferWritePos + i) % tunerBufferSize];
+        for (size_t i = 0; i < bufSize; ++i)
+            linearBuffer[i] = tunerBuffer[(static_cast<size_t>(tunerBufferWritePos) + i) % bufSize];
 
         // Step 1 & 2: Difference function + cumulative mean normalized
         yinBuffer[0] = 1.0f;
         float runningSum = 0.0f;
 
-        for (int tau = 1; tau < halfSize; ++tau)
+        for (size_t tau = 1; tau < halfSize; ++tau)
         {
             float sum = 0.0f;
-            for (int j = 0; j < halfSize && j + tau < tunerBufferSize; ++j)
+            for (size_t j = 0; j < halfSize && j + tau < bufSize; ++j)
             {
                 float delta = linearBuffer[j] - linearBuffer[j + tau];
                 sum += delta * delta;
@@ -150,20 +151,22 @@ private:
 
         // Step 3: Absolute threshold — find first dip below threshold
         constexpr float threshold = 0.15f;
-        int tauEstimate = -1;
+        size_t tauEstimate = 0;
+        bool found = false;
 
-        for (int tau = 2; tau < halfSize; ++tau)
+        for (size_t tau = 2; tau < halfSize; ++tau)
         {
             if (yinBuffer[tau] < threshold)
             {
                 while (tau + 1 < halfSize && yinBuffer[tau + 1] < yinBuffer[tau])
                     ++tau;
                 tauEstimate = tau;
+                found = true;
                 break;
             }
         }
 
-        if (tauEstimate < 0)
+        if (!found)
         {
             detectedNoteIndex.store(-1, std::memory_order_relaxed);
             detectedConfidence.store(0.0f, std::memory_order_relaxed);

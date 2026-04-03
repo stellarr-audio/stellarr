@@ -113,7 +113,7 @@ public:
 
         if (p->hasEditor())
         {
-            if (auto* editor = p->createEditorIfNecessary())
+            if (auto* editor = p->createEditorAndMakeActive())
                 pluginWindow = std::make_unique<PluginWindow>(editor, name);
             else
                 pluginWindow = std::make_unique<PluginWindow>(

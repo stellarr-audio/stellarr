@@ -266,6 +266,112 @@ static bool testPresetChangeFromPC()
 
 // -- MIDI Learn ---------------------------------------------------------------
 
+static bool testStartLearnSetsMode()
+{
+    printf("Test: startLearn sets learning mode... ");
+
+    MidiMapper mapper;
+
+    if (mapper.isLearning()) { printf("FAIL (already learning)\n"); return false; }
+
+    mapper.startLearn(MidiMapper::Target::blockBalance, "block-test");
+
+    if (!mapper.isLearning()) { printf("FAIL (not learning)\n"); return false; }
+
+    // Cleanup
+    mapper.cancelLearn();
+    printf("PASS\n");
+    return true;
+}
+
+static bool testCcBoundaryValues()
+{
+    printf("Test: CC boundary values 0 and 127 scale correctly for all targets... ");
+
+    // blockMix: 0→0.0, 127→1.0
+    {
+        MidiMapper mapper;
+        MidiMapper::Mapping m;
+        m.channel = -1; m.ccNumber = 1; m.target = MidiMapper::Target::blockMix; m.blockId = "b";
+        mapper.addMapping(m);
+        float val = -1;
+        mapper.onBlockMix = [&](const juce::String&, float v) { val = v; };
+
+        juce::MidiBuffer buf;
+        buf.addEvent(juce::MidiMessage::controllerEvent(1, 1, 0), 0);
+        mapper.processMidi(buf);
+        if (val < -0.001f || val > 0.001f) { fprintf(stderr, "  mix(0) = %f\n", static_cast<double>(val)); printf("FAIL\n"); return false; }
+
+        buf.clear();
+        buf.addEvent(juce::MidiMessage::controllerEvent(1, 1, 127), 0);
+        mapper.processMidi(buf);
+        if (val < 0.999f || val > 1.001f) { fprintf(stderr, "  mix(127) = %f\n", static_cast<double>(val)); printf("FAIL\n"); return false; }
+    }
+
+    // blockBalance: 0→~-1.0, 127→~1.0
+    {
+        MidiMapper mapper;
+        MidiMapper::Mapping m;
+        m.channel = -1; m.ccNumber = 2; m.target = MidiMapper::Target::blockBalance; m.blockId = "b";
+        mapper.addMapping(m);
+        float val = 0;
+        mapper.onBlockBalance = [&](const juce::String&, float v) { val = v; };
+
+        juce::MidiBuffer buf;
+        buf.addEvent(juce::MidiMessage::controllerEvent(1, 2, 0), 0);
+        mapper.processMidi(buf);
+        if (val > -0.95f) { fprintf(stderr, "  bal(0) = %f\n", static_cast<double>(val)); printf("FAIL\n"); return false; }
+
+        buf.clear();
+        buf.addEvent(juce::MidiMessage::controllerEvent(1, 2, 127), 0);
+        mapper.processMidi(buf);
+        if (val < 0.95f) { fprintf(stderr, "  bal(127) = %f\n", static_cast<double>(val)); printf("FAIL\n"); return false; }
+    }
+
+    // blockLevel: 0→-60, 127→12
+    {
+        MidiMapper mapper;
+        MidiMapper::Mapping m;
+        m.channel = -1; m.ccNumber = 3; m.target = MidiMapper::Target::blockLevel; m.blockId = "b";
+        mapper.addMapping(m);
+        float val = 0;
+        mapper.onBlockLevel = [&](const juce::String&, float v) { val = v; };
+
+        juce::MidiBuffer buf;
+        buf.addEvent(juce::MidiMessage::controllerEvent(1, 3, 0), 0);
+        mapper.processMidi(buf);
+        if (std::abs(val - (-60.0f)) > 0.5f) { fprintf(stderr, "  lvl(0) = %f\n", static_cast<double>(val)); printf("FAIL\n"); return false; }
+
+        buf.clear();
+        buf.addEvent(juce::MidiMessage::controllerEvent(1, 3, 127), 0);
+        mapper.processMidi(buf);
+        if (std::abs(val - 12.0f) > 0.5f) { fprintf(stderr, "  lvl(127) = %f\n", static_cast<double>(val)); printf("FAIL\n"); return false; }
+    }
+
+    // blockBypass: 0→false, 127→true
+    {
+        MidiMapper mapper;
+        MidiMapper::Mapping m;
+        m.channel = -1; m.ccNumber = 4; m.target = MidiMapper::Target::blockBypass; m.blockId = "b";
+        mapper.addMapping(m);
+        bool val = true;
+        mapper.onBlockBypass = [&](const juce::String&, bool v) { val = v; };
+
+        juce::MidiBuffer buf;
+        buf.addEvent(juce::MidiMessage::controllerEvent(1, 4, 0), 0);
+        mapper.processMidi(buf);
+        if (val) { printf("FAIL (bypass 0 should be off)\n"); return false; }
+
+        buf.clear();
+        buf.addEvent(juce::MidiMessage::controllerEvent(1, 4, 127), 0);
+        mapper.processMidi(buf);
+        if (!val) { printf("FAIL (bypass 127 should be on)\n"); return false; }
+    }
+
+    printf("PASS\n");
+    return true;
+}
+
 static bool testMidiLearn()
 {
     printf("Test: MIDI Learn creates mapping from first CC... ");
@@ -615,8 +721,12 @@ int main()
     if (!testTunerToggleCallback())     ++failures;
 
     // MIDI Learn
+    if (!testStartLearnSetsMode())      ++failures;
     if (!testMidiLearn())               ++failures;
     if (!testCancelLearn())             ++failures;
+
+    // Boundary values
+    if (!testCcBoundaryValues())        ++failures;
 
     // Channel Filtering
     if (!testChannelFiltering())        ++failures;

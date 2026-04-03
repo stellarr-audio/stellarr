@@ -201,10 +201,10 @@ export function GridBlockComponent({ block }: Props) {
         {block.type === 'plugin' && (
           <div
             style={{
-              fontSize: '0.85rem',
-              fontWeight: 600,
+              fontSize: '0.6rem',
+              fontWeight: 700,
               color: colors.muted,
-              letterSpacing: '0.05em',
+              letterSpacing: '0.06em',
               textTransform: 'uppercase',
               overflow: 'hidden',
               textOverflow: 'ellipsis',

@@ -72,9 +72,9 @@ const dropdownContentStyle: React.CSSProperties = {
   zIndex: 20,
 };
 
-// -- Shared trigger button for preset/scene dropdowns -------------------------
+// -- Shared trigger content for preset/scene dropdowns ------------------------
 
-function DropdownTriggerButton({
+function DropdownTriggerContent({
   label,
   value,
   hasValue,
@@ -84,17 +84,7 @@ function DropdownTriggerButton({
   hasValue: boolean;
 }) {
   return (
-    <button
-      style={{
-        display: 'flex',
-        alignItems: 'stretch',
-        background: 'transparent',
-        border: `1px solid ${colors.border}`,
-        padding: 0,
-        cursor: 'pointer',
-        outline: 'none',
-      }}
-    >
+    <>
       <span
         style={{
           fontSize: '0.85rem',
@@ -134,7 +124,7 @@ function DropdownTriggerButton({
         </span>
         <ChevronDownIcon width={12} height={12} color={colors.muted} style={{ flexShrink: 0 }} />
       </span>
-    </button>
+    </>
   );
 }
 
@@ -281,8 +271,18 @@ function PresetDropdown({
 }) {
   return (
     <DropdownMenu.Root>
-      <DropdownMenu.Trigger asChild>
-        <DropdownTriggerButton
+      <DropdownMenu.Trigger
+        style={{
+          display: 'flex',
+          alignItems: 'stretch',
+          background: 'transparent',
+          border: `1px solid ${colors.border}`,
+          padding: 0,
+          cursor: 'pointer',
+          outline: 'none',
+        }}
+      >
+        <DropdownTriggerContent
           label="Preset"
           value={currentName}
           hasValue={currentPresetIndex >= 0}
@@ -368,8 +368,18 @@ function SceneDropdown({
         onSubmit={submitRename}
       />
       <DropdownMenu.Root>
-        <DropdownMenu.Trigger asChild>
-          <DropdownTriggerButton
+        <DropdownMenu.Trigger
+          style={{
+            display: 'flex',
+            alignItems: 'stretch',
+            background: 'transparent',
+            border: `1px solid ${colors.border}`,
+            padding: 0,
+            cursor: 'pointer',
+            outline: 'none',
+          }}
+        >
+          <DropdownTriggerContent
             label="Scene"
             value={currentName}
             hasValue={activeSceneIndex >= 0}

@@ -1,6 +1,7 @@
 import { useStore } from '../../store';
 import { OptionRow } from '../common/OptionRow';
 import { Slider } from '../common/Slider';
+import { ToggleSwitch } from '../common/ToggleSwitch';
 import { PluginSection } from './PluginSection';
 import { ParametersSection } from './ParametersSection';
 import { StatesSection } from './StatesSection';
@@ -78,37 +79,14 @@ export function OptionsPanel() {
 
             {/* Bypass toggle — non-I/O blocks only */}
             {block.type !== 'input' && block.type !== 'output' && (
-              <button
-                onClick={() => {
+              <ToggleSwitch
+                enabled={!block.bypassed}
+                onToggle={() => {
                   useStore.getState().setBlockBypassed(block.id, !block.bypassed);
                   requestToggleBlockBypass(block.id);
                 }}
                 title={block.bypassed ? 'Enable block' : 'Bypass block'}
-                style={{
-                  position: 'relative',
-                  width: 36,
-                  height: 20,
-                  borderRadius: 10,
-                  border: 'none',
-                  background: block.bypassed ? colors.border : colors.green,
-                  cursor: 'pointer',
-                  padding: 0,
-                  transition: 'background 0.2s ease',
-                }}
-              >
-                <div
-                  style={{
-                    position: 'absolute',
-                    top: 2,
-                    left: block.bypassed ? 2 : 18,
-                    width: 16,
-                    height: 16,
-                    borderRadius: '50%',
-                    background: '#ffffff',
-                    transition: 'left 0.2s ease',
-                  }}
-                />
-              </button>
+              />
             )}
           </div>
 
@@ -117,34 +95,11 @@ export function OptionsPanel() {
           {/* Input block options */}
           {block.type === 'input' && (
             <OptionRow label="Test Tone">
-              <button
-                onClick={() => requestToggleTestTone(block.id)}
+              <ToggleSwitch
+                enabled={block.testTone ?? false}
+                onToggle={() => requestToggleTestTone(block.id)}
                 title={block.testTone ? 'Disable test tone' : 'Enable test tone'}
-                style={{
-                  position: 'relative',
-                  width: 36,
-                  height: 20,
-                  borderRadius: 10,
-                  border: 'none',
-                  background: block.testTone ? colors.green : colors.border,
-                  cursor: 'pointer',
-                  padding: 0,
-                  transition: 'background 0.2s ease',
-                }}
-              >
-                <div
-                  style={{
-                    position: 'absolute',
-                    top: 2,
-                    left: block.testTone ? 18 : 2,
-                    width: 16,
-                    height: 16,
-                    borderRadius: '50%',
-                    background: '#ffffff',
-                    transition: 'left 0.2s ease',
-                  }}
-                />
-              </button>
+              />
             </OptionRow>
           )}
 

@@ -27,7 +27,7 @@ export function SceneRenameDialog({ open, onOpenChange, value, onChange, onSubmi
             top: '50%',
             left: '50%',
             transform: 'translate(-50%, -50%)',
-            background: '#1a1535',
+            background: colors.dropdownBg,
             border: `1px solid ${colors.border}`,
             padding: '1.5rem',
             zIndex: 51,

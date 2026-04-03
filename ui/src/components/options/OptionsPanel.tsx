@@ -1,9 +1,14 @@
 import { useStore } from '../../store';
 import { OptionRow } from '../common/OptionRow';
+import { Slider } from '../common/Slider';
 import { PluginSection } from './PluginSection';
 import { ParametersSection } from './ParametersSection';
 import { StatesSection } from './StatesSection';
-import { requestToggleTestTone, requestToggleBlockBypass } from '../../bridge';
+import {
+  requestToggleTestTone,
+  requestToggleBlockBypass,
+  requestSetBlockLevel,
+} from '../../bridge';
 import { colors } from '../common/colors';
 
 export function OptionsPanel() {
@@ -148,17 +153,58 @@ export function OptionsPanel() {
             <PluginSection block={block} availablePlugins={availablePlugins} />
           )}
 
-          {/* Output block — no options */}
-          {block.type === 'output' && (
-            <div
-              style={{
-                fontSize: '1rem',
-                color: colors.muted,
-                fontStyle: 'italic',
-              }}
-            >
-              No options available
-            </div>
+          {/* Level — for I/O blocks (plugin blocks get it via ParametersSection) */}
+          {(block.type === 'input' || block.type === 'output') && (
+            <>
+              <div style={{ height: 1, background: colors.border }} />
+              <div>
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: '0.4rem',
+                  }}
+                >
+                  <span
+                    style={{
+                      fontSize: '1rem',
+                      color: colors.text,
+                      letterSpacing: '0.05em',
+                      textTransform: 'uppercase',
+                    }}
+                  >
+                    Level
+                  </span>
+                  <span
+                    style={{
+                      fontSize: '1rem',
+                      color: colors.secondary,
+                      fontWeight: 600,
+                      fontVariantNumeric: 'tabular-nums',
+                      minWidth: '5ch',
+                      textAlign: 'right',
+                    }}
+                  >
+                    {(() => {
+                      const db = block.level ?? 0;
+                      if (db <= -60) return '-∞ dB';
+                      return `${db >= 0 ? '+' : ''}${db.toFixed(1)} dB`;
+                    })()}
+                  </span>
+                </div>
+                <Slider
+                  min={-60}
+                  max={12}
+                  step={0.1}
+                  value={block.level ?? 0}
+                  onChange={(v) => {
+                    useStore.getState().setBlockLevel(block.id, v);
+                    requestSetBlockLevel(block.id, v);
+                  }}
+                />
+              </div>
+            </>
           )}
 
           {/* Parameters — for non-I/O blocks */}

@@ -143,6 +143,35 @@ void StellarrBridge::handleEvent(const juce::String& eventName, const juce::var&
             }
         }
     }
+    else if (eventName == "setBlockLevel" && processor != nullptr)
+    {
+        auto* obj = json.getDynamicObject();
+        if (obj == nullptr) return;
+
+        auto blockId = obj->getProperty("blockId").toString();
+        auto levelDb = static_cast<float>(obj->getProperty("level"));
+
+        auto nodeIt = blockNodeMap.find(blockId);
+        if (nodeIt == blockNodeMap.end()) return;
+
+        if (auto* node = processor->getGraph().getNodeForId(nodeIt->second))
+        {
+            if (auto* block = dynamic_cast<stellarr::Block*>(node->getProcessor()))
+            {
+                block->setLevelDb(levelDb);
+                if (auto* pb = dynamic_cast<stellarr::PluginBlock*>(node->getProcessor()))
+                {
+                    pb->markDirty();
+                    emitBlockStates(blockId, pb);
+                }
+
+                auto* detail = new juce::DynamicObject();
+                detail->setProperty("blockId", blockId);
+                detail->setProperty("level", static_cast<double>(levelDb));
+                emitToJs("blockLevelChanged", detail);
+            }
+        }
+    }
     else if (eventName == "toggleBlockBypass" && processor != nullptr)
     {
         auto* obj = json.getDynamicObject();
@@ -523,6 +552,11 @@ void StellarrBridge::emitBlockParams(const juce::String& blockId, stellarr::Bloc
     balDetail->setProperty("blockId", blockId);
     balDetail->setProperty("balance", static_cast<double>(block->getBalance()));
     emitToJs("blockBalanceChanged", balDetail);
+
+    auto* lvlDetail = new juce::DynamicObject();
+    lvlDetail->setProperty("blockId", blockId);
+    lvlDetail->setProperty("level", static_cast<double>(block->getLevelDb()));
+    emitToJs("blockLevelChanged", lvlDetail);
 
     auto* bypDetail = new juce::DynamicObject();
     bypDetail->setProperty("blockId", blockId);
@@ -1042,6 +1076,7 @@ void StellarrBridge::sendGraphState()
 
                 blockObj->setProperty("mix", static_cast<double>(block->getMix()));
                 blockObj->setProperty("balance", static_cast<double>(block->getBalance()));
+                blockObj->setProperty("level", static_cast<double>(block->getLevelDb()));
                 blockObj->setProperty("bypassed", block->isBypassed());
                 blockObj->setProperty("bypassMode", stellarr::bypassModeToString(block->getBypassMode()));
             }

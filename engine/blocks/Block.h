@@ -97,6 +97,28 @@ public:
         balance.store(juce::jlimit(-1.0f, 1.0f, value), std::memory_order_relaxed);
     }
 
+    // Level: output gain in linear scale. 1.0 = 0 dB (unity), 0.0 = -inf dB (mute)
+    float getLevel() const { return level.load(std::memory_order_relaxed); }
+
+    void setLevel(float linearGain)
+    {
+        level.store(juce::jlimit(0.0f, 3.981f, linearGain), std::memory_order_relaxed); // max ~+12 dB
+    }
+
+    // dB helpers for UI/serialization
+    float getLevelDb() const
+    {
+        auto g = getLevel();
+        if (g <= 0.001f) return -60.0f;
+        return 20.0f * std::log10(g);
+    }
+
+    void setLevelDb(float db)
+    {
+        if (db <= -60.0f) setLevel(0.0f);
+        else setLevel(std::pow(10.0f, db / 20.0f));
+    }
+
     // Bypass: when true, block is disengaged (THRU mode — audio passes through unchanged)
     bool isBypassed() const { return bypassed.load(std::memory_order_relaxed); }
 
@@ -197,6 +219,13 @@ public:
                 buffer.applyGain(1, 0, buffer.getNumSamples(), rightGain);
             }
         }
+
+        // Apply output level (all blocks, independent of mix)
+        {
+            auto lvl = level.load(std::memory_order_relaxed);
+            if (lvl < 0.999f || lvl > 1.001f)
+                buffer.applyGain(lvl);
+        }
     }
 
     void prepareToPlay(double sampleRate, int samplesPerBlock) override
@@ -217,6 +246,8 @@ public:
         obj->setProperty("type", blockTypeToString(getBlockType()));
         obj->setProperty("name", blockName);
 
+        obj->setProperty("level", static_cast<double>(getLevelDb()));
+
         if (hasMix)
         {
             obj->setProperty("mix", static_cast<double>(getMix()));
@@ -235,6 +266,9 @@ public:
             auto idStr = obj->getProperty("id").toString();
             if (idStr.isNotEmpty())
                 blockId = juce::Uuid(idStr);
+
+            if (obj->hasProperty("level"))
+                setLevelDb(static_cast<float>(obj->getProperty("level")));
 
             if (hasMix && obj->hasProperty("mix"))
                 setMix(static_cast<float>(obj->getProperty("mix")));
@@ -286,6 +320,7 @@ private:
     bool hasMix;
     std::atomic<float> mix { 1.0f };
     std::atomic<float> balance { 0.0f };
+    std::atomic<float> level { 1.0f };
     std::atomic<bool> bypassed { false };
     std::atomic<int> bypassMode { static_cast<int>(BypassMode::thru) };
     juce::AudioBuffer<float> dryBuffer;

@@ -406,6 +406,455 @@ static bool testBypassMute()
     return true;
 }
 
+// -- Level dB tests -----------------------------------------------------------
+
+static bool testLevelDbConversion()
+{
+    printf("Test: level dB conversion edge cases... ");
+
+    stellarr::GainBlock block;
+
+    // -60 dB floor
+    block.setLevelDb(-60.0f);
+    if (block.getLevel() > 0.002f)
+    {
+        fprintf(stderr, "  -60 dB should produce near-zero gain, got %f\n", static_cast<double>(block.getLevel()));
+        printf("FAIL\n");
+        return false;
+    }
+
+    // +12 dB ceiling
+    block.setLevelDb(12.0f);
+    float expected12 = std::pow(10.0f, 12.0f / 20.0f); // ~3.981
+    if (std::abs(block.getLevel() - expected12) > 0.01f)
+    {
+        fprintf(stderr, "  +12 dB should produce ~3.98 gain, got %f\n", static_cast<double>(block.getLevel()));
+        printf("FAIL\n");
+        return false;
+    }
+
+    // 0 dB = unity
+    block.setLevelDb(0.0f);
+    if (std::abs(block.getLevel() - 1.0f) > 0.001f)
+    {
+        fprintf(stderr, "  0 dB should be unity, got %f\n", static_cast<double>(block.getLevel()));
+        printf("FAIL\n");
+        return false;
+    }
+
+    // Roundtrip
+    block.setLevelDb(-6.0f);
+    float roundtrip = block.getLevelDb();
+    if (std::abs(roundtrip - (-6.0f)) > 0.1f)
+    {
+        fprintf(stderr, "  roundtrip -6 dB failed, got %f\n", static_cast<double>(roundtrip));
+        printf("FAIL\n");
+        return false;
+    }
+
+    printf("PASS\n");
+    return true;
+}
+
+static bool testLevelAudio()
+{
+    printf("Test: level applies gain to audio output... ");
+
+    StellarrProcessor proc;
+    proc.prepareToPlay(kSampleRate, kBlockSize);
+
+    auto gain = std::make_unique<stellarr::GainBlock>();
+    gain->setGain(1.0f);
+    gain->setLevelDb(-6.0206f); // exactly 0.5 linear
+    auto* ptr = gain.get();
+
+    proc.disconnectBlocks(proc.getAudioInputNodeId(), proc.getAudioOutputNodeId());
+    auto nodeId = proc.addBlock(std::move(gain));
+    proc.connectBlocks(proc.getAudioInputNodeId(), nodeId);
+    proc.connectBlocks(nodeId, proc.getAudioOutputNodeId());
+
+    juce::AudioBuffer<float> buffer(2, kBlockSize);
+    generateSine(buffer);
+    juce::AudioBuffer<float> reference(buffer);
+    juce::MidiBuffer midi;
+    proc.processBlock(buffer, midi);
+
+    // gain=1.0 * level=0.5 → output should be ~0.5x input
+    if (!compareBuffers(buffer, reference, 0.02f, 0.5f))
+    {
+        printf("FAIL\n");
+        return false;
+    }
+
+    (void)ptr;
+    proc.releaseResources();
+    printf("PASS\n");
+    return true;
+}
+
+static bool testLevelSerialisation()
+{
+    printf("Test: level dB serialisation roundtrip... ");
+
+    stellarr::GainBlock original;
+    original.setLevelDb(-9.5f);
+    auto json = original.toJson();
+
+    stellarr::GainBlock restored;
+    restored.fromJson(json);
+
+    if (std::abs(restored.getLevelDb() - (-9.5f)) > 0.2f)
+    {
+        fprintf(stderr, "  level mismatch: expected -9.5, got %f\n", static_cast<double>(restored.getLevelDb()));
+        printf("FAIL\n");
+        return false;
+    }
+
+    printf("PASS\n");
+    return true;
+}
+
+// -- Bypass mode serialisation ------------------------------------------------
+
+static bool testBypassModeSerialisation()
+{
+    printf("Test: all bypass modes serialise/deserialise... ");
+
+    stellarr::BypassMode modes[] = {
+        stellarr::BypassMode::thru,
+        stellarr::BypassMode::muteIn,
+        stellarr::BypassMode::muteOut,
+        stellarr::BypassMode::mute,
+    };
+
+    for (auto mode : modes)
+    {
+        stellarr::GainBlock original;
+        original.setBypassMode(mode);
+        original.setBypassed(true);
+        auto json = original.toJson();
+
+        stellarr::GainBlock restored;
+        restored.fromJson(json);
+
+        if (restored.getBypassMode() != mode)
+        {
+            fprintf(stderr, "  mode mismatch for %s\n",
+                stellarr::bypassModeToString(mode).toRawUTF8());
+            printf("FAIL\n");
+            return false;
+        }
+        if (!restored.isBypassed())
+        {
+            fprintf(stderr, "  bypassed flag not restored\n");
+            printf("FAIL\n");
+            return false;
+        }
+    }
+
+    printf("PASS\n");
+    return true;
+}
+
+// -- PluginBlock state tests --------------------------------------------------
+
+static bool testStateCaptureAndApply()
+{
+    printf("Test: PluginBlock captureCurrentState and applyState... ");
+
+    stellarr::PluginBlock block;
+    block.prepareToPlay(kSampleRate, kBlockSize);
+    block.setMix(0.3f);
+    block.setBalance(-0.5f);
+    block.setLevelDb(-6.0f);
+    block.setBypassed(true);
+    block.setBypassMode(stellarr::BypassMode::muteOut);
+
+    auto state = block.captureCurrentState();
+
+    if (std::abs(state.mix - 0.3f) > 0.01f ||
+        std::abs(state.balance - (-0.5f)) > 0.01f ||
+        std::abs(state.levelDb - (-6.0f)) > 0.5f ||
+        !state.bypassed ||
+        state.bypassMode != stellarr::BypassMode::muteOut)
+    {
+        fprintf(stderr, "  captured state has wrong values\n");
+        printf("FAIL\n");
+        return false;
+    }
+
+    // Reset and apply
+    block.setMix(1.0f);
+    block.setBalance(0.0f);
+    block.setLevelDb(0.0f);
+    block.setBypassed(false);
+    block.applyState(state);
+
+    if (std::abs(block.getMix() - 0.3f) > 0.01f ||
+        std::abs(block.getBalance() - (-0.5f)) > 0.01f ||
+        !block.isBypassed())
+    {
+        fprintf(stderr, "  applyState did not restore values\n");
+        printf("FAIL\n");
+        return false;
+    }
+
+    block.releaseResources();
+    printf("PASS\n");
+    return true;
+}
+
+static bool testStateAddAndRecall()
+{
+    printf("Test: PluginBlock add state and recall... ");
+
+    stellarr::PluginBlock block;
+    block.prepareToPlay(kSampleRate, kBlockSize);
+
+    // State 0: mix = 0.5
+    block.setMix(0.5f);
+    block.saveCurrentState();
+
+    // Add state 1 (captures current mix=0.5, then we change it)
+    block.addState();
+    block.setMix(0.8f);
+    block.saveCurrentState();
+
+    if (block.getNumStates() != 2 || block.getActiveStateIndex() != 1)
+    {
+        fprintf(stderr, "  expected 2 states, active=1\n");
+        printf("FAIL\n");
+        return false;
+    }
+
+    // Recall state 0 — should restore mix = 0.5
+    block.recallState(0);
+    if (std::abs(block.getMix() - 0.5f) > 0.01f)
+    {
+        fprintf(stderr, "  recallState(0) should restore mix=0.5, got %f\n", static_cast<double>(block.getMix()));
+        printf("FAIL\n");
+        return false;
+    }
+
+    // Recall state 1 — should restore mix = 0.8
+    block.recallState(1);
+    if (std::abs(block.getMix() - 0.8f) > 0.01f)
+    {
+        fprintf(stderr, "  recallState(1) should restore mix=0.8, got %f\n", static_cast<double>(block.getMix()));
+        printf("FAIL\n");
+        return false;
+    }
+
+    block.releaseResources();
+    printf("PASS\n");
+    return true;
+}
+
+static bool testStateDirtyTracking()
+{
+    printf("Test: PluginBlock dirty state tracking... ");
+
+    stellarr::PluginBlock block;
+    block.prepareToPlay(kSampleRate, kBlockSize);
+
+    // Initially not dirty
+    if (!block.getDirtyStates().empty())
+    {
+        fprintf(stderr, "  expected no dirty states initially\n");
+        printf("FAIL\n");
+        return false;
+    }
+
+    // Mark dirty
+    block.markDirty();
+    if (block.getDirtyStates().count(0) != 1)
+    {
+        fprintf(stderr, "  expected state 0 dirty\n");
+        printf("FAIL\n");
+        return false;
+    }
+
+    // Save clears dirty
+    block.saveCurrentState();
+    if (!block.getDirtyStates().empty())
+    {
+        fprintf(stderr, "  saveCurrentState should clear dirty\n");
+        printf("FAIL\n");
+        return false;
+    }
+
+    block.releaseResources();
+    printf("PASS\n");
+    return true;
+}
+
+static bool testStateDelete()
+{
+    printf("Test: PluginBlock delete state reindexes... ");
+
+    stellarr::PluginBlock block;
+    block.prepareToPlay(kSampleRate, kBlockSize);
+
+    block.addState(); // 2 states
+    block.addState(); // 3 states
+
+    if (block.getNumStates() != 3)
+    {
+        fprintf(stderr, "  expected 3 states\n");
+        printf("FAIL\n");
+        return false;
+    }
+
+    // Delete middle state
+    block.recallState(1);
+    block.deleteState(1);
+
+    if (block.getNumStates() != 2)
+    {
+        fprintf(stderr, "  expected 2 states after delete\n");
+        printf("FAIL\n");
+        return false;
+    }
+
+    // Can't delete last state
+    block.deleteState(0);
+    if (block.getNumStates() != 1)
+    {
+        fprintf(stderr, "  should have 1 state left\n");
+        printf("FAIL\n");
+        return false;
+    }
+
+    if (block.deleteState(0))
+    {
+        fprintf(stderr, "  should not delete last state\n");
+        printf("FAIL\n");
+        return false;
+    }
+
+    block.releaseResources();
+    printf("PASS\n");
+    return true;
+}
+
+static bool testStateSerialisation()
+{
+    printf("Test: PluginBlock state serialisation roundtrip... ");
+
+    stellarr::PluginBlock original;
+    original.prepareToPlay(kSampleRate, kBlockSize);
+
+    original.setMix(0.2f);
+    original.saveCurrentState();
+    original.addState();
+    original.setMix(0.8f);
+    original.saveCurrentState();
+
+    auto json = original.toJson();
+
+    stellarr::PluginBlock restored;
+    restored.fromJson(json);
+
+    if (restored.getNumStates() != 2)
+    {
+        fprintf(stderr, "  expected 2 states, got %d\n", restored.getNumStates());
+        printf("FAIL\n");
+        return false;
+    }
+
+    if (restored.getActiveStateIndex() != 1)
+    {
+        fprintf(stderr, "  expected active=1, got %d\n", restored.getActiveStateIndex());
+        printf("FAIL\n");
+        return false;
+    }
+
+    original.releaseResources();
+    printf("PASS\n");
+    return true;
+}
+
+static bool testStateLegacyFormat()
+{
+    printf("Test: PluginBlock legacy format creates one state... ");
+
+    // Simulate old JSON without states array
+    auto* obj = new juce::DynamicObject();
+    obj->setProperty("id", juce::Uuid().toString());
+    obj->setProperty("type", "plugin");
+    obj->setProperty("name", "Plugin");
+    obj->setProperty("mix", 0.7);
+    obj->setProperty("balance", -0.3);
+    obj->setProperty("level", -3.0);
+    obj->setProperty("bypassed", true);
+    obj->setProperty("bypassMode", "mute");
+    obj->setProperty("pluginId", "");
+    obj->setProperty("pluginState", "");
+
+    stellarr::PluginBlock block;
+    block.fromJson(juce::var(obj));
+
+    if (block.getNumStates() != 1)
+    {
+        fprintf(stderr, "  expected 1 state from legacy format, got %d\n", block.getNumStates());
+        printf("FAIL\n");
+        return false;
+    }
+
+    if (block.getActiveStateIndex() != 0)
+    {
+        fprintf(stderr, "  expected active=0\n");
+        printf("FAIL\n");
+        return false;
+    }
+
+    printf("PASS\n");
+    return true;
+}
+
+// -- Display name tests -------------------------------------------------------
+
+static bool testDisplayNameSerialisation()
+{
+    printf("Test: block displayName serialisation roundtrip... ");
+
+    stellarr::GainBlock original;
+    original.setDisplayName("AMP");
+    auto json = original.toJson();
+
+    stellarr::GainBlock restored;
+    restored.fromJson(json);
+
+    if (restored.getDisplayName() != "AMP")
+    {
+        fprintf(stderr, "  expected 'AMP', got '%s'\n", restored.getDisplayName().toRawUTF8());
+        printf("FAIL\n");
+        return false;
+    }
+
+    printf("PASS\n");
+    return true;
+}
+
+static bool testDisplayNameEmpty()
+{
+    printf("Test: empty displayName not serialised... ");
+
+    stellarr::GainBlock block;
+    auto json = block.toJson();
+    auto* obj = json.getDynamicObject();
+
+    if (obj->hasProperty("displayName"))
+    {
+        fprintf(stderr, "  empty displayName should not be in JSON\n");
+        printf("FAIL\n");
+        return false;
+    }
+
+    printf("PASS\n");
+    return true;
+}
+
 int main()
 {
     int failures = 0;
@@ -420,6 +869,26 @@ int main()
     if (!testBypassMuteIn())            ++failures;
     if (!testBypassMuteOut())           ++failures;
     if (!testBypassMute())              ++failures;
+
+    // Level tests
+    if (!testLevelDbConversion())       ++failures;
+    if (!testLevelAudio())              ++failures;
+    if (!testLevelSerialisation())      ++failures;
+
+    // Bypass serialisation
+    if (!testBypassModeSerialisation()) ++failures;
+
+    // State tests
+    if (!testStateCaptureAndApply())    ++failures;
+    if (!testStateAddAndRecall())       ++failures;
+    if (!testStateDirtyTracking())      ++failures;
+    if (!testStateDelete())             ++failures;
+    if (!testStateSerialisation())      ++failures;
+    if (!testStateLegacyFormat())       ++failures;
+
+    // Display name
+    if (!testDisplayNameSerialisation()) ++failures;
+    if (!testDisplayNameEmpty())         ++failures;
 
     printf("\n%d test(s) failed\n", failures);
     return failures;

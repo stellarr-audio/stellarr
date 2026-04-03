@@ -121,9 +121,9 @@ juce::var StellarrBridge::serialiseSession() const
     session->setProperty("scenes", scenesArray);
     session->setProperty("activeSceneIndex", activeSceneIndex);
 
-    // MIDI mappings
+    // MIDI mappings (preset-level only — global mappings stored in app settings)
     if (processor != nullptr)
-        session->setProperty("midiMappings", processor->getMidiMapper().toJson());
+        session->setProperty("midiMappings", processor->getMidiMapper().presetMappingsToJson());
 
     return juce::var(session);
 }
@@ -288,9 +288,9 @@ void StellarrBridge::restoreSession(const juce::var& session)
         activeSceneIndex = 0;
     }
 
-    // Restore MIDI mappings
+    // Restore preset-level MIDI mappings (keeps global mappings intact)
     if (processor != nullptr && obj->hasProperty("midiMappings"))
-        processor->getMidiMapper().fromJson(obj->getProperty("midiMappings"));
+        processor->getMidiMapper().loadPresetMappings(obj->getProperty("midiMappings"));
 
     sendGraphState();
 }
@@ -325,6 +325,14 @@ void StellarrBridge::persistPresetInfo()
     settings->setValue("lastPresetDirectory", presetDirectory.getFullPathName());
     settings->setValue("lastPresetIndex", currentPresetIndex);
     settings->setValue("lastPresetFile", lastPresetFile.getFullPathName());
+
+    // Persist global MIDI mappings (preset change, tuner toggle)
+    if (processor != nullptr)
+    {
+        auto globalJson = juce::JSON::toString(processor->getMidiMapper().globalMappingsToJson());
+        settings->setValue("globalMidiMappings", globalJson);
+    }
+
     appProperties->saveIfNeeded();
 }
 

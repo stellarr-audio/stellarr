@@ -216,3 +216,83 @@ void MidiMapper::fromJson(const juce::var& json)
         }
     }
 }
+
+// -- Split serialization (preset vs global) -----------------------------------
+
+static juce::var filterMappingsToJson(const std::vector<MidiMapper::Mapping>& mappings, bool global)
+{
+    juce::Array<juce::var> arr;
+    for (auto& m : mappings)
+    {
+        if (MidiMapper::isGlobalTarget(m.target) != global) continue;
+        auto* obj = new juce::DynamicObject();
+        obj->setProperty("channel", m.channel);
+        obj->setProperty("cc", m.ccNumber);
+        obj->setProperty("target", MidiMapper::targetToString(m.target));
+        if (m.blockId.isNotEmpty())
+            obj->setProperty("blockId", m.blockId);
+        arr.add(juce::var(obj));
+    }
+    return arr;
+}
+
+static std::vector<MidiMapper::Mapping> parseMappingsArray(const juce::var& json)
+{
+    std::vector<MidiMapper::Mapping> result;
+    if (auto* arr = json.getArray())
+    {
+        for (auto& item : *arr)
+        {
+            if (auto* obj = item.getDynamicObject())
+            {
+                MidiMapper::Mapping m;
+                m.channel = static_cast<int>(obj->getProperty("channel"));
+                m.ccNumber = static_cast<int>(obj->getProperty("cc"));
+                m.target = MidiMapper::targetFromString(obj->getProperty("target").toString());
+                m.blockId = obj->getProperty("blockId").toString();
+                result.push_back(m);
+            }
+        }
+    }
+    return result;
+}
+
+juce::var MidiMapper::presetMappingsToJson() const
+{
+    return filterMappingsToJson(mappings, false);
+}
+
+juce::var MidiMapper::globalMappingsToJson() const
+{
+    return filterMappingsToJson(mappings, true);
+}
+
+void MidiMapper::loadPresetMappings(const juce::var& json)
+{
+    juce::SpinLock::ScopedLockType scopedLock(lock);
+
+    // Keep global mappings, replace preset mappings
+    std::vector<Mapping> globals;
+    for (auto& m : mappings)
+        if (isGlobalTarget(m.target))
+            globals.push_back(m);
+
+    mappings = globals;
+    for (auto& m : parseMappingsArray(json))
+        mappings.push_back(m);
+}
+
+void MidiMapper::loadGlobalMappings(const juce::var& json)
+{
+    juce::SpinLock::ScopedLockType scopedLock(lock);
+
+    // Keep preset mappings, replace global mappings
+    std::vector<Mapping> presets;
+    for (auto& m : mappings)
+        if (!isGlobalTarget(m.target))
+            presets.push_back(m);
+
+    mappings = presets;
+    for (auto& m : parseMappingsArray(json))
+        mappings.push_back(m);
+}

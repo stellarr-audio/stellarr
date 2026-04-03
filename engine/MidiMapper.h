@@ -47,6 +47,14 @@ public:
     juce::var toJson() const;
     void fromJson(const juce::var& json);
 
+    // Split serialization: preset-level vs global mappings
+    juce::var presetMappingsToJson() const;
+    juce::var globalMappingsToJson() const;
+    void loadPresetMappings(const juce::var& json);
+    void loadGlobalMappings(const juce::var& json);
+
+    static bool isGlobalTarget(Target t) { return t == Target::presetChange || t == Target::tunerToggle; }
+
     // Callbacks — set by the bridge
     std::function<void(int index)> onPresetChange;
     std::function<void(int index)> onSceneSwitch;

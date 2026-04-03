@@ -5,7 +5,7 @@ import {
   requestRemoveScanDirectory,
 } from '../../bridge';
 import { colors } from '../common/colors';
-import { MidiSettings } from './MidiSettings';
+// MIDI section moved to dedicated MIDI tab
 
 export function Settings() {
   const scanDirectories = useStore((s) => s.scanDirectories);
@@ -162,11 +162,6 @@ export function Settings() {
               ))}
             </div>
           )}
-        </Section>
-
-        {/* MIDI mappings section */}
-        <Section title="MIDI">
-          <MidiSettings />
         </Section>
       </div>
 

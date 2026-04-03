@@ -34,6 +34,16 @@ export function MidiPage() {
     return block ? block.displayName || block.name : id.slice(0, 8);
   };
 
+  // Sort by CC ascending, then channel ascending, preserving original indices
+  const sortedIndices = mappings
+    .map((_, i) => i)
+    .sort((a, b) => {
+      const ma = mappings[a],
+        mb = mappings[b];
+      if (ma.cc !== mb.cc) return ma.cc - mb.cc;
+      return ma.channel - mb.channel;
+    });
+
   const editMapping =
     editIndex !== null && editIndex < mappings.length ? mappings[editIndex] : null;
 
@@ -129,64 +139,67 @@ export function MidiPage() {
             </div>
 
             {/* Rows */}
-            {mappings.map((m, i) => (
-              <div
-                key={i}
-                onClick={() => setEditIndex(i)}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  padding: '0.45rem 0.5rem',
-                  background: colors.cell,
-                  border: `1px solid ${colors.border}`,
-                  fontSize: '0.95rem',
-                  cursor: 'pointer',
-                  transition: 'background 0.1s ease',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = colors.border;
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = colors.cell;
-                }}
-              >
-                <span
+            {sortedIndices.map((i) => {
+              const m = mappings[i];
+              return (
+                <div
+                  key={i}
+                  onClick={() => setEditIndex(i)}
                   style={{
-                    color: colors.text,
-                    fontWeight: 600,
-                    fontVariantNumeric: 'tabular-nums',
-                    minWidth: '6ch',
-                  }}
-                >
-                  {m.cc >= 0 ? m.cc : 'PC'}
-                </span>
-                <span style={{ color: colors.muted, minWidth: '5ch' }}>
-                  {m.channel >= 0 ? m.channel + 1 : 'Any'}
-                </span>
-                <span style={{ color: colors.muted, margin: '0 0.4rem' }}>→</span>
-                <span style={{ color: colors.secondary, flex: 1 }}>
-                  {targetLabels[m.target] || m.target}
-                  {m.blockId ? ` (${blockName(m.blockId)})` : ''}
-                </span>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    requestRemoveMidiMapping(i);
-                  }}
-                  style={{
-                    background: 'transparent',
-                    border: 'none',
-                    color: colors.muted,
-                    cursor: 'pointer',
-                    padding: '0.2rem',
                     display: 'flex',
                     alignItems: 'center',
+                    padding: '0.45rem 0.5rem',
+                    background: colors.cell,
+                    border: `1px solid ${colors.border}`,
+                    fontSize: '0.95rem',
+                    cursor: 'pointer',
+                    transition: 'background 0.1s ease',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = colors.border;
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = colors.cell;
                   }}
                 >
-                  <Cross2Icon width={14} height={14} />
-                </button>
-              </div>
-            ))}
+                  <span
+                    style={{
+                      color: colors.text,
+                      fontWeight: 600,
+                      fontVariantNumeric: 'tabular-nums',
+                      minWidth: '6ch',
+                    }}
+                  >
+                    {m.cc >= 0 ? m.cc : 'PC'}
+                  </span>
+                  <span style={{ color: colors.muted, minWidth: '5ch' }}>
+                    {m.channel >= 0 ? m.channel + 1 : 'Any'}
+                  </span>
+                  <span style={{ color: colors.muted, margin: '0 0.4rem' }}>→</span>
+                  <span style={{ color: colors.secondary, flex: 1 }}>
+                    {targetLabels[m.target] || m.target}
+                    {m.blockId ? ` (${blockName(m.blockId)})` : ''}
+                  </span>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      requestRemoveMidiMapping(i);
+                    }}
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      color: colors.muted,
+                      cursor: 'pointer',
+                      padding: '0.2rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                    }}
+                  >
+                    <Cross2Icon width={14} height={14} />
+                  </button>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>

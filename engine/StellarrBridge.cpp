@@ -73,6 +73,23 @@ void StellarrBridge::handleEvent(const juce::String& eventName, const juce::var&
         detail->setProperty("displayName", name);
         emitToJs("blockRenamed", detail);
     }
+    else if (eventName == "setBlockColor" && processor != nullptr)
+    {
+        auto* obj = json.getDynamicObject();
+        if (obj == nullptr) return;
+
+        auto blockId = obj->getProperty("blockId").toString();
+        auto color = obj->getProperty("color").toString();
+        auto* block = findBlock(blockId);
+        if (block == nullptr) return;
+
+        block->setBlockColor(color);
+
+        auto* detail = new juce::DynamicObject();
+        detail->setProperty("blockId", blockId);
+        detail->setProperty("blockColor", color);
+        emitToJs("blockColorChanged", detail);
+    }
 
     // MIDI mappings
     else if (eventName == "addMidiMapping" && processor != nullptr)
@@ -449,6 +466,8 @@ void StellarrBridge::sendGraphState()
                 blockObj->setProperty("name", block->getName());
                 if (block->getDisplayName().isNotEmpty())
                     blockObj->setProperty("displayName", block->getDisplayName());
+                if (block->getBlockColor().isNotEmpty())
+                    blockObj->setProperty("blockColor", block->getBlockColor());
 
                 if (auto* pluginBlock = dynamic_cast<stellarr::PluginBlock*>(node->getProcessor()))
                 {

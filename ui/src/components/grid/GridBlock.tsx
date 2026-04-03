@@ -4,6 +4,7 @@ import type { GridBlock as GridBlockData } from '../../store';
 import { requestRemoveBlock, requestRemoveConnection, requestOpenPluginEditor } from '../../bridge';
 import { useStore } from '../../store';
 import { colors } from '../common/colors';
+import { PALETTE } from '../options/ColorPicker';
 import { CELL_SIZE, cellLeft, cellTop } from './layout';
 import styles from './GridBlock.module.css';
 
@@ -12,9 +13,9 @@ interface Props {
 }
 
 const typeColors: Record<string, string> = {
-  input: colors.green,
-  output: colors.primary,
-  plugin: colors.secondary,
+  input: PALETTE.slateLight,
+  output: PALETTE.slateLight,
+  plugin: PALETTE.blue,
 };
 
 const typeAbbreviations: Record<string, string> = {
@@ -100,7 +101,7 @@ export function GridBlockComponent({ block }: Props) {
     [block.id],
   );
 
-  const accentColor = typeColors[block.type] ?? colors.secondary;
+  const accentColor = block.blockColor || typeColors[block.type] || colors.secondary;
 
   // Border must stay inline — it depends on multiple dynamic values (isSelected, bypassed, accentColor)
   const borderStyle = isSelected

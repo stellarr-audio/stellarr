@@ -300,6 +300,7 @@ export function initBridge(): void {
         String(d.blockId),
         String(d.pluginId),
         String(d.pluginName),
+        String(d.pluginFormat),
         Boolean(d.hasEditor),
       );
   });
@@ -318,6 +319,7 @@ export function initBridge(): void {
         nodeId: Number(r.nodeId),
         pluginId: r.pluginId ? String(r.pluginId) : undefined,
         pluginName: r.pluginName ? String(r.pluginName) : undefined,
+        pluginFormat: r.pluginFormat ? String(r.pluginFormat) : undefined,
         mix: r.mix !== undefined ? Number(r.mix) : undefined,
         balance: r.balance !== undefined ? Number(r.balance) : undefined,
         bypassed: r.bypassed ? Boolean(r.bypassed) : undefined,

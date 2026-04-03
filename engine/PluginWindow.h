@@ -8,9 +8,9 @@ public:
     PluginWindow(juce::AudioProcessorEditor* editor, const juce::String& title)
         : DocumentWindow(title, juce::Colours::black, DocumentWindow::closeButton)
     {
-        setContentOwned(editor, true);
         setUsingNativeTitleBar(true);
-        setResizable(editor->isResizable(), false);
+        setResizable(false, false);
+        setContentOwned(editor, true);
         centreWithSize(getWidth(), getHeight());
         setVisible(true);
     }

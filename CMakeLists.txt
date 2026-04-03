@@ -36,6 +36,10 @@ target_sources(Stellarr
         engine/StellarrProcessor.cpp
         engine/StellarrEditor.cpp
         engine/StellarrBridge.cpp
+        engine/bridge/GraphHandler.cpp
+        engine/bridge/ParamHandler.cpp
+        engine/bridge/SceneHandler.cpp
+        engine/bridge/PresetHandler.cpp
         engine/PluginManager.cpp
         engine/StellarrPlatform.mm
         engine/StellarrStandaloneApp.cpp

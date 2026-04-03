@@ -82,6 +82,23 @@ private:
     void emitBlockParams(const juce::String& blockId, stellarr::Block* block);
     void clearAllDirtyStates();
 
+    // Block lookup helpers — return nullptr if not found
+    stellarr::Block* findBlock(const juce::String& blockId);
+    stellarr::PluginBlock* findPluginBlock(const juce::String& blockId);
+
+    // Mark plugin block dirty and emit state update
+    void markDirtyAndEmit(const juce::String& blockId, stellarr::Block* block);
+
+    // Generic parameter handler (DRY)
+    void handleSetBlockParam(const juce::var& json,
+                              const juce::String& paramName,
+                              std::function<void(stellarr::Block*, const juce::var&)> setter,
+                              const juce::String& eventName,
+                              std::function<juce::var(stellarr::Block*)> getter);
+
+    // Generic block state handler
+    void handleBlockStateEvent(const juce::var& json, const juce::String& action);
+
     juce::WebBrowserComponent* webView = nullptr;
     StellarrProcessor* processor = nullptr;
     juce::ApplicationProperties* appProperties = nullptr;

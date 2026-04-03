@@ -22,7 +22,6 @@ export function LoadingScreen() {
     >
       <Logo
         size={48}
-        color={colors.primary}
         style={{ filter: `drop-shadow(0 0 8px ${colors.primary}66)` }}
       />
 

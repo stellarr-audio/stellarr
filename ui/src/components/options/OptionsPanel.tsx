@@ -3,6 +3,7 @@ import { useStore } from '../../store';
 import { OptionRow } from '../common/OptionRow';
 import { Slider } from '../common/Slider';
 import { ToggleSwitch } from '../common/ToggleSwitch';
+import { MidiAssignDialog } from '../common/MidiAssignDialog';
 import { Pencil1Icon } from '@radix-ui/react-icons';
 import { PluginSection } from './PluginSection';
 import { ParametersSection } from './ParametersSection';
@@ -226,17 +227,60 @@ function BlockHeader({ block }: { block: import('../../store').GridBlock }) {
         </div>
       )}
 
-      {/* Bypass toggle — non-I/O blocks only */}
-      {block.type !== 'input' && block.type !== 'output' && (
-        <ToggleSwitch
-          enabled={!block.bypassed}
-          onToggle={() => {
-            useStore.getState().setBlockBypassed(block.id, !block.bypassed);
-            requestToggleBlockBypass(block.id);
-          }}
-          title={block.bypassed ? 'Enable block' : 'Bypass block'}
-        />
-      )}
+      {/* Bypass toggle + MIDI — non-I/O blocks only */}
+      {block.type !== 'input' && block.type !== 'output' && <BypassControl block={block} />}
+    </div>
+  );
+}
+
+function BypassControl({ block }: { block: import('../../store').GridBlock }) {
+  const mappings = useStore((s) => s.midiMappings);
+  const [dialogOpen, setDialogOpen] = useState(false);
+
+  const existingIndex = mappings.findIndex(
+    (m) => m.target === 'blockBypass' && (m.blockId ?? '') === block.id,
+  );
+  const existing = existingIndex >= 0 ? mappings[existingIndex] : null;
+
+  const midiLabel = existing
+    ? `CC${existing.cc}${existing.channel >= 0 ? `/Ch${existing.channel + 1}` : ''}`
+    : 'MIDI';
+
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+      <button
+        onClick={() => setDialogOpen(true)}
+        title={existing ? `Bypass MIDI: CC ${existing.cc}` : 'Assign MIDI CC to bypass'}
+        style={{
+          background: existing ? `${colors.secondary}18` : 'transparent',
+          border: `1px solid ${existing ? colors.secondary : colors.border}`,
+          color: existing ? colors.secondary : colors.muted,
+          fontSize: '0.65rem',
+          fontWeight: 600,
+          letterSpacing: '0.04em',
+          textTransform: 'uppercase',
+          cursor: 'pointer',
+          padding: '0.1rem 0.3rem',
+        }}
+      >
+        {midiLabel}
+      </button>
+      <ToggleSwitch
+        enabled={!block.bypassed}
+        onToggle={() => {
+          useStore.getState().setBlockBypassed(block.id, !block.bypassed);
+          requestToggleBlockBypass(block.id);
+        }}
+        title={block.bypassed ? 'Enable block' : 'Bypass block'}
+      />
+      <MidiAssignDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        title="MIDI — Bypass"
+        target="blockBypass"
+        blockId={block.id}
+        existingIndex={existingIndex >= 0 ? existingIndex : undefined}
+      />
     </div>
   );
 }

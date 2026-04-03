@@ -288,9 +288,13 @@ void StellarrBridge::restoreSession(const juce::var& session)
         activeSceneIndex = 0;
     }
 
-    // Restore preset-level MIDI mappings (keeps global mappings intact)
-    if (processor != nullptr && obj->hasProperty("midiMappings"))
-        processor->getMidiMapper().loadPresetMappings(obj->getProperty("midiMappings"));
+    // Restore preset-level MIDI mappings (always clear old, keeps global intact)
+    if (processor != nullptr)
+    {
+        processor->getMidiMapper().loadPresetMappings(
+            obj->hasProperty("midiMappings") ? obj->getProperty("midiMappings") : juce::var());
+        emitMidiMappings();
+    }
 
     sendGraphState();
 }
@@ -353,6 +357,14 @@ void StellarrBridge::handleNewSession()
     captureIntoSceneForPreset(defaultScene, blockNodeMap, processor->getGraph());
     scenes.push_back(defaultScene);
     activeSceneIndex = 0;
+
+    // Clear preset-level MIDI mappings
+    if (processor != nullptr)
+    {
+        processor->getMidiMapper().loadPresetMappings(juce::var());
+        emitMidiMappings();
+    }
+
     persistPresetInfo();
 
     sendGraphState();

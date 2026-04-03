@@ -108,7 +108,7 @@ function App() {
               MIDI
             </Tabs.Trigger>
             <Tabs.Trigger value="settings" style={tabStyle(activeTab === 'settings')}>
-              Settings
+              System
             </Tabs.Trigger>
           </Tabs.List>
         </div>

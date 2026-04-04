@@ -301,7 +301,13 @@ export function initBridge(): void {
 
   juce.backend.addEventListener('testToneSampleChanged', (detail: unknown) => {
     const d = asRecord(detail);
-    useStore.getState().setTestToneSample(String(d.sample));
+    const blockId = String(d.blockId);
+    const sample = String(d.sample);
+    useStore.getState().setTestToneSample(sample);
+    // Store per-block
+    useStore.setState((s) => ({
+      blocks: s.blocks.map((b) => (b.id === blockId ? { ...b, testToneSample: sample } : b)),
+    }));
   });
 
   juce.backend.addEventListener('testToneChanged', (detail: unknown) => {

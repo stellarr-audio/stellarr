@@ -203,7 +203,8 @@ function BypassControl({ block }: { block: import('../../store').GridBlock }) {
 
 function TestToneSamplePicker({ blockId }: { blockId: string }) {
   const samples = useStore((s) => s.testToneSamples);
-  const currentSample = useStore((s) => s.testToneSample);
+  const block = useStore((s) => s.blocks.find((b) => b.id === blockId));
+  const currentSample = block?.testToneSample || 'Synth (Default)';
 
   // Fetch samples list on mount
   useState(() => {

@@ -106,6 +106,14 @@ export function requestSetBlockBypassMode(blockId: string, mode: string): void {
   sendEvent('setBlockBypassMode', JSON.stringify({ blockId, mode }));
 }
 
+export function requestGetTestToneSamples(): void {
+  sendEvent('getTestToneSamples', '');
+}
+
+export function requestSetTestToneSample(blockId: string, sample: string): void {
+  sendEvent('setTestToneSample', JSON.stringify({ blockId, sample }));
+}
+
 export function requestToggleTestTone(blockId: string): void {
   sendEvent('toggleTestTone', JSON.stringify({ blockId }));
 }
@@ -283,6 +291,17 @@ export function initBridge(): void {
 
   juce.backend.addEventListener('pong', (detail: unknown) => {
     console.log('[Bridge] RX pong:', extractMessage(detail));
+  });
+
+  juce.backend.addEventListener('testToneSamplesUpdated', (detail: unknown) => {
+    const d = asRecord(detail);
+    const samples = Array.isArray(d.samples) ? (d.samples as unknown[]).map(String) : [];
+    useStore.getState().setTestToneSamples(samples);
+  });
+
+  juce.backend.addEventListener('testToneSampleChanged', (detail: unknown) => {
+    const d = asRecord(detail);
+    useStore.getState().setTestToneSample(String(d.sample));
   });
 
   juce.backend.addEventListener('testToneChanged', (detail: unknown) => {

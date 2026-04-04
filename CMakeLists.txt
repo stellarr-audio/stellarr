@@ -52,6 +52,7 @@ target_compile_definitions(Stellarr
         JUCE_MODAL_LOOPS_PERMITTED=1
     PRIVATE
         STELLARR_UI_DIR="${CMAKE_SOURCE_DIR}/ui/dist"
+        STELLARR_SAMPLES_DIR="${CMAKE_SOURCE_DIR}/assets/samples/ui/public/inputs"
 )
 
 target_link_libraries(Stellarr

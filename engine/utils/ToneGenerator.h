@@ -1,5 +1,6 @@
 #pragma once
 #include <cmath>
+#include <juce_audio_formats/juce_audio_formats.h>
 #include <juce_core/juce_core.h>
 
 namespace stellarr
@@ -25,10 +26,73 @@ public:
         phase = 0.0;
         melodyIndex = 0;
         sampleInNote = 0.0;
+        samplePlaybackPos = 0;
     }
 
-    // Fill buffer with tone. Overwrites all channels with the same mono signal.
+    // Load a WAV file for playback. Returns true on success.
+    bool loadSample(const juce::File& file)
+    {
+        juce::AudioFormatManager formatManager;
+        formatManager.registerBasicFormats();
+
+        std::unique_ptr<juce::AudioFormatReader> reader(formatManager.createReaderFor(file));
+        if (reader == nullptr)
+            return false;
+
+        sampleBuffer.setSize(static_cast<int>(reader->numChannels),
+                             static_cast<int>(reader->lengthInSamples));
+        reader->read(&sampleBuffer, 0, static_cast<int>(reader->lengthInSamples), 0, true, true);
+        sampleRate = reader->sampleRate;
+        samplePlaybackPos = 0;
+        useSample = true;
+        currentSampleFile = file.getFileName();
+        return true;
+    }
+
+    void clearSample()
+    {
+        useSample = false;
+        sampleBuffer.setSize(0, 0);
+        currentSampleFile.clear();
+    }
+
+    bool isUsingSample() const { return useSample; }
+    juce::String getCurrentSampleName() const { return currentSampleFile; }
+
+    // Fill buffer with tone (synth melody or loaded sample)
     void fillBuffer(juce::AudioBuffer<float>& buffer)
+    {
+        if (useSample && sampleBuffer.getNumSamples() > 0)
+            fillFromSample(buffer);
+        else
+            fillFromSynth(buffer);
+    }
+
+private:
+    void fillFromSample(juce::AudioBuffer<float>& buffer)
+    {
+        int numSamples = buffer.getNumSamples();
+        int sampleLen = sampleBuffer.getNumSamples();
+        int sampleChannels = sampleBuffer.getNumChannels();
+
+        // Resample ratio (sample rate conversion)
+        double ratio = sampleRate / currentSampleRate;
+
+        for (int i = 0; i < numSamples; ++i)
+        {
+            int srcPos = static_cast<int>(samplePlaybackPos * ratio) % sampleLen;
+            for (int ch = 0; ch < buffer.getNumChannels(); ++ch)
+            {
+                int srcCh = std::min(ch, sampleChannels - 1);
+                buffer.setSample(ch, i, sampleBuffer.getSample(srcCh, srcPos));
+            }
+            ++samplePlaybackPos;
+            if (static_cast<int>(samplePlaybackPos * ratio) >= sampleLen)
+                samplePlaybackPos = 0;
+        }
+    }
+
+    void fillFromSynth(juce::AudioBuffer<float>& buffer)
     {
         for (int i = 0; i < buffer.getNumSamples(); ++i)
         {
@@ -65,31 +129,28 @@ public:
         }
     }
 
-private:
-    // A short pentatonic riff in E minor — loops naturally
+    // Synth melody data
     static constexpr int melodySize = 12;
     static constexpr Note melody[melodySize] = {
-        {329.63, 0.5},   // E4
-        {392.00, 0.5},   // G4
-        {440.00, 0.5},   // A4
-        {493.88, 1.0},   // B4
-        {440.00, 0.5},   // A4
-        {392.00, 0.5},   // G4
-        {329.63, 1.0},   // E4
-        {0.0,    0.5},   // rest
-        {293.66, 0.5},   // D4
-        {329.63, 0.5},   // E4
-        {392.00, 1.0},   // G4
-        {0.0,    1.0},   // rest
+        {329.63, 0.5}, {392.00, 0.5}, {440.00, 0.5}, {493.88, 1.0},
+        {440.00, 0.5}, {392.00, 0.5}, {329.63, 1.0}, {0.0, 0.5},
+        {293.66, 0.5}, {329.63, 0.5}, {392.00, 1.0}, {0.0, 1.0},
     };
-
     static constexpr float amplitude = 0.45f;
 
+    // Synth state
     double phase = 0.0;
     double currentSampleRate = 44100.0;
     double samplesPerBeat = 44100.0 * 60.0 / 120.0;
     int melodyIndex = 0;
     double sampleInNote = 0.0;
+
+    // Sample state
+    bool useSample = false;
+    juce::AudioBuffer<float> sampleBuffer;
+    double sampleRate = 44100.0;
+    int64_t samplePlaybackPos = 0;
+    juce::String currentSampleFile;
 };
 
 } // namespace stellarr

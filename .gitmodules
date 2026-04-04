@@ -1,0 +1,3 @@
+[submodule "assets/samples"]
+	path = assets/samples
+	url = https://github.com/tone-3000/neural-amp-modeler-wasm.git

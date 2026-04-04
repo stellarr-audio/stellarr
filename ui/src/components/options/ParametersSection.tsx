@@ -3,6 +3,7 @@ import { Select } from 'radix-ui';
 import { ChevronDownIcon } from '@radix-ui/react-icons';
 import { Slider } from '../common/Slider';
 import { MidiAssignDialog } from '../common/MidiAssignDialog';
+import { formatMidiLabel } from '../common/constants';
 import { useStore } from '../../store';
 import {
   requestSetBlockMix,
@@ -30,9 +31,7 @@ function ParamLabel({
   );
   const existing = existingIndex >= 0 ? mappings[existingIndex] : null;
 
-  const midiLabel = existing
-    ? `CC${existing.cc}${existing.channel >= 0 ? `/Ch${existing.channel + 1}` : ''}`
-    : 'MIDI';
+  const midiLabel = formatMidiLabel(existing);
 
   return (
     <>

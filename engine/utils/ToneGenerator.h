@@ -16,10 +16,10 @@ public:
         double beats;
     };
 
-    void prepareToPlay(double sampleRate, double bpm = 120.0)
+    void prepareToPlay(double hostSampleRate, double bpm = 120.0)
     {
-        currentSampleRate = sampleRate;
-        samplesPerBeat = sampleRate * 60.0 / bpm;
+        currentSampleRate = hostSampleRate;
+        samplesPerBeat = hostSampleRate * 60.0 / bpm;
     }
 
     void reset()
@@ -51,7 +51,7 @@ public:
             sampleRate = reader->sampleRate;
             samplePlaybackPos = 0;
             useSample = true;
-            currentSampleFile = file.getFileName();
+            currentSampleFile = file.getFileNameWithoutExtension();
         }
 
         return true;

@@ -6,6 +6,7 @@ import { useStore } from '../../store';
 import { colors } from '../common/colors';
 import { PALETTE } from '../options/ColorPicker';
 import { CELL_SIZE, cellLeft, cellTop } from './layout';
+import { TYPE_ABBREVIATIONS } from '../common/constants';
 import styles from './GridBlock.module.css';
 
 interface Props {
@@ -16,12 +17,6 @@ const typeColors: Record<string, string> = {
   input: PALETTE.slateLight,
   output: PALETTE.slateLight,
   plugin: PALETTE.blue,
-};
-
-const typeAbbreviations: Record<string, string> = {
-  input: 'INP',
-  output: 'OUT',
-  plugin: 'PLG',
 };
 
 function Port({
@@ -144,7 +139,9 @@ export function GridBlockComponent({ block }: Props) {
 
       {/* Middle region — block type */}
       <div className={styles.blockType} style={{ color: accentColor }}>
-        {block.displayName || typeAbbreviations[block.type] || block.type.slice(0, 3).toUpperCase()}
+        {block.displayName ||
+          TYPE_ABBREVIATIONS[block.type] ||
+          block.type.slice(0, 3).toUpperCase()}
       </div>
 
       {/* Bottom region — subtitle */}

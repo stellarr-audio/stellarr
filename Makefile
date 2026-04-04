@@ -1,34 +1,42 @@
-.PHONY: setup build build-ui build-cpp release release-cpp run run-release test docs clean
+.PHONY: setup dev dev-ui dev-cpp debug debug-cpp release release-cpp run run-debug run-release test docs clean
 
-.DEFAULT_GOAL := build
+.DEFAULT_GOAL := dev
 
 setup:
 	cd ui && npm install
 
-build-ui: setup
+dev-ui: setup
 	cd ui && npm run build
 
-build-cpp:
-	cmake -B build -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+dev-cpp:
+	cmake -B build -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=OFF -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
 	cmake --build build -j4
 
-build: build-ui build-cpp
+dev: dev-ui dev-cpp
+
+debug-cpp:
+	cmake -B build -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=ON -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+	cmake --build build -j4
+
+debug: dev-ui debug-cpp
 
 release-cpp:
 	cmake -B build-release -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF
 	cmake --build build-release --config Release -j4
 
-release: build-ui release-cpp
-	@echo "Release build: build-release/Stellarr_artefacts/Release/Standalone/Stellarr.app"
+release: dev-ui release-cpp
+
+run: dev
+	open build/Stellarr_artefacts/Debug/Standalone/Stellarr.app
+
+run-debug: debug
+	open build/Stellarr_artefacts/Debug/Standalone/Stellarr.app
 
 run-release: release
 	open build-release/Stellarr_artefacts/Release/Standalone/Stellarr.app
 
-test: build
+test: debug
 	ctest --test-dir build --output-on-failure
-
-run: build
-	open build/Stellarr_artefacts/Debug/Standalone/Stellarr.app
 
 docs:
 	npx serve docs/manual -p 3001

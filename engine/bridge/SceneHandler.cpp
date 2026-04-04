@@ -1,41 +1,5 @@
-#include "../StellarrBridge.h"
 #include "../StellarrProcessor.h"
-#include "../blocks/PluginBlock.h"
-
-// -- Scene capture helpers ----------------------------------------------------
-
-struct SceneCapture {
-    std::map<juce::String, int> stateMap;
-    std::map<juce::String, bool> bypassMap;
-};
-
-static SceneCapture captureScene(
-    const std::map<juce::String, juce::AudioProcessorGraph::NodeID>& blockNodeMap,
-    juce::AudioProcessorGraph& graph)
-{
-    SceneCapture cap;
-    for (auto& [blockId, nodeId] : blockNodeMap)
-    {
-        if (auto* node = graph.getNodeForId(nodeId))
-        {
-            if (auto* pb = dynamic_cast<stellarr::PluginBlock*>(node->getProcessor()))
-            {
-                cap.stateMap[blockId] = pb->getActiveStateIndex();
-                cap.bypassMap[blockId] = pb->isBypassed();
-            }
-        }
-    }
-    return cap;
-}
-
-static void captureIntoScene(StellarrBridge::Scene& scene,
-                             const std::map<juce::String, juce::AudioProcessorGraph::NodeID>& blockNodeMap,
-                             juce::AudioProcessorGraph& graph)
-{
-    auto cap = captureScene(blockNodeMap, graph);
-    scene.blockStateMap = cap.stateMap;
-    scene.blockBypassMap = cap.bypassMap;
-}
+#include "SceneCapture.h"
 
 // -- Scene event handlers -----------------------------------------------------
 

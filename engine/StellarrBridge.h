@@ -29,7 +29,7 @@ public:
     void sendTunerData();
     void sendMidiMonitorData();
     bool isTunerActive() const { return tunerActive; }
-    void setOnStartupComplete(std::function<void()> callback) { onStartupComplete = std::move(callback); }
+    void setOnUiReady(std::function<void()> callback) { onUiReady = std::move(callback); }
 
 private:
     void handleEvent(const juce::String& eventName, const juce::var& payload);
@@ -116,7 +116,7 @@ private:
     juce::StringArray presetFiles;
     int currentPresetIndex = -1;
     juce::File lastPresetFile;
-    std::function<void()> onStartupComplete;
+    std::function<void()> onUiReady;
     bool tunerActive = false;
 
     std::vector<Scene> scenes;

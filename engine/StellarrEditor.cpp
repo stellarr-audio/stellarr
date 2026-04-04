@@ -39,26 +39,21 @@ StellarrEditor::StellarrEditor(StellarrProcessor& p)
     bridge.setProcessor(&p);
     bridge.setAppProperties(p.getAppProperties());
     bridge.setWebView(webView.get());
-    bridge.setOnStartupComplete([this]() { hideSplash(); });
+    bridge.setOnUiReady([this]() { hideSplash(); });
 
     webView->goToURL(juce::WebBrowserComponent::getResourceProviderRoot());
 
-    // Show logo on top of WebView until page loads
+    // Splash overlay on top of WebView
+    splashOverlay = std::make_unique<SplashOverlay>();
     auto svgFile = uiDir.getChildFile("logo.svg");
     if (svgFile.existsAsFile())
     {
         auto xml = juce::XmlDocument::parse(svgFile);
         if (xml != nullptr)
-        {
-            if (auto drawable = juce::Drawable::createFromSVG(*xml))
-            {
-                splashLogo = std::make_unique<juce::DrawableComposite>();
-                splashLogo->addAndMakeVisible(drawable.release());
-                addAndMakeVisible(*splashLogo);
-                splashLogo->setAlwaysOnTop(true);
-            }
-        }
+            splashOverlay->setLogo(juce::Drawable::createFromSVG(*xml));
     }
+    addAndMakeVisible(*splashOverlay);
+    splashOverlay->setAlwaysOnTop(true);
 
     setResizable(true, true);
     setSize(1440, 700);
@@ -82,21 +77,15 @@ StellarrEditor::~StellarrEditor()
 
 void StellarrEditor::paint(juce::Graphics& g)
 {
-    g.fillAll(juce::Colour(82, 77, 115));
+    g.fillAll(kBackgroundColour);
 }
 
 void StellarrEditor::resized()
 {
     webView->setBounds(getLocalBounds());
 
-    if (splashLogo != nullptr)
-    {
-        int logoSize = 48;
-        auto area = getLocalBounds();
-        splashLogo->setBounds(area.getCentreX() - logoSize / 2,
-                              area.getCentreY() - logoSize / 2,
-                              logoSize, logoSize);
-    }
+    if (splashOverlay != nullptr)
+        splashOverlay->setBounds(getLocalBounds());
 }
 
 void StellarrEditor::timerCallback()
@@ -134,10 +123,10 @@ bool StellarrEditor::isDevToolsEnabled() const { return devToolsEnabled; }
 
 void StellarrEditor::hideSplash()
 {
-    if (splashLogo != nullptr)
+    if (splashOverlay != nullptr)
     {
-        removeChildComponent(splashLogo.get());
-        splashLogo = nullptr;
+        removeChildComponent(splashOverlay.get());
+        splashOverlay = nullptr;
     }
 }
 

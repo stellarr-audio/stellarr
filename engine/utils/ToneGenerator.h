@@ -1,6 +1,7 @@
 #pragma once
 #include <cmath>
 #include <juce_audio_formats/juce_audio_formats.h>
+#include <juce_audio_basics/juce_audio_basics.h>
 #include <juce_core/juce_core.h>
 
 namespace stellarr
@@ -39,18 +40,26 @@ public:
         if (reader == nullptr)
             return false;
 
-        sampleBuffer.setSize(static_cast<int>(reader->numChannels),
-                             static_cast<int>(reader->lengthInSamples));
-        reader->read(&sampleBuffer, 0, static_cast<int>(reader->lengthInSamples), 0, true, true);
-        sampleRate = reader->sampleRate;
-        samplePlaybackPos = 0;
-        useSample = true;
-        currentSampleFile = file.getFileName();
+        // Load into a temp buffer, then swap under lock
+        juce::AudioBuffer<float> newBuffer(static_cast<int>(reader->numChannels),
+                                            static_cast<int>(reader->lengthInSamples));
+        reader->read(&newBuffer, 0, static_cast<int>(reader->lengthInSamples), 0, true, true);
+
+        {
+            juce::SpinLock::ScopedLockType lock(sampleLock);
+            sampleBuffer = std::move(newBuffer);
+            sampleRate = reader->sampleRate;
+            samplePlaybackPos = 0;
+            useSample = true;
+            currentSampleFile = file.getFileName();
+        }
+
         return true;
     }
 
     void clearSample()
     {
+        juce::SpinLock::ScopedLockType lock(sampleLock);
         useSample = false;
         sampleBuffer.setSize(0, 0);
         currentSampleFile.clear();
@@ -62,6 +71,13 @@ public:
     // Fill buffer with tone (synth melody or loaded sample)
     void fillBuffer(juce::AudioBuffer<float>& buffer)
     {
+        juce::SpinLock::ScopedTryLockType lock(sampleLock);
+        if (!lock.isLocked())
+        {
+            buffer.clear();
+            return;
+        }
+
         if (useSample && sampleBuffer.getNumSamples() > 0)
             fillFromSample(buffer);
         else
@@ -146,6 +162,7 @@ private:
     double sampleInNote = 0.0;
 
     // Sample state
+    juce::SpinLock sampleLock;
     bool useSample = false;
     juce::AudioBuffer<float> sampleBuffer;
     double sampleRate = 44100.0;

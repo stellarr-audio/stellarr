@@ -8,6 +8,7 @@ export interface GridBlock {
   row: number;
   nodeId: number;
   testTone?: boolean;
+  testToneSample?: string;
   pluginId?: string;
   pluginName?: string;
   pluginFormat?: string;

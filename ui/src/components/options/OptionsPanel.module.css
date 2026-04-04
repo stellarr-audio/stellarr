@@ -125,3 +125,52 @@
   border-color: var(--color-secondary);
   color: var(--color-secondary);
 }
+
+.samplePicker {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.sampleLabel {
+  font-size: 0.8rem;
+  color: var(--color-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.sampleTrigger {
+  width: 100%;
+  text-align: left;
+  background: var(--color-cell);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  padding: 0.35rem 0.5rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  outline: none;
+}
+
+.sampleContent {
+  background: var(--color-dropdown-bg);
+  border: 1px solid var(--color-border);
+  width: var(--radix-select-trigger-width);
+  max-height: 250px;
+  overflow-y: auto;
+  z-index: 20;
+}
+
+.sampleItem {
+  padding: 0.35rem 0.5rem;
+  font-size: 0.9rem;
+  color: var(--color-text);
+  cursor: pointer;
+  outline: none;
+}
+
+.sampleItem:hover {
+  background: var(--color-border);
+}

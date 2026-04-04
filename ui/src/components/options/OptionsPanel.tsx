@@ -9,12 +9,16 @@ import { ColorPicker } from './ColorPicker';
 import { PluginSection } from './PluginSection';
 import { ParametersSection } from './ParametersSection';
 import { StatesSection } from './StatesSection';
+import { Select } from 'radix-ui';
+import { ChevronDownIcon } from '@radix-ui/react-icons';
 import {
   requestToggleTestTone,
   requestToggleBlockBypass,
   requestSetBlockLevel,
   requestRenameBlock,
   requestSetBlockColor,
+  requestGetTestToneSamples,
+  requestSetTestToneSample,
 } from '../../bridge';
 import styles from './OptionsPanel.module.css';
 
@@ -39,13 +43,16 @@ export function OptionsPanel() {
 
           {/* Input block options */}
           {block.type === 'input' && (
-            <OptionRow label="Test Tone">
-              <ToggleSwitch
-                enabled={block.testTone ?? false}
-                onToggle={() => requestToggleTestTone(block.id)}
-                title={block.testTone ? 'Disable test tone' : 'Enable test tone'}
-              />
-            </OptionRow>
+            <>
+              <OptionRow label="Test Tone">
+                <ToggleSwitch
+                  enabled={block.testTone ?? false}
+                  onToggle={() => requestToggleTestTone(block.id)}
+                  title={block.testTone ? 'Disable test tone' : 'Enable test tone'}
+                />
+              </OptionRow>
+              <TestToneSamplePicker blockId={block.id} />
+            </>
           )}
 
           {/* Plugin block — plugin select */}
@@ -190,6 +197,46 @@ function BypassControl({ block }: { block: import('../../store').GridBlock }) {
         blockId={block.id}
         existingIndex={existingIndex >= 0 ? existingIndex : undefined}
       />
+    </div>
+  );
+}
+
+function TestToneSamplePicker({ blockId }: { blockId: string }) {
+  const samples = useStore((s) => s.testToneSamples);
+  const currentSample = useStore((s) => s.testToneSample);
+
+  // Fetch samples list on mount
+  useState(() => {
+    requestGetTestToneSamples();
+  });
+
+  if (samples.length === 0) return null;
+
+  return (
+    <div className={styles.samplePicker}>
+      <span className={styles.sampleLabel}>Sample</span>
+      <Select.Root
+        value={currentSample}
+        onValueChange={(v) => requestSetTestToneSample(blockId, v)}
+      >
+        <Select.Trigger className={styles.sampleTrigger}>
+          <Select.Value />
+          <Select.Icon>
+            <ChevronDownIcon />
+          </Select.Icon>
+        </Select.Trigger>
+        <Select.Portal>
+          <Select.Content position="popper" sideOffset={4} className={styles.sampleContent}>
+            <Select.Viewport>
+              {samples.map((s) => (
+                <Select.Item key={s} value={s} className={styles.sampleItem}>
+                  <Select.ItemText>{s}</Select.ItemText>
+                </Select.Item>
+              ))}
+            </Select.Viewport>
+          </Select.Content>
+        </Select.Portal>
+      </Select.Root>
     </div>
   );
 }

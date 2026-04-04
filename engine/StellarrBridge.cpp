@@ -199,6 +199,60 @@ void StellarrBridge::handleEvent(const juce::String& eventName, const juce::var&
             }
         }
     }
+    else if (eventName == "getTestToneSamples")
+    {
+        juce::File samplesDir(STELLARR_SAMPLES_DIR);
+        juce::Array<juce::var> files;
+
+        if (samplesDir.isDirectory())
+        {
+            for (auto& f : samplesDir.findChildFiles(juce::File::findFiles, false, "*.wav"))
+                files.add(juce::var(f.getFileNameWithoutExtension()));
+        }
+
+        // Add "Synth (Default)" as first option
+        juce::Array<juce::var> sorted;
+        sorted.add(juce::var("Synth (Default)"));
+        for (auto& f : files)
+            sorted.add(f);
+
+        auto* detail = new juce::DynamicObject();
+        detail->setProperty("samples", sorted);
+        emitToJs("testToneSamplesUpdated", detail);
+    }
+    else if (eventName == "setTestToneSample" && processor != nullptr)
+    {
+        auto* obj = json.getDynamicObject();
+        if (obj == nullptr) return;
+
+        auto blockId = obj->getProperty("blockId").toString();
+        auto sampleName = obj->getProperty("sample").toString();
+        auto nodeIt = blockNodeMap.find(blockId);
+        if (nodeIt == blockNodeMap.end()) return;
+
+        if (auto* node = processor->getGraph().getNodeForId(nodeIt->second))
+        {
+            if (auto* inputBlock = dynamic_cast<stellarr::InputBlock*>(node->getProcessor()))
+            {
+                if (sampleName == "Synth (Default)" || sampleName.isEmpty())
+                {
+                    inputBlock->clearTestToneSample();
+                }
+                else
+                {
+                    juce::File samplesDir(STELLARR_SAMPLES_DIR);
+                    auto file = samplesDir.getChildFile(sampleName + ".wav");
+                    inputBlock->loadTestToneSample(file);
+                }
+
+                auto* detail = new juce::DynamicObject();
+                detail->setProperty("blockId", blockId);
+                detail->setProperty("sample", inputBlock->isUsingSample()
+                    ? inputBlock->getCurrentSampleName() : juce::String("Synth (Default)"));
+                emitToJs("testToneSampleChanged", detail);
+            }
+        }
+    }
     else if (eventName == "setTunerEnabled" && processor != nullptr)
     {
         auto* obj = json.getDynamicObject();

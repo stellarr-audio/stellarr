@@ -59,6 +59,11 @@ public:
         return testToneEnabled.load(std::memory_order_relaxed);
     }
 
+    bool loadTestToneSample(const juce::File& file) { return toneGenerator.loadSample(file); }
+    void clearTestToneSample() { toneGenerator.clearSample(); }
+    bool isUsingSample() const { return toneGenerator.isUsingSample(); }
+    juce::String getCurrentSampleName() const { return toneGenerator.getCurrentSampleName(); }
+
     // Tuner
     void setTunerEnabled(bool enabled)
     {

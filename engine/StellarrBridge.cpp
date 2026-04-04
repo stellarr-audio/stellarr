@@ -47,6 +47,7 @@ void StellarrBridge::handleEvent(const juce::String& eventName, const juce::var&
 
     // Startup
     if (eventName == "bridgeReady")                 handleBridgeReady();
+    else if (eventName == "uiReady")                { if (onUiReady) onUiReady(); }
 
     // Graph
     else if (eventName == "addBlock")               handleAddBlock(json);
@@ -478,8 +479,6 @@ void StellarrBridge::handleBridgeReady()
 
                 sendStartupProgress("Ready", 100);
                 emitToJs("startupComplete", new juce::DynamicObject());
-                if (onStartupComplete)
-                    onStartupComplete();
             });
         });
     });

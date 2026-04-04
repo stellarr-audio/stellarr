@@ -281,6 +281,8 @@ export function initBridge(): void {
   juce.backend.addEventListener('startupComplete', () => {
     console.log('[Bridge] RX startupComplete');
     useStore.getState().setLoading(false);
+    // Signal native to show WebView after React paints
+    requestAnimationFrame(() => sendEvent('uiReady', ''));
   });
 
   // Welcome / connection

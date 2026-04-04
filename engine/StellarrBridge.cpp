@@ -308,7 +308,7 @@ void StellarrBridge::handleEvent(const juce::String& eventName, const juce::var&
         emitToJs("blockBypassChanged", detail);
     }
     else if (eventName == "setBlockBypassMode")
-        handleSetBlockParam(json, "mode",
+        handleSetBlockParam(json, "bypassMode",
             [](stellarr::Block* b, const juce::var& v) {
                 b->setBypassMode(stellarr::bypassModeFromString(v.toString()));
             },

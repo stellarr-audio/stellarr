@@ -1,43 +1,7 @@
-#include "../StellarrBridge.h"
 #include "../StellarrProcessor.h"
 #include "../blocks/InputBlock.h"
 #include "../blocks/OutputBlock.h"
-#include "../blocks/PluginBlock.h"
-
-// -- Scene capture (needed for serialization) ---------------------------------
-
-struct PresetSceneCapture {
-    std::map<juce::String, int> stateMap;
-    std::map<juce::String, bool> bypassMap;
-};
-
-static PresetSceneCapture captureSceneForPreset(
-    const std::map<juce::String, juce::AudioProcessorGraph::NodeID>& blockNodeMap,
-    juce::AudioProcessorGraph& graph)
-{
-    PresetSceneCapture cap;
-    for (auto& [blockId, nodeId] : blockNodeMap)
-    {
-        if (auto* node = graph.getNodeForId(nodeId))
-        {
-            if (auto* pb = dynamic_cast<stellarr::PluginBlock*>(node->getProcessor()))
-            {
-                cap.stateMap[blockId] = pb->getActiveStateIndex();
-                cap.bypassMap[blockId] = pb->isBypassed();
-            }
-        }
-    }
-    return cap;
-}
-
-static void captureIntoSceneForPreset(StellarrBridge::Scene& scene,
-                                       const std::map<juce::String, juce::AudioProcessorGraph::NodeID>& blockNodeMap,
-                                       juce::AudioProcessorGraph& graph)
-{
-    auto cap = captureSceneForPreset(blockNodeMap, graph);
-    scene.blockStateMap = cap.stateMap;
-    scene.blockBypassMap = cap.bypassMap;
-}
+#include "SceneCapture.h"
 
 // -- Session serialization ----------------------------------------------------
 
@@ -99,7 +63,7 @@ juce::var StellarrBridge::serialiseSession() const
 
     // Update active scene before serialising
     if (activeSceneIndex >= 0 && activeSceneIndex < static_cast<int>(scenes.size()))
-        captureIntoSceneForPreset(const_cast<StellarrBridge*>(this)->scenes[static_cast<size_t>(activeSceneIndex)],
+        captureIntoScene(const_cast<StellarrBridge*>(this)->scenes[static_cast<size_t>(activeSceneIndex)],
                                    blockNodeMap, processor->getGraph());
 
     // Scenes
@@ -283,7 +247,7 @@ void StellarrBridge::restoreSession(const juce::var& session)
     {
         Scene defaultScene;
         defaultScene.name = "Scene 1";
-        captureIntoSceneForPreset(defaultScene, blockNodeMap, processor->getGraph());
+        captureIntoScene(defaultScene, blockNodeMap, processor->getGraph());
         scenes.push_back(defaultScene);
         activeSceneIndex = 0;
     }
@@ -354,7 +318,7 @@ void StellarrBridge::handleNewSession()
     scenes.clear();
     Scene defaultScene;
     defaultScene.name = "Scene 1";
-    captureIntoSceneForPreset(defaultScene, blockNodeMap, processor->getGraph());
+    captureIntoScene(defaultScene, blockNodeMap, processor->getGraph());
     scenes.push_back(defaultScene);
     activeSceneIndex = 0;
 

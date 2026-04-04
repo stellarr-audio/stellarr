@@ -102,8 +102,8 @@ export function requestToggleBlockBypass(blockId: string): void {
   sendEvent('toggleBlockBypass', JSON.stringify({ blockId }));
 }
 
-export function requestSetBlockBypassMode(blockId: string, mode: string): void {
-  sendEvent('setBlockBypassMode', JSON.stringify({ blockId, mode }));
+export function requestSetBlockBypassMode(blockId: string, bypassMode: string): void {
+  sendEvent('setBlockBypassMode', JSON.stringify({ blockId, bypassMode }));
 }
 
 export function requestGetTestToneSamples(): void {

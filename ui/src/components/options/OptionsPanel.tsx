@@ -1,10 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useStore } from '../../store';
-import { OptionRow } from '../common/OptionRow';
 import { Slider } from '../common/Slider';
 import { ToggleSwitch } from '../common/ToggleSwitch';
 import { MidiAssignDialog } from '../common/MidiAssignDialog';
-import { Pencil1Icon } from '@radix-ui/react-icons';
+import { TYPE_ABBREVIATIONS, formatMidiLabel } from '../common/constants';
+import { Pencil1Icon, PlayIcon, StopIcon } from '@radix-ui/react-icons';
 import { ColorPicker } from './ColorPicker';
 import { PluginSection } from './PluginSection';
 import { ParametersSection } from './ParametersSection';
@@ -43,16 +43,7 @@ export function OptionsPanel() {
 
           {/* Input block options */}
           {block.type === 'input' && (
-            <>
-              <OptionRow label="Test Tone">
-                <ToggleSwitch
-                  enabled={block.testTone ?? false}
-                  onToggle={() => requestToggleTestTone(block.id)}
-                  title={block.testTone ? 'Disable test tone' : 'Enable test tone'}
-                />
-              </OptionRow>
-              <TestToneSamplePicker blockId={block.id} />
-            </>
+            <TestToneSamplePicker blockId={block.id} playing={block.testTone ?? false} />
           )}
 
           {/* Plugin block — plugin select */}
@@ -104,12 +95,7 @@ function BlockHeader({ block }: { block: import('../../store').GridBlock }) {
   const [editing, setEditing] = useState(false);
   const [editValue, setEditValue] = useState('');
 
-  const typeAbbreviations: Record<string, string> = {
-    input: 'INP',
-    output: 'OUT',
-    plugin: 'PLG',
-  };
-  const abbreviation = typeAbbreviations[block.type] || block.type.slice(0, 3).toUpperCase();
+  const abbreviation = TYPE_ABBREVIATIONS[block.type] || block.type.slice(0, 3).toUpperCase();
   const displayName = block.displayName || abbreviation;
 
   const startEdit = () => {
@@ -168,9 +154,7 @@ function BypassControl({ block }: { block: import('../../store').GridBlock }) {
   );
   const existing = existingIndex >= 0 ? mappings[existingIndex] : null;
 
-  const midiLabel = existing
-    ? `CC${existing.cc}${existing.channel >= 0 ? `/Ch${existing.channel + 1}` : ''}`
-    : 'MIDI';
+  const midiLabel = formatMidiLabel(existing);
 
   return (
     <div className={styles.bypassControl}>
@@ -201,43 +185,52 @@ function BypassControl({ block }: { block: import('../../store').GridBlock }) {
   );
 }
 
-function TestToneSamplePicker({ blockId }: { blockId: string }) {
+function TestToneSamplePicker({ blockId, playing }: { blockId: string; playing: boolean }) {
   const samples = useStore((s) => s.testToneSamples);
   const block = useStore((s) => s.blocks.find((b) => b.id === blockId));
   const currentSample = block?.testToneSample || 'Synth (Default)';
 
   // Fetch samples list on mount
-  useState(() => {
+  useEffect(() => {
     requestGetTestToneSamples();
-  });
+  }, []);
 
   if (samples.length === 0) return null;
 
   return (
     <div className={styles.samplePicker}>
-      <span className={styles.sampleLabel}>Sample</span>
-      <Select.Root
-        value={currentSample}
-        onValueChange={(v) => requestSetTestToneSample(blockId, v)}
-      >
-        <Select.Trigger className={styles.sampleTrigger}>
-          <Select.Value />
-          <Select.Icon>
-            <ChevronDownIcon />
-          </Select.Icon>
-        </Select.Trigger>
-        <Select.Portal>
-          <Select.Content position="popper" sideOffset={4} className={styles.sampleContent}>
-            <Select.Viewport>
-              {samples.map((s) => (
-                <Select.Item key={s} value={s} className={styles.sampleItem}>
-                  <Select.ItemText>{s}</Select.ItemText>
-                </Select.Item>
-              ))}
-            </Select.Viewport>
-          </Select.Content>
-        </Select.Portal>
-      </Select.Root>
+      <span className={styles.sampleLabel}>Test Tone</span>
+      <div className={styles.sampleRow}>
+        <Select.Root
+          value={currentSample}
+          onValueChange={(v) => requestSetTestToneSample(blockId, v)}
+        >
+          <Select.Trigger className={styles.sampleTrigger}>
+            <Select.Value />
+            <Select.Icon>
+              <ChevronDownIcon />
+            </Select.Icon>
+          </Select.Trigger>
+          <Select.Portal>
+            <Select.Content position="popper" sideOffset={4} className={styles.sampleContent}>
+              <Select.Viewport>
+                {samples.map((s) => (
+                  <Select.Item key={s} value={s} className={styles.sampleItem}>
+                    <Select.ItemText>{s}</Select.ItemText>
+                  </Select.Item>
+                ))}
+              </Select.Viewport>
+            </Select.Content>
+          </Select.Portal>
+        </Select.Root>
+        <button
+          onClick={() => requestToggleTestTone(blockId)}
+          title={playing ? 'Stop test tone' : 'Play test tone'}
+          className={`${styles.toneButton} ${playing ? styles.toneButtonPlaying : ''}`}
+        >
+          {playing ? <StopIcon width={14} height={14} /> : <PlayIcon width={14} height={14} />}
+        </button>
+      </div>
     </div>
   );
 }

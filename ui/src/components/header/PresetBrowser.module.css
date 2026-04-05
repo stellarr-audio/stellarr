@@ -162,6 +162,52 @@
   align-items: center;
 }
 
+/* Scene group: dropdown + MIDI icon as one input group */
+.sceneGroup {
+  display: flex;
+  align-items: stretch;
+}
+
+.sceneGroup > *:first-child {
+  border-right: none;
+}
+
+.sceneMidiBtn {
+  background: transparent;
+  border: 1px solid var(--color-border);
+  color: var(--color-muted);
+  padding: 0.3rem 0.4rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.1s ease;
+}
+
+.sceneMidiBtn:hover {
+  background: #2a2545;
+}
+
+.sceneMidiBtnAssigned {
+  composes: sceneMidiBtn;
+  color: var(--color-secondary);
+  border-color: var(--color-secondary);
+}
+
+/* MIDI tag next to scene name */
+.midiTag {
+  background: rgba(0, 180, 255, 0.094);
+  border: 1px solid var(--color-secondary);
+  color: var(--color-secondary);
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 0.05rem 0.25rem;
+  margin-left: 0.4rem;
+  white-space: nowrap;
+}
+
 /* Sub-trigger (dots icon) */
 .subTrigger {
   padding: 0.35rem 0.5rem;

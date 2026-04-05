@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
 import { useStore } from '../../store';
-import { Slider } from '../common/Slider';
 import { requestSetMidiMonitorEnabled, requestInjectMidiCC } from '../../bridge';
 import styles from './MidiMonitor.module.css';
 
@@ -102,14 +101,17 @@ function CcSender() {
             className={styles.fieldInput}
           />
         </div>
-      </div>
-
-      <div>
-        <div className={styles.sliderHeader}>
+        <div className={styles.fieldCol}>
           <label className={styles.fieldLabel}>Value</label>
-          <span className={styles.sliderValue}>{value}</span>
+          <input
+            type="number"
+            min={0}
+            max={127}
+            value={value}
+            onChange={(e) => setValue(Math.max(0, Math.min(127, parseInt(e.target.value) || 0)))}
+            className={styles.fieldInput}
+          />
         </div>
-        <Slider min={0} max={127} value={value} onChange={setValue} />
       </div>
 
       <button onClick={send} className={styles.sendBtn}>

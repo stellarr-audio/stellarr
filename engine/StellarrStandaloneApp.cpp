@@ -117,6 +117,10 @@ private:
 
         const Array<StandalonePluginHolder::PluginInOuts> channelConfig;
 
+        // JUCE mutes audio input by default in standalone apps — disable that
+        // Must set before holder construction so it reads the correct value
+        appProperties.getUserSettings()->setValue("shouldMuteInput", false);
+
         auto holder = std::make_unique<StandalonePluginHolder>(
             appProperties.getUserSettings(), false, String{},
             nullptr, channelConfig, false);

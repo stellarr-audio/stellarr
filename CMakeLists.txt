@@ -20,6 +20,8 @@ juce_add_plugin(Stellarr
     NEEDS_MIDI_INPUT TRUE
     NEEDS_MIDI_OUTPUT TRUE
     EDITOR_WANTS_KEYBOARD_FOCUS TRUE
+    MICROPHONE_PERMISSION_ENABLED TRUE
+    MICROPHONE_PERMISSION_TEXT "Stellarr needs microphone access to process audio input from your audio interface."
     FORMATS Standalone
     PRODUCT_NAME "Stellarr"
     ICON_BIG "${CMAKE_SOURCE_DIR}/assets/icon.png"

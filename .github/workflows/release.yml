@@ -42,7 +42,6 @@ jobs:
           zip -r "${GITHUB_WORKSPACE}/Stellarr-${GITHUB_REF_NAME}-macOS-arm64.zip" Stellarr.app
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: Stellarr-*.zip
-          generate_release_notes: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" Stellarr-*.zip --generate-notes

@@ -44,7 +44,7 @@ If no plugins appear, check that your plugin directories are correctly configure
 In the top-right corner of the header bar, two bars show real-time performance:
 
 - **CPU** -- Audio processing load as a percentage. Colour changes from green (< 40%) to yellow (40--70%) to red (> 70%).
-- **Memory** -- Application memory usage as a percentage of total system RAM.
+- **OUT** -- Output level meter showing peak amplitude in **dBFS** (decibels relative to full scale). Green below -6 dB, yellow from -6 to 0 dB, red above 0 dB. When the output exceeds 0 dBFS the signal is **clipping** -- the value flashes red. Shows "-inf" at silence.
 
 ## Audio & MIDI Settings
 

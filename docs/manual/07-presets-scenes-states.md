@@ -23,6 +23,10 @@ The preset controls are in the centre of the header bar:
 
 When you save, a checkmark briefly flashes to confirm.
 
+### MIDI Preset Switching
+
+Click the **Link icon** next to the preset dropdown to assign MIDI Program Change control. When assigned, each preset in the dropdown shows a **PC:N** tag indicating which Program Change value selects it (e.g., PC:0 for the first file, PC:1 for the second). See [MIDI](05-midi.md) for details.
+
 ### Preset Folder
 
 Stellarr remembers the last folder you saved to or loaded from. The preset dropdown shows all `.stellarr` files in that folder, letting you browse through them.
@@ -41,12 +45,15 @@ Use cases:
 The scene controls are in the header bar next to the preset dropdown:
 
 - **Scene dropdown** -- Shows the active scene name. Click to switch scenes.
+- **Link icon** -- Assign a MIDI CC to switch scenes. When assigned, each scene in the dropdown shows a tag like **CC10 val:0**, **CC10 val:1**, etc., indicating which CC value triggers that scene.
 - **+ Add Scene** -- Creates a new scene from the current state of all blocks.
 - **Dots menu** (per scene) -- **Rename** or **Delete** a scene.
 
 Every preset starts with one scene called "Scene 1". You can have up to 16 scenes.
 
 ### How Scene Switching Works
+
+Scene switching is **instant** -- there is no audio gap. Since all plugins are already loaded and running, Stellarr applies the new parameters directly without suspending audio processing.
 
 When you switch to a different scene:
 1. The current block states and bypass settings are saved into the outgoing scene.

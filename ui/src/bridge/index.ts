@@ -126,6 +126,14 @@ export function requestRenameBlock(blockId: string, name: string): void {
   sendEvent('renameBlock', JSON.stringify({ blockId, name }));
 }
 
+export function requestCopyBlock(blockId: string): void {
+  sendEvent('copyBlock', JSON.stringify({ blockId }));
+}
+
+export function requestPasteBlock(col: number, row: number): void {
+  sendEvent('pasteBlock', JSON.stringify({ col, row }));
+}
+
 export function requestSetBlockPlugin(blockId: string, pluginId: string): void {
   sendEvent('setBlockPlugin', JSON.stringify({ blockId, pluginId }));
 }
@@ -352,6 +360,11 @@ export function initBridge(): void {
   });
 
   // Graph confirmations from C++
+  juce.backend.addEventListener('blockCopied', (detail: unknown) => {
+    const d = asRecord(detail);
+    useStore.getState().setClipboardBlockType(String(d.type));
+  });
+
   juce.backend.addEventListener('blockAdded', (detail: unknown) => {
     const d = asRecord(detail);
     console.log('[Bridge] RX blockAdded:', d);

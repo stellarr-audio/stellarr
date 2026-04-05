@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Tabs } from 'radix-ui';
 import { useStore } from './store';
 import { Grid } from './components/grid/Grid';
@@ -11,7 +12,7 @@ import { LoadingScreen } from './components/header/LoadingScreen';
 import { PresetBrowser } from './components/header/PresetBrowser';
 import { SystemStats } from './components/header/SystemStats';
 import { Logo } from './components/header/Logo';
-import { requestSetTunerEnabled } from './bridge';
+import { requestSetTunerEnabled, requestSaveSessionQuiet } from './bridge';
 import styles from './App.module.css';
 
 function App() {
@@ -19,6 +20,17 @@ function App() {
   const selectBlock = useStore((s) => s.selectBlock);
   const activeTab = useStore((s) => s.activeTab);
   const setActiveTab = useStore((s) => s.setActiveTab);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 's') {
+        e.preventDefault();
+        requestSaveSessionQuiet();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   if (loading) return <LoadingScreen />;
 

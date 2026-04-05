@@ -31,7 +31,14 @@ public:
     bool isTunerActive() const { return tunerActive; }
     void setOnUiReady(std::function<void()> callback) { onUiReady = std::move(callback); }
 
+    // Test accessors
+    const juce::StringArray& getPresetFiles() const { return presetFiles; }
+    int getCurrentPresetIndex() const { return currentPresetIndex; }
+    const juce::File& getLastPresetFile() const { return lastPresetFile; }
+    void setPresetDirectory(const juce::File& dir) { presetDirectory = dir; }
+
 private:
+    friend class PresetFileTestAccess;
     void handleEvent(const juce::String& eventName, const juce::var& payload);
     void handleBridgeReady();
     void sendStartupProgress(const juce::String& status, int progress);

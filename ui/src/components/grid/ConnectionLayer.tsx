@@ -74,54 +74,58 @@ export function ConnectionLayer(_props: Props) {
       return b?.bypassed && b?.bypassMode === 'mute';
     };
 
-    // Walk downstream from selected block, collecting all paths that reach an output.
-    // Returns the set of block IDs on live (output-reaching) paths.
-    const downstreamLive = new Set<string>();
-    const canReachOutput = (id: string, visited: Set<string>): boolean => {
-      if (visited.has(id)) return false;
-      visited.add(id);
-      const blk = blockMap.get(id);
-      if (!blk) return false;
-      if (blk.type === 'output') {
-        downstreamLive.add(id);
-        return true;
-      }
-      if (id !== selectedBlockId && isMuted(id)) return false;
+    // Memoized DFS: walk a direction collecting blocks that reach a target type.
+    // Uses `memo` to cache results so diamond/convergent paths all get counted.
+    // `path` tracks the current recursion stack for cycle detection only.
+    const walkReachable = (
+      startId: string,
+      adj: Map<string, string[]>,
+      targetType: string,
+    ): Set<string> => {
+      const live = new Set<string>();
+      const memo = new Map<string, boolean>();
 
-      let reachable = false;
-      for (const next of downstream.get(id) ?? []) {
-        if (canReachOutput(next, visited)) {
-          downstreamLive.add(id);
-          reachable = true;
+      const canReach = (id: string, path: Set<string>): boolean => {
+        if (memo.has(id)) return memo.get(id)!;
+        if (path.has(id)) return false;
+        path.add(id);
+
+        const blk = blockMap.get(id);
+        if (!blk) {
+          memo.set(id, false);
+          path.delete(id);
+          return false;
         }
-      }
-      return reachable;
-    };
-    canReachOutput(selectedBlockId, new Set());
-
-    // Walk upstream from selected block, collecting all paths that reach an input.
-    const upstreamLive = new Set<string>();
-    const canReachInput = (id: string, visited: Set<string>): boolean => {
-      if (visited.has(id)) return false;
-      visited.add(id);
-      const blk = blockMap.get(id);
-      if (!blk) return false;
-      if (blk.type === 'input') {
-        upstreamLive.add(id);
-        return true;
-      }
-      if (id !== selectedBlockId && isMuted(id)) return false;
-
-      let reachable = false;
-      for (const prev of upstream.get(id) ?? []) {
-        if (canReachInput(prev, visited)) {
-          upstreamLive.add(id);
-          reachable = true;
+        if (blk.type === targetType) {
+          live.add(id);
+          memo.set(id, true);
+          path.delete(id);
+          return true;
         }
-      }
-      return reachable;
+        if (id !== startId && isMuted(id)) {
+          memo.set(id, false);
+          path.delete(id);
+          return false;
+        }
+
+        let reachable = false;
+        for (const next of adj.get(id) ?? []) {
+          if (canReach(next, path)) {
+            live.add(id);
+            reachable = true;
+          }
+        }
+        memo.set(id, reachable);
+        path.delete(id);
+        return reachable;
+      };
+
+      canReach(startId, new Set());
+      return live;
     };
-    canReachInput(selectedBlockId, new Set());
+
+    const downstreamLive = walkReachable(selectedBlockId, downstream, 'output');
+    const upstreamLive = walkReachable(selectedBlockId, upstream, 'input');
 
     // A connection is live if both endpoints are on the combined live route
     const allLive = new Set([...downstreamLive, ...upstreamLive]);

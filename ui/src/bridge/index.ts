@@ -448,6 +448,7 @@ export function initBridge(): void {
         pluginId: r.pluginId ? String(r.pluginId) : undefined,
         pluginName: r.pluginName ? String(r.pluginName) : undefined,
         pluginFormat: r.pluginFormat ? String(r.pluginFormat) : undefined,
+        pluginMissing: r.pluginMissing ? Boolean(r.pluginMissing) : undefined,
         mix: r.mix !== undefined ? Number(r.mix) : undefined,
         balance: r.balance !== undefined ? Number(r.balance) : undefined,
         level: r.level !== undefined ? Number(r.level) : undefined,

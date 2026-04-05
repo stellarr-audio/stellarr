@@ -206,6 +206,7 @@ void StellarrBridge::handleSetBlockPlugin(const juce::var& json)
     detail->setProperty("pluginName", pluginName);
     detail->setProperty("pluginFormat", pluginBlock->getPluginFormat());
     detail->setProperty("hasEditor", true);
+    detail->setProperty("pluginMissing", false);
     emitToJs("blockPluginSet", detail);
 }
 
@@ -300,6 +301,12 @@ void StellarrBridge::handlePasteBlock(const juce::var& json)
                 {
                     pluginBlock->setPlugin(std::move(instance), pluginId);
                     pluginBlock->restorePluginState();
+                }
+                else
+                {
+                    pluginBlock->setPluginMissing(true);
+                    auto savedName = clipObj->getProperty("pluginName").toString();
+                    pluginBlock->setMissingPluginName(savedName.isNotEmpty() ? savedName : pluginId);
                 }
             }
         }

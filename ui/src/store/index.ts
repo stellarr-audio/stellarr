@@ -20,6 +20,7 @@ export interface GridBlock {
   bypassed?: boolean;
   bypassMode?: string;
   hasEditor?: boolean;
+  pluginMissing?: boolean;
   numStates?: number;
   activeStateIndex?: number;
   dirtyStates?: number[];
@@ -239,7 +240,9 @@ export const useStore = create<StellarrState>((set) => ({
   setBlockPlugin: (blockId, pluginId, pluginName, pluginFormat, hasEditor) =>
     set((s) => ({
       blocks: s.blocks.map((b) =>
-        b.id === blockId ? { ...b, pluginId, pluginName, pluginFormat, hasEditor } : b,
+        b.id === blockId
+          ? { ...b, pluginId, pluginName, pluginFormat, hasEditor, pluginMissing: false }
+          : b,
       ),
     })),
 

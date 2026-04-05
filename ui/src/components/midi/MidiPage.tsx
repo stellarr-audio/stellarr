@@ -134,6 +134,7 @@ export function MidiPage() {
           target={editMapping.target}
           blockId={editMapping.blockId}
           existingIndex={editIndex ?? undefined}
+          programChange={editMapping.cc === -1}
         />
       )}
     </div>

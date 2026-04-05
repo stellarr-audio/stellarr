@@ -7,3 +7,4 @@
 - [Tuner](06-tuner.md)
 - [Presets, Scenes & States](07-presets-scenes-states.md)
 - [System](08-system.md)
+- [Privacy & Telemetry](09-privacy.md)

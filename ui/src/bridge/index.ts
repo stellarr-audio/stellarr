@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/browser';
 import { useStore } from '../store';
 import type {
   GridBlock,
@@ -257,6 +258,14 @@ export function requestSetTunerEnabled(enabled: boolean): void {
 
 export function requestScanPlugins(): void {
   sendEvent('scanPlugins', '');
+}
+
+export function requestGetTelemetryEnabled(): void {
+  sendEvent('getTelemetryEnabled', '');
+}
+
+export function requestSetTelemetryEnabled(enabled: boolean): void {
+  sendEvent('setTelemetryEnabled', JSON.stringify({ enabled }));
 }
 
 export function requestPickScanDirectory(): void {
@@ -587,6 +596,27 @@ export function initBridge(): void {
   juce.backend.addEventListener('sessionSaved', () => {
     useStore.getState().setJustSaved(true);
     setTimeout(() => useStore.getState().setJustSaved(false), 1200);
+  });
+
+  juce.backend.addEventListener('telemetryState', (detail: unknown) => {
+    const d = asRecord(detail);
+    const enabled = Boolean(d.enabled);
+    const wasEnabled = useStore.getState().telemetryEnabled;
+    useStore.getState().setTelemetryEnabled(enabled);
+
+    const dsn = import.meta.env.VITE_SENTRY_DSN as string | undefined;
+    if (enabled && dsn && !Sentry.getClient()) {
+      Sentry.init({
+        dsn,
+        release: `stellarr@${import.meta.env.VITE_APP_VERSION ?? 'dev'}`,
+        environment: (import.meta.env.VITE_SENTRY_ENV as string) ?? 'development',
+      });
+
+      // Verify the pipeline works on first opt-in
+      if (!wasEnabled) {
+        Sentry.captureMessage('Telemetry enabled', 'info');
+      }
+    }
   });
 
   bridgeReady = true;

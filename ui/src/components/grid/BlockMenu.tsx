@@ -10,11 +10,12 @@ const menuItems = [
 interface Props {
   open: boolean;
   onSelect: (type: string) => void;
+  onPaste?: () => void;
   onClose: () => void;
   children: React.ReactNode;
 }
 
-export function BlockMenu({ open, onSelect, onClose, children }: Props) {
+export function BlockMenu({ open, onSelect, onPaste, onClose, children }: Props) {
   return (
     <DropdownMenu.Root
       open={open}
@@ -35,6 +36,14 @@ export function BlockMenu({ open, onSelect, onClose, children }: Props) {
               {item.label}
             </DropdownMenu.Item>
           ))}
+          {onPaste && (
+            <>
+              <DropdownMenu.Separator className={styles.separator} />
+              <DropdownMenu.Item onSelect={onPaste} className={styles.item}>
+                Paste
+              </DropdownMenu.Item>
+            </>
+          )}
         </DropdownMenu.Content>
       </DropdownMenu.Portal>
     </DropdownMenu.Root>

@@ -134,6 +134,34 @@
   text-transform: uppercase;
 }
 
+.privacyRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0.75rem;
+  background: var(--color-cell);
+  border: 1px solid var(--color-border);
+}
+
+.privacyInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.privacyLabel {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.privacyDescription {
+  font-size: 0.85rem;
+  color: var(--color-muted);
+  max-width: 400px;
+  line-height: 1.4;
+}
+
 .infoPanel {
   width: 280px;
   flex-shrink: 0;

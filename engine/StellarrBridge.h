@@ -3,6 +3,7 @@
 #include <juce_gui_extra/juce_gui_extra.h>
 #include <map>
 #include <vector>
+#include "Telemetry.h"
 
 class StellarrProcessor;
 namespace stellarr { class Block; class PluginBlock; }
@@ -63,6 +64,10 @@ private:
     void handleGetScanDirectories();
     void handlePickScanDirectory();
     void handleRemoveScanDirectory(const juce::var& json);
+
+    // Telemetry
+    void handleGetTelemetryEnabled();
+    void handleSetTelemetryEnabled(const juce::var& json);
 
     // Preset management
     void handleNewSession();

@@ -6,6 +6,7 @@ import {
   BookmarkIcon,
   ChevronDownIcon,
   DotsHorizontalIcon,
+  Link1Icon,
 } from '@radix-ui/react-icons';
 import { useStore } from '../../store';
 import {
@@ -23,6 +24,8 @@ import {
 } from '../../bridge';
 import { SceneRenameDialog } from './SceneRenameDialog';
 import { ConfirmDialog } from './ConfirmDialog';
+import { MidiAssignDialog } from '../common/MidiAssignDialog';
+import { formatMidiLabel } from '../common/constants';
 import styles from './PresetBrowser.module.css';
 
 // -- Shared trigger content for preset/scene dropdowns ------------------------
@@ -88,6 +91,11 @@ export function PresetBrowser() {
       ? scenes[activeSceneIndex].name
       : 'No Scene';
 
+  const [midiOpen, setMidiOpen] = useState(false);
+  const mappings = useStore((s) => s.midiMappings);
+  const sceneMidiIndex = mappings.findIndex((m) => m.target === 'sceneSwitch');
+  const sceneMidi = sceneMidiIndex >= 0 ? mappings[sceneMidiIndex] : null;
+
   return (
     <div className={styles.container}>
       {/* Open */}
@@ -102,11 +110,28 @@ export function PresetBrowser() {
         currentPresetIndex={currentPresetIndex}
       />
 
-      {/* Scene dropdown */}
-      <SceneDropdown
-        currentName={currentSceneName}
-        scenes={scenes}
-        activeSceneIndex={activeSceneIndex}
+      {/* Scene dropdown + MIDI assign */}
+      <div className={styles.sceneGroup}>
+        <SceneDropdown
+          currentName={currentSceneName}
+          scenes={scenes}
+          activeSceneIndex={activeSceneIndex}
+          sceneMidi={sceneMidi}
+        />
+        <button
+          onClick={() => setMidiOpen(true)}
+          title={sceneMidi ? `Scene MIDI: ${formatMidiLabel(sceneMidi)}` : 'Assign MIDI to scenes'}
+          className={sceneMidi ? styles.sceneMidiBtnAssigned : styles.sceneMidiBtn}
+        >
+          <Link1Icon width={16} height={16} />
+        </button>
+      </div>
+      <MidiAssignDialog
+        open={midiOpen}
+        onOpenChange={setMidiOpen}
+        title="MIDI — Scene Switch"
+        target="sceneSwitch"
+        existingIndex={sceneMidiIndex >= 0 ? sceneMidiIndex : undefined}
       />
 
       {/* Save split button */}
@@ -276,10 +301,12 @@ function SceneDropdown({
   currentName,
   scenes,
   activeSceneIndex,
+  sceneMidi,
 }: {
   currentName: string;
   scenes: { name: string }[];
   activeSceneIndex: number;
+  sceneMidi: import('../../store').MidiMapping | null;
 }) {
   const [renameOpen, setRenameOpen] = useState(false);
   const [renamingIndex, setRenamingIndex] = useState(0);
@@ -326,6 +353,11 @@ function SceneDropdown({
                   }
                 >
                   {scene.name}
+                  {sceneMidi && (
+                    <span className={styles.midiTag}>
+                      {formatMidiLabel(sceneMidi)} val:{i}
+                    </span>
+                  )}
                 </MenuItem>
                 <DropdownMenu.Sub>
                   <DropdownMenu.SubTrigger className={styles.subTrigger}>

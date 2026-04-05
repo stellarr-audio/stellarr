@@ -114,18 +114,6 @@
   box-sizing: border-box;
 }
 
-.sliderHeader {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 0.2rem;
-}
-
-.sliderValue {
-  font-size: 0.75rem;
-  color: var(--color-secondary);
-  font-variant-numeric: tabular-nums;
-}
-
 .sendBtn {
   background: var(--color-primary);
   border: none;

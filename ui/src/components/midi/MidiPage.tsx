@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { useStore } from '../../store';
 import { Cross2Icon } from '@radix-ui/react-icons';
 import { MidiAssignDialog } from '../common/MidiAssignDialog';
+import { PROGRAM_CHANGE_CC } from '../common/constants';
 import {
   requestRemoveMidiMapping,
   requestClearMidiMappings,
@@ -134,7 +135,7 @@ export function MidiPage() {
           target={editMapping.target}
           blockId={editMapping.blockId}
           existingIndex={editIndex ?? undefined}
-          programChange={editMapping.cc === -1}
+          programChange={editMapping.cc === PROGRAM_CHANGE_CC}
         />
       )}
     </div>

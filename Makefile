@@ -1,12 +1,15 @@
-.PHONY: setup dev dev-ui dev-cpp debug debug-cpp release release-cpp run run-debug run-release test docs clean
+.PHONY: setup dev dev-ui dev-cpp debug debug-cpp release release-cpp run run-debug run-release test docs clean clear-cache
 
 .DEFAULT_GOAL := dev
 
 setup:
 	cd ui && npm install
 
-dev-ui: setup
-	cd ui && npm run build
+clear-cache:
+	rm -rf ~/Library/Caches/com.Stellarr.Stellarr ~/Library/WebKit/com.Stellarr.Stellarr
+
+dev-ui: setup clear-cache
+	cd ui && rm -rf dist && npm run build
 
 dev-cpp:
 	cmake -B build -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=OFF -DCMAKE_EXPORT_COMPILE_COMMANDS=ON

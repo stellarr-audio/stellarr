@@ -471,6 +471,10 @@ export function initBridge(): void {
     useStore.getState().syncGraph(blocks, connections);
   });
 
+  juce.backend.addEventListener('scanStarted', () => {
+    useStore.getState().setScanning(true);
+  });
+
   juce.backend.addEventListener('pluginListUpdated', (detail: unknown) => {
     const d = asRecord(detail);
     console.log('[Bridge] RX pluginListUpdated');

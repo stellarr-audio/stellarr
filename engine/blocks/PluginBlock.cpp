@@ -96,7 +96,7 @@ PluginBlockState PluginBlock::captureCurrentState() const
     return s;
 }
 
-void PluginBlock::applyState(const PluginBlockState& s)
+void PluginBlock::applyState(const PluginBlockState& s, bool suspend)
 {
     setMix(s.mix);
     setBalance(s.balance);
@@ -104,7 +104,12 @@ void PluginBlock::applyState(const PluginBlockState& s)
     setBypassed(s.bypassed);
     setBypassMode(s.bypassMode);
 
-    suspendAndScheduleResume();
+    // Cold path (plugin just loaded / preset restore): suspend audio processing
+    // to give the plugin time to finish background initialisation.
+    // Hot path (scene recall on a running plugin): skip suspension entirely —
+    // setStateInformation on a warm plugin is safe while audio runs.
+    if (suspend)
+        suspendAndScheduleResume();
 
     {
         juce::SpinLock::ScopedLockType lock(pluginLock);
@@ -139,7 +144,7 @@ bool PluginBlock::recallState(int index)
         states[static_cast<size_t>(activeStateIndex)] = captureCurrentState();
 
     activeStateIndex = index;
-    applyState(states[static_cast<size_t>(index)]);
+    applyState(states[static_cast<size_t>(index)], /* suspend */ false);
     return true;
 }
 
@@ -162,7 +167,7 @@ bool PluginBlock::deleteState(int index)
     else if (index < activeStateIndex)
         activeStateIndex--;
 
-    applyState(states[static_cast<size_t>(activeStateIndex)]);
+    applyState(states[static_cast<size_t>(activeStateIndex)], /* suspend */ false);
     return true;
 }
 

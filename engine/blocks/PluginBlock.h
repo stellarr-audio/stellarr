@@ -93,7 +93,7 @@ public:
     void markDirty() { dirtyStates.insert(activeStateIndex); }
 
     PluginBlockState captureCurrentState() const;
-    void applyState(const PluginBlockState& s);
+    void applyState(const PluginBlockState& s, bool suspend = true);
 
     void saveCurrentState()
     {
@@ -130,7 +130,7 @@ private:
         startTimer(resumeDelayMs);
     }
 
-    static constexpr int resumeDelayMs = 5000;
+    static constexpr int resumeDelayMs = 3000;
 
     mutable juce::SpinLock pluginLock;
     std::unique_ptr<juce::AudioPluginInstance> plugin;

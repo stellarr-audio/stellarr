@@ -40,6 +40,16 @@ public:
 
     void process(juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midi) override
     {
+        // Skip processing during warmup to let plugins finish background init
+        auto remaining = warmupSamplesRemaining.load(std::memory_order_relaxed);
+        if (remaining > 0)
+        {
+            warmupSamplesRemaining.store(
+                std::max(0, remaining - buffer.getNumSamples()),
+                std::memory_order_relaxed);
+            return;
+        }
+
         juce::SpinLock::ScopedTryLockType lock(pluginLock);
 
         if (lock.isLocked() && plugin != nullptr
@@ -120,6 +130,8 @@ private:
     bool pluginMissing = false;
     double currentSampleRate = 44100.0;
     int currentBlockSize = 512;
+    std::atomic<int> warmupSamplesRemaining { 0 };
+    static constexpr double warmupSeconds = 0.2;
 
     std::vector<PluginBlockState> states;
     int activeStateIndex = 0;

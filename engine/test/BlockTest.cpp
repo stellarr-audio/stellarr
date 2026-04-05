@@ -948,6 +948,284 @@ static bool testPluginMissingNotSerialised()
     return true;
 }
 
+// -- Mix parameter audio tests ------------------------------------------------
+
+static bool testMixFullyDry()
+{
+    printf("Test: mix=0 leaves buffer unchanged (fully dry)... ");
+
+    stellarr::GainBlock block;
+    block.prepareToPlay(kSampleRate, kBlockSize);
+    block.setGain(0.5f);
+    block.setMix(0.0f);
+
+    juce::AudioBuffer<float> buffer(2, kBlockSize);
+    generateSine(buffer);
+    juce::AudioBuffer<float> expected(buffer);
+    juce::MidiBuffer midi;
+    block.processBlock(buffer, midi);
+
+    if (!compareBuffers(buffer, expected, 1e-6f))
+    {
+        printf("FAIL\n");
+        return false;
+    }
+
+    block.releaseResources();
+    printf("PASS\n");
+    return true;
+}
+
+static bool testMixFullyWet()
+{
+    printf("Test: mix=1 applies full processing... ");
+
+    stellarr::GainBlock block;
+    block.prepareToPlay(kSampleRate, kBlockSize);
+    block.setGain(0.5f);
+    block.setMix(1.0f);
+
+    juce::AudioBuffer<float> buffer(2, kBlockSize);
+    generateSine(buffer);
+    juce::AudioBuffer<float> reference(buffer);
+    juce::MidiBuffer midi;
+    block.processBlock(buffer, midi);
+
+    if (!compareBuffers(buffer, reference, 0.01f, 0.5f))
+    {
+        printf("FAIL\n");
+        return false;
+    }
+
+    block.releaseResources();
+    printf("PASS\n");
+    return true;
+}
+
+static bool testMixHalfBlend()
+{
+    printf("Test: mix=0.5 blends dry and wet equally... ");
+
+    stellarr::GainBlock block;
+    block.prepareToPlay(kSampleRate, kBlockSize);
+    block.setGain(0.0f); // wet = silence
+    block.setMix(0.5f);
+
+    juce::AudioBuffer<float> buffer(2, kBlockSize);
+    generateSine(buffer);
+    juce::AudioBuffer<float> reference(buffer);
+    juce::MidiBuffer midi;
+    block.processBlock(buffer, midi);
+
+    // dry*0.5 + wet(0)*0.5 = 0.5 * original
+    if (!compareBuffers(buffer, reference, 0.01f, 0.5f))
+    {
+        printf("FAIL\n");
+        return false;
+    }
+
+    block.releaseResources();
+    printf("PASS\n");
+    return true;
+}
+
+// -- Balance parameter audio tests --------------------------------------------
+
+static bool testBalanceFullLeft()
+{
+    printf("Test: balance=-1 silences right channel... ");
+
+    stellarr::GainBlock block;
+    block.prepareToPlay(kSampleRate, kBlockSize);
+    block.setBalance(-1.0f);
+
+    juce::AudioBuffer<float> buffer(2, kBlockSize);
+    generateSine(buffer);
+    juce::MidiBuffer midi;
+    block.processBlock(buffer, midi);
+
+    // Right channel should be silent
+    float rightPeak = 0.0f;
+    for (int i = 0; i < buffer.getNumSamples(); ++i)
+        rightPeak = std::max(rightPeak, std::abs(buffer.getSample(1, i)));
+
+    if (rightPeak > 1e-6f)
+    {
+        fprintf(stderr, "  right channel not silent: peak=%f\n", static_cast<double>(rightPeak));
+        printf("FAIL\n");
+        return false;
+    }
+
+    // Left channel should still have signal
+    float leftPeak = 0.0f;
+    for (int i = 0; i < buffer.getNumSamples(); ++i)
+        leftPeak = std::max(leftPeak, std::abs(buffer.getSample(0, i)));
+
+    if (leftPeak < 0.01f)
+    {
+        fprintf(stderr, "  left channel unexpectedly silent\n");
+        printf("FAIL\n");
+        return false;
+    }
+
+    block.releaseResources();
+    printf("PASS\n");
+    return true;
+}
+
+static bool testBalanceFullRight()
+{
+    printf("Test: balance=+1 silences left channel... ");
+
+    stellarr::GainBlock block;
+    block.prepareToPlay(kSampleRate, kBlockSize);
+    block.setBalance(1.0f);
+
+    juce::AudioBuffer<float> buffer(2, kBlockSize);
+    generateSine(buffer);
+    juce::MidiBuffer midi;
+    block.processBlock(buffer, midi);
+
+    float leftPeak = 0.0f;
+    for (int i = 0; i < buffer.getNumSamples(); ++i)
+        leftPeak = std::max(leftPeak, std::abs(buffer.getSample(0, i)));
+
+    if (leftPeak > 1e-6f)
+    {
+        fprintf(stderr, "  left channel not silent: peak=%f\n", static_cast<double>(leftPeak));
+        printf("FAIL\n");
+        return false;
+    }
+
+    float rightPeak = 0.0f;
+    for (int i = 0; i < buffer.getNumSamples(); ++i)
+        rightPeak = std::max(rightPeak, std::abs(buffer.getSample(1, i)));
+
+    if (rightPeak < 0.01f)
+    {
+        fprintf(stderr, "  right channel unexpectedly silent\n");
+        printf("FAIL\n");
+        return false;
+    }
+
+    block.releaseResources();
+    printf("PASS\n");
+    return true;
+}
+
+static bool testBalanceCentre()
+{
+    printf("Test: balance=0 leaves both channels unchanged... ");
+
+    stellarr::GainBlock block;
+    block.prepareToPlay(kSampleRate, kBlockSize);
+    block.setBalance(0.0f);
+
+    juce::AudioBuffer<float> buffer(2, kBlockSize);
+    generateSine(buffer);
+    juce::AudioBuffer<float> expected(buffer);
+    juce::MidiBuffer midi;
+    block.processBlock(buffer, midi);
+
+    if (!compareBuffers(buffer, expected, 1e-6f))
+    {
+        printf("FAIL\n");
+        return false;
+    }
+
+    block.releaseResources();
+    printf("PASS\n");
+    return true;
+}
+
+// -- Hot/cold path tests ------------------------------------------------------
+
+static bool testApplyStateHotPathNoSuspend()
+{
+    printf("Test: applyState(suspend=false) does not suspend processing... ");
+
+    stellarr::PluginBlock block;
+    block.prepareToPlay(kSampleRate, kBlockSize);
+
+    auto state = block.captureCurrentState();
+    block.applyState(state, false);
+
+    if (block.isSuspended())
+    {
+        fprintf(stderr, "  block should not be suspended on hot path\n");
+        printf("FAIL\n");
+        return false;
+    }
+
+    block.releaseResources();
+    printf("PASS\n");
+    return true;
+}
+
+static bool testApplyStateColdPathSuspends()
+{
+    printf("Test: applyState(suspend=true) suspends processing... ");
+
+    stellarr::PluginBlock block;
+    block.prepareToPlay(kSampleRate, kBlockSize);
+
+    auto state = block.captureCurrentState();
+    block.applyState(state, true);
+
+    if (!block.isSuspended())
+    {
+        fprintf(stderr, "  block should be suspended on cold path\n");
+        printf("FAIL\n");
+        return false;
+    }
+
+    block.releaseResources();
+    printf("PASS\n");
+    return true;
+}
+
+static bool testRecallStateUsesHotPath()
+{
+    printf("Test: recallState uses hot path (no suspend)... ");
+
+    stellarr::PluginBlock block;
+    block.prepareToPlay(kSampleRate, kBlockSize);
+    block.addState();
+    block.recallState(0);
+
+    if (block.isSuspended())
+    {
+        fprintf(stderr, "  recallState should not suspend\n");
+        printf("FAIL\n");
+        return false;
+    }
+
+    block.releaseResources();
+    printf("PASS\n");
+    return true;
+}
+
+static bool testDeleteStateUsesHotPath()
+{
+    printf("Test: deleteState uses hot path (no suspend)... ");
+
+    stellarr::PluginBlock block;
+    block.prepareToPlay(kSampleRate, kBlockSize);
+    block.addState();
+    block.deleteState(1);
+
+    if (block.isSuspended())
+    {
+        fprintf(stderr, "  deleteState should not suspend\n");
+        printf("FAIL\n");
+        return false;
+    }
+
+    block.releaseResources();
+    printf("PASS\n");
+    return true;
+}
+
 // -- ToneGenerator test -------------------------------------------------------
 
 static bool testToneGeneratorOutput()
@@ -1039,6 +1317,22 @@ int main()
     if (!testPluginMissingDefaultFalse())   ++failures;
     if (!testPluginMissingSetAndClear())     ++failures;
     if (!testPluginMissingNotSerialised())   ++failures;
+
+    // Mix audio
+    if (!testMixFullyDry())             ++failures;
+    if (!testMixFullyWet())             ++failures;
+    if (!testMixHalfBlend())            ++failures;
+
+    // Balance audio
+    if (!testBalanceFullLeft())          ++failures;
+    if (!testBalanceFullRight())         ++failures;
+    if (!testBalanceCentre())            ++failures;
+
+    // Hot/cold path
+    if (!testApplyStateHotPathNoSuspend()) ++failures;
+    if (!testApplyStateColdPathSuspends()) ++failures;
+    if (!testRecallStateUsesHotPath())     ++failures;
+    if (!testDeleteStateUsesHotPath())     ++failures;
 
     // ToneGenerator
     if (!testToneGeneratorOutput())      ++failures;

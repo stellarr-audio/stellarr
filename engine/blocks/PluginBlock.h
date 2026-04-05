@@ -131,7 +131,7 @@ private:
     double currentSampleRate = 44100.0;
     int currentBlockSize = 512;
     std::atomic<int> warmupSamplesRemaining { 0 };
-    static constexpr double warmupSeconds = 0.2;
+    static constexpr double warmupSeconds = 1.0;
 
     // Brief mute after plugin load/state change to let background init finish
     void startWarmup()

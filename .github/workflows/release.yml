@@ -28,10 +28,14 @@ jobs:
         run: cd ui && npm ci
 
       - name: Build UI
+        env:
+          VITE_SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+          VITE_SENTRY_ENV: production
+          VITE_APP_VERSION: ${{ github.ref_name }}
         run: cd ui && npm run build
 
       - name: Configure CMake (Release)
-        run: cmake -B build-release -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF
+        run: cmake -B build-release -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DSTELLARR_SENTRY_DSN="${{ secrets.SENTRY_DSN }}"
 
       - name: Build engine
         run: cmake --build build-release --config Release -j4

@@ -15,6 +15,16 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(JUCE)
 
+set(SENTRY_BACKEND "crashpad" CACHE STRING "")
+set(SENTRY_BUILD_SHARED_LIBS OFF CACHE BOOL "")
+FetchContent_Declare(
+    sentry
+    GIT_REPOSITORY https://github.com/getsentry/sentry-native.git
+    GIT_TAG 0.13.4
+    GIT_SHALLOW TRUE
+)
+FetchContent_MakeAvailable(sentry)
+
 juce_add_plugin(Stellarr
     COMPANY_NAME "Stellarr"
     NEEDS_MIDI_INPUT TRUE
@@ -61,10 +71,15 @@ target_compile_definitions(Stellarr
         STELLARR_SAMPLES_DIR="${CMAKE_SOURCE_DIR}/assets/samples/ui/public/inputs"
 )
 
+if(DEFINED STELLARR_SENTRY_DSN)
+    target_compile_definitions(Stellarr PRIVATE STELLARR_SENTRY_DSN="${STELLARR_SENTRY_DSN}")
+endif()
+
 target_link_libraries(Stellarr
     PRIVATE
         juce::juce_audio_utils
         juce::juce_gui_extra
+        sentry::sentry
     PUBLIC
         juce::juce_recommended_config_flags
         juce::juce_recommended_lto_flags
@@ -75,7 +90,7 @@ if(BUILD_TESTING)
     enable_testing()
 
     set(TEST_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/engine)
-    set(TEST_LIBS Stellarr juce::juce_audio_utils juce::juce_gui_extra)
+    set(TEST_LIBS Stellarr juce::juce_audio_utils juce::juce_gui_extra sentry::sentry)
 
     function(add_stellarr_test NAME SOURCE)
         add_executable(${NAME} ${SOURCE})
@@ -96,4 +111,5 @@ if(BUILD_TESTING)
     add_stellarr_test(PresetFileTest   engine/test/PresetFileTest.cpp)
     add_stellarr_test(CopyPasteTest   engine/test/CopyPasteTest.cpp)
     add_stellarr_test(PeakLevelTest  engine/test/PeakLevelTest.cpp)
+    add_stellarr_test(TelemetryTest engine/test/TelemetryTest.cpp)
 endif()

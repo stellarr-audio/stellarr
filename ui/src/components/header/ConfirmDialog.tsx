@@ -1,22 +1,22 @@
 import { Dialog } from 'radix-ui';
-import styles from './SceneRenameDialog.module.css';
+import styles from './ConfirmDialog.module.css';
 
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  title?: string;
-  value: string;
-  onChange: (value: string) => void;
-  onSubmit: () => void;
+  title: string;
+  message: string;
+  confirmLabel?: string;
+  onConfirm: () => void;
 }
 
-export function SceneRenameDialog({
+export function ConfirmDialog({
   open,
   onOpenChange,
-  title = 'Rename Scene',
-  value,
-  onChange,
-  onSubmit,
+  title,
+  message,
+  confirmLabel = 'Delete',
+  onConfirm,
 }: Props) {
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
@@ -24,21 +24,13 @@ export function SceneRenameDialog({
         <Dialog.Overlay className={styles.overlay} />
         <Dialog.Content className={styles.content}>
           <Dialog.Title className={styles.title}>{title}</Dialog.Title>
-          <input
-            autoFocus
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') onSubmit();
-            }}
-            className={styles.input}
-          />
+          <p className={styles.message}>{message}</p>
           <div className={styles.buttonRow}>
             <button onClick={() => onOpenChange(false)} className={styles.cancelButton}>
               Cancel
             </button>
-            <button onClick={onSubmit} className={styles.renameButton}>
-              Rename
+            <button onClick={onConfirm} className={styles.confirmButton}>
+              {confirmLabel}
             </button>
           </div>
         </Dialog.Content>

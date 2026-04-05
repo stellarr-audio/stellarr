@@ -1,66 +1,93 @@
-# Stellarr
+<p align="center">
+  <img src="assets/icon.svg" alt="Stellarr" width="64" height="64" />
+</p>
 
-Open-source guitar signal processing application built with JUCE (C++) for the audio engine and React + TypeScript for the UI, connected via the JUCE WebView bridge.
+<h1 align="center">Stellarr</h1>
 
-## Prerequisites
+<p align="center">
+  Open-source signal processing for musicians.<br/>
+  Build custom audio chains with any VST3 or Audio Unit plugin you already own.
+</p>
 
-- CMake 3.24+
-- C++ compiler with C++20 support (Xcode Command Line Tools on macOS)
-- Node.js 18+
-- npm
+<p align="center">
+  <a href="docs/manual/01-introduction.md">Manual</a> &middot;
+  <a href="docs/CONTRIBUTING.md">Contributing</a> &middot;
+  <a href="LICENSE">AGPLv3 Licence</a>
+</p>
 
-## Quick Start
+---
+
+<!-- When you have a screenshot, uncomment this:
+<p align="center">
+  <img src="assets/screenshot.png" alt="Stellarr screenshot" width="800" />
+</p>
+-->
+
+## What is Stellarr?
+
+Stellarr is a virtual pedalboard and amp rack that you design yourself. Arrange plugins on a visual grid, connect them with drag-and-drop wiring, and switch between configurations instantly during a live performance.
+
+It was made by an AI and a human, together. It is free and open, forever. For the love of music, art and human expression.
+
+## Features
+
+**Signal chain on a grid** -- Place Input, Output, and Plugin blocks on a visual grid. Drag wires between them to build your chain. Splice new blocks into existing connections automatically.
+
+**Host any plugin** -- Load VST3 and Audio Unit plugins. Open their native editor, control their parameters, and blend them with per-block mix, balance, and level controls.
+
+**States and scenes** -- Save up to 16 parameter snapshots per plugin block. Group them into scenes that recall your entire rig in one click -- verse, chorus, solo, whatever you need.
+
+**Instant scene switching** -- Swap between scenes with no audio gap. Plugins stay loaded; only their settings change.
+
+**Full MIDI control** -- Map any CC to block bypass, mix, balance, level, scene switching, or tuner toggle. Use Program Change to switch presets. MIDI Learn auto-detects your controller.
+
+**Live signal tracing** -- Select a block to highlight its full end-to-end route in amber. Connections outside the active path fade so you can see exactly where your signal goes.
+
+**Built-in tuner** -- Chromatic tuner with large stage-readable display. Auto-mutes output while tuning.
+
+**Output metering** -- Real-time output level in dBFS with clipping detection.
+
+**Copy-paste blocks** -- Duplicate any block with its plugin, states, and parameters.
+
+**Presets** -- Save your entire rig (blocks, connections, scenes, states, MIDI mappings) as a `.stellarr` file.
+
+## Platform Support
+
+Stellarr currently targets **macOS on Apple Silicon** only. Windows and Linux support may come in the future.
+
+## Installation
+
+### Download
+
+Check the [Releases](../../releases) page for the latest macOS (Apple Silicon) build.
+
+### Build from source
+
+Requires macOS on Apple Silicon, CMake 3.24+, Xcode Command Line Tools, and Node.js 18+.
 
 ```
-make build    # install npm deps, build UI, configure + build C++
-make run      # launch the standalone app
-make test     # run audio processing tests
+git clone https://github.com/user/stellarr.git
+cd stellarr
+make dev       # build UI + engine
+make run       # launch the app
 ```
 
-The first build fetches JUCE via git and compiles the `juceaide` tool. This takes several minutes on the first run.
+The first build fetches JUCE via git and compiles the `juceaide` tool, which takes several minutes.
 
-## Project Structure
+See [Contributing](docs/CONTRIBUTING.md) for the full development guide.
 
-- `engine/` — C++ audio engine, plugin editor, and WebView bridge
-- `engine/test/` — Audio processing tests
-- `ui/` — React + TypeScript frontend (Vite, Zustand)
+## Documentation
 
-## Make Targets
+The [user manual](docs/manual/01-introduction.md) covers everything from quick start to MIDI mapping.
 
-| Target | Description |
-|---|---|
-| `make build` | Full build: npm install, UI build, CMake configure + compile |
-| `make build-ui` | Install npm deps and build the React app only |
-| `make build-cpp` | CMake configure and compile only |
-| `make test` | Build and run all tests |
-| `make run` | Build and launch the standalone app |
-| `make clean` | Remove build/, ui/dist/, and ui/node_modules/ |
-
-## Build Outputs
-
-The CMake build produces three plugin formats from the same codebase:
-
-- **Standalone** — runs as a regular macOS application
-- **VST3** — installed to `~/Library/Audio/Plug-Ins/VST3/`
-- **AU** — installed to `~/Library/Audio/Plug-Ins/Components/`
-
-## Development
-
-### UI hot reload
-
-Run the Vite dev server for rapid UI iteration:
+To browse it locally with navigation and search:
 
 ```
-cd ui
-npm run dev
+make docs
 ```
 
-Then rebuild the UI (`npm run build`) before launching the plugin to see changes in the WebView.
-
-### WebKit Inspector
-
-In debug builds, right-click anywhere in the plugin window and select "Inspect Element" to open the WebKit Inspector. Bridge activity is logged to the console with `[Bridge]` prefix.
+Then open [http://localhost:3001](http://localhost:3001).
 
 ## Licence
 
-MIT
+[GNU Affero General Public License v3.0](LICENSE)

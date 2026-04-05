@@ -17,6 +17,7 @@ interface Props {
   target: string;
   blockId?: string;
   existingIndex?: number;
+  programChange?: boolean;
 }
 
 export function MidiAssignDialog({
@@ -26,6 +27,7 @@ export function MidiAssignDialog({
   target,
   blockId,
   existingIndex,
+  programChange,
 }: Props) {
   const learning = useStore((s) => s.midiLearning);
   const mappings = useStore((s) => s.midiMappings);
@@ -47,6 +49,13 @@ export function MidiAssignDialog({
   }, [open, existing]);
 
   const submit = () => {
+    if (programChange) {
+      if (existingIndex !== undefined && existingIndex >= 0)
+        requestRemoveMidiMapping(existingIndex);
+      requestAddMidiMapping(parseInt(channel, 10), -1, target, blockId);
+      onOpenChange(false);
+      return;
+    }
     const cc = parseInt(ccValue, 10);
     if (isNaN(cc) || cc < 0 || cc > 127) return;
     if (existingIndex !== undefined && existingIndex >= 0) requestRemoveMidiMapping(existingIndex);
@@ -67,36 +76,38 @@ export function MidiAssignDialog({
           <Dialog.Title className={styles.title}>{title}</Dialog.Title>
 
           <div className={styles.fieldRow}>
-            {/* CC Number with Learn icon button */}
-            <div className={styles.fieldGroupFlex}>
-              <span className={styles.fieldLabel}>CC Number</span>
-              <div className={`${styles.ccInputWrap} ${learning ? styles.learning : ''}`}>
-                <button
-                  onClick={() => {
-                    if (learning) requestCancelMidiLearn();
-                    else requestStartMidiLearn(target, blockId);
-                  }}
-                  title={
-                    learning
-                      ? 'Cancel MIDI learn'
-                      : 'Learn — send a CC from your controller to auto-detect'
-                  }
-                  className={`${styles.learnButton} ${learning ? styles.learning : ''}`}
-                >
-                  <MixerHorizontalIcon width={16} height={16} />
-                </button>
-                <input
-                  autoFocus
-                  placeholder="0-127"
-                  value={ccValue}
-                  onChange={(e) => setCcValue(e.target.value.replace(/\D/g, '').slice(0, 3))}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') submit();
-                  }}
-                  className={styles.ccInput}
-                />
+            {/* CC Number with Learn icon button — hidden in PC mode */}
+            {!programChange && (
+              <div className={styles.fieldGroupFlex}>
+                <span className={styles.fieldLabel}>CC Number</span>
+                <div className={`${styles.ccInputWrap} ${learning ? styles.learning : ''}`}>
+                  <button
+                    onClick={() => {
+                      if (learning) requestCancelMidiLearn();
+                      else requestStartMidiLearn(target, blockId);
+                    }}
+                    title={
+                      learning
+                        ? 'Cancel MIDI learn'
+                        : 'Learn — send a CC from your controller to auto-detect'
+                    }
+                    className={`${styles.learnButton} ${learning ? styles.learning : ''}`}
+                  >
+                    <MixerHorizontalIcon width={16} height={16} />
+                  </button>
+                  <input
+                    autoFocus
+                    placeholder="0-127"
+                    value={ccValue}
+                    onChange={(e) => setCcValue(e.target.value.replace(/\D/g, '').slice(0, 3))}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') submit();
+                    }}
+                    className={styles.ccInput}
+                  />
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Channel */}
             <div className={styles.fieldGroup}>
@@ -125,6 +136,12 @@ export function MidiAssignDialog({
               </Select.Root>
             </div>
           </div>
+
+          {programChange && (
+            <p className={styles.pcNote}>
+              Program Change value maps directly to preset index in the active folder.
+            </p>
+          )}
 
           {/* Buttons: Clear (left) | Cancel + Save (right) */}
           <div className={styles.buttonRow}>

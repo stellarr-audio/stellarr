@@ -122,6 +122,12 @@
   outline: none;
 }
 
+.pcNote {
+  font-size: 0.8rem;
+  color: var(--color-muted);
+  margin: 0;
+}
+
 .buttonRow {
   display: flex;
   justify-content: space-between;

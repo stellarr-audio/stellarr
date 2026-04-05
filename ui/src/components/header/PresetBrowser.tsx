@@ -14,12 +14,15 @@ import {
   requestSaveSessionQuiet,
   requestLoadSession,
   requestLoadPresetByIndex,
+  requestRenamePreset,
+  requestDeletePreset,
   requestAddScene,
   requestRecallScene,
   requestRenameScene,
   requestDeleteScene,
 } from '../../bridge';
 import { SceneRenameDialog } from './SceneRenameDialog';
+import { ConfirmDialog } from './ConfirmDialog';
 import styles from './PresetBrowser.module.css';
 
 // -- Shared trigger content for preset/scene dropdowns ------------------------
@@ -153,37 +156,117 @@ function PresetDropdown({
   presetFiles: string[];
   currentPresetIndex: number;
 }) {
+  const [renameOpen, setRenameOpen] = useState(false);
+  const [renamingIndex, setRenamingIndex] = useState(0);
+  const [renameValue, setRenameValue] = useState('');
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deletingIndex, setDeletingIndex] = useState(0);
+
+  const startRename = (i: number) => {
+    setRenamingIndex(i);
+    setRenameValue(presetFiles[i].replace('.stellarr', ''));
+    setRenameOpen(true);
+  };
+
+  const submitRename = () => {
+    if (renameValue.trim()) {
+      requestRenamePreset(renamingIndex, renameValue.trim());
+    }
+    setRenameOpen(false);
+  };
+
+  const startDelete = (i: number) => {
+    setDeletingIndex(i);
+    setDeleteOpen(true);
+  };
+
+  const confirmDelete = () => {
+    requestDeletePreset(deletingIndex);
+    setDeleteOpen(false);
+  };
+
+  const deleteName =
+    deletingIndex >= 0 && deletingIndex < presetFiles.length
+      ? presetFiles[deletingIndex].replace('.stellarr', '')
+      : '';
+
   return (
-    <DropdownMenu.Root>
-      <DropdownMenu.Trigger className={styles.dropdownTrigger}>
-        <DropdownTriggerContent
-          label="Preset"
-          value={currentName}
-          hasValue={currentPresetIndex >= 0}
-        />
-      </DropdownMenu.Trigger>
-      <DropdownMenu.Portal>
-        <DropdownMenu.Content sideOffset={4} className={styles.dropdownContentScrollable}>
-          {presetFiles.length === 0 ? (
-            <div className={styles.emptyState}>No presets</div>
-          ) : (
-            presetFiles.map((file, i) => (
-              <MenuItem
-                key={i}
-                onSelect={() => requestLoadPresetByIndex(i)}
-                className={i === currentPresetIndex ? styles.menuItemActive : styles.menuItem}
-              >
-                {file.replace('.stellarr', '')}
-              </MenuItem>
-            ))
-          )}
-          <DropdownMenu.Separator className={styles.separator} />
-          <MenuItem onSelect={requestNewSession} className={styles.menuItemMuted}>
-            + New Preset
-          </MenuItem>
-        </DropdownMenu.Content>
-      </DropdownMenu.Portal>
-    </DropdownMenu.Root>
+    <>
+      <SceneRenameDialog
+        open={renameOpen}
+        onOpenChange={setRenameOpen}
+        title="Rename Preset"
+        value={renameValue}
+        onChange={setRenameValue}
+        onSubmit={submitRename}
+      />
+      <ConfirmDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        title="Delete Preset"
+        message={`Are you sure you want to delete "${deleteName}"? This cannot be undone.`}
+        onConfirm={confirmDelete}
+      />
+      <DropdownMenu.Root>
+        <DropdownMenu.Trigger className={styles.dropdownTrigger}>
+          <DropdownTriggerContent
+            label="Preset"
+            value={currentName}
+            hasValue={currentPresetIndex >= 0}
+          />
+        </DropdownMenu.Trigger>
+        <DropdownMenu.Portal>
+          <DropdownMenu.Content sideOffset={4} className={styles.dropdownContentScrollable}>
+            {presetFiles.length === 0 ? (
+              <div className={styles.emptyState}>No presets</div>
+            ) : (
+              presetFiles.map((file, i) => (
+                <div key={i} className={styles.sceneRow}>
+                  <MenuItem
+                    onSelect={() => requestLoadPresetByIndex(i)}
+                    className={
+                      i === currentPresetIndex ? styles.menuItemActiveFlex : styles.menuItemFlex
+                    }
+                  >
+                    {file.replace('.stellarr', '')}
+                  </MenuItem>
+                  <DropdownMenu.Sub>
+                    <DropdownMenu.SubTrigger className={styles.subTrigger}>
+                      <DotsHorizontalIcon width={14} height={14} />
+                    </DropdownMenu.SubTrigger>
+                    <DropdownMenu.Portal>
+                      <DropdownMenu.SubContent sideOffset={4} className={styles.subContent}>
+                        <MenuItem
+                          onSelect={(e) => {
+                            e.preventDefault();
+                            startRename(i);
+                          }}
+                        >
+                          Rename
+                        </MenuItem>
+                        <MenuItem
+                          onSelect={(e) => {
+                            e.preventDefault();
+                            startDelete(i);
+                          }}
+                          className={styles.menuItemDanger}
+                        >
+                          Delete
+                        </MenuItem>
+                      </DropdownMenu.SubContent>
+                    </DropdownMenu.Portal>
+                  </DropdownMenu.Sub>
+                </div>
+              ))
+            )}
+            <DropdownMenu.Separator className={styles.separator} />
+            <MenuItem onSelect={requestNewSession} className={styles.menuItemMuted}>
+              + New Preset
+            </MenuItem>
+          </DropdownMenu.Content>
+        </DropdownMenu.Portal>
+      </DropdownMenu.Root>
+    </>
   );
 }
 

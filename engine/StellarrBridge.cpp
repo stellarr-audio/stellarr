@@ -167,6 +167,8 @@ void StellarrBridge::handleEvent(const juce::String& eventName, const juce::var&
     else if (eventName == "loadSession")            handleLoadSession();
     else if (eventName == "pickPresetDirectory")    handlePickPresetDirectory();
     else if (eventName == "loadPresetByIndex")      handleLoadPresetByIndex(json);
+    else if (eventName == "renamePreset")           handleRenamePreset(json);
+    else if (eventName == "deletePreset")           handleDeletePreset(json);
     else if (eventName == "getPresetList")          handleGetPresetList();
 
     // Scenes

@@ -14,11 +14,11 @@ jobs:
   build-release:
     runs-on: macos-15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           submodules: true
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
@@ -42,7 +42,7 @@ jobs:
           zip -r "${GITHUB_WORKSPACE}/Stellarr-${GITHUB_REF_NAME}-macOS-arm64.zip" Stellarr.app
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: Stellarr-*.zip
           generate_release_notes: true

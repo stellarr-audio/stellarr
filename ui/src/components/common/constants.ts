@@ -8,5 +8,7 @@ export const TYPE_ABBREVIATIONS: Record<string, string> = {
 
 export function formatMidiLabel(mapping: MidiMapping | null): string {
   if (!mapping) return 'MIDI';
-  return `CC${mapping.cc}${mapping.channel >= 0 ? `/Ch${mapping.channel + 1}` : ''}`;
+  const ch = mapping.channel >= 0 ? `/Ch${mapping.channel + 1}` : '';
+  if (mapping.cc === -1) return `PC${ch}`;
+  return `CC${mapping.cc}${ch}`;
 }

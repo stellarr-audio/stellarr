@@ -91,8 +91,13 @@ export function PresetBrowser() {
       ? scenes[activeSceneIndex].name
       : 'No Scene';
 
-  const [midiOpen, setMidiOpen] = useState(false);
   const mappings = useStore((s) => s.midiMappings);
+
+  const [presetMidiOpen, setPresetMidiOpen] = useState(false);
+  const presetMidiIndex = mappings.findIndex((m) => m.target === 'presetChange');
+  const presetMidi = presetMidiIndex >= 0 ? mappings[presetMidiIndex] : null;
+
+  const [sceneMidiOpen, setSceneMidiOpen] = useState(false);
   const sceneMidiIndex = mappings.findIndex((m) => m.target === 'sceneSwitch');
   const sceneMidi = sceneMidiIndex >= 0 ? mappings[sceneMidiIndex] : null;
 
@@ -103,11 +108,29 @@ export function PresetBrowser() {
         <UploadIcon width={16} height={16} />
       </button>
 
-      {/* Preset dropdown */}
-      <PresetDropdown
-        currentName={currentName}
-        presetFiles={presetFiles}
-        currentPresetIndex={currentPresetIndex}
+      {/* Preset dropdown + MIDI assign */}
+      <div className={styles.sceneGroup}>
+        <PresetDropdown
+          currentName={currentName}
+          presetFiles={presetFiles}
+          currentPresetIndex={currentPresetIndex}
+          presetMidi={presetMidi}
+        />
+        <button
+          onClick={() => setPresetMidiOpen(true)}
+          title={presetMidi ? `Preset MIDI: PC` : 'Assign MIDI Program Change to presets'}
+          className={presetMidi ? styles.sceneMidiBtnAssigned : styles.sceneMidiBtn}
+        >
+          <Link1Icon width={16} height={16} />
+        </button>
+      </div>
+      <MidiAssignDialog
+        open={presetMidiOpen}
+        onOpenChange={setPresetMidiOpen}
+        title="MIDI — Preset Change"
+        target="presetChange"
+        existingIndex={presetMidiIndex >= 0 ? presetMidiIndex : undefined}
+        programChange
       />
 
       {/* Scene dropdown + MIDI assign */}
@@ -119,7 +142,7 @@ export function PresetBrowser() {
           sceneMidi={sceneMidi}
         />
         <button
-          onClick={() => setMidiOpen(true)}
+          onClick={() => setSceneMidiOpen(true)}
           title={sceneMidi ? `Scene MIDI: ${formatMidiLabel(sceneMidi)}` : 'Assign MIDI to scenes'}
           className={sceneMidi ? styles.sceneMidiBtnAssigned : styles.sceneMidiBtn}
         >
@@ -127,8 +150,8 @@ export function PresetBrowser() {
         </button>
       </div>
       <MidiAssignDialog
-        open={midiOpen}
-        onOpenChange={setMidiOpen}
+        open={sceneMidiOpen}
+        onOpenChange={setSceneMidiOpen}
         title="MIDI — Scene Switch"
         target="sceneSwitch"
         existingIndex={sceneMidiIndex >= 0 ? sceneMidiIndex : undefined}
@@ -176,10 +199,12 @@ function PresetDropdown({
   currentName,
   presetFiles,
   currentPresetIndex,
+  presetMidi,
 }: {
   currentName: string;
   presetFiles: string[];
   currentPresetIndex: number;
+  presetMidi: import('../../store').MidiMapping | null;
 }) {
   const [renameOpen, setRenameOpen] = useState(false);
   const [renamingIndex, setRenamingIndex] = useState(0);
@@ -254,6 +279,7 @@ function PresetDropdown({
                     }
                   >
                     {file.replace('.stellarr', '')}
+                    {presetMidi && <span className={styles.midiTag}>PC:{i}</span>}
                   </MenuItem>
                   <DropdownMenu.Sub>
                     <DropdownMenu.SubTrigger className={styles.subTrigger}>

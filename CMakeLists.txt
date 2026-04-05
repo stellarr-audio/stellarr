@@ -36,6 +36,10 @@ target_sources(Stellarr
         engine/bridge/SceneHandler.cpp
         engine/bridge/PresetHandler.cpp
         engine/bridge/MidiHandler.cpp
+        engine/blocks/Block.cpp
+        engine/blocks/PluginBlock.cpp
+        engine/blocks/InputBlock.cpp
+        engine/utils/ToneGenerator.cpp
         engine/MidiMapper.cpp
         engine/PluginManager.cpp
         engine/StellarrPlatform.mm

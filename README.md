@@ -80,6 +80,14 @@ make docs
 
 Then open [http://localhost:3001](http://localhost:3001).
 
+## Privacy
+
+Stellarr includes optional crash reporting powered by [Sentry](https://sentry.io). It is **off by default** and only activates when you explicitly opt in via the System tab.
+
+When enabled, only anonymous crash data is sent (stack traces, app version, OS version). No plugin names, preset content, audio data, file paths, or personal information is ever collected. If you don't opt in, no data leaves your machine.
+
+Full details in the [Privacy & Telemetry](https://stellarr.org/#/09-privacy) page.
+
 ## Licence
 
 [GNU Affero General Public License v3.0](LICENSE)

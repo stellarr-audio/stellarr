@@ -3,13 +3,16 @@ import {
   requestScanPlugins,
   requestPickScanDirectory,
   requestRemoveScanDirectory,
+  requestSetTelemetryEnabled,
 } from '../../bridge';
+import { ToggleSwitch } from '../common/ToggleSwitch';
 import styles from './Settings.module.css';
 
 export function Settings() {
   const scanDirectories = useStore((s) => s.scanDirectories);
   const availablePlugins = useStore((s) => s.availablePlugins);
   const scanning = useStore((s) => s.scanning);
+  const telemetryEnabled = useStore((s) => s.telemetryEnabled);
 
   return (
     <div className={styles.container}>
@@ -64,6 +67,23 @@ export function Settings() {
               ))}
             </div>
           )}
+        </Section>
+        {/* Privacy section */}
+        <Section title="Privacy">
+          <div className={styles.privacyRow}>
+            <div className={styles.privacyInfo}>
+              <span className={styles.privacyLabel}>Send crash reports</span>
+              <span className={styles.privacyDescription}>
+                Anonymous crash data only. No plugin names, presets, audio, or personal information.
+                Takes effect on next launch.
+              </span>
+            </div>
+            <ToggleSwitch
+              enabled={telemetryEnabled}
+              onToggle={() => requestSetTelemetryEnabled(!telemetryEnabled)}
+              title="Toggle crash reporting"
+            />
+          </div>
         </Section>
       </div>
 

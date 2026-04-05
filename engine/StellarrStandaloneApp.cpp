@@ -3,6 +3,7 @@
 #include <juce_audio_plugin_client/Standalone/juce_StandaloneFilterWindow.h>
 #include "StellarrEditor.h"
 #include "StellarrProcessor.h"
+#include "Telemetry.h"
 
 namespace juce
 {
@@ -81,6 +82,8 @@ public:
 
     void initialise(const String&) override
     {
+        stellarr::Telemetry::init(&appProperties);
+
         mainWindow.reset(createWindow());
 
         if (mainWindow != nullptr)
@@ -96,6 +99,7 @@ public:
     {
         mainWindow = nullptr;
         appProperties.saveIfNeeded();
+        stellarr::Telemetry::close();
     }
 
     void systemRequestedQuit() override

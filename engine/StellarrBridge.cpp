@@ -162,6 +162,10 @@ void StellarrBridge::handleEvent(const juce::String& eventName, const juce::var&
     else if (eventName == "pickScanDirectory")      handlePickScanDirectory();
     else if (eventName == "removeScanDirectory")    handleRemoveScanDirectory(json);
 
+    // Telemetry
+    else if (eventName == "getTelemetryEnabled")    handleGetTelemetryEnabled();
+    else if (eventName == "setTelemetryEnabled")    handleSetTelemetryEnabled(json);
+
     // Presets
     else if (eventName == "newSession")             handleNewSession();
     else if (eventName == "saveSession")            handleSaveSession();
@@ -454,6 +458,7 @@ void StellarrBridge::handleBridgeReady()
 {
     sendStartupProgress("Connecting to engine...", 10);
     sendWelcome();
+    handleGetTelemetryEnabled();
 
     juce::MessageManager::callAsync([this]()
     {
@@ -790,4 +795,26 @@ void StellarrBridge::sendScanDirectories()
     auto* detail = new juce::DynamicObject();
     detail->setProperty("directories", dirs);
     emitToJs("scanDirectoriesUpdated", detail);
+}
+
+// -- Telemetry ----------------------------------------------------------------
+
+void StellarrBridge::handleGetTelemetryEnabled()
+{
+    auto* detail = new juce::DynamicObject();
+    detail->setProperty("enabled", stellarr::Telemetry::isEnabled(appProperties));
+    emitToJs("telemetryState", detail);
+}
+
+void StellarrBridge::handleSetTelemetryEnabled(const juce::var& json)
+{
+    auto* obj = json.getDynamicObject();
+    if (obj == nullptr) return;
+
+    bool enabled = static_cast<bool>(obj->getProperty("enabled"));
+    stellarr::Telemetry::setEnabled(appProperties, enabled);
+
+    auto* detail = new juce::DynamicObject();
+    detail->setProperty("enabled", enabled);
+    emitToJs("telemetryState", detail);
 }

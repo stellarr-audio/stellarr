@@ -186,6 +186,7 @@ export function GridBlockComponent({ block }: Props) {
         className={styles.copyButton}
         onClick={(e) => {
           e.stopPropagation();
+          selectBlock(block.id);
           requestCopyBlock(block.id);
         }}
       >

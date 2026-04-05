@@ -18,14 +18,16 @@ void PluginBlock::setPlugin(std::unique_ptr<juce::AudioPluginInstance> newPlugin
         newPlugin->prepareToPlay(currentSampleRate, currentBlockSize);
     }
 
+    // Set warmup BEFORE the swap so the audio thread can't see the plugin
+    // without the warmup guard active
+    if (newPlugin != nullptr)
+        startWarmup();
+
     {
         juce::SpinLock::ScopedLockType lock(pluginLock);
         std::swap(plugin, newPlugin);
         pluginIdentifier = identifier;
     }
-
-    if (plugin != nullptr)
-        startWarmup();
 
     if (newPlugin != nullptr)
         newPlugin->releaseResources();

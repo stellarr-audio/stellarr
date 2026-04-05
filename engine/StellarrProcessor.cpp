@@ -62,8 +62,9 @@ void StellarrProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::Mid
 
     // Peak output level across all channels (absolute sample value)
     float peak = 0.0f;
-    for (int ch = 0; ch < buffer.getNumChannels(); ++ch)
-        peak = juce::jmax(peak, buffer.getMagnitude(ch, 0, buffer.getNumSamples()));
+    if (buffer.getNumSamples() > 0)
+        for (int ch = 0; ch < buffer.getNumChannels(); ++ch)
+            peak = juce::jmax(peak, buffer.getMagnitude(ch, 0, buffer.getNumSamples()));
     outputPeakLevel.store(peak, std::memory_order_relaxed);
 }
 

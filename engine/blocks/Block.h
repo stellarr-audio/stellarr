@@ -76,6 +76,7 @@ public:
     ~Block() override = default;
 
     const juce::Uuid& getBlockId() const { return blockId; }
+    void regenerateBlockId() { blockId = juce::Uuid(); }
     virtual BlockType getBlockType() const = 0;
 
     int getNumAudioInputs() const  { return getTotalNumInputChannels(); }

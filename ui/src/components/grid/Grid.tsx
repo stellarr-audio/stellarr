@@ -3,7 +3,9 @@ import { useStore } from '../../store';
 import {
   requestAddBlock,
   requestAddConnection,
+  requestCopyBlock,
   requestMoveBlock,
+  requestPasteBlock,
   requestToggleBlockBypass,
 } from '../../bridge';
 import { GridBlockComponent } from './GridBlock';
@@ -23,9 +25,10 @@ export function Grid() {
 
   const [hoveredCell, setHoveredCell] = useState<{ col: number; row: number } | null>(null);
 
-  // Space key toggles bypass on the selected block
+  // Keyboard shortcuts: Space (bypass), Cmd/Ctrl+C (copy), Cmd/Ctrl+V (paste)
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
+      // Space: toggle bypass on selected block
       if (e.code === 'Space' && selectedBlockId) {
         e.preventDefault();
         const block = useStore.getState().blocks.find((b) => b.id === selectedBlockId);
@@ -33,11 +36,52 @@ export function Grid() {
           useStore.getState().setBlockBypassed(selectedBlockId, !block.bypassed);
           requestToggleBlockBypass(selectedBlockId);
         }
+        return;
+      }
+
+      const mod = e.metaKey || e.ctrlKey;
+      if (!mod) return;
+
+      // Cmd/Ctrl+C: copy selected block
+      if (e.key === 'c' && selectedBlockId) {
+        e.preventDefault();
+        requestCopyBlock(selectedBlockId);
+      }
+
+      // Cmd/Ctrl+V: paste into nearest empty cell
+      if (e.key === 'v') {
+        const { clipboardBlockType, blocks, grid: g } = useStore.getState();
+        if (!clipboardBlockType) return;
+        e.preventDefault();
+
+        const occupied = new Set(blocks.map((b) => `${b.col},${b.row}`));
+
+        // Start searching from one cell right of the selected block
+        const source = blocks.find((b) => b.id === selectedBlockId);
+        const startCol = source ? source.col + 1 : 0;
+        const startRow = source ? source.row : 0;
+
+        // Diamond search outward for nearest empty cell
+        let target: { col: number; row: number } | null = null;
+        for (let dist = 0; dist < Math.max(g.columns, g.rows) && !target; dist++) {
+          for (let dr = -dist; dr <= dist && !target; dr++) {
+            for (let dc = -dist; dc <= dist && !target; dc++) {
+              if (Math.abs(dr) !== dist && Math.abs(dc) !== dist) continue;
+              const c = startCol + dc;
+              const r = startRow + dr;
+              if (c < 0 || c >= g.columns || r < 0 || r >= g.rows) continue;
+              if (!occupied.has(`${c},${r}`)) target = { col: c, row: r };
+            }
+          }
+        }
+
+        if (target) requestPasteBlock(target.col, target.row);
       }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
   }, [selectedBlockId]);
+
   const [menuCell, setMenuCell] = useState<{ col: number; row: number } | null>(null);
 
   const occupiedSet = new Set(blocks.map((b) => `${b.col},${b.row}`));

@@ -94,6 +94,8 @@ juce::var StellarrBridge::serialiseSession() const
 
 void StellarrBridge::clearGraph()
 {
+    // Close plugin editor windows first — removeBlock deletes the processor,
+    // which would leave dangling window references.
     for (auto& [blockId, nodeId] : blockNodeMap)
     {
         if (auto* node = processor->getGraph().getNodeForId(nodeId))
@@ -101,6 +103,7 @@ void StellarrBridge::clearGraph()
                 pluginBlock->closePluginEditor();
     }
 
+    // Copy the map — removeBlock invalidates iterators on the original.
     auto ids = blockNodeMap;
     for (auto& [blockId, nodeId] : ids)
         processor->removeBlock(nodeId);

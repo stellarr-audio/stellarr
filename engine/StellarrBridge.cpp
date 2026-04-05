@@ -57,6 +57,8 @@ void StellarrBridge::handleEvent(const juce::String& eventName, const juce::var&
     else if (eventName == "removeConnection")       handleRemoveConnection(json);
     else if (eventName == "setBlockPlugin")         handleSetBlockPlugin(json);
     else if (eventName == "openPluginEditor")       handleOpenPluginEditor(json);
+    else if (eventName == "copyBlock")              handleCopyBlock(json);
+    else if (eventName == "pasteBlock")             handlePasteBlock(json);
     else if (eventName == "renameBlock" && processor != nullptr)
     {
         auto* obj = json.getDynamicObject();

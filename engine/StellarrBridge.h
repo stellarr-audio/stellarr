@@ -39,6 +39,7 @@ public:
 
 private:
     friend class PresetFileTestAccess;
+    friend class CopyPasteTestAccess;
     void handleEvent(const juce::String& eventName, const juce::var& payload);
     void handleBridgeReady();
     void sendStartupProgress(const juce::String& status, int progress);
@@ -53,6 +54,8 @@ private:
     void handleRemoveConnection(const juce::var& json);
     void handleSetBlockPlugin(const juce::var& json);
     void handleOpenPluginEditor(const juce::var& json);
+    void handleCopyBlock(const juce::var& json);
+    void handlePasteBlock(const juce::var& json);
 
     // Plugin management event handlers
     void handleScanPlugins();
@@ -119,6 +122,7 @@ private:
 
     std::map<juce::String, juce::AudioProcessorGraph::NodeID> blockNodeMap;
     std::map<juce::String, std::pair<int, int>> blockPositions;
+    juce::var clipboardJson;
 
     // Preset directory and browsing
     juce::File presetDirectory;

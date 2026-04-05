@@ -209,6 +209,107 @@ void StellarrBridge::handleSetBlockPlugin(const juce::var& json)
     emitToJs("blockPluginSet", detail);
 }
 
+void StellarrBridge::handleCopyBlock(const juce::var& json)
+{
+    if (processor == nullptr) return;
+
+    auto* obj = json.getDynamicObject();
+    if (obj == nullptr) return;
+
+    auto blockId = obj->getProperty("blockId").toString();
+    auto nodeIt = blockNodeMap.find(blockId);
+    if (nodeIt == blockNodeMap.end()) return;
+
+    auto* node = processor->getGraph().getNodeForId(nodeIt->second);
+    if (node == nullptr) return;
+
+    auto* block = dynamic_cast<stellarr::Block*>(node->getProcessor());
+    if (block == nullptr) return;
+
+    clipboardJson = block->toJson();
+
+    auto* detail = new juce::DynamicObject();
+    detail->setProperty("type", stellarr::blockTypeToString(block->getBlockType()));
+    emitToJs("blockCopied", detail);
+}
+
+void StellarrBridge::handlePasteBlock(const juce::var& json)
+{
+    if (processor == nullptr) return;
+    if (!clipboardJson.getDynamicObject()) return;
+
+    auto* obj = json.getDynamicObject();
+    if (obj == nullptr) return;
+
+    auto col = static_cast<int>(obj->getProperty("col"));
+    auto row = static_cast<int>(obj->getProperty("row"));
+
+    auto* clipObj = clipboardJson.getDynamicObject();
+    auto type = clipObj->getProperty("type").toString();
+
+    std::unique_ptr<stellarr::Block> block;
+    if (type == "input")       block = std::make_unique<stellarr::InputBlock>();
+    else if (type == "output") block = std::make_unique<stellarr::OutputBlock>();
+    else if (type == "plugin" || type == "vst") block = std::make_unique<stellarr::PluginBlock>();
+    else return;
+
+    block->fromJson(clipboardJson);
+    block->regenerateBlockId();
+    block->resetToDefault();
+
+    auto blockId = block->getBlockId().toString();
+    auto blockName = block->getName();
+    auto nodeId = processor->addBlock(std::move(block));
+    if (nodeId.uid == 0) return;
+
+    blockNodeMap[blockId] = nodeId;
+    blockPositions[blockId] = {col, row};
+
+    if (type == "input")
+    {
+        processor->connectBlocks(processor->getAudioInputNodeId(), nodeId);
+        processor->getGraph().addConnection({
+            {processor->getMidiInputNodeId(), juce::AudioProcessorGraph::midiChannelIndex},
+            {nodeId, juce::AudioProcessorGraph::midiChannelIndex}
+        });
+    }
+    else if (type == "output")
+    {
+        processor->connectBlocks(nodeId, processor->getAudioOutputNodeId());
+        processor->getGraph().addConnection({
+            {nodeId, juce::AudioProcessorGraph::midiChannelIndex},
+            {processor->getMidiOutputNodeId(), juce::AudioProcessorGraph::midiChannelIndex}
+        });
+    }
+
+    // Restore plugin instance for plugin blocks
+    if (type == "plugin" || type == "vst")
+    {
+        auto pluginId = clipObj->getProperty("pluginId").toString();
+        if (pluginId.isNotEmpty())
+        {
+            auto* node = processor->getGraph().getNodeForId(nodeId);
+            if (auto* pluginBlock = dynamic_cast<stellarr::PluginBlock*>(node->getProcessor()))
+            {
+                juce::String errorMessage;
+                auto instance = processor->getPluginManager().createPluginInstance(
+                    pluginId, processor->getSampleRate(),
+                    processor->getBlockSize(), errorMessage);
+
+                if (instance != nullptr)
+                {
+                    pluginBlock->setPlugin(std::move(instance), pluginId);
+                    pluginBlock->restorePluginState();
+                }
+            }
+        }
+    }
+
+    // Full graph sync to ensure all block properties (mix, level, plugin info, etc.)
+    // are sent to the UI — a simple blockAdded event only carries basic fields.
+    sendGraphState();
+}
+
 void StellarrBridge::handleOpenPluginEditor(const juce::var& json)
 {
     if (processor == nullptr) return;

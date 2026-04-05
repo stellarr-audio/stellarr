@@ -155,6 +155,9 @@ interface StellarrState {
   removeConnection: (sourceId: string, destId: string) => void;
   syncGraph: (blocks: GridBlock[], connections: Connection[]) => void;
 
+  clipboardBlockType: string | null;
+  setClipboardBlockType: (type: string | null) => void;
+
   selectedBlockId: string | null;
   selectBlock: (blockId: string | null) => void;
 
@@ -206,6 +209,7 @@ export const useStore = create<StellarrState>((set) => ({
   midiMonitorEvents: [],
   midiMonitorEnabled: false,
   midiMappingActivity: {},
+  clipboardBlockType: null,
   selectedBlockId: null,
   draggingConnection: null,
 
@@ -352,6 +356,7 @@ export const useStore = create<StellarrState>((set) => ({
 
   syncGraph: (blocks, connections) => set({ blocks, connections }),
 
+  setClipboardBlockType: (type) => set({ clipboardBlockType: type }),
   selectBlock: (blockId) => set({ selectedBlockId: blockId }),
   setDraggingConnection: (state) => set({ draggingConnection: state }),
 }));

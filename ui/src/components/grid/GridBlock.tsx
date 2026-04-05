@@ -1,7 +1,17 @@
 import { useCallback, useRef } from 'react';
-import { Cross2Icon, ExclamationTriangleIcon, SpeakerLoudIcon } from '@radix-ui/react-icons';
+import {
+  CopyIcon,
+  Cross2Icon,
+  ExclamationTriangleIcon,
+  SpeakerLoudIcon,
+} from '@radix-ui/react-icons';
 import type { GridBlock as GridBlockData } from '../../store';
-import { requestRemoveBlock, requestRemoveConnection, requestOpenPluginEditor } from '../../bridge';
+import {
+  requestCopyBlock,
+  requestRemoveBlock,
+  requestRemoveConnection,
+  requestOpenPluginEditor,
+} from '../../bridge';
 import { useStore } from '../../store';
 import { colors } from '../common/colors';
 import { PALETTE } from '../options/ColorPicker';
@@ -170,6 +180,17 @@ export function GridBlockComponent({ block }: Props) {
       {block.type !== 'output' && (
         <Port side="output" blockId={block.id} connected={hasOutputConnection} />
       )}
+
+      {/* Copy button — visible on block hover via CSS */}
+      <div
+        className={styles.copyButton}
+        onClick={(e) => {
+          e.stopPropagation();
+          requestCopyBlock(block.id);
+        }}
+      >
+        <CopyIcon width={12} height={12} />
+      </div>
 
       {/* Remove button — visible on block hover via CSS */}
       <div

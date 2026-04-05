@@ -632,12 +632,16 @@ void StellarrBridge::sendGraphState()
 
 // -- System stats and tuner ---------------------------------------------------
 
-void StellarrBridge::sendSystemStats(double cpuPercent, double memoryMB, double totalMemoryMB)
+void StellarrBridge::sendSystemStats(double cpuPercent, float outputPeakLinear)
 {
+    auto peakDb = outputPeakLinear > 0.0001f
+        ? 20.0f * std::log10(outputPeakLinear)
+        : -60.0f;
+
     auto* detail = new juce::DynamicObject();
     detail->setProperty("cpu", cpuPercent);
-    detail->setProperty("memory", memoryMB);
-    detail->setProperty("totalMemory", totalMemoryMB);
+    detail->setProperty("outputLevelDb", static_cast<double>(peakDb));
+    detail->setProperty("clipping", outputPeakLinear > 1.0f);
     emitToJs("systemStats", detail);
 }
 

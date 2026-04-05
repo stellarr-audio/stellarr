@@ -25,7 +25,7 @@ public:
 
     juce::var serialiseSession() const;
     void restoreSession(const juce::var& session);
-    void sendSystemStats(double cpuPercent, double memoryMB, double totalMemoryMB);
+    void sendSystemStats(double cpuPercent, float outputPeakLinear);
     void sendTunerData();
     void sendMidiMonitorData();
     bool isTunerActive() const { return tunerActive; }

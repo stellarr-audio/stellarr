@@ -59,6 +59,12 @@ void StellarrProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::Mid
     auto elapsedSecs = juce::Time::highResolutionTicksToSeconds(end - start);
     auto bufferDuration = static_cast<double>(buffer.getNumSamples()) / getSampleRate();
     cpuUsagePercent.store(elapsedSecs / bufferDuration * 100.0, std::memory_order_relaxed);
+
+    // Peak output level across all channels (absolute sample value)
+    float peak = 0.0f;
+    for (int ch = 0; ch < buffer.getNumChannels(); ++ch)
+        peak = juce::jmax(peak, buffer.getMagnitude(ch, 0, buffer.getNumSamples()));
+    outputPeakLevel.store(peak, std::memory_order_relaxed);
 }
 
 

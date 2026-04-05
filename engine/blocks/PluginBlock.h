@@ -18,13 +18,15 @@ struct PluginBlockState
     BypassMode bypassMode = BypassMode::thru;
 };
 
-class PluginBlock final : public Block
+class PluginBlock final : public Block, private juce::Timer
 {
 public:
     PluginBlock() : Block("Plugin", 2, 2)
     {
         states.push_back({});
     }
+
+    ~PluginBlock() override { stopTimer(); }
 
     BlockType getBlockType() const override { return BlockType::plugin; }
 
@@ -40,16 +42,6 @@ public:
 
     void process(juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midi) override
     {
-        // Skip processing during warmup to let plugins finish background init
-        auto remaining = warmupSamplesRemaining.load(std::memory_order_relaxed);
-        if (remaining > 0)
-        {
-            warmupSamplesRemaining.store(
-                std::max(0, remaining - buffer.getNumSamples()),
-                std::memory_order_relaxed);
-            return;
-        }
-
         juce::SpinLock::ScopedTryLockType lock(pluginLock);
 
         if (lock.isLocked() && plugin != nullptr
@@ -121,6 +113,25 @@ public:
     void restorePluginState();
 
 private:
+    // Timer callback: resume audio processing after plugin background init
+    void timerCallback() override
+    {
+        stopTimer();
+        suspendProcessing(false);
+    }
+
+    // Suspend audio processing at the graph level and schedule a deferred resume.
+    // While suspended, the AudioProcessorGraph skips this node entirely —
+    // the audio thread never enters processBlock.
+    void suspendAndScheduleResume()
+    {
+        stopTimer();
+        suspendProcessing(true);
+        startTimer(resumeDelayMs);
+    }
+
+    static constexpr int resumeDelayMs = 2000;
+
     mutable juce::SpinLock pluginLock;
     std::unique_ptr<juce::AudioPluginInstance> plugin;
     std::unique_ptr<PluginWindow> pluginWindow;
@@ -130,16 +141,6 @@ private:
     bool pluginMissing = false;
     double currentSampleRate = 44100.0;
     int currentBlockSize = 512;
-    std::atomic<int> warmupSamplesRemaining { 0 };
-    static constexpr double warmupSeconds = 1.0;
-
-    // Brief mute after plugin load/state change to let background init finish
-    void startWarmup()
-    {
-        warmupSamplesRemaining.store(
-            static_cast<int>(currentSampleRate * warmupSeconds),
-            std::memory_order_relaxed);
-    }
 
     std::vector<PluginBlockState> states;
     int activeStateIndex = 0;

@@ -6,6 +6,11 @@ namespace stellarr
 void PluginBlock::setPlugin(std::unique_ptr<juce::AudioPluginInstance> newPlugin,
                             const juce::String& identifier)
 {
+    // Suspend at the graph level — guarantees the audio thread will not call
+    // processBlock on this node until we resume.
+    stopTimer();
+    suspendProcessing(true);
+
     pluginWindow = nullptr;
     pluginMissing = false;
     missingPluginName.clear();
@@ -18,11 +23,6 @@ void PluginBlock::setPlugin(std::unique_ptr<juce::AudioPluginInstance> newPlugin
         newPlugin->prepareToPlay(currentSampleRate, currentBlockSize);
     }
 
-    // Set warmup BEFORE the swap so the audio thread can't see the plugin
-    // without the warmup guard active
-    if (newPlugin != nullptr)
-        startWarmup();
-
     {
         juce::SpinLock::ScopedLockType lock(pluginLock);
         std::swap(plugin, newPlugin);
@@ -31,6 +31,12 @@ void PluginBlock::setPlugin(std::unique_ptr<juce::AudioPluginInstance> newPlugin
 
     if (newPlugin != nullptr)
         newPlugin->releaseResources();
+
+    // Schedule deferred resume to give plugin background threads time to finish
+    if (plugin != nullptr)
+        startTimer(resumeDelayMs);
+    else
+        suspendProcessing(false);
 }
 
 void PluginBlock::openPluginEditor()
@@ -98,6 +104,8 @@ void PluginBlock::applyState(const PluginBlockState& s)
     setBypassed(s.bypassed);
     setBypassMode(s.bypassMode);
 
+    suspendAndScheduleResume();
+
     {
         juce::SpinLock::ScopedLockType lock(pluginLock);
         if (plugin != nullptr && s.pluginStateBase64.isNotEmpty())
@@ -107,8 +115,6 @@ void PluginBlock::applyState(const PluginBlockState& s)
             plugin->setStateInformation(mb.getData(), static_cast<int>(mb.getSize()));
         }
     }
-
-    startWarmup();
 }
 
 bool PluginBlock::addState()
@@ -250,6 +256,8 @@ void PluginBlock::fromJson(const juce::var& json)
 
 void PluginBlock::restorePluginState()
 {
+    suspendAndScheduleResume();
+
     {
         juce::SpinLock::ScopedLockType lock(pluginLock);
         if (plugin != nullptr && pluginStateBase64.isNotEmpty())
@@ -260,8 +268,6 @@ void PluginBlock::restorePluginState()
             pluginStateBase64.clear();
         }
     }
-
-    startWarmup();
 }
 
 } // namespace stellarr

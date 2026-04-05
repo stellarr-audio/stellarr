@@ -66,7 +66,7 @@ Check the [Releases](../../releases) page for the latest macOS (Apple Silicon) b
 Requires macOS on Apple Silicon, CMake 3.24+, Xcode Command Line Tools, and Node.js 18+.
 
 ```
-git clone https://github.com/user/stellarr.git
+git clone https://github.com/stellarr-audio/stellarr.git
 cd stellarr
 make dev       # build UI + engine
 make run       # launch the app

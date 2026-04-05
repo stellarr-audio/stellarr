@@ -9,6 +9,7 @@ import styles from './Settings.module.css';
 export function Settings() {
   const scanDirectories = useStore((s) => s.scanDirectories);
   const availablePlugins = useStore((s) => s.availablePlugins);
+  const scanning = useStore((s) => s.scanning);
 
   return (
     <div className={styles.container}>
@@ -38,8 +39,8 @@ export function Settings() {
             <button className={styles.actionBtn} onClick={requestPickScanDirectory}>
               Add Directory
             </button>
-            <button className={styles.actionBtn} onClick={requestScanPlugins}>
-              Scan Now
+            <button className={styles.actionBtn} onClick={requestScanPlugins} disabled={scanning}>
+              {scanning ? 'Scanning...' : 'Scan Now'}
             </button>
           </div>
         </Section>

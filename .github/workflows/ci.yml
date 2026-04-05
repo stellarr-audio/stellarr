@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-and-test:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: ui/package-lock.json
+
+      - name: Install UI dependencies
+        run: cd ui && npm ci
+
+      - name: TypeScript check
+        run: cd ui && npx tsc --noEmit
+
+      - name: Build UI
+        run: cd ui && npm run build
+
+      - name: Configure CMake
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=ON
+
+      - name: Build engine
+        run: cmake --build build -j4
+
+      - name: Run tests
+        run: ctest --test-dir build --output-on-failure

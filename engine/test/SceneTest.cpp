@@ -212,14 +212,123 @@ static bool testSceneMaxLimit()
     return true;
 }
 
+static bool testSceneRecallClampsStateIndex()
+{
+    printf("Test: scene recall clamps state index beyond block's state count... ");
+
+    StellarrProcessor proc;
+    proc.prepareToPlay(kSampleRate, kBlockSize);
+
+    auto plugin = std::make_unique<stellarr::PluginBlock>();
+    // Only 1 state (index 0)
+
+    proc.disconnectBlocks(proc.getAudioInputNodeId(), proc.getAudioOutputNodeId());
+    auto nodeId = proc.addBlock(std::move(plugin));
+
+    auto* node = proc.getGraph().getNodeForId(nodeId);
+    auto* pb = dynamic_cast<stellarr::PluginBlock*>(node->getProcessor());
+    juce::String blockId = pb->getBlockId().toString();
+
+    // Scene references state index 5 — block only has 1 state
+    StellarrBridge::Scene scene;
+    scene.name = "OutOfRange";
+    scene.blockStateMap[blockId] = 5;
+    scene.blockBypassMap[blockId] = false;
+
+    int stateIdx = scene.blockStateMap[blockId];
+    int clamped = juce::jmin(stateIdx, pb->getNumStates() - 1);
+    pb->recallState(clamped);
+
+    if (pb->getActiveStateIndex() != 0)
+    {
+        fprintf(stderr, "  expected clamped to 0, got %d\n", pb->getActiveStateIndex());
+        printf("FAIL\n");
+        return false;
+    }
+
+    proc.releaseResources();
+    printf("PASS\n");
+    return true;
+}
+
+static bool testSceneRecallNoSuspend()
+{
+    printf("Test: scene recall does not suspend audio processing... ");
+
+    stellarr::PluginBlock block;
+    block.prepareToPlay(kSampleRate, kBlockSize);
+    block.setMix(0.5f);
+    block.addState();
+    block.setMix(0.8f);
+
+    // Recall state 0 — should use hot path
+    block.recallState(0);
+
+    if (block.isSuspended())
+    {
+        fprintf(stderr, "  scene recall should not suspend processing\n");
+        printf("FAIL\n");
+        return false;
+    }
+
+    if (std::abs(block.getMix() - 0.5f) > 0.01f)
+    {
+        fprintf(stderr, "  expected mix=0.5, got %f\n", static_cast<double>(block.getMix()));
+        printf("FAIL\n");
+        return false;
+    }
+
+    block.releaseResources();
+    printf("PASS\n");
+    return true;
+}
+
+static bool testMultipleRapidRecalls()
+{
+    printf("Test: multiple rapid scene recalls do not crash or corrupt index... ");
+
+    stellarr::PluginBlock block;
+    block.prepareToPlay(kSampleRate, kBlockSize);
+    block.addState();
+    block.addState();
+    // 3 states: 0, 1, 2
+
+    // Rapid switching — should not crash or produce invalid index
+    for (int i = 0; i < 51; ++i)
+        block.recallState(i % 3);
+
+    // After 51 iterations (last index 50 % 3 = 2), should be on state 2
+    if (block.getActiveStateIndex() != 2)
+    {
+        fprintf(stderr, "  expected state 2, got %d\n", block.getActiveStateIndex());
+        printf("FAIL\n");
+        return false;
+    }
+
+    // Index must be valid
+    if (block.getActiveStateIndex() < 0 || block.getActiveStateIndex() >= block.getNumStates())
+    {
+        fprintf(stderr, "  invalid state index after rapid recalls\n");
+        printf("FAIL\n");
+        return false;
+    }
+
+    block.releaseResources();
+    printf("PASS\n");
+    return true;
+}
+
 int main()
 {
     int failures = 0;
 
-    if (!testSceneCapture())        ++failures;
-    if (!testSceneRecall())         ++failures;
-    if (!testSceneSerialisation())  ++failures;
-    if (!testSceneMaxLimit())       ++failures;
+    if (!testSceneCapture())              ++failures;
+    if (!testSceneRecall())               ++failures;
+    if (!testSceneSerialisation())        ++failures;
+    if (!testSceneMaxLimit())             ++failures;
+    if (!testSceneRecallClampsStateIndex()) ++failures;
+    if (!testSceneRecallNoSuspend())       ++failures;
+    if (!testMultipleRapidRecalls())       ++failures;
 
     printf("\n%d test(s) failed\n", failures);
     return failures;

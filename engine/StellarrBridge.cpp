@@ -210,7 +210,11 @@ void StellarrBridge::handleEvent(const juce::String& eventName, const juce::var&
         if (samplesDir.isDirectory())
         {
             for (auto& f : samplesDir.findChildFiles(juce::File::findFiles, false, "*.wav"))
-                files.add(juce::var(f.getFileNameWithoutExtension()));
+            {
+                auto name = f.getFileNameWithoutExtension();
+                if (name.equalsIgnoreCase("placeholder")) continue; // skip submodule placeholder file
+                files.add(juce::var(name));
+            }
         }
 
         // Add "Synth (Default)" as first option

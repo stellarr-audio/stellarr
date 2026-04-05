@@ -12,16 +12,12 @@
 <p align="center">
   <a href="docs/manual/01-introduction.md">Manual</a> &middot;
   <a href="docs/CONTRIBUTING.md">Contributing</a> &middot;
-  <a href="LICENSE">AGPLv3 Licence</a>
+  <a href="LICENSE">Licence</a>
 </p>
 
----
-
-<!-- When you have a screenshot, uncomment this:
 <p align="center">
   <img src="assets/screenshot.png" alt="Stellarr screenshot" width="800" />
 </p>
--->
 
 ## What is Stellarr?
 
@@ -31,25 +27,16 @@ It was made by an AI and a human, together. It is free and open, forever. For th
 
 ## Features
 
-**Signal chain on a grid** -- Place Input, Output, and Plugin blocks on a visual grid. Drag wires between them to build your chain. Splice new blocks into existing connections automatically.
-
-**Host any plugin** -- Load VST3 and Audio Unit plugins. Open their native editor, control their parameters, and blend them with per-block mix, balance, and level controls.
-
-**States and scenes** -- Save up to 16 parameter snapshots per plugin block. Group them into scenes that recall your entire rig in one click -- verse, chorus, solo, whatever you need.
-
-**Instant scene switching** -- Swap between scenes with no audio gap. Plugins stay loaded; only their settings change.
-
-**Full MIDI control** -- Map any CC to block bypass, mix, balance, level, scene switching, or tuner toggle. Use Program Change to switch presets. MIDI Learn auto-detects your controller.
-
-**Live signal tracing** -- Select a block to highlight its full end-to-end route in amber. Connections outside the active path fade so you can see exactly where your signal goes.
-
-**Built-in tuner** -- Chromatic tuner with large stage-readable display. Auto-mutes output while tuning.
-
-**Output metering** -- Real-time output level in dBFS with clipping detection.
-
-**Copy-paste blocks** -- Duplicate any block with its plugin, states, and parameters.
-
-**Presets** -- Save your entire rig (blocks, connections, scenes, states, MIDI mappings) as a `.stellarr` file.
+- **Signal chain on a grid** -- Place Input, Output, and Plugin blocks on a visual grid. Drag wires between them to build your chain. Splice new blocks into existing connections automatically.
+- **Host any plugin** -- Load VST3 and Audio Unit plugins. Open their native editor, control their parameters, and blend them with per-block mix, balance, and level controls.
+- **States and scenes** -- Save up to 16 parameter snapshots per plugin block. Group them into scenes that recall your entire rig in one click -- verse, chorus, solo, whatever you need.
+- **Instant scene switching** -- Swap between scenes with no audio gap. Plugins stay loaded; only their settings change.
+- **Full MIDI control** -- Map any CC to block bypass, mix, balance, level, scene switching, or tuner toggle. Use Program Change to switch presets. MIDI Learn auto-detects your controller.
+- **Live signal tracing** -- Select a block to highlight its full end-to-end route in amber. Connections outside the active path fade so you can see exactly where your signal goes.
+- **Built-in tuner** -- Chromatic tuner with large stage-readable display. Auto-mutes output while tuning.
+- **Output metering** -- Real-time output level in dBFS with clipping detection.
+- **Copy-paste blocks** -- Duplicate any block with its plugin, states, and parameters.
+- **Presets** -- Save your entire rig (blocks, connections, scenes, states, MIDI mappings) as a `.stellarr` file.
 
 ## Platform Support
 

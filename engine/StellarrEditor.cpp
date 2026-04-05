@@ -125,13 +125,12 @@ void StellarrEditor::timerCallback()
 {
     ++timerTick;
 
-    // System stats at ~2Hz (every 10th tick)
-    if (timerTick % 10 == 0)
+    // System stats at ~4Hz (every 5th tick) — fast enough for responsive level meter
+    if (timerTick % 5 == 0)
     {
         auto& proc = dynamic_cast<StellarrProcessor&>(processor);
         bridge.sendSystemStats(proc.getCpuUsagePercent(),
-                               stellarrGetProcessMemoryMB(),
-                               stellarrGetTotalMemoryMB());
+                               proc.getOutputPeakLevel());
     }
 
     // Tuner data at ~20Hz

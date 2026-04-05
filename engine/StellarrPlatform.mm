@@ -1,6 +1,5 @@
 #import <Cocoa/Cocoa.h>
 #import <WebKit/WebKit.h>
-#import <mach/mach.h>
 #include "StellarrPlatform.h"
 
 void stellarrSetDarkAppearance()
@@ -39,23 +38,4 @@ void stellarrMakeWebViewInspectable(void* nativeView)
         [webView setValue:@NO forKey:@"drawsBackground"];
         webView.enclosingScrollView.backgroundColor = [NSColor colorWithRed:0.05 green:0.04 blue:0.1 alpha:1.0];
     }
-}
-
-double stellarrGetProcessMemoryMB()
-{
-    task_vm_info_data_t info;
-    mach_msg_type_number_t count = TASK_VM_INFO_COUNT;
-
-    if (task_info(mach_task_self(), TASK_VM_INFO,
-                  (task_info_t)&info, &count) == KERN_SUCCESS)
-    {
-        return static_cast<double>(info.phys_footprint) / (1024.0 * 1024.0);
-    }
-
-    return 0.0;
-}
-
-double stellarrGetTotalMemoryMB()
-{
-    return static_cast<double>([NSProcessInfo processInfo].physicalMemory) / (1024.0 * 1024.0);
 }

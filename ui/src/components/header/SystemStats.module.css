@@ -28,13 +28,22 @@
 .fill {
   height: 100%;
   border-radius: 3px;
-  transition: width 0.3s ease, background 0.3s ease;
+  transition: width 0.15s ease, background 0.15s ease;
 }
 
-.percent {
+.value {
   font-size: 1rem;
   font-weight: 600;
-  width: 3ch;
+  min-width: 4ch;
   text-align: right;
   font-variant-numeric: tabular-nums;
+}
+
+.clipping {
+  animation: clipFlash 0.3s ease;
+}
+
+@keyframes clipFlash {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
 }

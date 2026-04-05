@@ -58,6 +58,20 @@
   color: var(--color-warning);
 }
 
+.copyButton {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  color: var(--color-muted);
+  cursor: pointer;
+  z-index: 5;
+  display: none;
+}
+
+.copyButton:hover {
+  color: var(--color-text);
+}
+
 .removeButton {
   position: absolute;
   top: 3px;
@@ -68,6 +82,7 @@
   display: none;
 }
 
+.block:hover .copyButton,
 .block:hover .removeButton {
   display: block;
 }

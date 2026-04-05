@@ -40,6 +40,7 @@ public:
 private:
     friend class PresetFileTestAccess;
     friend class CopyPasteTestAccess;
+    friend class SessionTestAccess;
     void handleEvent(const juce::String& eventName, const juce::var& payload);
     void handleBridgeReady();
     void sendStartupProgress(const juce::String& status, int progress);

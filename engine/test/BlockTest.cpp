@@ -856,6 +856,98 @@ static bool testDisplayNameEmpty()
     return true;
 }
 
+// -- Missing plugin tests -----------------------------------------------------
+
+static bool testPluginMissingDefaultFalse()
+{
+    printf("Test: PluginBlock pluginMissing defaults to false... ");
+
+    stellarr::PluginBlock block;
+    if (block.isPluginMissing())
+    {
+        fprintf(stderr, "  expected false by default\n");
+        printf("FAIL\n");
+        return false;
+    }
+
+    printf("PASS\n");
+    return true;
+}
+
+static bool testPluginMissingSetAndClear()
+{
+    printf("Test: pluginMissing can be set and is cleared by setPlugin... ");
+
+    stellarr::PluginBlock block;
+    block.prepareToPlay(kSampleRate, kBlockSize);
+
+    block.setPluginMissing(true);
+    block.setMissingPluginName("My Missing Plugin");
+
+    if (!block.isPluginMissing())
+    {
+        fprintf(stderr, "  expected true after setPluginMissing(true)\n");
+        printf("FAIL\n");
+        return false;
+    }
+
+    if (block.getPluginName() != "My Missing Plugin")
+    {
+        fprintf(stderr, "  expected missingPluginName fallback, got '%s'\n",
+                block.getPluginName().toRawUTF8());
+        printf("FAIL\n");
+        return false;
+    }
+
+    // setPlugin with nullptr doesn't clear (no valid plugin)
+    // setPlugin with a valid plugin would clear — but we can't create a real instance in tests.
+    // Instead verify the flag is settable back to false.
+    block.setPluginMissing(false);
+    if (block.isPluginMissing())
+    {
+        fprintf(stderr, "  expected false after setPluginMissing(false)\n");
+        printf("FAIL\n");
+        return false;
+    }
+
+    block.releaseResources();
+    printf("PASS\n");
+    return true;
+}
+
+static bool testPluginMissingNotSerialised()
+{
+    printf("Test: pluginMissing is not persisted in JSON... ");
+
+    stellarr::PluginBlock block;
+    block.setPluginMissing(true);
+    block.setMissingPluginName("Gone Plugin");
+
+    auto json = block.toJson();
+    auto* obj = json.getDynamicObject();
+
+    if (obj->hasProperty("pluginMissing"))
+    {
+        fprintf(stderr, "  pluginMissing should not be in serialised JSON\n");
+        printf("FAIL\n");
+        return false;
+    }
+
+    // Restoring from JSON should default to false
+    stellarr::PluginBlock restored;
+    restored.fromJson(json);
+
+    if (restored.isPluginMissing())
+    {
+        fprintf(stderr, "  restored block should not be missing\n");
+        printf("FAIL\n");
+        return false;
+    }
+
+    printf("PASS\n");
+    return true;
+}
+
 // -- ToneGenerator test -------------------------------------------------------
 
 static bool testToneGeneratorOutput()
@@ -942,6 +1034,11 @@ int main()
     // Display name
     if (!testDisplayNameSerialisation()) ++failures;
     if (!testDisplayNameEmpty())         ++failures;
+
+    // Missing plugin
+    if (!testPluginMissingDefaultFalse())   ++failures;
+    if (!testPluginMissingSetAndClear())     ++failures;
+    if (!testPluginMissingNotSerialised())   ++failures;
 
     // ToneGenerator
     if (!testToneGeneratorOutput())      ++failures;

@@ -1,5 +1,5 @@
 import { useCallback, useRef } from 'react';
-import { Cross2Icon, SpeakerLoudIcon } from '@radix-ui/react-icons';
+import { Cross2Icon, ExclamationTriangleIcon, SpeakerLoudIcon } from '@radix-ui/react-icons';
 import type { GridBlock as GridBlockData } from '../../store';
 import { requestRemoveBlock, requestRemoveConnection, requestOpenPluginEditor } from '../../bridge';
 import { useStore } from '../../store';
@@ -96,7 +96,9 @@ export function GridBlockComponent({ block }: Props) {
     [block.id],
   );
 
-  const accentColor = block.blockColor || typeColors[block.type] || colors.secondary;
+  const accentColor = block.pluginMissing
+    ? colors.warning
+    : block.blockColor || typeColors[block.type] || colors.secondary;
 
   // Border must stay inline — it depends on multiple dynamic values (isSelected, bypassed, accentColor)
   const borderStyle = isSelected
@@ -114,7 +116,8 @@ export function GridBlockComponent({ block }: Props) {
       }}
       onClick={() => selectBlock(block.id)}
       onDoubleClick={() => {
-        if (block.type === 'plugin' && block.pluginId) requestOpenPluginEditor(block.id);
+        if (block.type === 'plugin' && block.pluginId && !block.pluginMissing)
+          requestOpenPluginEditor(block.id);
       }}
       className={styles.block}
       style={{
@@ -130,7 +133,10 @@ export function GridBlockComponent({ block }: Props) {
         {block.type === 'input' && block.testTone && (
           <SpeakerLoudIcon width={12} height={12} color={colors.green} />
         )}
-        {block.type === 'plugin' && block.pluginFormat && (
+        {block.pluginMissing && (
+          <ExclamationTriangleIcon width={14} height={14} color={colors.warning} />
+        )}
+        {block.type === 'plugin' && block.pluginFormat && !block.pluginMissing && (
           <span className={styles.formatTag}>
             {block.pluginFormat === 'AudioUnit' ? 'AU' : block.pluginFormat}
           </span>
@@ -147,7 +153,11 @@ export function GridBlockComponent({ block }: Props) {
       {/* Bottom region — subtitle */}
       <div className={styles.bottomRegion}>
         {block.type === 'plugin' && (
-          <div className={styles.pluginName}>{block.pluginName ?? 'No plugin'}</div>
+          <div className={block.pluginMissing ? styles.pluginNameMissing : styles.pluginName}>
+            {block.pluginMissing
+              ? `Missing: ${block.pluginName || 'Unknown'}`
+              : (block.pluginName ?? 'No plugin')}
+          </div>
         )}
       </div>
 

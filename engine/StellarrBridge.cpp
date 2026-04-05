@@ -535,6 +535,8 @@ void StellarrBridge::sendGraphState()
                     blockObj->setProperty("pluginId", pluginBlock->getPluginIdentifier());
                     blockObj->setProperty("pluginName", pluginBlock->getPluginName());
                     blockObj->setProperty("pluginFormat", pluginBlock->getPluginFormat());
+                    if (pluginBlock->isPluginMissing())
+                        blockObj->setProperty("pluginMissing", true);
                     blockObj->setProperty("numStates", pluginBlock->getNumStates());
                     blockObj->setProperty("activeStateIndex", pluginBlock->getActiveStateIndex());
                     juce::Array<juce::var> dirtyArr;

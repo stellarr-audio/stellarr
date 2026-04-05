@@ -1,5 +1,92 @@
 #include "TestUtils.h"
 #include "blocks/GainBlock.h"
+#include "blocks/PluginBlock.h"
+#include "../StellarrBridge.h"
+
+class SessionTestAccess
+{
+public:
+    static const auto& getBlockNodeMap(StellarrBridge& b) { return b.blockNodeMap; }
+};
+
+static bool testRestoreSessionMissingPlugin()
+{
+    printf("Test: restoreSession marks missing plugins... ");
+
+    StellarrProcessor proc;
+    proc.prepareToPlay(kSampleRate, kBlockSize);
+
+    StellarrBridge bridge;
+    bridge.setProcessor(&proc);
+
+    // Build a session JSON with a plugin block referencing a non-existent plugin
+    auto session = juce::JSON::parse(R"({
+        "version": 1,
+        "grid": {"columns": 12, "rows": 6},
+        "blocks": [
+            {
+                "id": "test-block-1",
+                "type": "plugin",
+                "name": "Plugin",
+                "col": 3,
+                "row": 2,
+                "pluginId": "nonexistent-plugin-id-12345",
+                "pluginName": "Deleted Amp Sim",
+                "states": [{"pluginState":"","mix":0.5,"balance":0.0,"level":0.0,"bypassed":false,"bypassMode":"thru"}],
+                "activeStateIndex": 0
+            }
+        ],
+        "connections": [],
+        "scenes": [],
+        "activeSceneIndex": -1
+    })");
+
+    bridge.restoreSession(session);
+
+    // Find the plugin block and check the missing flag
+    auto& map = SessionTestAccess::getBlockNodeMap(bridge);
+    if (map.empty())
+    {
+        printf("FAIL (no blocks restored)\n");
+        proc.releaseResources();
+        return false;
+    }
+
+    bool foundMissing = false;
+    juce::String missingName;
+    for (auto& [blockId, nodeId] : map)
+    {
+        if (auto* node = proc.getGraph().getNodeForId(nodeId))
+        {
+            if (auto* pb = dynamic_cast<stellarr::PluginBlock*>(node->getProcessor()))
+            {
+                if (pb->isPluginMissing())
+                {
+                    foundMissing = true;
+                    missingName = pb->getPluginName();
+                }
+            }
+        }
+    }
+
+    if (!foundMissing)
+    {
+        printf("FAIL (pluginMissing not set)\n");
+        proc.releaseResources();
+        return false;
+    }
+
+    if (missingName != "Deleted Amp Sim")
+    {
+        printf("FAIL (expected name 'Deleted Amp Sim', got '%s')\n", missingName.toRawUTF8());
+        proc.releaseResources();
+        return false;
+    }
+
+    proc.releaseResources();
+    printf("PASS\n");
+    return true;
+}
 
 static bool testDeserialisation()
 {
@@ -148,9 +235,10 @@ int main()
 {
     int failures = 0;
 
-    if (!testDeserialisation())        ++failures;
-    if (!testSessionRoundTrip())       ++failures;
-    if (!testSessionWithConnections()) ++failures;
+    if (!testRestoreSessionMissingPlugin()) ++failures;
+    if (!testDeserialisation())            ++failures;
+    if (!testSessionRoundTrip())           ++failures;
+    if (!testSessionWithConnections())     ++failures;
 
     printf("\n%d test(s) failed\n", failures);
     return failures;

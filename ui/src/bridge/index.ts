@@ -577,7 +577,7 @@ export function initBridge(): void {
 
   juce.backend.addEventListener('systemStats', (detail: unknown) => {
     const d = asRecord(detail);
-    useStore.getState().setSystemStats(Number(d.cpu), Number(d.memory), Number(d.totalMemory));
+    useStore.getState().setSystemStats(Number(d.cpu), Number(d.outputLevelDb), Boolean(d.clipping));
   });
 
   juce.backend.addEventListener('sessionSaved', () => {

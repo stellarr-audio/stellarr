@@ -84,9 +84,9 @@ interface StellarrState {
   testToneSamples: string[];
   testToneSample: string;
   cpuPercent: number;
-  memoryMB: number;
+  outputLevelDb: number;
+  outputClipping: boolean;
   justSaved: boolean;
-  totalMemoryMB: number;
   scenes: Scene[];
   activeSceneIndex: number;
   midiMappings: MidiMapping[];
@@ -138,7 +138,7 @@ interface StellarrState {
     dirtyStates: number[],
   ) => void;
   setPresetList: (directory: string, files: string[], currentIndex: number) => void;
-  setSystemStats: (cpu: number, memory: number, totalMemory: number) => void;
+  setSystemStats: (cpu: number, outputLevelDb: number, clipping: boolean) => void;
   setTestToneSamples: (samples: string[]) => void;
   setTestToneSample: (sample: string) => void;
   setJustSaved: (value: boolean) => void;
@@ -200,9 +200,9 @@ export const useStore = create<StellarrState>((set) => ({
   testToneSamples: [],
   testToneSample: 'Synth (Default)',
   cpuPercent: 0,
-  memoryMB: 0,
+  outputLevelDb: -60,
+  outputClipping: false,
   justSaved: false,
-  totalMemoryMB: 1,
   scenes: [],
   activeSceneIndex: -1,
   midiMappings: [],
@@ -291,8 +291,8 @@ export const useStore = create<StellarrState>((set) => ({
   setPresetList: (directory, files, currentIndex) =>
     set({ presetDirectory: directory, presetFiles: files, currentPresetIndex: currentIndex }),
 
-  setSystemStats: (cpu, memory, totalMemory) =>
-    set({ cpuPercent: cpu, memoryMB: memory, totalMemoryMB: totalMemory }),
+  setSystemStats: (cpu, outputLevelDb, clipping) =>
+    set({ cpuPercent: cpu, outputLevelDb, outputClipping: clipping }),
 
   setTestToneSamples: (samples) => set({ testToneSamples: samples }),
   setTestToneSample: (sample) => set({ testToneSample: sample }),

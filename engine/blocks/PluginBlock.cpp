@@ -24,11 +24,8 @@ void PluginBlock::setPlugin(std::unique_ptr<juce::AudioPluginInstance> newPlugin
         pluginIdentifier = identifier;
     }
 
-    // Give the plugin time to finish background init (e.g. convolution IR loading)
     if (plugin != nullptr)
-        warmupSamplesRemaining.store(
-            static_cast<int>(currentSampleRate * warmupSeconds),
-            std::memory_order_relaxed);
+        startWarmup();
 
     if (newPlugin != nullptr)
         newPlugin->releaseResources();
@@ -109,9 +106,7 @@ void PluginBlock::applyState(const PluginBlockState& s)
         }
     }
 
-    warmupSamplesRemaining.store(
-        static_cast<int>(currentSampleRate * warmupSeconds),
-        std::memory_order_relaxed);
+    startWarmup();
 }
 
 bool PluginBlock::addState()
@@ -264,10 +259,7 @@ void PluginBlock::restorePluginState()
         }
     }
 
-    // State restore can trigger background reloads (e.g. convolution IRs)
-    warmupSamplesRemaining.store(
-        static_cast<int>(currentSampleRate * warmupSeconds),
-        std::memory_order_relaxed);
+    startWarmup();
 }
 
 } // namespace stellarr

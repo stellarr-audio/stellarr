@@ -8,6 +8,7 @@ import {
   requestAddMidiMapping,
   requestRemoveMidiMapping,
 } from '../../bridge';
+import { PROGRAM_CHANGE_CC } from './constants';
 import styles from './MidiAssignDialog.module.css';
 
 interface Props {
@@ -52,7 +53,7 @@ export function MidiAssignDialog({
     if (programChange) {
       if (existingIndex !== undefined && existingIndex >= 0)
         requestRemoveMidiMapping(existingIndex);
-      requestAddMidiMapping(parseInt(channel, 10), -1, target, blockId);
+      requestAddMidiMapping(parseInt(channel, 10), PROGRAM_CHANGE_CC, target, blockId);
       onOpenChange(false);
       return;
     }

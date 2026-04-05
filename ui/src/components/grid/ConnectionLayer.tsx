@@ -1,4 +1,4 @@
-import type { RefObject } from 'react';
+import { type RefObject, useMemo } from 'react';
 import { useStore } from '../../store';
 import { colors } from '../common/colors';
 import { CELL_SIZE, GAP, outputPortX, inputPortX, portY, gridWidth, gridHeight } from './layout';
@@ -56,12 +56,14 @@ export function ConnectionLayer(_props: Props) {
   const dragging = useStore((s) => s.draggingConnection);
 
   const selectedBlockId = useStore((s) => s.selectedBlockId);
-  const blockMap = new Map(blocks.map((b) => [b.id, b]));
 
   // Find all connections on live routes (input→output) through the selected block.
-  // A block with bypassed=true + bypassMode="mute" is a dead end — signal stops there.
-  const liveConnections = new Set<number>();
-  if (selectedBlockId) {
+  // Memoised so the DFS only re-runs when blocks, connections, or selection change.
+  const liveConnections = useMemo(() => {
+    const live = new Set<number>();
+    if (!selectedBlockId) return live;
+
+    const bMap = new Map(blocks.map((b) => [b.id, b]));
     const downstream = new Map<string, string[]>();
     const upstream = new Map<string, string[]>();
     for (const c of connections) {
@@ -72,11 +74,11 @@ export function ConnectionLayer(_props: Props) {
     // A block with bypass mode "mute" silences both input and output,
     // effectively cutting the signal chain — treat as a dead end in route tracing.
     const isMuted = (id: string) => {
-      const b = blockMap.get(id);
+      const b = bMap.get(id);
       return b?.bypassed && b?.bypassMode === 'mute';
     };
 
-    // Memoized DFS: walk a direction collecting blocks that reach a target type.
+    // Memoised DFS: walk a direction collecting blocks that reach a target type.
     // Uses `memo` to cache results so diamond/convergent paths all get counted.
     // `path` tracks the current recursion stack for cycle detection only.
     const walkReachable = (
@@ -84,7 +86,7 @@ export function ConnectionLayer(_props: Props) {
       adj: Map<string, string[]>,
       targetType: string,
     ): Set<string> => {
-      const live = new Set<string>();
+      const reachable = new Set<string>();
       const memo = new Map<string, boolean>();
 
       const canReach = (id: string, path: Set<string>): boolean => {
@@ -92,14 +94,14 @@ export function ConnectionLayer(_props: Props) {
         if (path.has(id)) return false;
         path.add(id);
 
-        const blk = blockMap.get(id);
+        const blk = bMap.get(id);
         if (!blk) {
           memo.set(id, false);
           path.delete(id);
           return false;
         }
         if (blk.type === targetType) {
-          live.add(id);
+          reachable.add(id);
           memo.set(id, true);
           path.delete(id);
           return true;
@@ -110,33 +112,34 @@ export function ConnectionLayer(_props: Props) {
           return false;
         }
 
-        let reachable = false;
+        let found = false;
         for (const next of adj.get(id) ?? []) {
           if (canReach(next, path)) {
-            live.add(id);
-            reachable = true;
+            reachable.add(id);
+            found = true;
           }
         }
-        memo.set(id, reachable);
+        memo.set(id, found);
         path.delete(id);
-        return reachable;
+        return found;
       };
 
       canReach(startId, new Set());
-      return live;
+      return reachable;
     };
 
     const downstreamLive = walkReachable(selectedBlockId, downstream, 'output');
     const upstreamLive = walkReachable(selectedBlockId, upstream, 'input');
 
-    // A connection is live if both endpoints are on the combined live route
     const allLive = new Set([...downstreamLive, ...upstreamLive]);
     connections.forEach((conn, i) => {
-      if (allLive.has(conn.sourceId) && allLive.has(conn.destId)) liveConnections.add(i);
+      if (allLive.has(conn.sourceId) && allLive.has(conn.destId)) live.add(i);
     });
-  }
+    return live;
+  }, [blocks, connections, selectedBlockId]);
 
   const hasSelection = selectedBlockId !== null;
+  const blockMap = new Map(blocks.map((b) => [b.id, b]));
 
   const gw = gridWidth(grid.columns);
   const gh = gridHeight(grid.rows);

@@ -33,6 +33,15 @@ Instead of typing a CC number:
 4. Stellarr auto-detects the CC number and channel.
 5. Click **Save** to confirm.
 
+### From the Header Bar
+
+The **Preset** and **Scene** dropdowns each have a **Link icon** button on their right edge:
+
+- **Preset Link icon** -- Opens the MIDI assign dialog in **Program Change** mode. The CC field is hidden; the mapping responds to MIDI Program Change messages, where the PC value maps directly to the preset index in the active folder.
+- **Scene Link icon** -- Opens the MIDI assign dialog for scene switching. Assign a CC number, and the CC value selects the scene index (value 0 = first scene, value 1 = second, etc.).
+
+When a mapping is active, the Link icon turns **blue** to indicate it is assigned.
+
 ### What Can Be Mapped
 
 | Target | Description | CC Behaviour |
@@ -42,7 +51,7 @@ Instead of typing a CC number:
 | Block Balance | Stereo balance | CC 0--127 maps to L100--R100 |
 | Block Level | Output gain | CC 0--127 maps to -60 to +12 dB |
 | Scene Switch | Recall a scene | CC value = scene index |
-| Preset Change | Switch presets | Program Change message |
+| Preset Change | Switch presets | Program Change value = preset index |
 | Tuner Toggle | Enable/disable tuner | CC >= 64 = on, < 64 = off |
 
 ## MIDI Page
@@ -79,8 +88,8 @@ The monitor auto-activates when you open the MIDI tab and deactivates when you l
 Below the monitor is a **Send CC** panel for testing your mappings without hardware:
 
 1. Set the **CC#** (0--127).
-2. Set the **Channel** (1--16).
-3. Adjust the **Value** slider (0--127).
+2. Set the **Ch** (1--16).
+3. Set the **Value** (0--127).
 4. Click **Send**.
 
 The CC is injected into Stellarr's audio processing as if it came from a real MIDI device. The corresponding mapping's activity diamond will flash, and the parameter will change.

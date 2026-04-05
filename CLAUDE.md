@@ -35,6 +35,15 @@ When asked to review code (or variations like "pls review", "review and commit",
 - Build verification (`make build-ui` or `npx tsc --noEmit` for UI, `cmake --build` for engine)
 - Run all tests before committing (`ctest --test-dir build --output-on-failure`)
 
+## Documentation
+
+- User manual lives in `docs/manual/` as numbered Markdown files served via Docsify
+- When adding or significantly changing a user-facing feature, update the relevant manual page
+- Match the existing tone: concise, second-person, no jargon without explanation
+- Use New Zealand English spelling consistent with the rest of the project
+- Do not create new manual pages without being asked — prefer extending existing ones
+- Reference other pages with relative Markdown links (e.g., `[MIDI](05-midi.md)`)
+
 ## Build Commands
 
 - `make dev` — build UI + engine (no tests), clears WebView cache

@@ -1,0 +1,45 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  build-release:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: ui/package-lock.json
+
+      - name: Install UI dependencies
+        run: cd ui && npm ci
+
+      - name: Build UI
+        run: cd ui && npm run build
+
+      - name: Configure CMake (Release)
+        run: cmake -B build-release -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF
+
+      - name: Build engine
+        run: cmake --build build-release --config Release -j4
+
+      - name: Package app
+        run: |
+          cd build-release/Stellarr_artefacts/Release/Standalone
+          zip -r "${GITHUB_WORKSPACE}/Stellarr-${GITHUB_REF_NAME}-macOS-arm64.zip" Stellarr.app
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: Stellarr-*.zip
+          generate_release_notes: true

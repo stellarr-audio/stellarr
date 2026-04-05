@@ -158,6 +158,14 @@ export function requestLoadPresetByIndex(index: number): void {
   sendEvent('loadPresetByIndex', JSON.stringify({ index }));
 }
 
+export function requestRenamePreset(index: number, name: string): void {
+  sendEvent('renamePreset', JSON.stringify({ index, name }));
+}
+
+export function requestDeletePreset(index: number): void {
+  sendEvent('deletePreset', JSON.stringify({ index }));
+}
+
 export function requestSaveBlockState(blockId: string): void {
   sendEvent('saveBlockState', JSON.stringify({ blockId }));
 }

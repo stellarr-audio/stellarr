@@ -409,6 +409,79 @@ void StellarrBridge::handlePickPresetDirectory()
     });
 }
 
+void StellarrBridge::handleRenamePreset(const juce::var& json)
+{
+    auto* obj = json.getDynamicObject();
+    if (obj == nullptr) return;
+
+    auto index = static_cast<int>(obj->getProperty("index"));
+    auto newName = obj->getProperty("name").toString().trim();
+    if (index < 0 || index >= presetFiles.size() || newName.isEmpty()) return;
+
+    auto oldFile = presetDirectory.getChildFile(presetFiles[index]);
+    auto newFile = presetDirectory.getChildFile(newName + ".stellarr");
+
+    if (newFile.existsAsFile() || !oldFile.existsAsFile()) return;
+
+    if (oldFile.moveFileTo(newFile))
+    {
+        // Update tracking if this was the active preset
+        if (index == currentPresetIndex)
+            lastPresetFile = newFile;
+
+        handleGetPresetList();
+
+        // Find new index after re-sorting
+        currentPresetIndex = -1;
+        for (int i = 0; i < presetFiles.size(); ++i)
+        {
+            if (presetFiles[i] == newFile.getFileName())
+            {
+                currentPresetIndex = i;
+                break;
+            }
+        }
+
+        sendPresetList();
+        persistPresetInfo();
+    }
+}
+
+void StellarrBridge::handleDeletePreset(const juce::var& json)
+{
+    auto* obj = json.getDynamicObject();
+    if (obj == nullptr) return;
+
+    auto index = static_cast<int>(obj->getProperty("index"));
+    if (index < 0 || index >= presetFiles.size()) return;
+
+    auto file = presetDirectory.getChildFile(presetFiles[index]);
+    if (!file.existsAsFile()) return;
+
+    if (file.deleteFile())
+    {
+        bool wasActive = (index == currentPresetIndex);
+
+        handleGetPresetList();
+
+        if (wasActive)
+        {
+            // Deleted the active preset — clear active state
+            currentPresetIndex = -1;
+            lastPresetFile = juce::File{};
+        }
+        else if (currentPresetIndex > index)
+        {
+            // Active preset shifted down
+            currentPresetIndex--;
+        }
+        // else: active preset was before deleted one, index unchanged
+
+        sendPresetList();
+        persistPresetInfo();
+    }
+}
+
 void StellarrBridge::handleGetPresetList()
 {
     presetFiles.clear();

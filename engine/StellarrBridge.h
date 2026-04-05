@@ -60,6 +60,8 @@ private:
     void handleLoadSession();
     void handlePickPresetDirectory();
     void handleLoadPresetByIndex(const juce::var& json);
+    void handleRenamePreset(const juce::var& json);
+    void handleDeletePreset(const juce::var& json);
     void handleGetPresetList();
 
     // MIDI mapping

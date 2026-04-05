@@ -24,6 +24,12 @@ void PluginBlock::setPlugin(std::unique_ptr<juce::AudioPluginInstance> newPlugin
         pluginIdentifier = identifier;
     }
 
+    // Give the plugin time to finish background init (e.g. convolution IR loading)
+    if (plugin != nullptr)
+        warmupSamplesRemaining.store(
+            static_cast<int>(currentSampleRate * warmupSeconds),
+            std::memory_order_relaxed);
+
     if (newPlugin != nullptr)
         newPlugin->releaseResources();
 }
@@ -93,13 +99,19 @@ void PluginBlock::applyState(const PluginBlockState& s)
     setBypassed(s.bypassed);
     setBypassMode(s.bypassMode);
 
-    juce::SpinLock::ScopedLockType lock(pluginLock);
-    if (plugin != nullptr && s.pluginStateBase64.isNotEmpty())
     {
-        juce::MemoryBlock mb;
-        mb.fromBase64Encoding(s.pluginStateBase64);
-        plugin->setStateInformation(mb.getData(), static_cast<int>(mb.getSize()));
+        juce::SpinLock::ScopedLockType lock(pluginLock);
+        if (plugin != nullptr && s.pluginStateBase64.isNotEmpty())
+        {
+            juce::MemoryBlock mb;
+            mb.fromBase64Encoding(s.pluginStateBase64);
+            plugin->setStateInformation(mb.getData(), static_cast<int>(mb.getSize()));
+        }
     }
+
+    warmupSamplesRemaining.store(
+        static_cast<int>(currentSampleRate * warmupSeconds),
+        std::memory_order_relaxed);
 }
 
 bool PluginBlock::addState()
@@ -241,14 +253,21 @@ void PluginBlock::fromJson(const juce::var& json)
 
 void PluginBlock::restorePluginState()
 {
-    juce::SpinLock::ScopedLockType lock(pluginLock);
-    if (plugin != nullptr && pluginStateBase64.isNotEmpty())
     {
-        juce::MemoryBlock mb;
-        mb.fromBase64Encoding(pluginStateBase64);
-        plugin->setStateInformation(mb.getData(), static_cast<int>(mb.getSize()));
-        pluginStateBase64.clear();
+        juce::SpinLock::ScopedLockType lock(pluginLock);
+        if (plugin != nullptr && pluginStateBase64.isNotEmpty())
+        {
+            juce::MemoryBlock mb;
+            mb.fromBase64Encoding(pluginStateBase64);
+            plugin->setStateInformation(mb.getData(), static_cast<int>(mb.getSize()));
+            pluginStateBase64.clear();
+        }
     }
+
+    // State restore can trigger background reloads (e.g. convolution IRs)
+    warmupSamplesRemaining.store(
+        static_cast<int>(currentSampleRate * warmupSeconds),
+        std::memory_order_relaxed);
 }
 
 } // namespace stellarr

@@ -130,7 +130,7 @@ private:
         startTimer(resumeDelayMs);
     }
 
-    static constexpr int resumeDelayMs = 2000;
+    static constexpr int resumeDelayMs = 5000;
 
     mutable juce::SpinLock pluginLock;
     std::unique_ptr<juce::AudioPluginInstance> plugin;

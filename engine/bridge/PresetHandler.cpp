@@ -116,6 +116,10 @@ void StellarrBridge::restoreSession(const juce::var& session)
     auto* obj = session.getDynamicObject();
     if (obj == nullptr) return;
 
+    // Suspend the entire audio graph during the transition.
+    // No audio processing occurs until we resume after all plugins are loaded.
+    processor->suspendProcessing(true);
+
     clearGraph();
 
     // Restore blocks
@@ -225,6 +229,10 @@ void StellarrBridge::restoreSession(const juce::var& session)
             obj->hasProperty("midiMappings") ? obj->getProperty("midiMappings") : juce::var());
         emitMidiMappings();
     }
+
+    // Resume the graph after a delay — individual plugin blocks have their own
+    // suspendProcessing timers, so this just re-enables graph-level routing.
+    processor->suspendProcessing(false);
 
     sendGraphState();
 }

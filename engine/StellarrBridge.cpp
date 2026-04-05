@@ -703,8 +703,18 @@ void StellarrBridge::handleScanPlugins()
 {
     if (processor == nullptr) return;
 
-    processor->getPluginManager().scanPlugins();
-    sendPluginList();
+    emitToJs("scanStarted", new juce::DynamicObject());
+
+    // Run scan on a background thread to avoid freezing the UI.
+    // sendPluginList must run on the message thread (bridge emission).
+    auto* proc = processor;
+    auto* self = this;
+    std::thread([proc, self]() {
+        proc->getPluginManager().scanPlugins();
+        juce::MessageManager::callAsync([self]() {
+            self->sendPluginList();
+        });
+    }).detach();
 }
 
 void StellarrBridge::handleGetScanDirectories()

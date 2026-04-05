@@ -78,6 +78,7 @@ interface StellarrState {
   grid: GridSettings;
   scanDirectories: ScanDirectory[];
   availablePlugins: PluginInfo[];
+  scanning: boolean;
   presetDirectory: string;
   presetFiles: string[];
   currentPresetIndex: number;
@@ -117,6 +118,7 @@ interface StellarrState {
   setGridSize: (columns: number, rows: number) => void;
   setScanDirectories: (dirs: ScanDirectory[]) => void;
   setAvailablePlugins: (plugins: PluginInfo[]) => void;
+  setScanning: (scanning: boolean) => void;
   setBlockPlugin: (
     blockId: string,
     pluginId: string,
@@ -194,6 +196,7 @@ export const useStore = create<StellarrState>((set) => ({
   grid: { columns: 12, rows: 6 },
   scanDirectories: [],
   availablePlugins: [],
+  scanning: false,
   presetDirectory: '',
   presetFiles: [],
   currentPresetIndex: -1,
@@ -235,7 +238,8 @@ export const useStore = create<StellarrState>((set) => ({
 
   setGridSize: (columns, rows) => set({ grid: { columns, rows } }),
   setScanDirectories: (dirs) => set({ scanDirectories: dirs }),
-  setAvailablePlugins: (plugins) => set({ availablePlugins: plugins }),
+  setAvailablePlugins: (plugins) => set({ availablePlugins: plugins, scanning: false }),
+  setScanning: (scanning) => set({ scanning }),
 
   setBlockPlugin: (blockId, pluginId, pluginName, pluginFormat, hasEditor) =>
     set((s) => ({

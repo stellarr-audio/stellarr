@@ -58,8 +58,13 @@ public:
     juce::String getPluginName() const
     {
         juce::SpinLock::ScopedLockType lock(pluginLock);
-        return plugin != nullptr ? plugin->getName() : juce::String{};
+        if (plugin != nullptr) return plugin->getName();
+        return missingPluginName;
     }
+
+    bool isPluginMissing() const { return pluginMissing; }
+    void setPluginMissing(bool missing) { pluginMissing = missing; }
+    void setMissingPluginName(const juce::String& name) { missingPluginName = name; }
 
     juce::String getPluginFormat() const
     {
@@ -111,6 +116,8 @@ private:
     std::unique_ptr<PluginWindow> pluginWindow;
     juce::String pluginIdentifier;
     juce::String pluginStateBase64;
+    juce::String missingPluginName;
+    bool pluginMissing = false;
     double currentSampleRate = 44100.0;
     int currentBlockSize = 512;
 

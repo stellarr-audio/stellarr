@@ -53,6 +53,11 @@
   text-align: center;
 }
 
+.pluginNameMissing {
+  composes: pluginName;
+  color: var(--color-warning);
+}
+
 .removeButton {
   position: absolute;
   top: 3px;

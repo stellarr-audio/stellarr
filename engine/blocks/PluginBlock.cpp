@@ -7,6 +7,8 @@ void PluginBlock::setPlugin(std::unique_ptr<juce::AudioPluginInstance> newPlugin
                             const juce::String& identifier)
 {
     pluginWindow = nullptr;
+    pluginMissing = false;
+    missingPluginName.clear();
 
     if (newPlugin != nullptr)
     {

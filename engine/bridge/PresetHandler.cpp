@@ -184,6 +184,12 @@ void StellarrBridge::restoreSession(const juce::var& session)
                             pluginBlock->setPlugin(std::move(instance), pluginId);
                             pluginBlock->restorePluginState();
                         }
+                        else
+                        {
+                            pluginBlock->setPluginMissing(true);
+                            auto savedName = blockObj->getProperty("pluginName").toString();
+                            pluginBlock->setMissingPluginName(savedName.isNotEmpty() ? savedName : pluginId);
+                        }
                     }
                 }
             }

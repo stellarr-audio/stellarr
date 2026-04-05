@@ -44,6 +44,29 @@ When asked to review code (or variations like "pls review", "review and commit",
 - Do not create new manual pages without being asked — prefer extending existing ones
 - Reference other pages with relative Markdown links (e.g., `[MIDI](05-midi.md)`)
 
+## Git Workflow
+
+- **Never commit directly to main** — main is protected
+- Branch from main, push branch, create PR, merge via GitHub
+- CI runs automatically on PRs and must pass before merge
+
+### Branch naming
+
+| Type | Pattern | Example |
+|------|---------|---------|
+| Feature | `feature/<short-name>` | `feature/undo-redo` |
+| Bug fix | `fix/<short-name>` | `fix/scan-freeze` |
+| Hotfix | `hotfix/<short-name>` | `hotfix/crash-on-load` |
+| Documentation | `doc/<short-name>` | `doc/update-midi-manual` |
+| Chore | `chore/<short-name>` | `chore/bump-actions` |
+
+### Merge strategy
+
+- **Squash merge** for features and fixes (clean single commit on main)
+- **Regular merge** for large features where individual commits tell a story
+- Delete branch after merge
+- Tag from main for releases (`git tag v1.x.x`)
+
 ## Build Commands
 
 - `make dev` — build UI + engine (no tests), clears WebView cache

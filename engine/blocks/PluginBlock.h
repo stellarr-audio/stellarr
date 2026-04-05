@@ -142,8 +142,8 @@ private:
     double currentSampleRate = 44100.0;
     int currentBlockSize = 512;
 
-    std::vector<PluginBlockState> states;
-    int activeStateIndex = 0;
+    mutable std::vector<PluginBlockState> states;
+    mutable int activeStateIndex = 0;
     std::set<int> dirtyStates;
 };
 

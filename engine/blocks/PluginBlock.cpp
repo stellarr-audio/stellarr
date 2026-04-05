@@ -170,7 +170,7 @@ juce::var PluginBlock::toJson() const
 {
     // Save live settings into the active state before serializing
     if (activeStateIndex >= 0 && activeStateIndex < static_cast<int>(states.size()))
-        const_cast<PluginBlock*>(this)->states[static_cast<size_t>(activeStateIndex)] = captureCurrentState();
+        states[static_cast<size_t>(activeStateIndex)] = captureCurrentState();
 
     auto json = Block::toJson();
     if (auto* obj = json.getDynamicObject())

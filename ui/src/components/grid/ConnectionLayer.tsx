@@ -69,6 +69,8 @@ export function ConnectionLayer(_props: Props) {
       upstream.set(c.destId, [...(upstream.get(c.destId) ?? []), c.sourceId]);
     }
 
+    // A block with bypass mode "mute" silences both input and output,
+    // effectively cutting the signal chain — treat as a dead end in route tracing.
     const isMuted = (id: string) => {
       const b = blockMap.get(id);
       return b?.bypassed && b?.bypassMode === 'mute';

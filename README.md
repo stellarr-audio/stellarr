@@ -15,7 +15,7 @@
 </p>
 
 <p align="center">
-  <a href="docs/manual/01-introduction.md">Manual</a> &middot;
+  <a href="https://stellarr.org">Manual</a> &middot;
   <a href="docs/CONTRIBUTING.md">Contributing</a> &middot;
   <a href="LICENSE">Licence</a>
 </p>

@@ -3,7 +3,6 @@ import { useStore } from '../../store';
 import {
   requestAddBlock,
   requestAddConnection,
-  requestCopyBlock,
   requestMoveBlock,
   requestPasteBlock,
   requestToggleBlockBypass,
@@ -22,13 +21,13 @@ export function Grid() {
   const gridRef = useRef<HTMLDivElement>(null);
 
   const selectedBlockId = useStore((s) => s.selectedBlockId);
+  const clipboardBlockType = useStore((s) => s.clipboardBlockType);
 
   const [hoveredCell, setHoveredCell] = useState<{ col: number; row: number } | null>(null);
 
-  // Keyboard shortcuts: Space (bypass), Cmd/Ctrl+C (copy), Cmd/Ctrl+V (paste)
+  // Space key toggles bypass on the selected block
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      // Space: toggle bypass on selected block
       if (e.code === 'Space' && selectedBlockId) {
         e.preventDefault();
         const block = useStore.getState().blocks.find((b) => b.id === selectedBlockId);
@@ -36,46 +35,6 @@ export function Grid() {
           useStore.getState().setBlockBypassed(selectedBlockId, !block.bypassed);
           requestToggleBlockBypass(selectedBlockId);
         }
-        return;
-      }
-
-      const mod = e.metaKey || e.ctrlKey;
-      if (!mod) return;
-
-      // Cmd/Ctrl+C: copy selected block
-      if (e.key === 'c' && selectedBlockId) {
-        e.preventDefault();
-        requestCopyBlock(selectedBlockId);
-      }
-
-      // Cmd/Ctrl+V: paste into nearest empty cell
-      if (e.key === 'v') {
-        const { clipboardBlockType, blocks, grid: g } = useStore.getState();
-        if (!clipboardBlockType) return;
-        e.preventDefault();
-
-        const occupied = new Set(blocks.map((b) => `${b.col},${b.row}`));
-
-        // Start searching from one cell right of the selected block
-        const source = blocks.find((b) => b.id === selectedBlockId);
-        const startCol = source ? source.col + 1 : 0;
-        const startRow = source ? source.row : 0;
-
-        // Diamond search outward for nearest empty cell
-        let target: { col: number; row: number } | null = null;
-        for (let dist = 0; dist < Math.max(g.columns, g.rows) && !target; dist++) {
-          for (let dr = -dist; dr <= dist && !target; dr++) {
-            for (let dc = -dist; dc <= dist && !target; dc++) {
-              if (Math.abs(dr) !== dist && Math.abs(dc) !== dist) continue;
-              const c = startCol + dc;
-              const r = startRow + dr;
-              if (c < 0 || c >= g.columns || r < 0 || r >= g.rows) continue;
-              if (!occupied.has(`${c},${r}`)) target = { col: c, row: r };
-            }
-          }
-        }
-
-        if (target) requestPasteBlock(target.col, target.row);
       }
     };
     window.addEventListener('keydown', handler);
@@ -253,6 +212,14 @@ export function Grid() {
                 key={key}
                 open={true}
                 onSelect={handleMenuSelect}
+                onPaste={
+                  clipboardBlockType
+                    ? () => {
+                        requestPasteBlock(col, row);
+                        setMenuCell(null);
+                      }
+                    : undefined
+                }
                 onClose={() => setMenuCell(null)}
               >
                 {cellContent}

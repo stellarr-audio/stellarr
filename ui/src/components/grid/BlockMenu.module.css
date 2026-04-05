@@ -20,3 +20,9 @@
 .item:hover {
   background: var(--color-border);
 }
+
+.separator {
+  height: 1px;
+  background: var(--color-border);
+  margin: 0.25rem 0;
+}

@@ -133,6 +133,14 @@ private:
     std::atomic<int> warmupSamplesRemaining { 0 };
     static constexpr double warmupSeconds = 0.2;
 
+    // Brief mute after plugin load/state change to let background init finish
+    void startWarmup()
+    {
+        warmupSamplesRemaining.store(
+            static_cast<int>(currentSampleRate * warmupSeconds),
+            std::memory_order_relaxed);
+    }
+
     std::vector<PluginBlockState> states;
     int activeStateIndex = 0;
     std::set<int> dirtyStates;

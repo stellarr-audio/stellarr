@@ -266,51 +266,11 @@ void StellarrBridge::handlePasteBlock(const juce::var& json)
     blockNodeMap[blockId] = nodeId;
     blockPositions[blockId] = {col, row};
 
-    if (type == "input")
-    {
-        processor->connectBlocks(processor->getAudioInputNodeId(), nodeId);
-        processor->getGraph().addConnection({
-            {processor->getMidiInputNodeId(), juce::AudioProcessorGraph::midiChannelIndex},
-            {nodeId, juce::AudioProcessorGraph::midiChannelIndex}
-        });
-    }
-    else if (type == "output")
-    {
-        processor->connectBlocks(nodeId, processor->getAudioOutputNodeId());
-        processor->getGraph().addConnection({
-            {nodeId, juce::AudioProcessorGraph::midiChannelIndex},
-            {processor->getMidiOutputNodeId(), juce::AudioProcessorGraph::midiChannelIndex}
-        });
-    }
+    connectIOBlock(type, nodeId);
 
-    // Restore plugin instance for plugin blocks
     if (type == "plugin" || type == "vst")
-    {
-        auto pluginId = clipObj->getProperty("pluginId").toString();
-        if (pluginId.isNotEmpty())
-        {
-            auto* node = processor->getGraph().getNodeForId(nodeId);
-            if (auto* pluginBlock = dynamic_cast<stellarr::PluginBlock*>(node->getProcessor()))
-            {
-                juce::String errorMessage;
-                auto instance = processor->getPluginManager().createPluginInstance(
-                    pluginId, processor->getSampleRate(),
-                    processor->getBlockSize(), errorMessage);
-
-                if (instance != nullptr)
-                {
-                    pluginBlock->setPlugin(std::move(instance), pluginId);
-                    pluginBlock->restorePluginState();
-                }
-                else
-                {
-                    pluginBlock->setPluginMissing(true);
-                    auto savedName = clipObj->getProperty("pluginName").toString();
-                    pluginBlock->setMissingPluginName(savedName.isNotEmpty() ? savedName : pluginId);
-                }
-            }
-        }
-    }
+        restoreBlockPlugin(nodeId, clipObj->getProperty("pluginId").toString(),
+                           clipObj->getProperty("pluginName").toString());
 
     // Full graph sync to ensure all block properties (mix, level, plugin info, etc.)
     // are sent to the UI — a simple blockAdded event only carries basic fields.

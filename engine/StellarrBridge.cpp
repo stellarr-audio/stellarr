@@ -335,6 +335,54 @@ void StellarrBridge::handleEvent(const juce::String& eventName, const juce::var&
 
 // -- Helpers ------------------------------------------------------------------
 
+void StellarrBridge::connectIOBlock(const juce::String& type, juce::AudioProcessorGraph::NodeID nodeId)
+{
+    if (type == "input")
+    {
+        processor->connectBlocks(processor->getAudioInputNodeId(), nodeId);
+        processor->getGraph().addConnection({
+            {processor->getMidiInputNodeId(), juce::AudioProcessorGraph::midiChannelIndex},
+            {nodeId, juce::AudioProcessorGraph::midiChannelIndex}
+        });
+    }
+    else if (type == "output")
+    {
+        processor->connectBlocks(nodeId, processor->getAudioOutputNodeId());
+        processor->getGraph().addConnection({
+            {nodeId, juce::AudioProcessorGraph::midiChannelIndex},
+            {processor->getMidiOutputNodeId(), juce::AudioProcessorGraph::midiChannelIndex}
+        });
+    }
+}
+
+void StellarrBridge::restoreBlockPlugin(juce::AudioProcessorGraph::NodeID nodeId,
+                                        const juce::String& pluginId,
+                                        const juce::String& savedPluginName)
+{
+    if (pluginId.isEmpty()) return;
+
+    auto* node = processor->getGraph().getNodeForId(nodeId);
+    if (auto* pluginBlock = dynamic_cast<stellarr::PluginBlock*>(node->getProcessor()))
+    {
+        juce::String errorMessage;
+        auto instance = processor->getPluginManager().createPluginInstance(
+            pluginId, processor->getSampleRate(),
+            processor->getBlockSize(), errorMessage);
+
+        if (instance != nullptr)
+        {
+            pluginBlock->setPlugin(std::move(instance), pluginId);
+            pluginBlock->restorePluginState();
+        }
+        else
+        {
+            pluginBlock->setPluginMissing(true);
+            pluginBlock->setMissingPluginName(
+                savedPluginName.isNotEmpty() ? savedPluginName : pluginId);
+        }
+    }
+}
+
 void StellarrBridge::emitToJs(const juce::String& eventName, juce::DynamicObject* detail)
 {
     if (webView == nullptr) return;

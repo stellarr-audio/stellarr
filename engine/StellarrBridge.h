@@ -95,6 +95,11 @@ private:
     void setPresetFromFile(const juce::File& file);
     void persistPresetInfo();
 
+    // Shared helpers for block setup (used by addBlock, pasteBlock, restoreSession)
+    void connectIOBlock(const juce::String& type, juce::AudioProcessorGraph::NodeID nodeId);
+    void restoreBlockPlugin(juce::AudioProcessorGraph::NodeID nodeId,
+                            const juce::String& pluginId, const juce::String& savedPluginName);
+
     void emitToJs(const juce::String& eventName, juce::DynamicObject* detail);
     void emitBlockStates(const juce::String& blockId, stellarr::PluginBlock* pluginBlock);
     void emitBlockParams(const juce::String& blockId, stellarr::Block* block);

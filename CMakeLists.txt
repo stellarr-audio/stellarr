@@ -15,7 +15,7 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(JUCE)
 
-set(SENTRY_BACKEND "crashpad" CACHE STRING "")
+set(SENTRY_BACKEND "inproc" CACHE STRING "")
 set(SENTRY_BUILD_SHARED_LIBS OFF CACHE BOOL "")
 FetchContent_Declare(
     sentry

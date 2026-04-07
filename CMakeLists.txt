@@ -15,13 +15,14 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(JUCE)
 
-set(SENTRY_BACKEND "crashpad" CACHE STRING "")
+set(SENTRY_BACKEND "inproc" CACHE STRING "")
 set(SENTRY_BUILD_SHARED_LIBS OFF CACHE BOOL "")
 FetchContent_Declare(
     sentry
     GIT_REPOSITORY https://github.com/getsentry/sentry-native.git
     GIT_TAG 0.13.4
     GIT_SHALLOW TRUE
+    GIT_SUBMODULES ""
 )
 FetchContent_MakeAvailable(sentry)
 

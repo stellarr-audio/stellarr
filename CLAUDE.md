@@ -50,6 +50,20 @@ When asked to review code (or variations like "pls review", "review and commit",
 - Branch from main, push branch, create PR, merge via GitHub
 - CI runs automatically on PRs and must pass before merge
 
+### Before writing any code
+
+1. Check the current branch (`git branch --show-current`)
+2. If on `main` or an unrelated branch: stash any uncommitted work, switch to `main`, pull latest, and create a new branch
+3. One branch per task — never mix unrelated changes on the same branch
+4. If already on the correct branch for the current task, continue on it
+
+### Committing and PRs
+
+1. Stage only the files relevant to the task
+2. Push the branch and create a PR (draft if the work is untested or in progress)
+3. Wait for CI to pass before requesting merge
+4. After merge, delete the remote branch and switch back to `main` locally
+
 ### Branch naming
 
 | Type | Pattern | Example |

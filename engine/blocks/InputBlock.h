@@ -59,6 +59,9 @@ public:
     int getTunerOctave() const { return detectedOctave.load(std::memory_order_relaxed); }
     float getTunerConfidence() const { return detectedConfidence.load(std::memory_order_relaxed); }
 
+    void setReferencePitch(float hz) { referencePitch.store(hz, std::memory_order_relaxed); }
+    float getReferencePitch() const { return referencePitch.load(std::memory_order_relaxed); }
+
     juce::var toJson() const override
     {
         auto json = Block::toJson();
@@ -90,6 +93,7 @@ private:
     std::atomic<int> detectedNoteIndex { -1 };
     std::atomic<int> detectedOctave { -1 };
     std::atomic<float> detectedConfidence { 0.0f };
+    std::atomic<float> referencePitch { 440.0f };
 
     std::vector<float> tunerBuffer;
     std::vector<float> yinBuffer;

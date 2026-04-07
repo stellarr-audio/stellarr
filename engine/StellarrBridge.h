@@ -69,6 +69,10 @@ private:
     void handleGetTelemetryEnabled();
     void handleSetTelemetryEnabled(const juce::var& json);
 
+    // Tuner settings
+    void handleGetReferencePitch();
+    void handleSetReferencePitch(const juce::var& json);
+
     // Preset management
     void handleNewSession();
     void handleSaveSession();

@@ -106,7 +106,7 @@ export function ConnectionLayer(_props: Props) {
           path.delete(id);
           return true;
         }
-        if (id !== startId && isMuted(id)) {
+        if (isMuted(id)) {
           memo.set(id, false);
           path.delete(id);
           return false;

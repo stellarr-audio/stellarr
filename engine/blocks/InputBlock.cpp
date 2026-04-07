@@ -125,8 +125,9 @@ void InputBlock::runYinDetection()
         return;
     }
 
-    // Convert to note
-    float midiNote = 12.0f * std::log2(freq / 440.0f) + 69.0f;
+    // Convert to note using configurable reference pitch
+    float refHz = referencePitch.load(std::memory_order_relaxed);
+    float midiNote = 12.0f * std::log2(freq / refHz) + 69.0f;
     int roundedNote = static_cast<int>(std::round(midiNote));
     float cents = (midiNote - static_cast<float>(roundedNote)) * 100.0f;
     int noteIndex = ((roundedNote % 12) + 12) % 12; // ensure positive

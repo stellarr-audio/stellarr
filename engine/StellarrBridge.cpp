@@ -166,6 +166,10 @@ void StellarrBridge::handleEvent(const juce::String& eventName, const juce::var&
     else if (eventName == "getTelemetryEnabled")    handleGetTelemetryEnabled();
     else if (eventName == "setTelemetryEnabled")    handleSetTelemetryEnabled(json);
 
+    // Tuner settings
+    else if (eventName == "getReferencePitch")      handleGetReferencePitch();
+    else if (eventName == "setReferencePitch")      handleSetReferencePitch(json);
+
     // Presets
     else if (eventName == "newSession")             handleNewSession();
     else if (eventName == "saveSession")            handleSaveSession();
@@ -459,6 +463,7 @@ void StellarrBridge::handleBridgeReady()
     sendStartupProgress("Connecting to engine...", 10);
     sendWelcome();
     handleGetTelemetryEnabled();
+    handleGetReferencePitch();
 
     juce::MessageManager::callAsync([this]()
     {
@@ -817,4 +822,64 @@ void StellarrBridge::handleSetTelemetryEnabled(const juce::var& json)
     auto* detail = new juce::DynamicObject();
     detail->setProperty("enabled", enabled);
     emitToJs("telemetryState", detail);
+}
+
+// -- Tuner settings -----------------------------------------------------------
+
+void StellarrBridge::handleGetReferencePitch()
+{
+    float hz = 440.0f;
+    if (appProperties != nullptr)
+    {
+        auto* settings = appProperties->getUserSettings();
+        if (settings != nullptr)
+            hz = static_cast<float>(settings->getDoubleValue("referencePitch", 440.0));
+    }
+
+    // Apply stored value to all input blocks
+    if (processor != nullptr)
+    {
+        for (auto& [blockId, nodeId] : blockNodeMap)
+        {
+            if (auto* node = processor->getGraph().getNodeForId(nodeId))
+                if (auto* inputBlock = dynamic_cast<stellarr::InputBlock*>(node->getProcessor()))
+                    inputBlock->setReferencePitch(hz);
+        }
+    }
+
+    auto* detail = new juce::DynamicObject();
+    detail->setProperty("hz", static_cast<double>(hz));
+    emitToJs("referencePitchState", detail);
+}
+
+void StellarrBridge::handleSetReferencePitch(const juce::var& json)
+{
+    auto* obj = json.getDynamicObject();
+    if (obj == nullptr) return;
+
+    float hz = static_cast<float>(obj->getProperty("hz"));
+    if (hz < 420.0f || hz > 460.0f) return;
+
+    // Persist
+    if (appProperties != nullptr)
+    {
+        auto* settings = appProperties->getUserSettings();
+        if (settings != nullptr)
+            settings->setValue("referencePitch", static_cast<double>(hz));
+    }
+
+    // Apply to all input blocks
+    if (processor != nullptr)
+    {
+        for (auto& [blockId, nodeId] : blockNodeMap)
+        {
+            if (auto* node = processor->getGraph().getNodeForId(nodeId))
+                if (auto* inputBlock = dynamic_cast<stellarr::InputBlock*>(node->getProcessor()))
+                    inputBlock->setReferencePitch(hz);
+        }
+    }
+
+    auto* detail = new juce::DynamicObject();
+    detail->setProperty("hz", static_cast<double>(hz));
+    emitToJs("referencePitchState", detail);
 }

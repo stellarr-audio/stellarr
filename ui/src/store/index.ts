@@ -108,6 +108,7 @@ interface StellarrState {
   tunerCents: number;
   tunerFrequency: number;
   tunerConfidence: number;
+  referencePitch: number;
   setTunerData: (
     note: string | null,
     octave: number,
@@ -115,6 +116,7 @@ interface StellarrState {
     frequency: number,
     confidence: number,
   ) => void;
+  setReferencePitch: (hz: number) => void;
   setBlockTestTone: (blockId: string, enabled: boolean) => void;
   setGridSize: (columns: number, rows: number) => void;
   setScanDirectories: (dirs: ScanDirectory[]) => void;
@@ -193,6 +195,7 @@ export const useStore = create<StellarrState>((set) => ({
   tunerCents: 0,
   tunerFrequency: 0,
   tunerConfidence: 0,
+  referencePitch: 440,
   blocks: [],
   connections: [],
   grid: { columns: 12, rows: 6 },
@@ -233,6 +236,8 @@ export const useStore = create<StellarrState>((set) => ({
       tunerFrequency: frequency,
       tunerConfidence: confidence,
     }),
+
+  setReferencePitch: (hz) => set({ referencePitch: hz }),
 
   setBlockTestTone: (blockId, enabled) =>
     set((s) => ({

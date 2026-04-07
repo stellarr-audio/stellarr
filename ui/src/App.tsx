@@ -6,6 +6,7 @@ import { GridOverlay } from './components/grid/GridOverlay';
 import { OptionsPanel } from './components/options/OptionsPanel';
 import { Settings } from './components/settings/Settings';
 import { Tuner } from './components/tuner/Tuner';
+import { TunerPanel } from './components/tuner/TunerPanel';
 import { MidiPage } from './components/midi/MidiPage';
 import { MidiMonitor } from './components/midi/MidiMonitor';
 import { LoadingScreen } from './components/header/LoadingScreen';
@@ -113,6 +114,7 @@ function App() {
           className={`${styles.tabContent} ${activeTab === 'tuner' ? styles.tabContentVisible : ''}`}
         >
           <Tuner />
+          <TunerPanel />
         </Tabs.Content>
 
         <Tabs.Content

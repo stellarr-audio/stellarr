@@ -8,6 +8,8 @@ const presets = [432, 440, 442, 444];
 
 export function TunerPanel() {
   const referencePitch = useStore((s) => s.referencePitch);
+  const tunerMode = useStore((s) => s.tunerMode);
+  const setTunerMode = useStore((s) => s.setTunerMode);
   const [inputValue, setInputValue] = useState<string>(String(referencePitch));
   const [focused, setFocused] = useState(false);
 
@@ -24,6 +26,27 @@ export function TunerPanel() {
   return (
     <div className={styles.panel}>
       <span className={styles.title}>Tuner</span>
+
+      <div className={styles.divider} />
+
+      <div className={styles.content}>
+        <span className={styles.sectionTitle}>Mode</span>
+
+        <div className={styles.modeButtons}>
+          <button
+            className={`${styles.modeButton} ${tunerMode === 'needle' ? styles.modeButtonActive : ''}`}
+            onClick={() => setTunerMode('needle')}
+          >
+            Needle
+          </button>
+          <button
+            className={`${styles.modeButton} ${tunerMode === 'strobe' ? styles.modeButtonActive : ''}`}
+            onClick={() => setTunerMode('strobe')}
+          >
+            Strobe
+          </button>
+        </div>
+      </div>
 
       <div className={styles.divider} />
 

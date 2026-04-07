@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/stellarr-audio/stellarr/actions/workflows/ci.yml"><img src="https://github.com/stellarr-audio/stellarr/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI" /></a>
+  <a href="https://github.com/stellarr-audio/stellarr/actions/workflows/ci.yml"><img src="https://github.com/stellarr-audio/stellarr/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
   <a href="https://github.com/stellarr-audio/stellarr/actions/workflows/github-code-scanning/codeql"><img src="https://github.com/stellarr-audio/stellarr/actions/workflows/github-code-scanning/codeql/badge.svg" alt="CodeQL" /></a>
 </p>
 

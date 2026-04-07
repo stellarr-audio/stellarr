@@ -256,6 +256,14 @@ export function requestSetTunerEnabled(enabled: boolean): void {
   sendEvent('setTunerEnabled', JSON.stringify({ enabled }));
 }
 
+export function requestGetReferencePitch(): void {
+  sendEvent('getReferencePitch', '');
+}
+
+export function requestSetReferencePitch(hz: number): void {
+  sendEvent('setReferencePitch', JSON.stringify({ hz }));
+}
+
 export function requestScanPlugins(): void {
   sendEvent('scanPlugins', '');
 }
@@ -596,6 +604,11 @@ export function initBridge(): void {
   juce.backend.addEventListener('sessionSaved', () => {
     useStore.getState().setJustSaved(true);
     setTimeout(() => useStore.getState().setJustSaved(false), 1200);
+  });
+
+  juce.backend.addEventListener('referencePitchState', (detail: unknown) => {
+    const d = asRecord(detail);
+    useStore.getState().setReferencePitch(Number(d.hz));
   });
 
   juce.backend.addEventListener('telemetryState', (detail: unknown) => {

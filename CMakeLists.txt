@@ -22,6 +22,7 @@ FetchContent_Declare(
     GIT_REPOSITORY https://github.com/getsentry/sentry-native.git
     GIT_TAG 0.13.4
     GIT_SHALLOW TRUE
+    GIT_SUBMODULES ""
 )
 FetchContent_MakeAvailable(sentry)
 

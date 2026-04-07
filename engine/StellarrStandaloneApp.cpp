@@ -8,7 +8,8 @@
 namespace juce
 {
 
-class StellarrFilterWindow final : public StandaloneFilterWindow
+class StellarrFilterWindow final : public StandaloneFilterWindow,
+                                   private ChangeListener
 {
 public:
     StellarrFilterWindow(const String& title,
@@ -16,9 +17,22 @@ public:
                          std::unique_ptr<StandalonePluginHolder> holder)
         : StandaloneFilterWindow(title, backgroundColour, std::move(holder))
     {
+        // Save audio device settings immediately whenever they change,
+        // so they survive a crash during the session.
+        pluginHolder->deviceManager.addChangeListener(this);
+    }
+
+    ~StellarrFilterWindow() override
+    {
+        pluginHolder->deviceManager.removeChangeListener(this);
     }
 
 private:
+    void changeListenerCallback(ChangeBroadcaster*) override
+    {
+        pluginHolder->saveAudioDeviceState();
+    }
+
     void buttonClicked(Button* button) override
     {
         PopupMenu m;
@@ -122,8 +136,9 @@ private:
         const Array<StandalonePluginHolder::PluginInOuts> channelConfig;
 
         // JUCE mutes audio input by default in standalone apps — disable that
-        // Must set before holder construction so it reads the correct value
-        appProperties.getUserSettings()->setValue("shouldMuteInput", false);
+        // on first launch only, so the user's later preference is preserved.
+        if (!appProperties.getUserSettings()->containsKey("shouldMuteInput"))
+            appProperties.getUserSettings()->setValue("shouldMuteInput", false);
 
         auto holder = std::make_unique<StandalonePluginHolder>(
             appProperties.getUserSettings(), false, String{},

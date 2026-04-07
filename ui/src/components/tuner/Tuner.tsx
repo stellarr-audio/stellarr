@@ -1,5 +1,6 @@
 import { useStore } from '../../store';
 import { colors } from '../common/colors';
+import { StrobeBand } from './StrobeBand';
 import styles from './Tuner.module.css';
 
 export function Tuner() {
@@ -8,6 +9,7 @@ export function Tuner() {
   const cents = useStore((s) => s.tunerCents);
   const frequency = useStore((s) => s.tunerFrequency);
   const confidence = useStore((s) => s.tunerConfidence);
+  const tunerMode = useStore((s) => s.tunerMode);
 
   const hasSignal = confidence > 0.3 && note !== null;
 
@@ -38,35 +40,33 @@ export function Tuner() {
         {hasSignal ? `${frequency.toFixed(1)} Hz` : '-- Hz'}
       </span>
 
-      {/* Cents bar */}
-      <div className={styles.centsBar}>
-        {/* Track */}
-        <div className={styles.track}>
-          {/* Center mark */}
-          <div className={styles.centerMark} />
-
-          {/* Needle */}
-          {hasSignal && (
-            <div
-              className={styles.needle}
-              style={{
-                left: `${50 + cents}%`,
-                background: centsColor,
-                boxShadow: `0 0 12px ${centsColor}88`,
-              }}
-            />
-          )}
+      {/* Tuner visualisation */}
+      {tunerMode === 'strobe' ? (
+        <StrobeBand />
+      ) : (
+        <div className={styles.centsBar}>
+          <div className={styles.track}>
+            <div className={styles.centerMark} />
+            {hasSignal && (
+              <div
+                className={styles.needle}
+                style={{
+                  left: `${50 + cents}%`,
+                  background: centsColor,
+                  boxShadow: `0 0 12px ${centsColor}88`,
+                }}
+              />
+            )}
+          </div>
+          <div className={styles.labels}>
+            <span>-50</span>
+            <span>-25</span>
+            <span>0</span>
+            <span>+25</span>
+            <span>+50</span>
+          </div>
         </div>
-
-        {/* Labels */}
-        <div className={styles.labels}>
-          <span>-50</span>
-          <span>-25</span>
-          <span>0</span>
-          <span>+25</span>
-          <span>+50</span>
-        </div>
-      </div>
+      )}
     </div>
   );
 }

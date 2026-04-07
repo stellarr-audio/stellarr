@@ -39,6 +39,35 @@
   letter-spacing: 0.06em;
 }
 
+.modeButtons {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.modeButton {
+  flex: 1;
+  background: transparent;
+  border: 1px solid var(--color-border);
+  color: var(--color-muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 0.3rem 0;
+  cursor: pointer;
+}
+
+.modeButton:hover {
+  border-color: var(--color-muted);
+  color: var(--color-text);
+}
+
+.modeButtonActive {
+  background: rgba(0, 180, 255, 0.094);
+  border-color: var(--color-secondary);
+  color: var(--color-secondary);
+}
+
 .pitchInput {
   flex: 1;
   min-width: 0;

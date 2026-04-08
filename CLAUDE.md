@@ -107,6 +107,7 @@ macOS Apple Silicon, CMake 3.24+, Xcode CLI tools, Node.js 18+, npm. See `docs/C
 - Bridge: UI `sendEvent` -> C++ `handleEvent` -> `emitToJs` -> Zustand store
 - Bridge handlers are split by domain: `engine/bridge/` contains PresetHandler, GraphHandler, SceneHandler, MidiHandler, ParamHandler (all compiled as part of StellarrBridge)
 - Tests: C++ test executables with custom harness (each has its own `main()`), gated behind `BUILD_TESTING` CMake flag. New audio processing features should have a corresponding test in `engine/test/`.
+- Manual tests: `docs/testing/` contains per-area test case files (TC-XX-NNN format). When adding automated tests, also add corresponding manual test cases for anything that needs real plugins, hardware, or human judgement.
 - Settings persistence: JUCE `ApplicationProperties` / `PropertiesFile` stored in `~/Library/Application Support/Stellarr/`
 - Declarations in headers, implementations in .cpp files
 - Licence: AGPLv3 (required by JUCE dependency) — all contributions must be compatible

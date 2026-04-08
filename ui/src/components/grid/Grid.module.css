@@ -16,14 +16,14 @@
   transition: background 0.1s ease, border-color 0.1s ease;
 }
 
-.cell:hover {
-  background: var(--color-cell-hover);
-  border-color: var(--color-muted);
-}
-
 .cellOccupied {
   cursor: default;
   pointer-events: none;
+}
+
+.cellHovered {
+  background: var(--color-cell-hover);
+  border-color: var(--color-muted);
 }
 
 .cellActive {
@@ -31,9 +31,26 @@
   border-color: var(--color-muted);
 }
 
+.cellDropTarget {
+  border-color: var(--color-secondary);
+  background: rgba(0, 180, 255, 0.094);
+}
+
 .cellPlus {
   font-size: 1.2rem;
   font-weight: 300;
   color: var(--color-muted);
   line-height: 1;
+}
+
+.dragGhost {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-block-bg);
+  border: 2px solid;
+  opacity: 0.85;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
 }

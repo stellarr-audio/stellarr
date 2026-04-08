@@ -1,4 +1,5 @@
-import { useCallback, useRef } from 'react';
+import { useCallback } from 'react';
+import { useDraggable } from '@dnd-kit/core';
 import {
   CopyIcon,
   Cross2Icon,
@@ -72,11 +73,9 @@ function Port({
 
   return (
     <div
-      draggable={false}
       data-port-block-id={blockId}
       data-port-type={side}
       onMouseDown={handleMouseDown}
-      onDragStart={(e) => e.preventDefault()}
       onClick={handleClick}
       className={portClassName}
     />
@@ -87,24 +86,13 @@ export function GridBlockComponent({ block }: Props) {
   const connections = useStore((s) => s.connections);
   const selectedBlockId = useStore((s) => s.selectedBlockId);
   const selectBlock = useStore((s) => s.selectBlock);
-  const portActive = useRef(false);
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+    id: block.id,
+  });
 
   const isSelected = selectedBlockId === block.id;
   const hasInputConnection = connections.some((c) => c.destId === block.id);
   const hasOutputConnection = connections.some((c) => c.sourceId === block.id);
-
-  const handleDragStart = useCallback(
-    (e: React.DragEvent) => {
-      if (portActive.current) {
-        e.preventDefault();
-        portActive.current = false;
-        return;
-      }
-      e.dataTransfer.setData('moveBlockId', block.id);
-      e.dataTransfer.effectAllowed = 'move';
-    },
-    [block.id],
-  );
 
   const accentColor = block.pluginMissing
     ? colors.warning
@@ -119,11 +107,9 @@ export function GridBlockComponent({ block }: Props) {
 
   return (
     <div
-      draggable
-      onDragStart={handleDragStart}
-      onMouseDown={() => {
-        portActive.current = false;
-      }}
+      ref={setNodeRef}
+      {...listeners}
+      {...attributes}
       onClick={() => selectBlock(block.id)}
       onDoubleClick={() => {
         if (block.type === 'plugin' && block.pluginId && !block.pluginMissing)
@@ -136,6 +122,7 @@ export function GridBlockComponent({ block }: Props) {
         width: CELL_SIZE,
         height: CELL_SIZE,
         border: borderStyle,
+        opacity: isDragging ? 0.3 : 1,
       }}
     >
       {/* Top region — status icons / format tag */}

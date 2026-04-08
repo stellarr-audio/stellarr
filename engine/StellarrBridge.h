@@ -42,6 +42,7 @@ private:
     friend class PresetFileTestAccess;
     friend class CopyPasteTestAccess;
     friend class SessionTestAccess;
+    friend class PresetSwitchTestAccess;
     void handleEvent(const juce::String& eventName, const juce::var& payload);
     void handleBridgeReady();
     void sendStartupProgress(const juce::String& status, int progress);
@@ -105,7 +106,8 @@ private:
     void persistPresetInfo();
 
     // Shared helpers for block setup (used by addBlock, pasteBlock, restoreSession)
-    void connectIOBlock(const juce::String& type, juce::AudioProcessorGraph::NodeID nodeId);
+    void connectIOBlock(const juce::String& type, juce::AudioProcessorGraph::NodeID nodeId,
+                        juce::AudioProcessorGraph::UpdateKind update = juce::AudioProcessorGraph::UpdateKind::sync);
     void restoreBlockPlugin(juce::AudioProcessorGraph::NodeID nodeId,
                             const juce::String& pluginId, const juce::String& savedPluginName);
 

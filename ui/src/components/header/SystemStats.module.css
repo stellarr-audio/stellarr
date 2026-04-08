@@ -34,9 +34,18 @@
 .value {
   font-size: 1rem;
   font-weight: 600;
-  min-width: 4ch;
   text-align: right;
   font-variant-numeric: tabular-nums;
+}
+
+.valueCpu {
+  composes: value;
+  width: 4ch;
+}
+
+.valueOut {
+  composes: value;
+  width: 5.5ch;
 }
 
 .clipping {

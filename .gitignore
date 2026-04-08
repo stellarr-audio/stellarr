@@ -5,6 +5,7 @@ ui/dist/
 .env
 .env.*
 !.env.example
+.cache/
 .claude/
 .DS_Store
 *.user

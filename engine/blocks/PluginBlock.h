@@ -42,6 +42,9 @@ public:
 
     void process(juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midi) override
     {
+        if (!pluginReady.load(std::memory_order_acquire))
+            return;
+
         juce::SpinLock::ScopedTryLockType lock(pluginLock);
 
         if (lock.isLocked() && plugin != nullptr
@@ -113,16 +116,16 @@ public:
     void restorePluginState();
 
 private:
-    // Timer callback: resume audio processing after plugin background init
+    // Timer callback: resume audio processing after plugin initialisation
     void timerCallback() override
     {
         stopTimer();
         suspendProcessing(false);
     }
 
-    // Suspend audio processing at the graph level and schedule a deferred resume.
-    // While suspended, the AudioProcessorGraph skips this node entirely —
-    // the audio thread never enters processBlock.
+    // Suspend audio processing and schedule a deferred resume.
+    // Used only by the cold path (applyState during preset restore) where
+    // plugin state changes may trigger background initialisation.
     void suspendAndScheduleResume()
     {
         stopTimer();
@@ -132,6 +135,7 @@ private:
 
     static constexpr int resumeDelayMs = 3000;
 
+    std::atomic<bool> pluginReady { false };
     mutable juce::SpinLock pluginLock;
     std::unique_ptr<juce::AudioPluginInstance> plugin;
     std::unique_ptr<PluginWindow> pluginWindow;

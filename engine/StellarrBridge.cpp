@@ -343,23 +343,25 @@ void StellarrBridge::handleEvent(const juce::String& eventName, const juce::var&
 
 // -- Helpers ------------------------------------------------------------------
 
-void StellarrBridge::connectIOBlock(const juce::String& type, juce::AudioProcessorGraph::NodeID nodeId)
+void StellarrBridge::connectIOBlock(const juce::String& type,
+                                    juce::AudioProcessorGraph::NodeID nodeId,
+                                    juce::AudioProcessorGraph::UpdateKind update)
 {
     if (type == "input")
     {
-        processor->connectBlocks(processor->getAudioInputNodeId(), nodeId);
+        processor->connectBlocks(processor->getAudioInputNodeId(), nodeId, 2, update);
         processor->getGraph().addConnection({
             {processor->getMidiInputNodeId(), juce::AudioProcessorGraph::midiChannelIndex},
             {nodeId, juce::AudioProcessorGraph::midiChannelIndex}
-        });
+        }, update);
     }
     else if (type == "output")
     {
-        processor->connectBlocks(nodeId, processor->getAudioOutputNodeId());
+        processor->connectBlocks(nodeId, processor->getAudioOutputNodeId(), 2, update);
         processor->getGraph().addConnection({
             {nodeId, juce::AudioProcessorGraph::midiChannelIndex},
             {processor->getMidiOutputNodeId(), juce::AudioProcessorGraph::midiChannelIndex}
-        });
+        }, update);
     }
 }
 

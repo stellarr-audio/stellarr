@@ -32,8 +32,8 @@ When asked to review code (or variations like "pls review", "review and commit",
 - Consistency with existing codebase patterns and conventions
 - Error handling at system boundaries (user input, external APIs, plugin loading)
 - Best practices for the relevant language (C++ and TypeScript)
-- Build verification (`make build-ui` or `npx tsc --noEmit` for UI, `cmake --build` for engine)
-- Run all tests before committing (`ctest --test-dir build --output-on-failure`)
+- Build verification (`make build-ui` or `npx tsc --noEmit` for UI, `make debug` for engine)
+- Run all tests before committing (`make test`)
 
 ## Documentation
 
@@ -56,6 +56,12 @@ When asked to review code (or variations like "pls review", "review and commit",
 2. If on `main` or an unrelated branch: stash any uncommitted work, switch to `main`, pull latest, and create a new branch
 3. One branch per task — never mix unrelated changes on the same branch
 4. If already on the correct branch for the current task, continue on it
+
+### Commit messages
+
+- Imperative mood, present tense (e.g. "Fix crash on load", not "Fixed crash")
+- First line under 72 characters
+- Reference GitHub issue numbers where applicable (e.g. `(#12)`)
 
 ### Committing and PRs
 
@@ -90,10 +96,39 @@ When asked to review code (or variations like "pls review", "review and commit",
 - `make test` — build with tests and run them
 - Always run `make build-ui` or `npx tsc --noEmit` to catch TypeScript errors, not just `make`
 
+### Prerequisites
+
+macOS Apple Silicon, CMake 3.24+, Xcode CLI tools, Node.js 18+, npm. See `docs/CONTRIBUTING.md` for full setup.
+
 ## Architecture Notes
 
 - Engine (C++): JUCE AudioProcessorGraph for audio routing
 - UI (React/TS): Zustand store, Radix UI components, CSS Modules
 - Bridge: UI `sendEvent` -> C++ `handleEvent` -> `emitToJs` -> Zustand store
-- Tests: C++ test executables gated behind `BUILD_TESTING` CMake flag
+- Bridge handlers are split by domain: `engine/bridge/` contains PresetHandler, GraphHandler, SceneHandler, MidiHandler, ParamHandler (all compiled as part of StellarrBridge)
+- Tests: C++ test executables with custom harness (each has its own `main()`), gated behind `BUILD_TESTING` CMake flag. New audio processing features should have a corresponding test in `engine/test/`.
+- Manual tests: `docs/testing/` contains per-area test case files (TC-XX-NNN format). When adding automated tests, also add corresponding manual test cases for anything that needs real plugins, hardware, or human judgement.
+- Settings persistence: JUCE `ApplicationProperties` / `PropertiesFile` stored in `~/Library/Application Support/Stellarr/`
 - Declarations in headers, implementations in .cpp files
+- Licence: AGPLv3 (required by JUCE dependency) — all contributions must be compatible
+
+### Audio thread safety
+
+- Never modify the AudioProcessorGraph from the audio thread
+- Batch graph mutations with `UpdateKind::none` and call `rebuildGraph()` once at the end — never trigger N intermediate rebuilds
+- Use `suspendProcessing(true)` on the top-level processor to synchronise with the audio thread (it acquires the `callbackLock`)
+- Pre-create plugin instances (load binary, `prepareToPlay`) before suspending the graph to minimise the audio gap
+- Use `std::atomic` for data shared between audio and message threads; use `SpinLock::ScopedTryLockType` (non-blocking) on the audio thread
+- Individual block `suspendProcessing` has no effect at graph level — the graph does not check `isSuspended()` on sub-nodes
+
+### Key paths
+
+| Area | Path |
+|------|------|
+| Engine entry | `engine/StellarrStandaloneApp.cpp` |
+| UI entry | `ui/src/main.tsx` |
+| Bridge (C++) | `engine/StellarrBridge.cpp`, `engine/bridge/` |
+| Bridge (TS) | `ui/src/bridge/index.ts` |
+| Zustand store | `ui/src/store/index.ts` |
+| C++ tests | `engine/test/` |
+| User manual | `docs/manual/` |

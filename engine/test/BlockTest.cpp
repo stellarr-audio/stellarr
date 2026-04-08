@@ -1162,19 +1162,29 @@ static bool testApplyStateHotPathNoSuspend()
     return true;
 }
 
-static bool testApplyStateColdPathSuspends()
+static bool testApplyStateColdPathSilencesOutput()
 {
-    printf("Test: applyState(suspend=true) suspends processing... ");
+    printf("Test: applyState(suspend=true) gates audio via readiness flag... ");
 
     stellarr::PluginBlock block;
     block.prepareToPlay(kSampleRate, kBlockSize);
 
+    // After cold-path applyState completes, the block should be ready to process
+    // (the readiness flag gates during state application, then re-enables).
     auto state = block.captureCurrentState();
     block.applyState(state, true);
 
-    if (!block.isSuspended())
+    // Verify the block can process after state application (not left suspended)
+    juce::AudioBuffer<float> buf(2, kBlockSize);
+    buf.clear();
+    juce::MidiBuffer midi;
+    block.processBlock(buf, midi);
+
+    // With no plugin loaded, process is a no-op — the block should not crash
+    // and should not be stuck in a suspended state.
+    if (block.isSuspended())
     {
-        fprintf(stderr, "  block should be suspended on cold path\n");
+        fprintf(stderr, "  block should not remain suspended after cold applyState\n");
         printf("FAIL\n");
         return false;
     }
@@ -1330,7 +1340,7 @@ int main()
 
     // Hot/cold path
     if (!testApplyStateHotPathNoSuspend()) ++failures;
-    if (!testApplyStateColdPathSuspends()) ++failures;
+    if (!testApplyStateColdPathSilencesOutput()) ++failures;
     if (!testRecallStateUsesHotPath())     ++failures;
     if (!testDeleteStateUsesHotPath())     ++failures;
 

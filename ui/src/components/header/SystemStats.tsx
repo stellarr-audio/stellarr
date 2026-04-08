@@ -18,7 +18,7 @@ function CpuBar() {
       <div className={styles.track}>
         <div className={styles.fill} style={{ width: `${clamped}%`, background: color }} />
       </div>
-      <span className={styles.value} style={{ color }}>
+      <span className={styles.valueCpu} style={{ color }}>
         {clamped.toFixed(0)}%
       </span>
     </div>
@@ -52,7 +52,7 @@ function OutputLevelBar() {
       <div className={styles.track}>
         <div className={styles.fill} style={{ width: `${percent}%`, background: color }} />
       </div>
-      <span className={`${styles.value} ${clipping ? styles.clipping : ''}`} style={{ color }}>
+      <span className={`${styles.valueOut} ${clipping ? styles.clipping : ''}`} style={{ color }}>
         {display}
       </span>
     </div>

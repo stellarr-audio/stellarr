@@ -75,6 +75,7 @@ function Port({
     <div
       data-port-block-id={blockId}
       data-port-type={side}
+      onPointerDown={(e) => e.stopPropagation()}
       onMouseDown={handleMouseDown}
       onClick={handleClick}
       className={portClassName}

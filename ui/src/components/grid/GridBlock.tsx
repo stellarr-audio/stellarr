@@ -172,6 +172,7 @@ export function GridBlockComponent({ block }: Props) {
       {/* Copy button — visible on block hover via CSS */}
       <div
         className={styles.copyButton}
+        onPointerDown={(e) => e.stopPropagation()}
         onClick={(e) => {
           e.stopPropagation();
           selectBlock(block.id);
@@ -184,6 +185,7 @@ export function GridBlockComponent({ block }: Props) {
       {/* Remove button — visible on block hover via CSS */}
       <div
         className={styles.removeButton}
+        onPointerDown={(e) => e.stopPropagation()}
         onClick={(e) => {
           e.stopPropagation();
           requestRemoveBlock(block.id);

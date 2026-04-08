@@ -59,7 +59,30 @@ Test whenever you touch the connection layer, block bypass, block movement, spli
 
 **Expected:** Block moves. Connections follow. Audio continues flowing.
 
-### TC-GR-007: Multiple parallel chains
+### TC-GR-007: Drop target highlight during drag
+
+**Steps:**
+1. Start dragging a block
+2. Move the cursor over various empty cells
+
+**Expected:** The cell under the cursor highlights in blue (drop target indicator). Only one cell is highlighted at a time. Occupied cells do not highlight. No ghost highlights remain after dropping.
+
+### TC-GR-008: Drag and drop back to original position
+
+**Steps:**
+1. Start dragging a block
+2. Release it on its original cell
+
+**Expected:** Block stays in place. No ghost highlights on any cell after release.
+
+### TC-GR-009: Click to select still works after drag
+
+**Steps:**
+1. Click a block without dragging (no mouse movement)
+
+**Expected:** Block is selected (not dragged). Options panel shows the block's settings.
+
+### TC-GR-010: Multiple parallel chains
 
 **Steps:**
 1. Add two Input blocks and two Output blocks

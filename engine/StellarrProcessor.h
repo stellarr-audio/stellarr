@@ -32,15 +32,25 @@ public:
     void setStateInformation(const void* data, int sizeInBytes) override;
 
     // Graph management
-    juce::AudioProcessorGraph::NodeID addBlock(std::unique_ptr<stellarr::Block> block);
-    void removeBlock(juce::AudioProcessorGraph::NodeID nodeId);
+    using UpdateKind = juce::AudioProcessorGraph::UpdateKind;
+
+    juce::AudioProcessorGraph::NodeID addBlock(
+        std::unique_ptr<stellarr::Block> block,
+        UpdateKind update = UpdateKind::sync);
+
+    void removeBlock(juce::AudioProcessorGraph::NodeID nodeId,
+                     UpdateKind update = UpdateKind::sync);
 
     bool connectBlocks(juce::AudioProcessorGraph::NodeID source,
                        juce::AudioProcessorGraph::NodeID dest,
-                       int numChannels = 2);
+                       int numChannels = 2,
+                       UpdateKind update = UpdateKind::sync);
 
     void disconnectBlocks(juce::AudioProcessorGraph::NodeID source,
-                          juce::AudioProcessorGraph::NodeID dest);
+                          juce::AudioProcessorGraph::NodeID dest,
+                          UpdateKind update = UpdateKind::sync);
+
+    void rebuildGraph() { graph.rebuild(); }
 
     juce::AudioProcessorGraph& getGraph() { return graph; }
 

@@ -105,7 +105,8 @@ private:
     void persistPresetInfo();
 
     // Shared helpers for block setup (used by addBlock, pasteBlock, restoreSession)
-    void connectIOBlock(const juce::String& type, juce::AudioProcessorGraph::NodeID nodeId);
+    void connectIOBlock(const juce::String& type, juce::AudioProcessorGraph::NodeID nodeId,
+                        juce::AudioProcessorGraph::UpdateKind update = juce::AudioProcessorGraph::UpdateKind::sync);
     void restoreBlockPlugin(juce::AudioProcessorGraph::NodeID nodeId,
                             const juce::String& pluginId, const juce::String& savedPluginName);
 

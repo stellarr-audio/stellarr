@@ -72,49 +72,51 @@ void StellarrProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::Mid
 // Graph management -----------------------------------------------------------
 
 juce::AudioProcessorGraph::NodeID StellarrProcessor::addBlock(
-    std::unique_ptr<stellarr::Block> block)
+    std::unique_ptr<stellarr::Block> block, StellarrProcessor::UpdateKind update)
 {
-    auto node = graph.addNode(std::move(block));
+    auto node = graph.addNode(std::move(block), std::nullopt, update);
     return node != nullptr ? node->nodeID
                            : juce::AudioProcessorGraph::NodeID{};
 }
 
-void StellarrProcessor::removeBlock(juce::AudioProcessorGraph::NodeID nodeId)
+void StellarrProcessor::removeBlock(juce::AudioProcessorGraph::NodeID nodeId,
+                                    StellarrProcessor::UpdateKind update)
 {
     // Prevent removal of the graph's built-in I/O nodes
     if (nodeId == audioInputNodeId || nodeId == audioOutputNodeId ||
         nodeId == midiInputNodeId || nodeId == midiOutputNodeId)
         return;
 
-    graph.removeNode(nodeId);
+    graph.removeNode(nodeId, update);
 }
 
 bool StellarrProcessor::connectBlocks(
     juce::AudioProcessorGraph::NodeID source,
     juce::AudioProcessorGraph::NodeID dest,
-    int numChannels)
+    int numChannels, StellarrProcessor::UpdateKind update)
 {
     bool ok = true;
 
     for (int ch = 0; ch < numChannels; ++ch)
-        ok &= graph.addConnection({{source, ch}, {dest, ch}});
+        ok &= graph.addConnection({{source, ch}, {dest, ch}}, update);
 
     // Also connect MIDI channel
     graph.addConnection({
         {source, juce::AudioProcessorGraph::midiChannelIndex},
         {dest, juce::AudioProcessorGraph::midiChannelIndex}
-    });
+    }, update);
 
     return ok;
 }
 
 void StellarrProcessor::disconnectBlocks(
     juce::AudioProcessorGraph::NodeID source,
-    juce::AudioProcessorGraph::NodeID dest)
+    juce::AudioProcessorGraph::NodeID dest,
+    StellarrProcessor::UpdateKind update)
 {
     for (auto& conn : graph.getConnections())
         if (conn.source.nodeID == source && conn.destination.nodeID == dest)
-            graph.removeConnection(conn);
+            graph.removeConnection(conn, update);
 }
 
 // AudioProcessor boilerplate -------------------------------------------------

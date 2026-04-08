@@ -94,6 +94,8 @@ juce::var StellarrBridge::serialiseSession() const
 
 void StellarrBridge::clearGraph()
 {
+    using UK = juce::AudioProcessorGraph::UpdateKind;
+
     // Close plugin editor windows first — removeBlock deletes the processor,
     // which would leave dangling window references.
     for (auto& [blockId, nodeId] : blockNodeMap)
@@ -103,10 +105,10 @@ void StellarrBridge::clearGraph()
                 pluginBlock->closePluginEditor();
     }
 
-    // Copy the map — removeBlock invalidates iterators on the original.
+    // Remove all blocks without rebuilding after each one.
     auto ids = blockNodeMap;
     for (auto& [blockId, nodeId] : ids)
-        processor->removeBlock(nodeId);
+        processor->removeBlock(nodeId, UK::none);
 
     blockNodeMap.clear();
     blockPositions.clear();
@@ -119,16 +121,70 @@ void StellarrBridge::restoreSession(const juce::var& session)
     auto* obj = session.getDynamicObject();
     if (obj == nullptr) return;
 
-    // Suspend the entire audio graph during the transition.
-    // No audio processing occurs until we resume after all plugins are loaded.
+    using UK = juce::AudioProcessorGraph::UpdateKind;
+
+    // -- Phase 1: Pre-create plugin instances while audio is still running -----
+    // This is the slow part (loading plugin binaries from disk). We do it before
+    // suspending so the audio gap is as short as possible.
+
+    struct PluginPreload {
+        juce::String blockId;
+        juce::String pluginId;
+        juce::String pluginName;
+        std::unique_ptr<juce::AudioPluginInstance> instance;
+    };
+    std::vector<PluginPreload> preloads;
+
+    auto blocksVar = obj->getProperty("blocks");
+    if (auto* blocksArray = blocksVar.getArray())
+    {
+        for (auto& blockVar : *blocksArray)
+        {
+            auto* blockObj = blockVar.getDynamicObject();
+            if (blockObj == nullptr) continue;
+
+            auto type = blockObj->getProperty("type").toString();
+            if (type != "plugin" && type != "vst") continue;
+
+            auto pluginId = blockObj->getProperty("pluginId").toString();
+            if (pluginId.isEmpty()) continue;
+
+            auto savedId = blockObj->getProperty("id").toString();
+            auto pluginName = blockObj->getProperty("pluginName").toString();
+
+            juce::String errorMessage;
+            auto instance = processor->getPluginManager().createPluginInstance(
+                pluginId, processor->getSampleRate(),
+                processor->getBlockSize(), errorMessage);
+
+            if (instance != nullptr)
+            {
+                instance->setPlayConfigDetails(2, 2, processor->getSampleRate(),
+                                               processor->getBlockSize());
+                instance->prepareToPlay(processor->getSampleRate(),
+                                        processor->getBlockSize());
+            }
+
+            preloads.push_back({savedId, pluginId, pluginName, std::move(instance)});
+        }
+    }
+
+    // -- Phase 2: Suspend and rebuild the graph atomically --------------------
+    // Now that all plugins are pre-loaded, the suspension window is minimal:
+    // just pointer swaps, connection wiring, and a single graph rebuild.
+
     processor->suspendProcessing(true);
 
     clearGraph();
 
-    // Restore blocks
-    auto blocksVar = obj->getProperty("blocks");
+    // Restore blocks (all graph mutations use UpdateKind::none — no intermediate rebuilds)
     if (auto* blocksArray = blocksVar.getArray())
     {
+        // Build a lookup from saved block ID to preloaded instance
+        std::map<juce::String, size_t> preloadIndex;
+        for (size_t i = 0; i < preloads.size(); ++i)
+            preloadIndex[preloads[i].blockId] = i;
+
         for (auto& blockVar : *blocksArray)
         {
             auto* blockObj = blockVar.getDynamicObject();
@@ -149,21 +205,43 @@ void StellarrBridge::restoreSession(const juce::var& session)
             block->resetToDefault();
 
             auto blockId = savedId.isNotEmpty() ? savedId : block->getBlockId().toString();
-            auto nodeId = processor->addBlock(std::move(block));
+            auto nodeId = processor->addBlock(std::move(block), UK::none);
             if (nodeId.uid == 0) continue;
 
             blockNodeMap[blockId] = nodeId;
             blockPositions[blockId] = {col, row};
 
-            connectIOBlock(type, nodeId);
+            connectIOBlock(type, nodeId, UK::none);
 
+            // Install pre-loaded plugin instance (just a pointer swap, fast)
             if (type == "plugin" || type == "vst")
-                restoreBlockPlugin(nodeId, blockObj->getProperty("pluginId").toString(),
-                                   blockObj->getProperty("pluginName").toString());
+            {
+                auto preloadIt = preloadIndex.find(blockId);
+                if (preloadIt != preloadIndex.end())
+                {
+                    auto& pl = preloads[preloadIt->second];
+                    if (auto* node = processor->getGraph().getNodeForId(nodeId))
+                    {
+                        if (auto* pb = dynamic_cast<stellarr::PluginBlock*>(node->getProcessor()))
+                        {
+                            if (pl.instance != nullptr)
+                            {
+                                pb->setPlugin(std::move(pl.instance), pl.pluginId);
+                                pb->restorePluginState();
+                            }
+                            else
+                            {
+                                pb->setPluginMissing(true);
+                                pb->setMissingPluginName(pl.pluginName);
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 
-    // Restore connections
+    // Restore connections (also batched)
     auto connectionsVar = obj->getProperty("connections");
     if (auto* connectionsArray = connectionsVar.getArray())
     {
@@ -179,9 +257,12 @@ void StellarrBridge::restoreSession(const juce::var& session)
             auto dstIt = blockNodeMap.find(destId);
             if (srcIt == blockNodeMap.end() || dstIt == blockNodeMap.end()) continue;
 
-            processor->connectBlocks(srcIt->second, dstIt->second);
+            processor->connectBlocks(srcIt->second, dstIt->second, 2, UK::none);
         }
     }
+
+    // Single atomic rebuild — audio thread picks up the complete new graph in one swap
+    processor->rebuildGraph();
 
     // Restore scenes
     scenes.clear();
@@ -226,15 +307,11 @@ void StellarrBridge::restoreSession(const juce::var& session)
     }
 
     // Restore preset-level MIDI mappings (always clear old, keeps global intact)
-    if (processor != nullptr)
-    {
-        processor->getMidiMapper().loadPresetMappings(
-            obj->hasProperty("midiMappings") ? obj->getProperty("midiMappings") : juce::var());
-        emitMidiMappings();
-    }
+    processor->getMidiMapper().loadPresetMappings(
+        obj->hasProperty("midiMappings") ? obj->getProperty("midiMappings") : juce::var());
+    emitMidiMappings();
 
-    // Resume the graph after a delay — individual plugin blocks have their own
-    // suspendProcessing timers, so this just re-enables graph-level routing.
+    // Resume graph-level routing
     processor->suspendProcessing(false);
 
     sendGraphState();

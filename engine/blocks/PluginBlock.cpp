@@ -6,15 +6,15 @@ namespace stellarr
 void PluginBlock::setPlugin(std::unique_ptr<juce::AudioPluginInstance> newPlugin,
                             const juce::String& identifier)
 {
-    // Suspend at the graph level — guarantees the audio thread will not call
-    // processBlock on this node until we resume.
+    pluginReady.store(false, std::memory_order_release);
     stopTimer();
-    suspendProcessing(true);
 
     pluginWindow = nullptr;
     pluginMissing = false;
     missingPluginName.clear();
 
+    // prepareToPlay may already have been called by the caller (pre-load path).
+    // Call it here as well for the single-block swap path (plugin picker).
     if (newPlugin != nullptr)
     {
         newPlugin->setPlayConfigDetails(
@@ -32,11 +32,9 @@ void PluginBlock::setPlugin(std::unique_ptr<juce::AudioPluginInstance> newPlugin
     if (newPlugin != nullptr)
         newPlugin->releaseResources();
 
-    // Schedule deferred resume to give plugin background threads time to finish
+    // Mark ready immediately — prepareToPlay is complete, the plugin can process.
     if (plugin != nullptr)
-        startTimer(resumeDelayMs);
-    else
-        suspendProcessing(false);
+        pluginReady.store(true, std::memory_order_release);
 }
 
 void PluginBlock::openPluginEditor()
@@ -104,12 +102,10 @@ void PluginBlock::applyState(const PluginBlockState& s, bool suspend)
     setBypassed(s.bypassed);
     setBypassMode(s.bypassMode);
 
-    // Cold path (plugin just loaded / preset restore): suspend audio processing
-    // to give the plugin time to finish background initialisation.
-    // Hot path (scene recall on a running plugin): skip suspension entirely —
-    // setStateInformation on a warm plugin is safe while audio runs.
+    // Cold path (preset restore): gate the audio thread via readiness flag
+    // while we apply state. Hot path (scene recall): spinlock is sufficient.
     if (suspend)
-        suspendAndScheduleResume();
+        pluginReady.store(false, std::memory_order_release);
 
     {
         juce::SpinLock::ScopedLockType lock(pluginLock);
@@ -120,6 +116,9 @@ void PluginBlock::applyState(const PluginBlockState& s, bool suspend)
             plugin->setStateInformation(mb.getData(), static_cast<int>(mb.getSize()));
         }
     }
+
+    if (suspend)
+        pluginReady.store(true, std::memory_order_release);
 }
 
 bool PluginBlock::addState()
@@ -261,7 +260,7 @@ void PluginBlock::fromJson(const juce::var& json)
 
 void PluginBlock::restorePluginState()
 {
-    suspendAndScheduleResume();
+    pluginReady.store(false, std::memory_order_release);
 
     {
         juce::SpinLock::ScopedLockType lock(pluginLock);
@@ -273,6 +272,8 @@ void PluginBlock::restorePluginState()
             pluginStateBase64.clear();
         }
     }
+
+    pluginReady.store(true, std::memory_order_release);
 }
 
 } // namespace stellarr

@@ -82,7 +82,19 @@ Test whenever you touch the connection layer, block bypass, block movement, spli
 
 **Expected:** Block is selected (not dragged). Options panel shows the block's settings.
 
-### TC-GR-010: Multiple parallel chains
+### TC-GR-010: Splice fails when path is broken by muted block
+
+**Steps:**
+1. Build a chain: Input > A > B > Output
+2. Mute block A (bypass mode "Mute")
+3. Click an empty cell on the connection line between A and B
+4. Add a Plugin block
+
+**Expected:** New block should splice into the connection between A and B regardless of bypass state.
+
+**Status:** Known bug (pre-existing). Splice detection does not account for muted blocks in the path.
+
+### TC-GR-011: Multiple parallel chains
 
 **Steps:**
 1. Add two Input blocks and two Output blocks

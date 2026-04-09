@@ -59,9 +59,21 @@ When asked to review code (or variations like "pls review", "review and commit",
 
 ### Commit messages
 
-- Imperative mood, present tense (e.g. "Fix crash on load", not "Fixed crash")
+Follow [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/):
+
+```
+<type>[optional scope]: <description>
+
+[optional body]
+
+[optional footer(s)]
+```
+
+- **Types:** `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`
+- Description in imperative mood, present tense (e.g. `fix: resolve crash on load`)
 - First line under 72 characters
-- Reference GitHub issue numbers where applicable (e.g. `(#12)`)
+- Reference GitHub issue numbers where applicable (e.g. `fix: resolve scan freeze (#12)`)
+- Use `feat!:` or a `BREAKING CHANGE:` footer for breaking changes
 
 ### Committing and PRs
 

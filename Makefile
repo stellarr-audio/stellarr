@@ -1,4 +1,4 @@
-.PHONY: setup dev dev-ui dev-cpp debug debug-cpp release release-cpp run run-debug run-release test docs clean clear-cache
+.PHONY: setup dev dev-ui dev-cpp debug debug-cpp release release-cpp run run-debug run-release test docs clean clear-cache screenshots
 
 .DEFAULT_GOAL := dev
 
@@ -46,6 +46,9 @@ run-release: release
 
 test: debug
 	ctest --test-dir build --output-on-failure
+
+screenshots:
+	./scripts/screenshots.sh
 
 docs:
 	npx serve docs/manual -p 3001

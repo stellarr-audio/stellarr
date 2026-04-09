@@ -33,6 +33,7 @@ public:
     void toggleDevTools();
     bool isDevToolsEnabled() const;
     void hideSplash();
+    StellarrBridge& getBridge() { return bridge; }
 
 private:
     static juce::String getMimeType(const juce::File& file);

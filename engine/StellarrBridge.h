@@ -31,6 +31,7 @@ public:
     void sendMidiMonitorData();
     bool isTunerActive() const { return tunerActive; }
     void setOnUiReady(std::function<void()> callback) { onUiReady = std::move(callback); }
+    void setScreenshotConfig(const juce::var& config) { screenshotConfig = config; }
 
     // Test accessors
     const juce::StringArray& getPresetFiles() const { return presetFiles; }
@@ -97,6 +98,10 @@ private:
     void handleDeleteScene(const juce::var& json);
     void emitScenes();
 
+    // Screenshot automation
+    void handleScreenshotSetup();
+    void handleScreenshotReady();
+
     void sendPluginList();
     void sendScanDirectories();
     void sendPresetList();
@@ -152,4 +157,6 @@ private:
     std::vector<Scene> scenes;
     int activeSceneIndex = -1;
     static constexpr int maxScenes = 16;
+
+    juce::var screenshotConfig;
 };

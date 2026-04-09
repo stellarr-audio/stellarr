@@ -63,7 +63,7 @@ public:
     MidiMapper& getMidiMapper() { return midiMapper; }
 
     double getCpuUsagePercent() const { return cpuUsagePercent.load(std::memory_order_relaxed); }
-    float getOutputPeakLevel() const { return outputPeakLevel.load(std::memory_order_relaxed); }
+    float getOutputPeakLevel() const { return outputPeakLevel.exchange(0.0f, std::memory_order_relaxed); }
 
     void setAppProperties(juce::ApplicationProperties* props) { appProperties = props; }
     juce::ApplicationProperties* getAppProperties() const { return appProperties; }
@@ -80,5 +80,5 @@ private:
     MidiMapper midiMapper;
     juce::ApplicationProperties* appProperties = nullptr;
     std::atomic<double> cpuUsagePercent { 0.0 };
-    std::atomic<float> outputPeakLevel { 0.0f };
+    mutable std::atomic<float> outputPeakLevel { 0.0f };
 };

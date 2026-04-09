@@ -605,7 +605,8 @@ export function initBridge(): void {
     const d = asRecord(detail);
     const blocks = d.blocks as Array<Record<string, unknown>>;
     const store = useStore.getState();
-    if (d.sampleRate) store.setSampleRate(Number(d.sampleRate));
+    const sr = Number(d.sampleRate);
+    if (sr && sr !== store.sampleRate) store.setSampleRate(sr);
     if (Array.isArray(blocks)) {
       store.updateBlockMetrics(
         blocks.map((b) => ({

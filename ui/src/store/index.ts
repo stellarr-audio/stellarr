@@ -322,12 +322,16 @@ export const useStore = create<StellarrState>((set) => ({
   setSampleRate: (rate) => set({ sampleRate: rate }),
 
   updateBlockMetrics: (metrics) =>
-    set((state) => ({
-      blocks: state.blocks.map((b) => {
+    set((state) => {
+      let changed = false;
+      const blocks = state.blocks.map((b) => {
         const m = metrics.find((x) => x.id === b.id);
-        return m ? { ...b, peakDb: m.peakDb, latencySamples: m.latencySamples } : b;
-      }),
-    })),
+        if (!m || (b.peakDb === m.peakDb && b.latencySamples === m.latencySamples)) return b;
+        changed = true;
+        return { ...b, peakDb: m.peakDb, latencySamples: m.latencySamples };
+      });
+      return changed ? { blocks } : {};
+    }),
 
   setTestToneSamples: (samples) => set({ testToneSamples: samples }),
   setTestToneSample: (sample) => set({ testToneSample: sample }),

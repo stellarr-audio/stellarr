@@ -9,6 +9,7 @@ permissions:
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  APP_NAME: Stellarr
 
 jobs:
   build-release:
@@ -38,12 +39,98 @@ jobs:
       - name: Build engine
         run: cmake --build build-release --config Release -j4
 
-      - name: Package app
+      # ── Code signing (requires Apple Developer secrets) ──
+
+      - name: Import signing certificate
+        if: env.APPLE_CERTIFICATE != ''
+        env:
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
         run: |
-          cd build-release/Stellarr_artefacts/Release/Standalone
-          zip -r "${GITHUB_WORKSPACE}/Stellarr-${GITHUB_REF_NAME}-macOS-arm64.zip" Stellarr.app
+          CERT_FILE=$(mktemp /tmp/cert.XXXXXX.p12)
+          KEYCHAIN=build.keychain
+          KEYCHAIN_PASSWORD=$(openssl rand -base64 24)
+
+          echo "$APPLE_CERTIFICATE" | base64 --decode > "$CERT_FILE"
+
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security set-keychain-settings -lut 3600 "$KEYCHAIN"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security import "$CERT_FILE" -k "$KEYCHAIN" -P "$APPLE_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security list-keychains -d user -s "$KEYCHAIN" $(security list-keychains -d user | tr -d '"')
+
+          rm "$CERT_FILE"
+
+      - name: Sign app bundle
+        if: env.APPLE_CERTIFICATE != ''
+        env:
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          APP_PATH="build-release/Stellarr_artefacts/Release/Standalone/${APP_NAME}.app"
+          codesign --deep --force --options runtime \
+            --sign "Developer ID Application: Stellarr (${APPLE_TEAM_ID})" \
+            "$APP_PATH"
+          codesign --verify --deep --strict "$APP_PATH"
+
+      # ── Package as .dmg ──
+
+      - name: Create DMG
+        run: |
+          APP_PATH="build-release/Stellarr_artefacts/Release/Standalone/${APP_NAME}.app"
+          DMG_NAME="${APP_NAME}-${GITHUB_REF_NAME}-macOS-arm64.dmg"
+
+          STAGING=$(mktemp -d)
+          cp -R "$APP_PATH" "$STAGING/"
+          ln -s /Applications "$STAGING/Applications"
+
+          hdiutil create -volname "$APP_NAME" -srcfolder "$STAGING" \
+            -ov -format UDZO "$DMG_NAME"
+
+          rm -rf "$STAGING"
+
+      - name: Sign DMG
+        if: env.APPLE_CERTIFICATE != ''
+        env:
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          DMG_NAME="${APP_NAME}-${GITHUB_REF_NAME}-macOS-arm64.dmg"
+          codesign --force --sign "Developer ID Application: Stellarr (${APPLE_TEAM_ID})" "$DMG_NAME"
+
+      # ── Notarisation (requires Apple ID secrets) ──
+
+      - name: Notarise DMG
+        if: env.APPLE_CERTIFICATE != ''
+        env:
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          DMG_NAME="${APP_NAME}-${GITHUB_REF_NAME}-macOS-arm64.dmg"
+          xcrun notarytool submit "$DMG_NAME" \
+            --apple-id "$APPLE_ID" \
+            --team-id "$APPLE_TEAM_ID" \
+            --password "$APPLE_APP_PASSWORD" \
+            --wait
+          xcrun stapler staple "$DMG_NAME"
+
+      # ── Cleanup ──
+
+      - name: Cleanup keychain
+        if: always() && env.APPLE_CERTIFICATE != ''
+        env:
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+        run: security delete-keychain build.keychain || true
+
+      # ── Upload to GitHub Release ──
 
       - name: Create GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" Stellarr-*.zip --generate-notes
+        run: |
+          DMG_NAME="${APP_NAME}-${GITHUB_REF_NAME}-macOS-arm64.dmg"
+          gh release upload "$GITHUB_REF_NAME" "$DMG_NAME" --clobber || \
+            gh release create "$GITHUB_REF_NAME" "$DMG_NAME" --generate-notes

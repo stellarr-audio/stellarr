@@ -1,0 +1,25 @@
+[
+  {
+    "name": "main",
+    "output": "assets/screenshot.png",
+    "windowSize": [1280, 800],
+    "page": "grid",
+    "preset": "~/Music/Stellarr/Presets/Demo.stellarr",
+    "scene": 0,
+    "actions": [
+      { "selectBlock": { "col": 3, "row": 1 } }
+    ]
+  },
+  {
+    "name": "tuner",
+    "output": "assets/screenshot-tuner.png",
+    "windowSize": [1280, 800],
+    "page": "tuner"
+  },
+  {
+    "name": "settings",
+    "output": "assets/screenshot-settings.png",
+    "windowSize": [1280, 800],
+    "page": "settings"
+  }
+]

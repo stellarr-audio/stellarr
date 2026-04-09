@@ -8,6 +8,7 @@ ui/dist/
 .cache/
 .claude/
 .DS_Store
+screenshots.json
 *.user
 .vscode/
 !.vscode/c_cpp_properties.json

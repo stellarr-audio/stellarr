@@ -11,6 +11,7 @@
   z-index: 2;
   padding: 4px 2px;
   background: var(--color-block-bg);
+  outline: none;
 }
 
 .topRegion {

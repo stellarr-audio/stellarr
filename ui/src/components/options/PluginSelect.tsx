@@ -1,6 +1,6 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { Select } from 'radix-ui';
-import { ChevronDownIcon, ChevronUpIcon } from '@radix-ui/react-icons';
+import { ChevronDownIcon } from '@radix-ui/react-icons';
 import type { PluginInfo } from '../../store';
 import styles from './PluginSelect.module.css';
 
@@ -18,19 +18,25 @@ interface Props {
 
 export function PluginSelect({ plugins, selectedId, onSelect }: Props) {
   const [search, setSearch] = useState('');
+  const searchRef = useRef<HTMLInputElement>(null);
 
   const selected = plugins.find((p) => p.id === selectedId);
 
   const filtered = useMemo(() => {
     const sorted = plugins.toSorted((a, b) => a.name.localeCompare(b.name));
-    return search
-      ? sorted.filter(
-          (p) =>
-            p.name.toLowerCase().includes(search.toLowerCase()) ||
-            p.manufacturer.toLowerCase().includes(search.toLowerCase()),
-        )
-      : sorted;
-  }, [plugins, search]);
+    if (!search) return sorted;
+    const lowerSearch = search.toLowerCase();
+    const matches = sorted.filter(
+      (p) =>
+        p.name.toLowerCase().includes(lowerSearch) ||
+        p.manufacturer.toLowerCase().includes(lowerSearch),
+    );
+    // Always include the selected plugin so Radix can render the trigger text
+    if (selected && !matches.some((p) => p.id === selectedId)) {
+      matches.push(selected);
+    }
+    return matches;
+  }, [plugins, search, selected, selectedId]);
 
   return (
     <Select.Root value={selectedId} onValueChange={onSelect}>
@@ -45,24 +51,23 @@ export function PluginSelect({ plugins, selectedId, onSelect }: Props) {
 
       <Select.Portal>
         <Select.Content position="popper" sideOffset={4} className={styles.content}>
-          <Select.ScrollUpButton className={styles.scrollButton}>
-            <ChevronUpIcon />
-          </Select.ScrollUpButton>
+          <div className={styles.searchWrapper}>
+            <input
+              ref={searchRef}
+              type="text"
+              placeholder="Search..."
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                requestAnimationFrame(() => searchRef.current?.focus());
+              }}
+              onClick={(e) => e.stopPropagation()}
+              onKeyDown={(e) => e.stopPropagation()}
+              className={styles.searchInput}
+            />
+          </div>
 
           <Select.Viewport>
-            {/* Search — using a div so it doesn't interfere with Select keyboard nav */}
-            <div className={styles.searchWrapper}>
-              <input
-                type="text"
-                placeholder="Search..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                onClick={(e) => e.stopPropagation()}
-                onKeyDown={(e) => e.stopPropagation()}
-                className={styles.searchInput}
-              />
-            </div>
-
             {filtered.length === 0 ? (
               <div className={styles.emptyMessage}>No plugins found</div>
             ) : (
@@ -91,10 +96,6 @@ export function PluginSelect({ plugins, selectedId, onSelect }: Props) {
               })
             )}
           </Select.Viewport>
-
-          <Select.ScrollDownButton className={styles.scrollButton}>
-            <ChevronDownIcon />
-          </Select.ScrollDownButton>
         </Select.Content>
       </Select.Portal>
     </Select.Root>

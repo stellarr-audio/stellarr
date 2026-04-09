@@ -92,6 +92,27 @@ or `make build-ui` to verify the UI compiles cleanly.
 
 The build produces a **standalone macOS application** at `build/Stellarr_artefacts/Debug/Standalone/Stellarr.app` (or `Release` for release builds).
 
+## Commit Messages
+
+This project uses [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/):
+
+```
+<type>[optional scope]: <description>
+```
+
+Common types: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`.
+
+Examples:
+
+```
+feat: add MIDI learn to parameter knobs
+fix: resolve crash on load (#12)
+docs: update preset manual page
+chore: bump JUCE to 8.x
+```
+
+Use `feat!:` or a `BREAKING CHANGE:` footer for breaking changes. Keep the first line under 72 characters.
+
 ## Pull Request Guidelines
 
 - Keep PRs focused on a single change

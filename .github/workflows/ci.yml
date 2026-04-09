@@ -22,7 +22,7 @@ jobs:
 
       - uses: actions/setup-node@v5
         with:
-          node-version: 22
+          node-version: 24
 
       - name: Install UI dependencies
         run: cd ui && npm ci

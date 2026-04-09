@@ -3,7 +3,7 @@
   max-width: 1040px;
   text-align: center;
   padding: 0.5rem 0;
-  border-bottom: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--stellarr-color-border);
   flex-shrink: 0;
 }
 
@@ -12,7 +12,7 @@
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--color-primary);
+  color: var(--stellarr-color-primary);
 }
 
 .separator {

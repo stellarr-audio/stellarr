@@ -84,6 +84,17 @@ void Block::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer& mid
         if (lvl < 0.999f || lvl > 1.001f)
             buffer.applyGain(lvl);
     }
+
+    // Update peak level for metering
+    {
+        float peak = 0.0f;
+        for (int ch = 0; ch < buffer.getNumChannels(); ++ch)
+            peak = std::max(peak, buffer.getMagnitude(ch, 0, buffer.getNumSamples()));
+
+        float prev = peakLevel.load(std::memory_order_relaxed);
+        if (peak > prev)
+            peakLevel.store(peak, std::memory_order_relaxed);
+    }
 }
 
 void Block::prepareToPlay(double sampleRate, int samplesPerBlock)

@@ -2,7 +2,7 @@ import { useStore } from '../../store';
 import styles from './SystemStats.module.css';
 
 function cpuBarColor(percent: number): string {
-  if (percent < 40) return 'var(--color-green)';
+  if (percent < 40) return 'var(--stellarr-color-green)';
   if (percent < 70) return '#ffcc00';
   return '#ff4444';
 }
@@ -36,7 +36,7 @@ function levelToPercent(db: number): number {
 function levelBarColor(db: number, clipping: boolean): string {
   if (clipping || db > 0) return '#ff4444';
   if (db > -6) return '#ffcc00';
-  return 'var(--color-green)';
+  return 'var(--stellarr-color-green)';
 }
 
 function OutputLevelBar() {

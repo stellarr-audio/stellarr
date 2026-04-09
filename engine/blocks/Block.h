@@ -146,6 +146,12 @@ public:
         bypassMode.store(static_cast<int>(mode), std::memory_order_relaxed);
     }
 
+    // Per-block peak level metering (read from message thread, written from audio thread)
+    float getPeakLevel() const
+    {
+        return peakLevel.exchange(0.0f, std::memory_order_relaxed);
+    }
+
     // Reset transient state to defaults. Called when loading a preset.
     virtual void resetToDefault() {}
 
@@ -204,6 +210,7 @@ private:
     std::atomic<float> level { 1.0f };
     std::atomic<bool> bypassed { false };
     std::atomic<int> bypassMode { static_cast<int>(BypassMode::thru) };
+    mutable std::atomic<float> peakLevel { 0.0f };
     juce::AudioBuffer<float> dryBuffer;
 };
 

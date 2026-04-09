@@ -1,6 +1,6 @@
 .divider {
   height: 1px;
-  background: var(--color-border);
+  background: var(--stellarr-color-border);
 }
 
 .container {
@@ -12,7 +12,7 @@
 .sectionTitle {
   font-size: 1rem;
   font-weight: 600;
-  color: var(--color-secondary);
+  color: var(--stellarr-color-secondary);
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -30,12 +30,12 @@
   align-items: center;
   justify-content: center;
   background: transparent;
-  border: 1px dashed var(--color-border);
-  color: var(--color-muted);
+  border: 1px dashed var(--stellarr-color-border);
+  color: var(--stellarr-color-muted);
   cursor: pointer;
   padding: 0;
 }
 
 .addButton:hover {
-  border-color: var(--color-muted);
+  border-color: var(--stellarr-color-muted);
 }

@@ -1,19 +1,19 @@
 .trigger {
   width: 20px;
   height: 20px;
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--stellarr-color-border);
   cursor: pointer;
   padding: 0;
   flex-shrink: 0;
 }
 
 .trigger:hover {
-  border-color: var(--color-muted);
+  border-color: var(--stellarr-color-muted);
 }
 
 .content {
-  background: var(--color-dropdown-bg);
-  border: 1px solid var(--color-border);
+  background: var(--stellarr-color-dropdown-bg);
+  border: 1px solid var(--stellarr-color-border);
   padding: 0.5rem;
   z-index: 20;
   display: grid;

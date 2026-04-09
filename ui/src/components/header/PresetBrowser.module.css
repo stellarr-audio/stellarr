@@ -7,8 +7,8 @@
 /* Icon buttons (open, save icon) */
 .iconBtn {
   background: transparent;
-  border: 1px solid var(--color-border);
-  color: var(--color-muted);
+  border: 1px solid var(--stellarr-color-border);
+  color: var(--stellarr-color-muted);
   padding: 0.3rem;
   cursor: pointer;
   display: flex;
@@ -26,7 +26,7 @@
   display: flex;
   align-items: stretch;
   background: transparent;
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--stellarr-color-border);
   padding: 0;
   cursor: pointer;
   outline: none;
@@ -36,10 +36,10 @@
 .triggerLabel {
   font-size: 0.85rem;
   font-weight: 600;
-  color: var(--color-muted);
+  color: var(--stellarr-color-muted);
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  background: color-mix(in srgb, var(--color-border) 53%, transparent);
+  background: color-mix(in srgb, var(--stellarr-color-border) 53%, transparent);
   padding: 0.3rem 0.5rem;
   display: flex;
   align-items: center;
@@ -64,22 +64,22 @@
 }
 
 .triggerValueText.hasValue {
-  color: var(--color-text);
+  color: var(--stellarr-color-text);
 }
 
 .triggerValueText.noValue {
-  color: var(--color-muted);
+  color: var(--stellarr-color-muted);
 }
 
 .triggerChevron {
   flex-shrink: 0;
-  color: var(--color-muted);
+  color: var(--stellarr-color-muted);
 }
 
 /* Dropdown content */
 .dropdownContent {
-  background: var(--color-dropdown-bg);
-  border: 1px solid var(--color-border);
+  background: var(--stellarr-color-dropdown-bg);
+  border: 1px solid var(--stellarr-color-border);
   padding: 0.25rem 0;
   min-width: var(--radix-dropdown-menu-trigger-width);
   z-index: 20;
@@ -106,13 +106,13 @@
 .menuItem {
   padding: 0.35rem 0.75rem;
   font-size: 1rem;
-  color: var(--color-text);
+  color: var(--stellarr-color-text);
   cursor: pointer;
   outline: none;
 }
 
 .menuItem:hover {
-  background: var(--color-border);
+  background: var(--stellarr-color-border);
 }
 
 .menuItemFlex {
@@ -123,7 +123,7 @@
 .menuItemActive {
   composes: menuItem;
   font-weight: 700;
-  color: var(--color-primary);
+  color: var(--stellarr-color-primary);
 }
 
 .menuItemActiveFlex {
@@ -133,26 +133,26 @@
 
 .menuItemMuted {
   composes: menuItem;
-  color: var(--color-muted);
+  color: var(--stellarr-color-muted);
 }
 
 .menuItemDanger {
   composes: menuItem;
-  color: var(--color-danger);
+  color: var(--stellarr-color-danger);
 }
 
 /* Empty state */
 .emptyState {
   padding: 0.35rem 0.75rem;
   font-size: 1rem;
-  color: var(--color-muted);
+  color: var(--stellarr-color-muted);
   font-style: italic;
 }
 
 /* Separator */
 .separator {
   height: 1px;
-  background: var(--color-border);
+  background: var(--stellarr-color-border);
   margin: 0.25rem 0;
 }
 
@@ -174,8 +174,8 @@
 
 .sceneMidiBtn {
   background: transparent;
-  border: 1px solid var(--color-border);
-  color: var(--color-muted);
+  border: 1px solid var(--stellarr-color-border);
+  color: var(--stellarr-color-muted);
   padding: 0.3rem 0.4rem;
   cursor: pointer;
   display: flex;
@@ -190,15 +190,15 @@
 
 .sceneMidiBtnAssigned {
   composes: sceneMidiBtn;
-  color: var(--color-secondary);
-  border-color: var(--color-secondary);
+  color: var(--stellarr-color-secondary);
+  border-color: var(--stellarr-color-secondary);
 }
 
 /* MIDI tag next to scene name */
 .midiTag {
   background: rgba(0, 180, 255, 0.094);
-  border: 1px solid var(--color-secondary);
-  color: var(--color-secondary);
+  border: 1px solid var(--stellarr-color-secondary);
+  color: var(--stellarr-color-secondary);
   font-size: 0.6rem;
   font-weight: 600;
   letter-spacing: 0.04em;
@@ -211,7 +211,7 @@
 /* Sub-trigger (dots icon) */
 .subTrigger {
   padding: 0.35rem 0.5rem;
-  color: var(--color-muted);
+  color: var(--stellarr-color-muted);
   cursor: pointer;
   outline: none;
   display: flex;
@@ -219,14 +219,14 @@
 }
 
 .subTrigger:hover {
-  background: var(--color-border);
+  background: var(--stellarr-color-border);
 }
 
 /* Save split button */
 .saveSplit {
   display: flex;
   align-items: stretch;
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--stellarr-color-border);
 }
 
 .saveBtn {
@@ -245,19 +245,19 @@
 
 .saveBtnDefault {
   composes: saveBtn;
-  color: var(--color-muted);
+  color: var(--stellarr-color-muted);
 }
 
 .saveBtnSaved {
   composes: saveBtn;
-  color: var(--color-green);
+  color: var(--stellarr-color-green);
 }
 
 .saveChevron {
   background: transparent;
   border: none;
-  border-left: 1px solid var(--color-border);
-  color: var(--color-muted);
+  border-left: 1px solid var(--stellarr-color-border);
+  color: var(--stellarr-color-muted);
   padding: 0.3rem 0.2rem;
   cursor: pointer;
   display: flex;

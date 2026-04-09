@@ -1,6 +1,6 @@
 .root {
-  background: var(--color-bg);
-  color: var(--color-text);
+  background: var(--stellarr-color-bg);
+  color: var(--stellarr-color-text);
   font-family: 'Switzer', system-ui, -apple-system, sans-serif;
   letter-spacing: 0.02em;
   height: 100vh;
@@ -15,7 +15,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 0.5rem 1.25rem;
-  border-bottom: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--stellarr-color-border);
   flex-shrink: 0;
 }
 
@@ -33,16 +33,16 @@
 }
 
 .brandLogo {
-  filter: drop-shadow(0 0 4px var(--color-primary));
+  filter: drop-shadow(0 0 4px var(--stellarr-color-primary));
 }
 
 .brandName {
   font-size: 1rem;
   font-weight: 700;
-  color: var(--color-primary);
+  color: var(--stellarr-color-primary);
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  text-shadow: 0 0 12px color-mix(in srgb, var(--color-primary) 27%, transparent);
+  text-shadow: 0 0 12px color-mix(in srgb, var(--stellarr-color-primary) 27%, transparent);
 }
 
 .tabList {
@@ -55,7 +55,7 @@
   background: transparent;
   border: none;
   border-bottom: 2px solid transparent;
-  color: var(--color-muted);
+  color: var(--stellarr-color-muted);
   padding: 0.6rem 1rem;
   font-size: 1rem;
   font-weight: 600;
@@ -66,13 +66,13 @@
 }
 
 .tab:hover {
-  color: var(--color-text);
+  color: var(--stellarr-color-text);
 }
 
 .tabActive {
-  background: var(--color-border);
-  border-bottom: 2px solid var(--color-primary);
-  color: var(--color-text);
+  background: var(--stellarr-color-border);
+  border-bottom: 2px solid var(--stellarr-color-primary);
+  color: var(--stellarr-color-text);
 }
 
 .headerCenter {

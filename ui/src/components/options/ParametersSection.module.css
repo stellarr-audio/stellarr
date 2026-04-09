@@ -1,6 +1,6 @@
 .divider {
   height: 1px;
-  background: var(--color-border);
+  background: var(--stellarr-color-border);
 }
 
 .container {
@@ -12,7 +12,7 @@
 .sectionTitle {
   font-size: 1rem;
   font-weight: 600;
-  color: var(--color-secondary);
+  color: var(--stellarr-color-secondary);
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -26,7 +26,7 @@
 
 .paramValue {
   font-size: 1rem;
-  color: var(--color-secondary);
+  color: var(--stellarr-color-secondary);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   min-width: 4ch;
@@ -46,15 +46,15 @@
 
 .paramLabelText {
   font-size: 1rem;
-  color: var(--color-text);
+  color: var(--stellarr-color-text);
   letter-spacing: 0.05em;
   text-transform: uppercase;
 }
 
 .midiButton {
   background: transparent;
-  border: 1px solid var(--color-border);
-  color: var(--color-muted);
+  border: 1px solid var(--stellarr-color-border);
+  color: var(--stellarr-color-muted);
   font-size: 0.65rem;
   font-weight: 600;
   letter-spacing: 0.04em;
@@ -65,14 +65,14 @@
 
 .midiButtonAssigned {
   background: rgba(0, 180, 255, 0.094);
-  border-color: var(--color-secondary);
-  color: var(--color-secondary);
+  border-color: var(--stellarr-color-secondary);
+  color: var(--stellarr-color-secondary);
 }
 
 /* Bypass Mode */
 .bypassModeLabel {
   font-size: 1rem;
-  color: var(--color-text);
+  color: var(--stellarr-color-text);
   letter-spacing: 0.05em;
   text-transform: uppercase;
 }
@@ -80,9 +80,9 @@
 .selectTrigger {
   width: 100%;
   text-align: left;
-  background: var(--color-cell);
-  color: var(--color-text);
-  border: 1px solid var(--color-border);
+  background: var(--stellarr-color-cell);
+  color: var(--stellarr-color-text);
+  border: 1px solid var(--stellarr-color-border);
   padding: 0.35rem 0.5rem;
   font-size: 1rem;
   cursor: pointer;
@@ -93,8 +93,8 @@
 }
 
 .selectContent {
-  background: var(--color-dropdown-bg);
-  border: 1px solid var(--color-border);
+  background: var(--stellarr-color-dropdown-bg);
+  border: 1px solid var(--stellarr-color-border);
   width: var(--radix-select-trigger-width);
   z-index: 20;
 }
@@ -102,7 +102,7 @@
 .selectItem {
   padding: 0.35rem 0.5rem;
   font-size: 1rem;
-  color: var(--color-text);
+  color: var(--stellarr-color-text);
   cursor: pointer;
   outline: none;
 }

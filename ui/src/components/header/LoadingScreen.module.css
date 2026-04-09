@@ -1,6 +1,6 @@
 .container {
-  background: var(--color-bg);
-  color: var(--color-text);
+  background: var(--stellarr-color-bg);
+  color: var(--stellarr-color-text);
   height: 100vh;
   display: flex;
   flex-direction: column;
@@ -10,35 +10,35 @@
 }
 
 .logo {
-  filter: drop-shadow(0 0 8px color-mix(in srgb, var(--color-primary) 40%, transparent));
+  filter: drop-shadow(0 0 8px color-mix(in srgb, var(--stellarr-color-primary) 40%, transparent));
 }
 
 .title {
   font-size: 1.2rem;
   font-weight: 700;
-  color: var(--color-primary);
+  color: var(--stellarr-color-primary);
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  text-shadow: 0 0 16px color-mix(in srgb, var(--color-primary) 27%, transparent);
+  text-shadow: 0 0 16px color-mix(in srgb, var(--stellarr-color-primary) 27%, transparent);
 }
 
 .progressTrack {
   width: 280px;
   height: 3px;
-  background: var(--color-border);
+  background: var(--stellarr-color-border);
   border-radius: 2px;
   overflow: hidden;
 }
 
 .progressFill {
   height: 100%;
-  background: var(--color-primary);
+  background: var(--stellarr-color-primary);
   transition: width 0.3s ease;
 }
 
 .status {
   font-size: 1rem;
-  color: var(--color-muted);
+  color: var(--stellarr-color-muted);
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }

@@ -11,9 +11,9 @@
 .track {
   position: relative;
   flex-grow: 1;
-  height: 4px;
+  height: var(--stellarr-track-height);
   border-radius: 9999px;
-  background: var(--color-border);
+  background: var(--stellarr-color-border);
   overflow: hidden;
 }
 
@@ -21,7 +21,7 @@
   position: absolute;
   height: 100%;
   border-radius: 9999px;
-  background: var(--color-primary);
+  background: var(--stellarr-color-primary);
 }
 
 .thumb {
@@ -29,8 +29,8 @@
   width: 16px;
   height: 16px;
   border-radius: 9999px;
-  background: var(--color-secondary);
-  box-shadow: 0 0 4px color-mix(in srgb, var(--color-secondary) 27%, transparent);
+  background: var(--stellarr-color-secondary);
+  box-shadow: 0 0 4px color-mix(in srgb, var(--stellarr-color-secondary) 27%, transparent);
   outline: none;
   cursor: grab;
 }

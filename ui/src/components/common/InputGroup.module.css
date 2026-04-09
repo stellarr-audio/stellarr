@@ -1,11 +1,11 @@
 .group {
   display: flex;
   align-items: stretch;
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--stellarr-color-border);
 }
 
 .group:focus-within {
-  border-color: var(--color-secondary);
+  border-color: var(--stellarr-color-secondary);
 }
 
 .label {
@@ -14,8 +14,8 @@
   padding: 0.3rem 0.5rem;
   font-size: 0.85rem;
   font-weight: 600;
-  color: var(--color-muted);
-  background: color-mix(in srgb, var(--color-border) 53%, transparent);
+  color: var(--stellarr-color-muted);
+  background: color-mix(in srgb, var(--stellarr-color-border) 53%, transparent);
   letter-spacing: 0.06em;
   text-transform: uppercase;
   white-space: nowrap;

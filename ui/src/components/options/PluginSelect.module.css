@@ -1,8 +1,8 @@
 .trigger {
   width: 100%;
   text-align: left;
-  background: var(--color-cell);
-  border: 1px solid var(--color-border);
+  background: var(--stellarr-color-cell);
+  border: 1px solid var(--stellarr-color-border);
   padding: 0.35rem 0.5rem;
   font-size: 1rem;
   cursor: pointer;
@@ -14,16 +14,16 @@
 }
 
 .triggerSelected {
-  color: var(--color-text);
+  color: var(--stellarr-color-text);
 }
 
 .triggerPlaceholder {
-  color: var(--color-muted);
+  color: var(--stellarr-color-muted);
 }
 
 .content {
-  background: var(--color-dropdown-bg);
-  border: 1px solid var(--color-border);
+  background: var(--stellarr-color-dropdown-bg);
+  border: 1px solid var(--stellarr-color-border);
   max-height: 400px;
   display: flex;
   flex-direction: column;
@@ -34,13 +34,13 @@
 
 .searchWrapper {
   padding: 0.25rem 0.5rem;
-  border-bottom: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--stellarr-color-border);
   flex-shrink: 0;
 }
 
 .searchInput {
-  background: var(--color-cell);
-  color: var(--color-text);
+  background: var(--stellarr-color-cell);
+  color: var(--stellarr-color-text);
   border: none;
   width: 100%;
   padding: 0.25rem 0;
@@ -51,7 +51,7 @@
 .emptyMessage {
   padding: 0.5rem;
   font-size: 1rem;
-  color: var(--color-muted);
+  color: var(--stellarr-color-muted);
   font-style: italic;
 }
 
@@ -63,7 +63,7 @@
   cursor: pointer;
   outline: none;
   font-size: 1rem;
-  color: var(--color-text);
+  color: var(--stellarr-color-text);
 }
 
 .item:hover {
@@ -72,7 +72,7 @@
 
 .itemManufacturer {
   font-size: 0.85rem;
-  color: var(--color-muted);
+  color: var(--stellarr-color-muted);
   margin-top: 0.1rem;
 }
 

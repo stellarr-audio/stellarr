@@ -17,7 +17,7 @@
   top: -4px;
   width: 3px;
   height: 48px;
-  background: var(--color-muted);
+  background: var(--stellarr-color-muted);
   transform: translateX(-50%);
   pointer-events: none;
 }

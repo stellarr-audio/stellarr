@@ -642,6 +642,45 @@ void StellarrBridge::sendGraphState()
     emitScenes();
 }
 
+// -- Per-block metrics --------------------------------------------------------
+
+void StellarrBridge::sendBlockMetrics()
+{
+    if (webView == nullptr || processor == nullptr) return;
+
+    juce::Array<juce::var> metricsArray;
+
+    for (auto& [blockId, nodeId] : blockNodeMap)
+    {
+        if (auto* node = processor->getGraph().getNodeForId(nodeId))
+        {
+            if (auto* block = dynamic_cast<stellarr::Block*>(node->getProcessor()))
+            {
+                float peakLinear = block->getPeakLevel();
+                float peakDb = peakLinear > 0.0001f
+                    ? 20.0f * std::log10(peakLinear)
+                    : -60.0f;
+
+                auto* m = new juce::DynamicObject();
+                m->setProperty("id", blockId);
+                m->setProperty("peakDb", static_cast<double>(peakDb));
+
+                if (auto* pluginBlock = dynamic_cast<stellarr::PluginBlock*>(node->getProcessor()))
+                    m->setProperty("latencySamples", pluginBlock->getPluginLatencySamples());
+                else
+                    m->setProperty("latencySamples", 0);
+
+                metricsArray.add(juce::var(m));
+            }
+        }
+    }
+
+    auto* detail = new juce::DynamicObject();
+    detail->setProperty("blocks", metricsArray);
+    detail->setProperty("sampleRate", processor->getSampleRate());
+    emitToJs("blockMetrics", detail);
+}
+
 // -- System stats and tuner ---------------------------------------------------
 
 void StellarrBridge::sendSystemStats(double cpuPercent, float outputPeakLinear)

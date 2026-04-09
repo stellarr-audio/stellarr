@@ -1,6 +1,6 @@
 .content {
-  background: var(--color-dropdown-bg);
-  border: 1px solid var(--color-border);
+  background: var(--stellarr-color-dropdown-bg);
+  border: 1px solid var(--stellarr-color-border);
   padding: 0.25rem 0;
   min-width: 120px;
   z-index: 10;
@@ -12,17 +12,17 @@
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--color-text);
+  color: var(--stellarr-color-text);
   cursor: pointer;
   outline: none;
 }
 
 .item:hover {
-  background: var(--color-border);
+  background: var(--stellarr-color-border);
 }
 
 .separator {
   height: 1px;
-  background: var(--color-border);
+  background: var(--stellarr-color-border);
   margin: 0.25rem 0;
 }

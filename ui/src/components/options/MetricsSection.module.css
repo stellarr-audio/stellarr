@@ -1,0 +1,47 @@
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.label {
+  font-size: 0.8rem;
+  color: var(--stellarr-color-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.value {
+  font-size: 0.8rem;
+  color: var(--stellarr-color-secondary);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.valueClipping {
+  color: var(--stellarr-color-danger-bright);
+}
+
+.meterTrack {
+  height: var(--stellarr-track-height);
+  background: var(--stellarr-color-cell);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.meterFill {
+  height: 100%;
+  background: var(--stellarr-color-secondary);
+  border-radius: 2px;
+  transition: width 80ms linear;
+}
+
+.meterClipping {
+  background: var(--stellarr-color-danger-bright);
+}

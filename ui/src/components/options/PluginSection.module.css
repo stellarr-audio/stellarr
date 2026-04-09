@@ -7,7 +7,7 @@
 .sectionTitle {
   font-size: 1rem;
   font-weight: 600;
-  color: var(--color-secondary);
+  color: var(--stellarr-color-secondary);
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -24,8 +24,8 @@
 
 .optionsButton {
   background: transparent;
-  border: 1px solid var(--color-border);
-  color: var(--color-muted);
+  border: 1px solid var(--stellarr-color-border);
+  color: var(--stellarr-color-muted);
   padding: 0.3rem;
   cursor: pointer;
   display: flex;
@@ -34,11 +34,11 @@
 }
 
 .optionsButton:hover {
-  border-color: var(--color-muted);
+  border-color: var(--stellarr-color-muted);
 }
 
 .emptyMessage {
   font-size: 1rem;
-  color: var(--color-muted);
+  color: var(--stellarr-color-muted);
   font-style: italic;
 }

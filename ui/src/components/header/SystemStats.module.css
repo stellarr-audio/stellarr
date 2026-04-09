@@ -13,14 +13,14 @@
 
 .label {
   font-size: 1rem;
-  color: var(--color-muted);
+  color: var(--stellarr-color-muted);
   letter-spacing: 0.06em;
 }
 
 .track {
   width: 50px;
-  height: 6px;
-  background: var(--color-border);
+  height: var(--stellarr-track-height);
+  background: var(--stellarr-color-border);
   border-radius: 3px;
   overflow: hidden;
 }

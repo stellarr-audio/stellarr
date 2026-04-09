@@ -83,6 +83,12 @@ public:
         return plugin != nullptr;
     }
 
+    int getPluginLatencySamples() const
+    {
+        juce::SpinLock::ScopedLockType lock(pluginLock);
+        return plugin != nullptr ? plugin->getLatencySamples() : 0;
+    }
+
     void openPluginEditor();
     void closePluginEditor() { pluginWindow = nullptr; }
 

@@ -1,6 +1,6 @@
 .grid {
   position: relative;
-  background: var(--color-bg);
+  background: var(--stellarr-color-bg);
   overflow: visible;
 }
 
@@ -10,8 +10,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--color-cell);
-  border: 1px solid var(--color-border);
+  background: var(--stellarr-color-cell);
+  border: 1px solid var(--stellarr-color-border);
   cursor: pointer;
   transition: background 0.1s ease, border-color 0.1s ease;
 }
@@ -22,24 +22,24 @@
 }
 
 .cellHovered {
-  background: var(--color-cell-hover);
-  border-color: var(--color-muted);
+  background: var(--stellarr-color-cell-hover);
+  border-color: var(--stellarr-color-muted);
 }
 
 .cellActive {
-  background: var(--color-cell-hover);
-  border-color: var(--color-muted);
+  background: var(--stellarr-color-cell-hover);
+  border-color: var(--stellarr-color-muted);
 }
 
 .cellDropTarget {
-  border-color: var(--color-secondary);
+  border-color: var(--stellarr-color-secondary);
   background: rgba(0, 180, 255, 0.094);
 }
 
 .cellPlus {
   font-size: 1.2rem;
   font-weight: 300;
-  color: var(--color-muted);
+  color: var(--stellarr-color-muted);
   line-height: 1;
 }
 
@@ -47,7 +47,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--color-block-bg);
+  background: var(--stellarr-color-block-bg);
   border: 2px solid;
   opacity: 0.85;
   font-size: 1rem;

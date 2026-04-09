@@ -17,7 +17,7 @@
 .sectionTitle {
   font-size: 1rem;
   font-weight: 600;
-  color: var(--color-secondary);
+  color: var(--stellarr-color-secondary);
   letter-spacing: 0.1em;
   text-transform: uppercase;
   margin: 0 0 0.75rem 0;
@@ -35,8 +35,8 @@
   align-items: center;
   justify-content: space-between;
   padding: 0.5rem 0.75rem;
-  background: var(--color-cell);
-  border: 1px solid var(--color-border);
+  background: var(--stellarr-color-cell);
+  border: 1px solid var(--stellarr-color-border);
 }
 
 .dirInfo {
@@ -47,17 +47,17 @@
 
 .dirPath {
   font-size: 1rem;
-  color: var(--color-text);
+  color: var(--stellarr-color-text);
   word-break: break-all;
 }
 
 .dirBadge {
   font-size: 1rem;
   font-weight: 600;
-  color: var(--color-secondary);
+  color: var(--stellarr-color-secondary);
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  border: 1px solid color-mix(in srgb, var(--color-secondary) 27%, transparent);
+  border: 1px solid color-mix(in srgb, var(--stellarr-color-secondary) 27%, transparent);
   padding: 0.1rem 0.3rem;
   flex-shrink: 0;
 }
@@ -65,7 +65,7 @@
 .removeBtn {
   background: transparent;
   border: none;
-  color: var(--color-muted);
+  color: var(--stellarr-color-muted);
   font-size: 1rem;
   cursor: pointer;
   padding: 0 0.25rem;
@@ -79,8 +79,8 @@
 
 .actionBtn {
   background: transparent;
-  color: var(--color-text);
-  border: 1px solid var(--color-border);
+  color: var(--stellarr-color-text);
+  border: 1px solid var(--stellarr-color-border);
   padding: 0.35rem 0.75rem;
   font-size: 1rem;
   font-weight: 600;
@@ -90,12 +90,12 @@
 }
 
 .actionBtn:hover {
-  border-color: var(--color-muted);
+  border-color: var(--stellarr-color-muted);
 }
 
 .emptyText {
   font-size: 1rem;
-  color: var(--color-muted);
+  color: var(--stellarr-color-muted);
   font-style: italic;
 }
 
@@ -112,24 +112,24 @@
   align-items: center;
   justify-content: space-between;
   padding: 0.4rem 0.75rem;
-  background: var(--color-cell);
-  border: 1px solid var(--color-border);
+  background: var(--stellarr-color-cell);
+  border: 1px solid var(--stellarr-color-border);
 }
 
 .pluginName {
   font-size: 1rem;
   font-weight: 600;
-  color: var(--color-text);
+  color: var(--stellarr-color-text);
 }
 
 .pluginManufacturer {
   font-size: 1rem;
-  color: var(--color-muted);
+  color: var(--stellarr-color-muted);
 }
 
 .pluginFormat {
   font-size: 1rem;
-  color: var(--color-muted);
+  color: var(--stellarr-color-muted);
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
@@ -139,8 +139,8 @@
   align-items: center;
   justify-content: space-between;
   padding: 0.5rem 0.75rem;
-  background: var(--color-cell);
-  border: 1px solid var(--color-border);
+  background: var(--stellarr-color-cell);
+  border: 1px solid var(--stellarr-color-border);
 }
 
 .privacyInfo {
@@ -152,12 +152,12 @@
 .privacyLabel {
   font-size: 1rem;
   font-weight: 600;
-  color: var(--color-text);
+  color: var(--stellarr-color-text);
 }
 
 .privacyDescription {
   font-size: 0.85rem;
-  color: var(--color-muted);
+  color: var(--stellarr-color-muted);
   max-width: 400px;
   line-height: 1.4;
 }
@@ -167,7 +167,7 @@
   flex-shrink: 0;
   padding: 1rem;
   box-sizing: border-box;
-  border-left: 1px solid var(--color-border);
+  border-left: 1px solid var(--stellarr-color-border);
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -178,21 +178,21 @@
 .infoTitle {
   font-size: 1.2rem;
   font-weight: 700;
-  color: var(--color-primary);
+  color: var(--stellarr-color-primary);
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  text-shadow: 0 0 12px color-mix(in srgb, var(--color-primary) 27%, transparent);
+  text-shadow: 0 0 12px color-mix(in srgb, var(--stellarr-color-primary) 27%, transparent);
 }
 
 .infoVersion {
   font-size: 1rem;
-  color: var(--color-muted);
+  color: var(--stellarr-color-muted);
   letter-spacing: 0.06em;
 }
 
 .infoDescription {
   font-size: 1rem;
-  color: var(--color-muted);
+  color: var(--stellarr-color-muted);
   text-align: center;
   line-height: 1.6;
   margin: 0;

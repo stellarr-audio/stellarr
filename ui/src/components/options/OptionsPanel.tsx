@@ -7,6 +7,7 @@ import { TYPE_ABBREVIATIONS, formatMidiLabel } from '../common/constants';
 import { Pencil1Icon, PlayIcon, StopIcon } from '@radix-ui/react-icons';
 import { ColorPicker } from './ColorPicker';
 import { PluginSection } from './PluginSection';
+import { MetricsSection } from './MetricsSection';
 import { ParametersSection } from './ParametersSection';
 import { StatesSection } from './StatesSection';
 import { Select } from 'radix-ui';
@@ -38,6 +39,10 @@ export function OptionsPanel() {
       ) : (
         <div className={styles.content}>
           <BlockHeader block={block} />
+
+          <div className={styles.divider} />
+
+          <MetricsSection block={block} />
 
           <div className={styles.divider} />
 

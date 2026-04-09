@@ -2,7 +2,7 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  background: var(--color-bg);
+  background: var(--stellarr-color-bg);
   padding: 2rem;
   overflow: auto;
 }
@@ -25,22 +25,22 @@
 .title {
   font-size: 1.2rem;
   font-weight: 700;
-  color: var(--color-text);
+  color: var(--stellarr-color-text);
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
 .clearBtn {
   background: transparent;
-  border: 1px solid var(--color-border);
-  color: var(--color-muted);
+  border: 1px solid var(--stellarr-color-border);
+  color: var(--stellarr-color-muted);
   padding: 0.3rem 0.6rem;
   font-size: 0.85rem;
   cursor: pointer;
 }
 
 .emptyState {
-  color: var(--color-muted);
+  color: var(--stellarr-color-muted);
   font-style: italic;
   font-size: 1rem;
   text-align: center;
@@ -58,7 +58,7 @@
   align-items: center;
   padding: 0.35rem 0.5rem;
   font-size: 0.8rem;
-  color: var(--color-muted);
+  color: var(--stellarr-color-muted);
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
@@ -97,15 +97,15 @@
   display: flex;
   align-items: center;
   padding: 0.45rem 0.5rem;
-  background: var(--color-cell);
-  border: 1px solid var(--color-border);
+  background: var(--stellarr-color-cell);
+  border: 1px solid var(--stellarr-color-border);
   font-size: 0.95rem;
   cursor: pointer;
   transition: background 0.1s ease;
 }
 
 .row:hover {
-  background: var(--color-border);
+  background: var(--stellarr-color-border);
 }
 
 .activityCol {
@@ -115,31 +115,31 @@
 }
 
 .ccValue {
-  color: var(--color-text);
+  color: var(--stellarr-color-text);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   min-width: 6ch;
 }
 
 .chValue {
-  color: var(--color-muted);
+  color: var(--stellarr-color-muted);
   min-width: 5ch;
 }
 
 .arrow {
-  color: var(--color-muted);
+  color: var(--stellarr-color-muted);
   margin: 0 0.4rem;
 }
 
 .target {
-  color: var(--color-secondary);
+  color: var(--stellarr-color-secondary);
   flex: 1;
 }
 
 .removeBtn {
   background: transparent;
   border: none;
-  color: var(--color-muted);
+  color: var(--stellarr-color-muted);
   cursor: pointer;
   padding: 0.2rem;
   display: flex;
@@ -150,13 +150,13 @@
   width: 10px;
   height: 10px;
   transform: rotate(45deg);
-  background: var(--color-muted);
+  background: var(--stellarr-color-muted);
   opacity: 0.3;
   transition: background 0.1s ease, opacity 0.4s ease;
 }
 
 .activityDotActive {
-  background: var(--color-green);
+  background: var(--stellarr-color-green);
   opacity: 1;
-  box-shadow: 0 0 4px color-mix(in srgb, var(--color-green) 53%, transparent);
+  box-shadow: 0 0 4px color-mix(in srgb, var(--stellarr-color-green) 53%, transparent);
 }

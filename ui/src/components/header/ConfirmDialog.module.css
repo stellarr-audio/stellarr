@@ -10,8 +10,8 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  background: var(--color-dropdown-bg);
-  border: 1px solid var(--color-border);
+  background: var(--stellarr-color-dropdown-bg);
+  border: 1px solid var(--stellarr-color-border);
   padding: 1.5rem;
   z-index: 51;
   min-width: 280px;
@@ -23,7 +23,7 @@
 .title {
   font-size: 1rem;
   font-weight: 700;
-  color: var(--color-text);
+  color: var(--stellarr-color-text);
   letter-spacing: 0.06em;
   text-transform: uppercase;
   margin: 0;
@@ -31,7 +31,7 @@
 
 .message {
   font-size: 0.9rem;
-  color: var(--color-muted);
+  color: var(--stellarr-color-muted);
   margin: 0;
   line-height: 1.4;
 }
@@ -44,15 +44,15 @@
 
 .cancelButton {
   background: transparent;
-  border: 1px solid var(--color-border);
-  color: var(--color-muted);
+  border: 1px solid var(--stellarr-color-border);
+  color: var(--stellarr-color-muted);
   padding: 0.35rem 0.75rem;
   font-size: 0.85rem;
   cursor: pointer;
 }
 
 .confirmButton {
-  background: var(--color-danger);
+  background: var(--stellarr-color-danger);
   border: none;
   color: #ffffff;
   padding: 0.35rem 0.75rem;

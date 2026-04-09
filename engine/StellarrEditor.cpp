@@ -131,6 +131,7 @@ void StellarrEditor::timerCallback()
         auto& proc = dynamic_cast<StellarrProcessor&>(processor);
         bridge.sendSystemStats(proc.getCpuUsagePercent(),
                                proc.getOutputPeakLevel());
+        bridge.sendBlockMetrics();
     }
 
     // Tuner data at ~20Hz

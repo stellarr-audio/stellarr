@@ -601,6 +601,22 @@ export function initBridge(): void {
     useStore.getState().setSystemStats(Number(d.cpu), Number(d.outputLevelDb), Boolean(d.clipping));
   });
 
+  juce.backend.addEventListener('blockMetrics', (detail: unknown) => {
+    const d = asRecord(detail);
+    const blocks = d.blocks as Array<Record<string, unknown>>;
+    const store = useStore.getState();
+    if (d.sampleRate) store.setSampleRate(Number(d.sampleRate));
+    if (Array.isArray(blocks)) {
+      store.updateBlockMetrics(
+        blocks.map((b) => ({
+          id: String(b.id),
+          peakDb: Number(b.peakDb),
+          latencySamples: Number(b.latencySamples),
+        })),
+      );
+    }
+  });
+
   juce.backend.addEventListener('sessionSaved', () => {
     useStore.getState().setJustSaved(true);
     setTimeout(() => useStore.getState().setJustSaved(false), 1200);

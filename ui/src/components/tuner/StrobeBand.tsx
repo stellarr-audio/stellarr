@@ -41,7 +41,7 @@ export function StrobeBand() {
     return () => cancelAnimationFrame(rafRef.current);
   }, []);
 
-  const colour = hasSignal ? centsColor(cents) : 'var(--color-muted)';
+  const colour = hasSignal ? centsColor(cents) : 'var(--stellarr-color-muted)';
   const opacity = hasSignal ? 1 : 0.15;
 
   return (

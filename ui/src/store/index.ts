@@ -24,6 +24,8 @@ export interface GridBlock {
   numStates?: number;
   activeStateIndex?: number;
   dirtyStates?: number[];
+  peakDb?: number;
+  latencySamples?: number;
 }
 
 export interface Connection {
@@ -86,6 +88,7 @@ interface StellarrState {
   testToneSamples: string[];
   testToneSample: string;
   cpuPercent: number;
+  sampleRate: number;
   outputLevelDb: number;
   outputClipping: boolean;
   justSaved: boolean;
@@ -147,6 +150,10 @@ interface StellarrState {
   ) => void;
   setPresetList: (directory: string, files: string[], currentIndex: number) => void;
   setSystemStats: (cpu: number, outputLevelDb: number, clipping: boolean) => void;
+  setSampleRate: (rate: number) => void;
+  updateBlockMetrics: (
+    metrics: Array<{ id: string; peakDb: number; latencySamples: number }>,
+  ) => void;
   setTestToneSamples: (samples: string[]) => void;
   setTestToneSample: (sample: string) => void;
   setJustSaved: (value: boolean) => void;
@@ -212,6 +219,7 @@ export const useStore = create<StellarrState>((set) => ({
   testToneSamples: [],
   testToneSample: 'Synth (Default)',
   cpuPercent: 0,
+  sampleRate: 44100,
   outputLevelDb: -60,
   outputClipping: false,
   justSaved: false,
@@ -310,6 +318,16 @@ export const useStore = create<StellarrState>((set) => ({
 
   setSystemStats: (cpu, outputLevelDb, clipping) =>
     set({ cpuPercent: cpu, outputLevelDb, outputClipping: clipping }),
+
+  setSampleRate: (rate) => set({ sampleRate: rate }),
+
+  updateBlockMetrics: (metrics) =>
+    set((state) => ({
+      blocks: state.blocks.map((b) => {
+        const m = metrics.find((x) => x.id === b.id);
+        return m ? { ...b, peakDb: m.peakDb, latencySamples: m.latencySamples } : b;
+      }),
+    })),
 
   setTestToneSamples: (samples) => set({ testToneSamples: samples }),
   setTestToneSample: (sample) => set({ testToneSample: sample }),

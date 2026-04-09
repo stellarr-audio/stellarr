@@ -22,7 +22,7 @@ export function PluginSelect({ plugins, selectedId, onSelect }: Props) {
   const selected = plugins.find((p) => p.id === selectedId);
 
   const filtered = useMemo(() => {
-    const sorted = [...plugins].sort((a, b) => a.name.localeCompare(b.name));
+    const sorted = plugins.toSorted((a, b) => a.name.localeCompare(b.name));
     return search
       ? sorted.filter(
           (p) =>

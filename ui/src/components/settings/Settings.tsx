@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useStore } from '../../store';
 import {
   requestScanPlugins,
@@ -11,6 +12,10 @@ import styles from './Settings.module.css';
 export function Settings() {
   const scanDirectories = useStore((s) => s.scanDirectories);
   const availablePlugins = useStore((s) => s.availablePlugins);
+  const sortedPlugins = useMemo(
+    () => availablePlugins.toSorted((a, b) => a.name.localeCompare(b.name)),
+    [availablePlugins],
+  );
   const scanning = useStore((s) => s.scanning);
   const telemetryEnabled = useStore((s) => s.telemetryEnabled);
 
@@ -56,7 +61,7 @@ export function Settings() {
             </div>
           ) : (
             <div className={styles.pluginList}>
-              {availablePlugins.map((plugin) => (
+              {sortedPlugins.map((plugin) => (
                 <div key={plugin.id} className={styles.pluginRow}>
                   <div>
                     <div className={styles.pluginName}>{plugin.name}</div>

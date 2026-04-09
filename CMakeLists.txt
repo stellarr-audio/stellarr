@@ -28,6 +28,7 @@ FetchContent_MakeAvailable(sentry)
 
 juce_add_plugin(Stellarr
     COMPANY_NAME "Stellarr"
+    BUNDLE_ID "com.stellarr.stellarr"
     NEEDS_MIDI_INPUT TRUE
     NEEDS_MIDI_OUTPUT TRUE
     EDITOR_WANTS_KEYBOARD_FOCUS TRUE

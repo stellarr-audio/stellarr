@@ -103,8 +103,8 @@ export function GridBlockComponent({ block }: Props) {
   const borderStyle = isSelected
     ? `2px ${block.bypassed ? 'dashed' : 'solid'} #ffffff`
     : block.bypassed
-      ? `2px dashed ${accentColor}44`
-      : `1px solid ${accentColor}55`;
+      ? `2px dashed ${accentColor}cc`
+      : `1px solid ${accentColor}cc`;
 
   return (
     <div

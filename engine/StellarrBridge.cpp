@@ -647,7 +647,11 @@ void StellarrBridge::sendGraphState()
 
 void StellarrBridge::handleScreenshotSetup()
 {
-    if (screenshotConfig.isVoid()) return;
+    auto configFile = juce::File("/tmp/stellarr-screenshot-config.json");
+    if (!configFile.existsAsFile()) return;
+
+    auto screenshotConfig = juce::JSON::parse(configFile.loadFileAsString());
+    configFile.deleteFile();
 
     auto* obj = screenshotConfig.getDynamicObject();
     if (obj == nullptr) return;

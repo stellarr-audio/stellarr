@@ -31,7 +31,6 @@ public:
     void sendMidiMonitorData();
     bool isTunerActive() const { return tunerActive; }
     void setOnUiReady(std::function<void()> callback) { onUiReady = std::move(callback); }
-    void setScreenshotConfig(const juce::var& config) { screenshotConfig = config; }
 
     // Test accessors
     const juce::StringArray& getPresetFiles() const { return presetFiles; }
@@ -158,5 +157,4 @@ private:
     int activeSceneIndex = -1;
     static constexpr int maxScenes = 16;
 
-    juce::var screenshotConfig;
 };

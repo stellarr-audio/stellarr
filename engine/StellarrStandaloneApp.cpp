@@ -94,18 +94,9 @@ public:
     bool moreThanOneInstanceAllowed() override            { return true; }
     void anotherInstanceStarted(const String&) override  {}
 
-    void initialise(const String& commandLine) override
+    void initialise(const String&) override
     {
         stellarr::Telemetry::init(&appProperties);
-
-        // Parse --screenshot <config> <index> args
-        auto args = StringArray::fromTokens(commandLine, true);
-        int screenshotArgIdx = args.indexOf("--screenshot");
-        if (screenshotArgIdx >= 0 && screenshotArgIdx + 2 < args.size())
-        {
-            screenshotConfigPath = args[screenshotArgIdx + 1];
-            screenshotIndex = args[screenshotArgIdx + 2].getIntValue();
-        }
 
         mainWindow.reset(createWindow());
 
@@ -115,36 +106,6 @@ public:
                 proc->setAppProperties(&appProperties);
 
             mainWindow->setVisible(true);
-
-            // Apply window size and pass screenshot config to bridge
-            if (screenshotConfigPath.isNotEmpty())
-            {
-                auto configFile = File(screenshotConfigPath);
-                if (configFile.existsAsFile())
-                {
-                    auto json = JSON::parse(configFile.loadFileAsString());
-                    if (auto* arr = json.getArray())
-                    {
-                        if (screenshotIndex >= 0 && screenshotIndex < arr->size())
-                        {
-                            auto entry = (*arr)[screenshotIndex];
-                            if (auto* obj = entry.getDynamicObject())
-                            {
-                                int w = obj->getProperty("windowSize").getArray() ?
-                                    static_cast<int>(obj->getProperty("windowSize").getArray()->getFirst()) : 1280;
-                                int h = obj->getProperty("windowSize").getArray() && obj->getProperty("windowSize").getArray()->size() > 1 ?
-                                    static_cast<int>((*obj->getProperty("windowSize").getArray())[1]) : 800;
-                                mainWindow->setSize(w, h);
-                                mainWindow->centreWithSize(w, h);
-
-                                if (auto* editor = dynamic_cast<StellarrEditor*>(
-                                        mainWindow->getAudioProcessor()->getActiveEditor()))
-                                    editor->getBridge().setScreenshotConfig(entry);
-                            }
-                        }
-                    }
-                }
-            }
         }
     }
 
@@ -196,8 +157,6 @@ private:
 
     ApplicationProperties appProperties;
     std::unique_ptr<StellarrFilterWindow> mainWindow;
-    String screenshotConfigPath;
-    int screenshotIndex = -1;
 };
 
 } // namespace juce

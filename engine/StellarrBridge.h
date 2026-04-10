@@ -97,6 +97,10 @@ private:
     void handleDeleteScene(const juce::var& json);
     void emitScenes();
 
+    // Screenshot automation
+    void handleScreenshotSetup();
+    void handleScreenshotReady();
+
     void sendPluginList();
     void sendScanDirectories();
     void sendPresetList();
@@ -152,4 +156,5 @@ private:
     std::vector<Scene> scenes;
     int activeSceneIndex = -1;
     static constexpr int maxScenes = 16;
+
 };

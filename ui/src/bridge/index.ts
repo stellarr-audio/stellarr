@@ -318,6 +318,35 @@ export function initBridge(): void {
     requestAnimationFrame(() => sendEvent('uiReady', ''));
   });
 
+  // Screenshot automation
+  juce.backend.addEventListener('screenshotSetup', (detail: unknown) => {
+    const d = asRecord(detail);
+
+    // Navigate to page
+    const page = String(d.page || 'grid');
+    useStore.getState().setActiveTab(page);
+
+    // Delay actions to allow graph state to arrive and render
+    setTimeout(() => {
+      const store = useStore.getState();
+      const actions = d.actions as Array<Record<string, unknown>> | undefined;
+      if (Array.isArray(actions)) {
+        for (const action of actions) {
+          if (action.selectBlock) {
+            const pos = action.selectBlock as Record<string, unknown>;
+            const col = Number(pos.col);
+            const row = Number(pos.row);
+            const block = store.blocks.find((b) => b.col === col && b.row === row);
+            if (block) store.selectBlock(block.id);
+          }
+        }
+      }
+
+      // Wait for render then signal ready
+      setTimeout(() => sendEvent('screenshotReady', ''), 500);
+    }, 1000);
+  });
+
   // Welcome / connection
   juce.backend.addEventListener('welcome', (detail: unknown) => {
     console.log('[Bridge] RX welcome:', extractMessage(detail));

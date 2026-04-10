@@ -47,7 +47,8 @@ void StellarrBridge::handleEvent(const juce::String& eventName, const juce::var&
 
     // Startup
     if (eventName == "bridgeReady")                 handleBridgeReady();
-    else if (eventName == "uiReady")                { if (onUiReady) onUiReady(); }
+    else if (eventName == "uiReady")                { if (onUiReady) onUiReady(); handleScreenshotSetup(); }
+    else if (eventName == "screenshotReady")          { handleScreenshotReady(); }
 
     // Graph
     else if (eventName == "addBlock")               handleAddBlock(json);
@@ -640,6 +641,58 @@ void StellarrBridge::sendGraphState()
     state->setProperty("connections", connectionsArray);
     emitToJs("graphState", state);
     emitScenes();
+}
+
+// -- Screenshot automation ----------------------------------------------------
+
+void StellarrBridge::handleScreenshotSetup()
+{
+    auto configFile = juce::File("/tmp/stellarr-screenshot-config.json");
+    if (!configFile.existsAsFile()) return;
+
+    auto screenshotConfig = juce::JSON::parse(configFile.loadFileAsString());
+    configFile.deleteFile();
+
+    auto* obj = screenshotConfig.getDynamicObject();
+    if (obj == nullptr) return;
+
+    // Load preset if specified
+    auto presetPath = obj->getProperty("preset").toString();
+    if (presetPath.isNotEmpty())
+    {
+        auto file = juce::File(presetPath);
+        if (presetPath.startsWith("~"))
+            file = juce::File::getSpecialLocation(juce::File::userHomeDirectory)
+                       .getChildFile(presetPath.substring(2));
+
+        if (file.existsAsFile())
+        {
+            auto jsonStr = file.loadFileAsString();
+            auto session = juce::JSON::parse(jsonStr);
+            if (session.getDynamicObject() != nullptr)
+            {
+                restoreSession(session);
+                sendGraphState();
+
+                // Recall scene if specified
+                if (obj->hasProperty("scene"))
+                {
+                    auto sceneJson = juce::JSON::parse(
+                        "{\"index\":" + juce::String(static_cast<int>(obj->getProperty("scene"))) + "}");
+                    handleRecallScene(sceneJson);
+                }
+            }
+        }
+    }
+
+    // Send config to UI for page navigation and actions
+    emitToJs("screenshotSetup", obj);
+}
+
+void StellarrBridge::handleScreenshotReady()
+{
+    // Write signal file so the capture script knows we're ready
+    juce::File("/tmp/stellarr-screenshot-ready").create();
 }
 
 // -- System stats and tuner ---------------------------------------------------

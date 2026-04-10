@@ -74,6 +74,7 @@ Follow [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/):
 - First line under 72 characters
 - Reference GitHub issue numbers where applicable (e.g. `fix: resolve scan freeze (#12)`)
 - Use `feat!:` or a `BREAKING CHANGE:` footer for breaking changes
+- Do not add `Co-Authored-By` trailers
 
 ### Committing and PRs
 

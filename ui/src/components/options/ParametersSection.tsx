@@ -61,6 +61,10 @@ function ParamLabel({
 const bypassModes = [
   { value: 'thru', label: 'Thru' },
   { value: 'mute', label: 'Mute' },
+  { value: 'muteIn', label: 'Mute In' },
+  { value: 'muteOut', label: 'Mute Out' },
+  { value: 'muteFxIn', label: 'Mute FX In' },
+  { value: 'muteFxOut', label: 'Mute FX Out' },
 ];
 
 interface Props {

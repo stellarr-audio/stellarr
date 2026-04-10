@@ -36,7 +36,20 @@ These parameters control how the block's audio is processed:
 | Mix | 0--100% | 100% | Wet/dry blend. 0% = fully dry (unprocessed), 100% = fully wet. |
 | Balance | L100--R100 | C (centre) | Stereo balance. Attenuates the opposite channel as you move from centre. |
 | Level | -60 to +12 dB | 0 dB | Output gain applied after mix and balance. |
-| Bypass Mode | Thru / Mute | Thru | What happens when bypassed. **Thru** passes audio unchanged. **Mute** silences the block completely. |
+| Bypass Mode | (see below) | Thru | Controls what happens to audio when the block is bypassed. |
+
+#### Bypass modes
+
+| Mode | Dry signal | Effect | Use case |
+|------|-----------|--------|----------|
+| Thru | Passes through | Skipped | Default. No CPU used by the plugin. |
+| Mute | Silenced | Skipped | Total silence when bypassed. |
+| Mute In | Silenced | Runs on silence | Effect tails (reverb, delay) ring out naturally. |
+| Mute Out | Silenced | Runs normally | Pre-loads signal into the effect before you engage it. |
+| Mute FX In | Passes through | Runs on silence | Tails ring out while dry signal continues uninterrupted. Level and Balance still apply. |
+| Mute FX Out | Passes through | Runs normally, output muted | Pre-loads the effect while dry signal continues. Level and Balance still apply. |
+
+**Tip:** Use **Mute FX In** on reverb and delay blocks for spillover -- when you bypass the block (manually, via MIDI, or via a scene recall), existing tails fade naturally while your dry guitar signal keeps flowing.
 
 Each parameter has a **MIDI** button for assigning a CC controller. Shows the assigned CC number when mapped.
 

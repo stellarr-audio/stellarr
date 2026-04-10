@@ -5,6 +5,8 @@ namespace stellarr
 
 void Block::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midi)
 {
+    // -- Fast-path bypass modes (no processing, no mix/balance/level) ---------
+
     if (bypassed.load(std::memory_order_relaxed))
     {
         auto mode = getBypassMode();
@@ -27,16 +29,29 @@ void Block::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer& mid
             case BypassMode::mute:
                 buffer.clear(); // total silence
                 return;
+
+            case BypassMode::muteFxIn:
+            case BypassMode::muteFxOut:
+                break; // handled below with mix/balance/level
         }
     }
 
+    // -- Determine processing behaviour ---------------------------------------
+
+    bool isBp = bypassed.load(std::memory_order_relaxed);
+    auto mode = getBypassMode();
+    bool feedSilence = isBp && mode == BypassMode::muteFxIn;
+    bool muteWet     = isBp && mode == BypassMode::muteFxOut;
+
+    // -- Process with dry/wet blending ----------------------------------------
+
     auto mixVal = mix.load(std::memory_order_relaxed);
 
-    if (!hasMix || mixVal >= 1.0f)
-    {
-        process(buffer, midi);
-    }
-    else if (mixVal > 0.0f)
+    // When bypassed with FX modes, always blend (dry must pass through)
+    bool needsBlend = (isBp && (mode == BypassMode::muteFxIn || mode == BypassMode::muteFxOut))
+                      || (hasMix && mixVal > 0.0f && mixVal < 1.0f);
+
+    if (needsBlend)
     {
         // Save dry signal
         if (dryBuffer.getNumChannels() != buffer.getNumChannels()
@@ -48,20 +63,56 @@ void Block::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer& mid
         for (int ch = 0; ch < buffer.getNumChannels(); ++ch)
             dryBuffer.copyFrom(ch, 0, buffer, ch, 0, buffer.getNumSamples());
 
+        if (feedSilence)
+            buffer.clear();
+
         process(buffer, midi);
 
-        float dryGain = 1.0f - mixVal;
-
-        for (int ch = 0; ch < buffer.getNumChannels(); ++ch)
+        if (muteWet)
         {
-            auto* wet = buffer.getWritePointer(ch);
-            auto* dry = dryBuffer.getReadPointer(ch);
+            // Discard wet, restore dry
+            for (int ch = 0; ch < buffer.getNumChannels(); ++ch)
+                buffer.copyFrom(ch, 0, dryBuffer, ch, 0, buffer.getNumSamples());
+        }
+        else if (isBp)
+        {
+            // muteFxIn: blend tails (wet) with dry using current mix
+            float wet = hasMix ? mixVal : 1.0f;
+            float dry = 1.0f - wet;
 
-            for (int i = 0; i < buffer.getNumSamples(); ++i)
-                wet[i] = dry[i] * dryGain + wet[i] * mixVal;
+            for (int ch = 0; ch < buffer.getNumChannels(); ++ch)
+            {
+                auto* wetBuf = buffer.getWritePointer(ch);
+                auto* dryBuf = dryBuffer.getReadPointer(ch);
+
+                for (int i = 0; i < buffer.getNumSamples(); ++i)
+                    wetBuf[i] = dryBuf[i] * dry + wetBuf[i] * wet;
+            }
+        }
+        else
+        {
+            // Normal non-bypassed wet/dry blend
+            float dryGain = 1.0f - mixVal;
+
+            for (int ch = 0; ch < buffer.getNumChannels(); ++ch)
+            {
+                auto* wet = buffer.getWritePointer(ch);
+                auto* dry = dryBuffer.getReadPointer(ch);
+
+                for (int i = 0; i < buffer.getNumSamples(); ++i)
+                    wet[i] = dry[i] * dryGain + wet[i] * mixVal;
+            }
         }
     }
-    // mixVal <= 0.0f: fully dry, buffer untouched
+    else if (!isBp)
+    {
+        // Fully wet (mix >= 1.0) or no mix support — just process
+        if (!hasMix || mixVal >= 1.0f)
+            process(buffer, midi);
+        // mixVal <= 0.0f: fully dry, buffer untouched
+    }
+
+    // -- Post-processing: balance and level -----------------------------------
 
     // Apply balance (stereo only, skip for mono or when centred)
     if (hasMix && buffer.getNumChannels() >= 2)

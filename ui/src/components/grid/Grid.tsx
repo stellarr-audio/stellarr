@@ -17,6 +17,7 @@ import {
   requestMoveBlock,
   requestPasteBlock,
   requestToggleBlockBypass,
+  requestRemoveConnection,
 } from '../../bridge';
 import { GridBlockComponent } from './GridBlock';
 import { ConnectionLayer } from './ConnectionLayer';
@@ -71,6 +72,12 @@ export function Grid() {
   const [hoveredCell, setHoveredCell] = useState<{ col: number; row: number } | null>(null);
   const [activeBlock, setActiveBlock] = useState<GridBlockData | null>(null);
   const [menuCell, setMenuCell] = useState<{ col: number; row: number } | null>(null);
+  const [connMenu, setConnMenu] = useState<{
+    x: number;
+    y: number;
+    sourceId: string;
+    destId: string;
+  } | null>(null);
 
   // Space key toggles bypass on the selected block
   useEffect(() => {
@@ -172,6 +179,27 @@ export function Grid() {
     },
     [occupiedSet],
   );
+
+  const handleConnectionClick = useCallback(
+    (e: React.MouseEvent, sourceId: string, destId: string) => {
+      if (!gridRef.current) return;
+      const rect = gridRef.current.getBoundingClientRect();
+      setConnMenu({
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top,
+        sourceId,
+        destId,
+      });
+    },
+    [],
+  );
+
+  useEffect(() => {
+    if (!connMenu) return;
+    const close = () => setConnMenu(null);
+    window.addEventListener('mousedown', close);
+    return () => window.removeEventListener('mousedown', close);
+  }, [connMenu]);
 
   const handleMenuSelect = useCallback(
     (type: string) => {
@@ -278,7 +306,25 @@ export function Grid() {
           }),
         )}
 
-        <ConnectionLayer gridRef={gridRef} />
+        <ConnectionLayer gridRef={gridRef} onConnectionClick={handleConnectionClick} />
+
+        {connMenu && (
+          <div
+            className={styles.connMenu}
+            style={{ left: connMenu.x, top: connMenu.y }}
+            onMouseDown={(e) => e.stopPropagation()}
+          >
+            <div
+              className={styles.connMenuItem}
+              onClick={() => {
+                requestRemoveConnection(connMenu.sourceId, connMenu.destId);
+                setConnMenu(null);
+              }}
+            >
+              Disconnect
+            </div>
+          </div>
+        )}
 
         {blocks.map((block) => (
           <GridBlockComponent key={block.id} block={block} />

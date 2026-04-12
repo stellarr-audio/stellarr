@@ -54,3 +54,27 @@
   font-weight: 700;
   letter-spacing: 0.12em;
 }
+
+/* Connection context menu */
+.connMenu {
+  position: absolute;
+  background: var(--stellarr-color-dropdown-bg);
+  border: 1px solid var(--stellarr-color-border);
+  padding: 0.25rem 0;
+  min-width: 120px;
+  z-index: 15;
+}
+
+.connMenuItem {
+  padding: 0.35rem 0.75rem;
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--stellarr-color-text);
+  cursor: pointer;
+}
+
+.connMenuItem:hover {
+  background: var(--stellarr-color-border);
+}

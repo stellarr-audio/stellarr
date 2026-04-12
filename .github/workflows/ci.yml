@@ -13,7 +13,25 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
-  build-and-test:
+  changes:
+    runs-on: self-hosted
+    outputs:
+      code: ${{ steps.filter.outputs.code }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            code:
+              - 'engine/**'
+              - 'ui/**'
+              - 'CMakeLists.txt'
+              - '.github/workflows/ci.yml'
+
+  run-build:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: self-hosted
     steps:
       - uses: actions/checkout@v5
@@ -41,3 +59,17 @@ jobs:
 
       - name: Run tests
         run: ctest --test-dir build --output-on-failure
+
+  # Gate job — satisfies the required "build-and-test" status check.
+  # Passes when the build succeeds OR when path filters skip it.
+  build-and-test:
+    if: always()
+    needs: [changes, run-build]
+    runs-on: self-hosted
+    steps:
+      - run: |
+          if [ "${{ needs.run-build.result }}" = "failure" ]; then
+            echo "Build failed"
+            exit 1
+          fi
+          echo "OK"

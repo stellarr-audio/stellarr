@@ -92,6 +92,56 @@ Test whenever you touch the connection layer, block bypass, block movement, spli
 
 **Expected:** New block should splice into the connection between A and B regardless of bypass state.
 
+### TC-GR-011: Mute FX In -- reverb tails ring out with dry pass-through
+
+**Steps:**
+1. Build a chain: Input > Reverb plugin > Output
+2. Set reverb to a long decay (2+ seconds)
+3. Set bypass mode to "Mute FX In"
+4. Play guitar, then toggle bypass on
+
+**Expected:** Dry guitar signal continues immediately. Reverb tail fades out naturally over the decay time. Level and Balance controls still affect the output while bypassed.
+
+### TC-GR-012: Mute FX Out -- signal enters effect before engaging
+
+**Steps:**
+1. Build a chain: Input > Reverb plugin > Output
+2. Set bypass mode to "Mute FX Out"
+3. Toggle bypass on
+4. Play guitar for a few seconds (signal enters reverb silently)
+5. Toggle bypass off
+
+**Expected:** While bypassed, dry guitar signal passes through. When un-bypassed, reverb immediately has a tail built up from the signal that was entering while bypassed.
+
+### TC-GR-013: Mute In -- tails ring, no dry
+
+**Steps:**
+1. Build a chain: Input > Delay plugin > Output
+2. Set bypass mode to "Mute In"
+3. Play guitar, then toggle bypass on
+
+**Expected:** Delay repeats continue (tails ring out). Dry signal is silenced -- only the effect tail is heard, fading to silence.
+
+### TC-GR-014: Mute Out -- signal enters, output silenced
+
+**Steps:**
+1. Build a chain: Input > Delay plugin > Output
+2. Set bypass mode to "Mute Out"
+3. Toggle bypass on, play guitar
+4. Toggle bypass off
+
+**Expected:** While bypassed, total silence. When un-bypassed, delay has accumulated repeats from the input signal.
+
+### TC-GR-015: FX bypass modes with scene recall
+
+**Steps:**
+1. Build a chain: Input > Reverb > Output
+2. Set reverb bypass mode to "Mute FX In"
+3. Create scene 0 with reverb active, scene 1 with reverb bypassed
+4. Play guitar, recall scene 1
+
+**Expected:** Reverb tail rings out naturally. Dry signal continues without interruption. Recalling scene 0 re-engages the reverb.
+
 **Status:** Known bug (pre-existing). Splice detection does not account for muted blocks in the path.
 
 ### TC-GR-011: Multiple parallel chains

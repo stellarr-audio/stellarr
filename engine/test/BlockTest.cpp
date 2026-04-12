@@ -407,6 +407,199 @@ static bool testBypassMute()
     return true;
 }
 
+// -- FX bypass mode tests -----------------------------------------------------
+
+static bool testBypassMuteFxInDryPassesThrough()
+{
+    printf("Test: bypass muteFxIn passes dry signal through... ");
+
+    StellarrProcessor proc;
+    proc.prepareToPlay(kSampleRate, kBlockSize);
+
+    auto gain = std::make_unique<stellarr::GainBlock>();
+    gain->setGain(0.0f); // wet output = silence (simulates tail-only scenario)
+    gain->setMix(0.5f);
+    gain->setBypassed(true);
+    gain->setBypassMode(stellarr::BypassMode::muteFxIn);
+
+    proc.disconnectBlocks(proc.getAudioInputNodeId(), proc.getAudioOutputNodeId());
+    auto nodeId = proc.addBlock(std::move(gain));
+    proc.connectBlocks(proc.getAudioInputNodeId(), nodeId);
+    proc.connectBlocks(nodeId, proc.getAudioOutputNodeId());
+
+    juce::AudioBuffer<float> buffer(2, kBlockSize);
+    generateSine(buffer);
+    juce::AudioBuffer<float> expected(buffer);
+    juce::MidiBuffer midi;
+    proc.processBlock(buffer, midi);
+
+    // With gain=0 (wet is silence) and mix=0.5, output should be 0.5 * dry
+    // (dry portion of the blend). Wet = gain(0) applied to silence = silence.
+    if (!compareBuffers(buffer, expected, 0.02f, 0.5f))
+    {
+        printf("FAIL\n");
+        return false;
+    }
+
+    proc.releaseResources();
+    printf("PASS\n");
+    return true;
+}
+
+static bool testBypassMuteFxInFeedsSilenceToPlugin()
+{
+    printf("Test: bypass muteFxIn feeds silence to plugin... ");
+
+    StellarrProcessor proc;
+    proc.prepareToPlay(kSampleRate, kBlockSize);
+
+    // gain=1.0 so if signal reaches the plugin, it passes through unchanged
+    auto gain = std::make_unique<stellarr::GainBlock>();
+    gain->setGain(1.0f);
+    gain->setMix(1.0f); // fully wet
+    gain->setBypassed(true);
+    gain->setBypassMode(stellarr::BypassMode::muteFxIn);
+
+    proc.disconnectBlocks(proc.getAudioInputNodeId(), proc.getAudioOutputNodeId());
+    auto nodeId = proc.addBlock(std::move(gain));
+    proc.connectBlocks(proc.getAudioInputNodeId(), nodeId);
+    proc.connectBlocks(nodeId, proc.getAudioOutputNodeId());
+
+    juce::AudioBuffer<float> buffer(2, kBlockSize);
+    generateSine(buffer);
+    juce::MidiBuffer midi;
+    proc.processBlock(buffer, midi);
+
+    // Fully wet + plugin fed silence = output should be silence
+    for (int ch = 0; ch < buffer.getNumChannels(); ++ch)
+    {
+        for (int i = 0; i < buffer.getNumSamples(); ++i)
+        {
+            if (std::abs(buffer.getSample(ch, i)) > 1e-6f)
+            {
+                fprintf(stderr, "  expected silence at ch=%d sample=%d\n", ch, i);
+                printf("FAIL\n");
+                return false;
+            }
+        }
+    }
+
+    proc.releaseResources();
+    printf("PASS\n");
+    return true;
+}
+
+static bool testBypassMuteFxInAppliesLevelAndBalance()
+{
+    printf("Test: bypass muteFxIn applies level and balance to output... ");
+
+    StellarrProcessor proc;
+    proc.prepareToPlay(kSampleRate, kBlockSize);
+
+    auto gain = std::make_unique<stellarr::GainBlock>();
+    gain->setGain(0.0f);     // wet = silence
+    gain->setMix(0.0f);      // fully dry output
+    gain->setLevelDb(-6.0206f); // 0.5 linear
+    gain->setBalance(0.0f);
+    gain->setBypassed(true);
+    gain->setBypassMode(stellarr::BypassMode::muteFxIn);
+
+    proc.disconnectBlocks(proc.getAudioInputNodeId(), proc.getAudioOutputNodeId());
+    auto nodeId = proc.addBlock(std::move(gain));
+    proc.connectBlocks(proc.getAudioInputNodeId(), nodeId);
+    proc.connectBlocks(nodeId, proc.getAudioOutputNodeId());
+
+    juce::AudioBuffer<float> buffer(2, kBlockSize);
+    generateSine(buffer);
+    juce::AudioBuffer<float> reference(buffer);
+    juce::MidiBuffer midi;
+    proc.processBlock(buffer, midi);
+
+    // Fully dry + level 0.5 → output = 0.5 * input
+    if (!compareBuffers(buffer, reference, 0.02f, 0.5f))
+    {
+        printf("FAIL\n");
+        return false;
+    }
+
+    proc.releaseResources();
+    printf("PASS\n");
+    return true;
+}
+
+static bool testBypassMuteFxOutDryPassesThrough()
+{
+    printf("Test: bypass muteFxOut passes dry signal, mutes wet... ");
+
+    StellarrProcessor proc;
+    proc.prepareToPlay(kSampleRate, kBlockSize);
+
+    auto gain = std::make_unique<stellarr::GainBlock>();
+    gain->setGain(2.0f);  // amplifies signal if it were heard
+    gain->setMix(0.5f);
+    gain->setBypassed(true);
+    gain->setBypassMode(stellarr::BypassMode::muteFxOut);
+
+    proc.disconnectBlocks(proc.getAudioInputNodeId(), proc.getAudioOutputNodeId());
+    auto nodeId = proc.addBlock(std::move(gain));
+    proc.connectBlocks(proc.getAudioInputNodeId(), nodeId);
+    proc.connectBlocks(nodeId, proc.getAudioOutputNodeId());
+
+    juce::AudioBuffer<float> buffer(2, kBlockSize);
+    generateSine(buffer);
+    juce::AudioBuffer<float> expected(buffer);
+    juce::MidiBuffer midi;
+    proc.processBlock(buffer, midi);
+
+    // Wet is muted, so output should equal dry input (gain has no effect)
+    if (!compareBuffers(buffer, expected, 1e-5f))
+    {
+        printf("FAIL\n");
+        return false;
+    }
+
+    proc.releaseResources();
+    printf("PASS\n");
+    return true;
+}
+
+static bool testBypassMuteFxOutAppliesLevelAndBalance()
+{
+    printf("Test: bypass muteFxOut applies level and balance... ");
+
+    StellarrProcessor proc;
+    proc.prepareToPlay(kSampleRate, kBlockSize);
+
+    auto gain = std::make_unique<stellarr::GainBlock>();
+    gain->setGain(2.0f);
+    gain->setMix(0.5f);
+    gain->setLevelDb(-6.0206f); // 0.5 linear
+    gain->setBypassed(true);
+    gain->setBypassMode(stellarr::BypassMode::muteFxOut);
+
+    proc.disconnectBlocks(proc.getAudioInputNodeId(), proc.getAudioOutputNodeId());
+    auto nodeId = proc.addBlock(std::move(gain));
+    proc.connectBlocks(proc.getAudioInputNodeId(), nodeId);
+    proc.connectBlocks(nodeId, proc.getAudioOutputNodeId());
+
+    juce::AudioBuffer<float> buffer(2, kBlockSize);
+    generateSine(buffer);
+    juce::AudioBuffer<float> reference(buffer);
+    juce::MidiBuffer midi;
+    proc.processBlock(buffer, midi);
+
+    // Dry + level 0.5 → output = 0.5 * input
+    if (!compareBuffers(buffer, reference, 0.02f, 0.5f))
+    {
+        printf("FAIL\n");
+        return false;
+    }
+
+    proc.releaseResources();
+    printf("PASS\n");
+    return true;
+}
+
 // -- Level dB tests -----------------------------------------------------------
 
 static bool testLevelDbConversion()
@@ -526,6 +719,8 @@ static bool testBypassModeSerialisation()
         stellarr::BypassMode::muteIn,
         stellarr::BypassMode::muteOut,
         stellarr::BypassMode::mute,
+        stellarr::BypassMode::muteFxIn,
+        stellarr::BypassMode::muteFxOut,
     };
 
     for (auto mode : modes)
@@ -1302,6 +1497,13 @@ int main()
     if (!testBypassMuteIn())            ++failures;
     if (!testBypassMuteOut())           ++failures;
     if (!testBypassMute())              ++failures;
+
+    // FX bypass modes
+    if (!testBypassMuteFxInDryPassesThrough())      ++failures;
+    if (!testBypassMuteFxInFeedsSilenceToPlugin())   ++failures;
+    if (!testBypassMuteFxInAppliesLevelAndBalance()) ++failures;
+    if (!testBypassMuteFxOutDryPassesThrough())      ++failures;
+    if (!testBypassMuteFxOutAppliesLevelAndBalance()) ++failures;
 
     // Level tests
     if (!testLevelDbConversion())       ++failures;

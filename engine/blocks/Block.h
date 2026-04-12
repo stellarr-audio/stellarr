@@ -17,26 +17,32 @@ enum class BypassMode
     thru,
     muteIn,
     muteOut,
-    mute
+    mute,
+    muteFxIn,
+    muteFxOut
 };
 
 inline juce::String bypassModeToString(BypassMode mode)
 {
     switch (mode)
     {
-        case BypassMode::thru:    return "thru";
-        case BypassMode::muteIn:  return "muteIn";
-        case BypassMode::muteOut: return "muteOut";
-        case BypassMode::mute:    return "mute";
+        case BypassMode::thru:      return "thru";
+        case BypassMode::muteIn:    return "muteIn";
+        case BypassMode::muteOut:   return "muteOut";
+        case BypassMode::mute:      return "mute";
+        case BypassMode::muteFxIn:  return "muteFxIn";
+        case BypassMode::muteFxOut: return "muteFxOut";
     }
     return "thru";
 }
 
 inline BypassMode bypassModeFromString(const juce::String& str)
 {
-    if (str == "muteIn")  return BypassMode::muteIn;
-    if (str == "muteOut") return BypassMode::muteOut;
-    if (str == "mute")    return BypassMode::mute;
+    if (str == "muteIn")    return BypassMode::muteIn;
+    if (str == "muteOut")   return BypassMode::muteOut;
+    if (str == "mute")      return BypassMode::mute;
+    if (str == "muteFxIn")  return BypassMode::muteFxIn;
+    if (str == "muteFxOut") return BypassMode::muteFxOut;
     return BypassMode::thru;
 }
 

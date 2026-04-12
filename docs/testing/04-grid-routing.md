@@ -12,7 +12,7 @@ Test whenever you touch the connection layer, block bypass, block movement, spli
 
 **Steps:**
 1. Add an Input, a Plugin block, and an Output to the grid
-2. Connect Input to Plugin by dragging from the output port to the input port
+2. Connect Input to Plugin by dragging from the right edge to the left edge
 3. Connect Plugin to Output
 
 **Expected:** Audio flows through the chain. Route highlights show the signal path when a block is selected.

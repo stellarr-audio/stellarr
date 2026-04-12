@@ -16,8 +16,8 @@ Click on an empty cell between the Input and Output blocks. Select **Plugin** fr
 
 ## 4. Connect the Chain
 
-- Drag from the Input block's right port to the Plugin block's left port.
-- Drag from the Plugin block's right port to the Output block's left port.
+- Drag from the Input block's right edge to the Plugin block's left edge.
+- Drag from the Plugin block's right edge to the Output block's left edge.
 
 Audio now flows: Input > Plugin > Output.
 

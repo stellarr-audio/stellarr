@@ -85,6 +85,14 @@ export function OptionsPanel() {
 
           {/* States — plugin blocks only */}
           {block.type === 'plugin' && <StatesSection block={block} />}
+
+          <div
+            className={styles.blockId}
+            title="Click to copy block ID"
+            onClick={() => navigator.clipboard.writeText(block.id)}
+          >
+            {block.id}
+          </div>
         </div>
       )}
     </div>

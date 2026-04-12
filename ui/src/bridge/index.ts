@@ -333,11 +333,19 @@ export function initBridge(): void {
       if (Array.isArray(actions)) {
         for (const action of actions) {
           if (action.selectBlock) {
-            const pos = action.selectBlock as Record<string, unknown>;
-            const col = Number(pos.col);
-            const row = Number(pos.row);
-            const block = store.blocks.find((b) => b.col === col && b.row === row);
-            if (block) store.selectBlock(block.id);
+            const val = action.selectBlock;
+            if (typeof val === 'string') {
+              // Select by block ID
+              const block = store.blocks.find((b) => b.id === val);
+              if (block) store.selectBlock(block.id);
+            } else {
+              // Select by grid position (legacy)
+              const pos = val as Record<string, unknown>;
+              const col = Number(pos.col);
+              const row = Number(pos.row);
+              const block = store.blocks.find((b) => b.col === col && b.row === row);
+              if (block) store.selectBlock(block.id);
+            }
           }
         }
       }

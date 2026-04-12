@@ -108,18 +108,17 @@
 
 .edgeHighlight {
   position: absolute;
-  top: 0;
+  top: -2px;
   width: 4px;
-  height: 100%;
+  height: calc(100% + 4px);
   z-index: 3;
   pointer-events: none;
-  opacity: 0.8;
 }
 
 .edgeHighlightLeft {
-  left: 0;
+  left: -2px;
 }
 
 .edgeHighlightRight {
-  right: 0;
+  right: -2px;
 }

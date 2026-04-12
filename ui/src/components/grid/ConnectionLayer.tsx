@@ -148,7 +148,7 @@ export function ConnectionLayer({ onConnectionClick }: Props) {
   }, [blocks, connections, selectedBlockId]);
 
   const hasSelection = selectedBlockId !== null;
-  const blockMap = new Map(blocks.map((b) => [b.id, b]));
+  const blockMap = useMemo(() => new Map(blocks.map((b) => [b.id, b])), [blocks]);
 
   // Group connections by source block (output side) and dest block (input side)
   // to determine count and sorted index for Y-position spacing.
@@ -162,9 +162,10 @@ export function ConnectionLayer({ onConnectionClick }: Props) {
       { sourceId: string; sourceRow: number; sourceCol: number; connIdx: number }[]
     >();
 
+    const bMap = new Map(blocks.map((b) => [b.id, b]));
     connections.forEach((conn, i) => {
-      const src = blocks.find((b) => b.id === conn.sourceId);
-      const dst = blocks.find((b) => b.id === conn.destId);
+      const src = bMap.get(conn.sourceId);
+      const dst = bMap.get(conn.destId);
       if (!src || !dst) return;
 
       const outGroup = outGroups.get(conn.sourceId) ?? [];

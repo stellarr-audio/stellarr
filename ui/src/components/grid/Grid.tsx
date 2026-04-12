@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   DndContext,
   DragOverlay,
@@ -102,7 +102,7 @@ export function Grid() {
     return () => window.removeEventListener('keydown', handler);
   }, [selectedBlockId]);
 
-  const occupiedSet = new Set(blocks.map((b) => `${b.col},${b.row}`));
+  const occupiedSet = useMemo(() => new Set(blocks.map((b) => `${b.col},${b.row}`)), [blocks]);
 
   // -- dnd-kit ----------------------------------------------------------------
 

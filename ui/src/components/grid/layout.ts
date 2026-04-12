@@ -29,3 +29,18 @@ export function gridWidth(columns: number): number {
 export function gridHeight(rows: number): number {
   return rows * STEP - GAP;
 }
+
+/**
+ * Calculate the Y position for the nth connection on a block edge.
+ * Connections are spaced equidistantly from the vertical centre.
+ *
+ * @param row - block grid row
+ * @param count - total connections on this edge
+ * @param index - this connection's index (0-based, sorted top to bottom)
+ */
+export function connectionY(row: number, count: number, index: number): number {
+  const centreY = row * STEP + CELL_SIZE / 2;
+  if (count <= 1) return centreY;
+  const gap = Math.min(16, (CELL_SIZE - 8) / count);
+  return centreY + (index - (count - 1) / 2) * gap;
+}

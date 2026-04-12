@@ -378,7 +378,8 @@ export function Grid() {
                       setEdgeMenu(null);
                     }}
                   >
-                    {label} &times;
+                    <span>{label}</span>
+                    <span className={styles.connMenuDisconnect}>&times;</span>
                   </div>
                 );
               })}

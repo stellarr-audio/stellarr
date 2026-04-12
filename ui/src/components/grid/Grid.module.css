@@ -66,6 +66,10 @@
 }
 
 .connMenuItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
   padding: 0.35rem 0.75rem;
   font-size: 1rem;
   font-weight: 600;
@@ -73,6 +77,12 @@
   text-transform: uppercase;
   color: var(--color-text);
   cursor: pointer;
+}
+
+.connMenuDisconnect {
+  color: var(--color-danger);
+  font-size: 1.2rem;
+  line-height: 1;
 }
 
 .connMenuItem:hover {

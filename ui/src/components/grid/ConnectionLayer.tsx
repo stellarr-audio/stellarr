@@ -1,4 +1,4 @@
-import { type RefObject, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useStore } from '../../store';
 import { colors } from '../common/colors';
 import {
@@ -24,7 +24,6 @@ const wireColors = [
 ];
 
 interface Props {
-  gridRef: RefObject<HTMLDivElement | null>;
   onConnectionClick?: (e: React.MouseEvent, sourceId: string, destId: string) => void;
 }
 
@@ -65,6 +64,7 @@ export function ConnectionLayer({ onConnectionClick }: Props) {
   const dragging = useStore((s) => s.draggingConnection);
 
   const selectedBlockId = useStore((s) => s.selectedBlockId);
+  const [hoveredConn, setHoveredConn] = useState<number | null>(null);
 
   // Find all connections on live routes (input→output) through the selected block.
   // Memoised so the DFS only re-runs when blocks, connections, or selection change.
@@ -152,36 +152,37 @@ export function ConnectionLayer({ onConnectionClick }: Props) {
 
   // Group connections by source block (output side) and dest block (input side)
   // to determine count and sorted index for Y-position spacing.
-  const outputGroups = new Map<
-    string,
-    { destId: string; destRow: number; destCol: number; connIdx: number }[]
-  >();
-  const inputGroups = new Map<
-    string,
-    { sourceId: string; sourceRow: number; sourceCol: number; connIdx: number }[]
-  >();
+  const { outputGroups, inputGroups } = useMemo(() => {
+    const outGroups = new Map<
+      string,
+      { destId: string; destRow: number; destCol: number; connIdx: number }[]
+    >();
+    const inGroups = new Map<
+      string,
+      { sourceId: string; sourceRow: number; sourceCol: number; connIdx: number }[]
+    >();
 
-  connections.forEach((conn, i) => {
-    const src = blockMap.get(conn.sourceId);
-    const dst = blockMap.get(conn.destId);
-    if (!src || !dst) return;
+    connections.forEach((conn, i) => {
+      const src = blocks.find((b) => b.id === conn.sourceId);
+      const dst = blocks.find((b) => b.id === conn.destId);
+      if (!src || !dst) return;
 
-    const outGroup = outputGroups.get(conn.sourceId) ?? [];
-    outGroup.push({ destId: conn.destId, destRow: dst.row, destCol: dst.col, connIdx: i });
-    outputGroups.set(conn.sourceId, outGroup);
+      const outGroup = outGroups.get(conn.sourceId) ?? [];
+      outGroup.push({ destId: conn.destId, destRow: dst.row, destCol: dst.col, connIdx: i });
+      outGroups.set(conn.sourceId, outGroup);
 
-    const inGroup = inputGroups.get(conn.destId) ?? [];
-    inGroup.push({ sourceId: conn.sourceId, sourceRow: src.row, sourceCol: src.col, connIdx: i });
-    inputGroups.set(conn.destId, inGroup);
-  });
+      const inGroup = inGroups.get(conn.destId) ?? [];
+      inGroup.push({ sourceId: conn.sourceId, sourceRow: src.row, sourceCol: src.col, connIdx: i });
+      inGroups.set(conn.destId, inGroup);
+    });
 
-  // Sort each group by row then col for stable Y ordering
-  for (const group of outputGroups.values())
-    group.sort((a, b) => a.destRow - b.destRow || a.destCol - b.destCol);
-  for (const group of inputGroups.values())
-    group.sort((a, b) => a.sourceRow - b.sourceRow || a.sourceCol - b.sourceCol);
+    for (const group of outGroups.values())
+      group.sort((a, b) => a.destRow - b.destRow || a.destCol - b.destCol);
+    for (const group of inGroups.values())
+      group.sort((a, b) => a.sourceRow - b.sourceRow || a.sourceCol - b.sourceCol);
 
-  const [hoveredConn, setHoveredConn] = useState<number | null>(null);
+    return { outputGroups: outGroups, inputGroups: inGroups };
+  }, [connections, blocks]);
 
   const gw = gridWidth(grid.columns);
   const gh = gridHeight(grid.rows);

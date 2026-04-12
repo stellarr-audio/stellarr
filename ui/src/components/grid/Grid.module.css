@@ -78,3 +78,10 @@
 .connMenuItem:hover {
   background: var(--stellarr-color-border);
 }
+
+.connMenuEmpty {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.85rem;
+  color: var(--stellarr-color-muted);
+  font-style: italic;
+}

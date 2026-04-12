@@ -62,6 +62,7 @@ function BlockGhost({ block }: { block: GridBlockData }) {
 export function Grid() {
   const grid = useStore((s) => s.grid);
   const blocks = useStore((s) => s.blocks);
+  const connections = useStore((s) => s.connections);
   const draggingConnection = useStore((s) => s.draggingConnection);
   const setDraggingConnection = useStore((s) => s.setDraggingConnection);
   const gridRef = useRef<HTMLDivElement>(null);
@@ -77,6 +78,12 @@ export function Grid() {
     y: number;
     sourceId: string;
     destId: string;
+  } | null>(null);
+  const [edgeMenu, setEdgeMenu] = useState<{
+    x: number;
+    y: number;
+    blockId: string;
+    side: 'input' | 'output';
   } | null>(null);
 
   // Space key toggles bypass on the selected block
@@ -194,12 +201,29 @@ export function Grid() {
     [],
   );
 
+  const handleEdgeContextMenu = useCallback(
+    (e: React.MouseEvent, blockId: string, side: 'input' | 'output') => {
+      if (!gridRef.current) return;
+      const rect = gridRef.current.getBoundingClientRect();
+      setEdgeMenu({
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top,
+        blockId,
+        side,
+      });
+    },
+    [],
+  );
+
   useEffect(() => {
-    if (!connMenu) return;
-    const close = () => setConnMenu(null);
+    if (!connMenu && !edgeMenu) return;
+    const close = () => {
+      setConnMenu(null);
+      setEdgeMenu(null);
+    };
     window.addEventListener('mousedown', close);
     return () => window.removeEventListener('mousedown', close);
-  }, [connMenu]);
+  }, [connMenu, edgeMenu]);
 
   const handleMenuSelect = useCallback(
     (type: string) => {
@@ -326,8 +350,52 @@ export function Grid() {
           </div>
         )}
 
+        {edgeMenu && (
+          <div
+            className={styles.connMenu}
+            style={{ left: edgeMenu.x, top: edgeMenu.y }}
+            onMouseDown={(e) => e.stopPropagation()}
+          >
+            {connections
+              .filter((c) =>
+                edgeMenu.side === 'output'
+                  ? c.sourceId === edgeMenu.blockId
+                  : c.destId === edgeMenu.blockId,
+              )
+              .map((c) => {
+                const connectedId = edgeMenu.side === 'output' ? c.destId : c.sourceId;
+                const connectedBlock = blocks.find((b) => b.id === connectedId);
+                const label =
+                  connectedBlock?.displayName ||
+                  TYPE_ABBREVIATIONS[connectedBlock?.type ?? ''] ||
+                  'Block';
+                return (
+                  <div
+                    key={connectedId}
+                    className={styles.connMenuItem}
+                    onClick={() => {
+                      requestRemoveConnection(c.sourceId, c.destId);
+                      setEdgeMenu(null);
+                    }}
+                  >
+                    {label} &times;
+                  </div>
+                );
+              })}
+            {connections.filter((c) =>
+              edgeMenu.side === 'output'
+                ? c.sourceId === edgeMenu.blockId
+                : c.destId === edgeMenu.blockId,
+            ).length === 0 && <div className={styles.connMenuEmpty}>No connections</div>}
+          </div>
+        )}
+
         {blocks.map((block) => (
-          <GridBlockComponent key={block.id} block={block} />
+          <GridBlockComponent
+            key={block.id}
+            block={block}
+            onEdgeContextMenu={handleEdgeContextMenu}
+          />
         ))}
       </div>
 

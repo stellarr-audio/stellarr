@@ -17,6 +17,7 @@ import styles from './GridBlock.module.css';
 
 interface Props {
   block: GridBlockData;
+  onEdgeContextMenu?: (e: React.MouseEvent, blockId: string, side: 'input' | 'output') => void;
 }
 
 const typeColors: Record<string, string> = {
@@ -88,7 +89,7 @@ function EdgeZone({
   );
 }
 
-export function GridBlockComponent({ block }: Props) {
+export function GridBlockComponent({ block, onEdgeContextMenu }: Props) {
   const selectedBlockId = useStore((s) => s.selectedBlockId);
   const selectBlock = useStore((s) => s.selectBlock);
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
@@ -163,12 +164,22 @@ export function GridBlockComponent({ block }: Props) {
 
       {/* Input edge zone (left) */}
       {block.type !== 'input' && (
-        <EdgeZone side="input" blockId={block.id} accentColor={accentColor} />
+        <EdgeZone
+          side="input"
+          blockId={block.id}
+          accentColor={accentColor}
+          onEdgeContextMenu={onEdgeContextMenu}
+        />
       )}
 
       {/* Output edge zone (right) */}
       {block.type !== 'output' && (
-        <EdgeZone side="output" blockId={block.id} accentColor={accentColor} />
+        <EdgeZone
+          side="output"
+          blockId={block.id}
+          accentColor={accentColor}
+          onEdgeContextMenu={onEdgeContextMenu}
+        />
       )}
 
       {/* Copy button — visible on block hover via CSS */}

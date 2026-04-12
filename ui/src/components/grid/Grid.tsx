@@ -375,7 +375,6 @@ export function Grid() {
                     className={styles.connMenuItem}
                     onClick={() => {
                       requestRemoveConnection(c.sourceId, c.destId);
-                      setEdgeMenu(null);
                     }}
                   >
                     <span>{label}</span>

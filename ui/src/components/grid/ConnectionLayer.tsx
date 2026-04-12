@@ -1,7 +1,15 @@
 import { type RefObject, useMemo } from 'react';
 import { useStore } from '../../store';
 import { colors } from '../common/colors';
-import { CELL_SIZE, GAP, outputPortX, inputPortX, portY, gridWidth, gridHeight } from './layout';
+import {
+  CELL_SIZE,
+  GAP,
+  outputPortX,
+  inputPortX,
+  connectionY,
+  gridWidth,
+  gridHeight,
+} from './layout';
 import styles from './ConnectionLayer.module.css';
 
 const wireColors = [
@@ -17,6 +25,7 @@ const wireColors = [
 
 interface Props {
   gridRef: RefObject<HTMLDivElement | null>;
+  onConnectionClick?: (e: React.MouseEvent, sourceId: string, destId: string) => void;
 }
 
 function orthogonalPath(x1: number, y1: number, x2: number, y2: number): string {
@@ -49,7 +58,7 @@ function orthogonalPath(x1: number, y1: number, x2: number, y2: number): string 
   ].join(' ');
 }
 
-export function ConnectionLayer(_props: Props) {
+export function ConnectionLayer({ onConnectionClick }: Props) {
   const blocks = useStore((s) => s.blocks);
   const connections = useStore((s) => s.connections);
   const grid = useStore((s) => s.grid);
@@ -141,6 +150,37 @@ export function ConnectionLayer(_props: Props) {
   const hasSelection = selectedBlockId !== null;
   const blockMap = new Map(blocks.map((b) => [b.id, b]));
 
+  // Group connections by source block (output side) and dest block (input side)
+  // to determine count and sorted index for Y-position spacing.
+  const outputGroups = new Map<
+    string,
+    { destId: string; destRow: number; destCol: number; connIdx: number }[]
+  >();
+  const inputGroups = new Map<
+    string,
+    { sourceId: string; sourceRow: number; sourceCol: number; connIdx: number }[]
+  >();
+
+  connections.forEach((conn, i) => {
+    const src = blockMap.get(conn.sourceId);
+    const dst = blockMap.get(conn.destId);
+    if (!src || !dst) return;
+
+    const outGroup = outputGroups.get(conn.sourceId) ?? [];
+    outGroup.push({ destId: conn.destId, destRow: dst.row, destCol: dst.col, connIdx: i });
+    outputGroups.set(conn.sourceId, outGroup);
+
+    const inGroup = inputGroups.get(conn.destId) ?? [];
+    inGroup.push({ sourceId: conn.sourceId, sourceRow: src.row, sourceCol: src.col, connIdx: i });
+    inputGroups.set(conn.destId, inGroup);
+  });
+
+  // Sort each group by row then col for stable Y ordering
+  for (const group of outputGroups.values())
+    group.sort((a, b) => a.destRow - b.destRow || a.destCol - b.destCol);
+  for (const group of inputGroups.values())
+    group.sort((a, b) => a.sourceRow - b.sourceRow || a.sourceCol - b.sourceCol);
+
   const gw = gridWidth(grid.columns);
   const gh = gridHeight(grid.rows);
 
@@ -151,10 +191,15 @@ export function ConnectionLayer(_props: Props) {
         const dst = blockMap.get(conn.destId);
         if (!src || !dst) return null;
 
+        const outGroup = outputGroups.get(conn.sourceId) ?? [];
+        const inGroup = inputGroups.get(conn.destId) ?? [];
+        const outIdx = outGroup.findIndex((g) => g.connIdx === i);
+        const inIdx = inGroup.findIndex((g) => g.connIdx === i);
+
         const x1 = outputPortX(src.col);
-        const y1 = portY(src.row);
+        const y1 = connectionY(src.row, outGroup.length, outIdx);
         const x2 = inputPortX(dst.col);
-        const y2 = portY(dst.row);
+        const y2 = connectionY(dst.row, inGroup.length, inIdx);
 
         const wireColor = wireColors[i % wireColors.length];
         const isLive = liveConnections.has(i);
@@ -164,14 +209,31 @@ export function ConnectionLayer(_props: Props) {
             : wireColor + '26'
           : wireColor + 'bb';
 
+        const d = orthogonalPath(x1, y1, x2, y2);
+
         return (
-          <path
-            key={i}
-            d={orthogonalPath(x1, y1, x2, y2)}
-            stroke={stroke}
-            strokeWidth={2}
-            fill="none"
-          />
+          <g key={i}>
+            {/* Invisible wide hit area for clicking */}
+            <path
+              d={d}
+              stroke="transparent"
+              strokeWidth={12}
+              fill="none"
+              style={{ pointerEvents: 'stroke', cursor: 'pointer' }}
+              onClick={(e) => {
+                e.stopPropagation();
+                onConnectionClick?.(e, conn.sourceId, conn.destId);
+              }}
+            />
+            {/* Visible connection line */}
+            <path
+              d={d}
+              stroke={stroke}
+              strokeWidth={2}
+              fill="none"
+              style={{ pointerEvents: 'none' }}
+            />
+          </g>
         );
       })}
 
@@ -180,7 +242,7 @@ export function ConnectionLayer(_props: Props) {
           const blk = blockMap.get(dragging.blockId);
           if (!blk) return null;
           const x1 = dragging.portType === 'output' ? outputPortX(blk.col) : inputPortX(blk.col);
-          const y1 = portY(blk.row);
+          const y1 = connectionY(blk.row, 1, 0);
           return (
             <line
               x1={x1}

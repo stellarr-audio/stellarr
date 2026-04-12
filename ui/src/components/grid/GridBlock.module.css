@@ -88,38 +88,38 @@
   display: block;
 }
 
-/* Port */
-.port {
+/* Edge zones — invisible hit areas along left/right block edges */
+.edgeZone {
   position: absolute;
-  top: 50%;
-  transform: translateY(-50%) rotate(45deg);
-  width: 12px;
-  height: 12px;
-  background: var(--color-port);
-  z-index: 3;
-  transition: background 0.15s ease;
-}
-
-.portLeft {
-  left: -6px;
-}
-
-.portRight {
-  right: -6px;
-}
-
-.portConnected {
-  cursor: pointer;
-}
-
-.portDisconnected {
+  top: 0;
+  width: 10px;
+  height: 100%;
+  z-index: 4;
   cursor: crosshair;
 }
 
-.portConnected:hover {
-  background: var(--color-danger-bright);
+.edgeZoneLeft {
+  left: -5px;
 }
 
-.portDisconnected:hover {
-  background: var(--color-warning);
+.edgeZoneRight {
+  right: -5px;
+}
+
+.edgeHighlight {
+  position: absolute;
+  top: 0;
+  width: 4px;
+  height: 100%;
+  z-index: 3;
+  pointer-events: none;
+  opacity: 0.8;
+}
+
+.edgeHighlightLeft {
+  left: 0;
+}
+
+.edgeHighlightRight {
+  right: 0;
 }

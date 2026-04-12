@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { useDraggable } from '@dnd-kit/core';
 import {
   CopyIcon,
@@ -7,12 +7,7 @@ import {
   SpeakerLoudIcon,
 } from '@radix-ui/react-icons';
 import type { GridBlock as GridBlockData } from '../../store';
-import {
-  requestCopyBlock,
-  requestRemoveBlock,
-  requestRemoveConnection,
-  requestOpenPluginEditor,
-} from '../../bridge';
+import { requestCopyBlock, requestRemoveBlock, requestOpenPluginEditor } from '../../bridge';
 import { useStore } from '../../store';
 import { colors } from '../common/colors';
 import { PALETTE } from '../options/ColorPicker';
@@ -30,33 +25,31 @@ const typeColors: Record<string, string> = {
   plugin: PALETTE.blue,
 };
 
-function Port({
+function EdgeZone({
   side,
   blockId,
-  connected,
+  accentColor,
+  onEdgeContextMenu,
 }: {
   side: 'input' | 'output';
   blockId: string;
-  connected: boolean;
+  accentColor: string;
+  onEdgeContextMenu?: (e: React.MouseEvent, blockId: string, side: 'input' | 'output') => void;
 }) {
-  const connections = useStore((s) => s.connections);
+  const [hovered, setHovered] = useState(false);
   const setDraggingConnection = useStore((s) => s.setDraggingConnection);
-
+  const draggingConnection = useStore((s) => s.draggingConnection);
   const isLeft = side === 'input';
 
-  const handleClick = useCallback(() => {
-    if (!connected) return;
-
-    const conn = isLeft
-      ? connections.find((c) => c.destId === blockId)
-      : connections.find((c) => c.sourceId === blockId);
-
-    if (conn) requestRemoveConnection(conn.sourceId, conn.destId);
-  }, [connected, connections, blockId, isLeft]);
+  // Show highlight when hovered OR when a connection is being dragged toward this side
+  const isDragTarget =
+    draggingConnection !== null &&
+    ((draggingConnection.portType === 'output' && isLeft) ||
+      (draggingConnection.portType === 'input' && !isLeft));
+  const showHighlight = hovered || isDragTarget;
 
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
-      if (connected) return; // connected ports use click-to-disconnect instead
       e.stopPropagation();
       e.preventDefault();
       setDraggingConnection({
@@ -66,25 +59,36 @@ function Port({
         mouseY: e.clientY,
       });
     },
-    [blockId, side, connected, setDraggingConnection],
+    [blockId, side, setDraggingConnection],
   );
 
-  const portClassName = `${styles.port} ${isLeft ? styles.portLeft : styles.portRight} ${connected ? styles.portConnected : styles.portDisconnected}`;
-
   return (
-    <div
-      data-port-block-id={blockId}
-      data-port-type={side}
-      onPointerDown={(e) => e.stopPropagation()}
-      onMouseDown={handleMouseDown}
-      onClick={handleClick}
-      className={portClassName}
-    />
+    <>
+      {showHighlight && (
+        <div
+          className={`${styles.edgeHighlight} ${isLeft ? styles.edgeHighlightLeft : styles.edgeHighlightRight}`}
+          style={{ background: accentColor }}
+        />
+      )}
+      <div
+        data-port-block-id={blockId}
+        data-port-type={side}
+        className={`${styles.edgeZone} ${isLeft ? styles.edgeZoneLeft : styles.edgeZoneRight}`}
+        onPointerDown={(e) => e.stopPropagation()}
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+        onMouseDown={handleMouseDown}
+        onContextMenu={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          if (onEdgeContextMenu) onEdgeContextMenu(e, blockId, side);
+        }}
+      />
+    </>
   );
 }
 
 export function GridBlockComponent({ block }: Props) {
-  const connections = useStore((s) => s.connections);
   const selectedBlockId = useStore((s) => s.selectedBlockId);
   const selectBlock = useStore((s) => s.selectBlock);
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
@@ -92,8 +96,6 @@ export function GridBlockComponent({ block }: Props) {
   });
 
   const isSelected = selectedBlockId === block.id;
-  const hasInputConnection = connections.some((c) => c.destId === block.id);
-  const hasOutputConnection = connections.some((c) => c.sourceId === block.id);
 
   const accentColor = block.pluginMissing
     ? colors.warning
@@ -159,14 +161,14 @@ export function GridBlockComponent({ block }: Props) {
         )}
       </div>
 
-      {/* Input port (left) */}
+      {/* Input edge zone (left) */}
       {block.type !== 'input' && (
-        <Port side="input" blockId={block.id} connected={hasInputConnection} />
+        <EdgeZone side="input" blockId={block.id} accentColor={accentColor} />
       )}
 
-      {/* Output port (right) */}
+      {/* Output edge zone (right) */}
       {block.type !== 'output' && (
-        <Port side="output" blockId={block.id} connected={hasOutputConnection} />
+        <EdgeZone side="output" blockId={block.id} accentColor={accentColor} />
       )}
 
       {/* Copy button — visible on block hover via CSS */}

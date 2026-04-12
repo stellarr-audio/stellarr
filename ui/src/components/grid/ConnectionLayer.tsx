@@ -1,4 +1,4 @@
-import { type RefObject, useMemo } from 'react';
+import { type RefObject, useMemo, useState } from 'react';
 import { useStore } from '../../store';
 import { colors } from '../common/colors';
 import {
@@ -181,6 +181,8 @@ export function ConnectionLayer({ onConnectionClick }: Props) {
   for (const group of inputGroups.values())
     group.sort((a, b) => a.sourceRow - b.sourceRow || a.sourceCol - b.sourceCol);
 
+  const [hoveredConn, setHoveredConn] = useState<number | null>(null);
+
   const gw = gridWidth(grid.columns);
   const gh = gridHeight(grid.rows);
 
@@ -220,6 +222,8 @@ export function ConnectionLayer({ onConnectionClick }: Props) {
               strokeWidth={12}
               fill="none"
               style={{ pointerEvents: 'stroke', cursor: 'pointer' }}
+              onMouseEnter={() => setHoveredConn(i)}
+              onMouseLeave={() => setHoveredConn((prev) => (prev === i ? null : prev))}
               onClick={(e) => {
                 e.stopPropagation();
                 onConnectionClick?.(e, conn.sourceId, conn.destId);
@@ -229,6 +233,7 @@ export function ConnectionLayer({ onConnectionClick }: Props) {
             <path
               d={d}
               stroke={stroke}
+              strokeDasharray={hoveredConn === i ? '6 4' : undefined}
               strokeWidth={2}
               fill="none"
               style={{ pointerEvents: 'none' }}

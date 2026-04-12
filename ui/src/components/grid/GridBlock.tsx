@@ -40,7 +40,11 @@ function EdgeZone({
   const [hovered, setHovered] = useState(false);
   const setDraggingConnection = useStore((s) => s.setDraggingConnection);
   const draggingConnection = useStore((s) => s.draggingConnection);
+  const connections = useStore((s) => s.connections);
   const isLeft = side === 'input';
+  const hasConnections = connections.some((c) =>
+    isLeft ? c.destId === blockId : c.sourceId === blockId,
+  );
 
   // Show highlight when hovered OR when a connection is being dragged toward this side
   const isDragTarget =
@@ -81,7 +85,7 @@ function EdgeZone({
         onMouseDown={handleMouseDown}
         onClick={(e) => {
           e.stopPropagation();
-          if (onEdgeContextMenu) onEdgeContextMenu(e, blockId, side);
+          if (hasConnections && onEdgeContextMenu) onEdgeContextMenu(e, blockId, side);
         }}
       />
     </>

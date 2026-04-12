@@ -55,7 +55,6 @@ function EdgeZone({
 
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
-      if (hasConnections) return; // connected edges use click-for-menu instead
       e.stopPropagation();
       e.preventDefault();
       setDraggingConnection({
@@ -65,7 +64,7 @@ function EdgeZone({
         mouseY: e.clientY,
       });
     },
-    [blockId, side, hasConnections, setDraggingConnection],
+    [blockId, side, setDraggingConnection],
   );
 
   return (

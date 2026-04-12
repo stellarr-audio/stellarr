@@ -6,7 +6,7 @@
     "preset": "~/Music/Stellarr/Presets/Demo.stellarr",
     "scene": 0,
     "actions": [
-      { "selectBlock": { "col": 3, "row": 1 } }
+      { "selectBlock": "block-id-from-preset-file" }
     ]
   },
   {

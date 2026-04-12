@@ -21,15 +21,13 @@ export function GridOverlay() {
 
   return (
     <div className={styles.overlay}>
-      <span className={styles.title}>
-        {presetName ?? 'Untitled'}
-        {sceneName && (
-          <>
-            <span className={styles.separator}>&#10022;</span>
-            {sceneName}
-          </>
-        )}
-      </span>
+      <span className={styles.presetName}>{presetName ?? 'Untitled'}</span>
+      {sceneName && (
+        <>
+          <span className={styles.separator}>&#10022;</span>
+          <span className={styles.sceneName}>{sceneName}</span>
+        </>
+      )}
     </div>
   );
 }

@@ -7,8 +7,8 @@
   flex-shrink: 0;
 }
 
-.title {
-  font-size: 1.8rem;
+.presetName {
+  font-size: 2.5rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -16,5 +16,15 @@
 }
 
 .separator {
+  font-size: 2.5rem;
   margin: 0 0.6rem;
+  color: var(--color-muted);
+}
+
+.sceneName {
+  font-size: 2.5rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-secondary);
 }

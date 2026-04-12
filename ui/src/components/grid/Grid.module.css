@@ -59,8 +59,7 @@
 .connMenu {
   position: absolute;
   background: var(--color-dropdown-bg);
-  border: 1px solid var(--color-border);
-  padding: 0.25rem 0;
+  border: 1px solid var(--color-muted);
   min-width: 120px;
   z-index: 15;
 }

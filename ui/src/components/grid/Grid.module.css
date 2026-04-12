@@ -54,3 +54,43 @@
   font-weight: 700;
   letter-spacing: 0.12em;
 }
+
+/* Connection context menu */
+.connMenu {
+  position: absolute;
+  background: var(--color-dropdown-bg);
+  border: 1px solid var(--color-muted);
+  min-width: 120px;
+  z-index: 15;
+}
+
+.connMenuItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.35rem 0.75rem;
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.connMenuDisconnect {
+  color: var(--color-danger);
+  font-size: 1.2rem;
+  line-height: 1;
+}
+
+.connMenuItem:hover {
+  background: var(--color-border);
+}
+
+.connMenuEmpty {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.85rem;
+  color: var(--color-muted);
+  font-style: italic;
+}

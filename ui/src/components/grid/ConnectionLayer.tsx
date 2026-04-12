@@ -1,7 +1,15 @@
-import { type RefObject, useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useStore } from '../../store';
 import { colors } from '../common/colors';
-import { CELL_SIZE, GAP, outputPortX, inputPortX, portY, gridWidth, gridHeight } from './layout';
+import {
+  CELL_SIZE,
+  GAP,
+  outputPortX,
+  inputPortX,
+  connectionY,
+  gridWidth,
+  gridHeight,
+} from './layout';
 import styles from './ConnectionLayer.module.css';
 
 const wireColors = [
@@ -16,7 +24,7 @@ const wireColors = [
 ];
 
 interface Props {
-  gridRef: RefObject<HTMLDivElement | null>;
+  onConnectionClick?: (e: React.MouseEvent, sourceId: string, destId: string) => void;
 }
 
 function orthogonalPath(x1: number, y1: number, x2: number, y2: number): string {
@@ -49,13 +57,14 @@ function orthogonalPath(x1: number, y1: number, x2: number, y2: number): string 
   ].join(' ');
 }
 
-export function ConnectionLayer(_props: Props) {
+export function ConnectionLayer({ onConnectionClick }: Props) {
   const blocks = useStore((s) => s.blocks);
   const connections = useStore((s) => s.connections);
   const grid = useStore((s) => s.grid);
   const dragging = useStore((s) => s.draggingConnection);
 
   const selectedBlockId = useStore((s) => s.selectedBlockId);
+  const [hoveredConn, setHoveredConn] = useState<number | null>(null);
 
   // Find all connections on live routes (input→output) through the selected block.
   // Memoised so the DFS only re-runs when blocks, connections, or selection change.
@@ -141,6 +150,40 @@ export function ConnectionLayer(_props: Props) {
   const hasSelection = selectedBlockId !== null;
   const blockMap = new Map(blocks.map((b) => [b.id, b]));
 
+  // Group connections by source block (output side) and dest block (input side)
+  // to determine count and sorted index for Y-position spacing.
+  const { outputGroups, inputGroups } = useMemo(() => {
+    const outGroups = new Map<
+      string,
+      { destId: string; destRow: number; destCol: number; connIdx: number }[]
+    >();
+    const inGroups = new Map<
+      string,
+      { sourceId: string; sourceRow: number; sourceCol: number; connIdx: number }[]
+    >();
+
+    connections.forEach((conn, i) => {
+      const src = blocks.find((b) => b.id === conn.sourceId);
+      const dst = blocks.find((b) => b.id === conn.destId);
+      if (!src || !dst) return;
+
+      const outGroup = outGroups.get(conn.sourceId) ?? [];
+      outGroup.push({ destId: conn.destId, destRow: dst.row, destCol: dst.col, connIdx: i });
+      outGroups.set(conn.sourceId, outGroup);
+
+      const inGroup = inGroups.get(conn.destId) ?? [];
+      inGroup.push({ sourceId: conn.sourceId, sourceRow: src.row, sourceCol: src.col, connIdx: i });
+      inGroups.set(conn.destId, inGroup);
+    });
+
+    for (const group of outGroups.values())
+      group.sort((a, b) => a.destRow - b.destRow || a.destCol - b.destCol);
+    for (const group of inGroups.values())
+      group.sort((a, b) => a.sourceRow - b.sourceRow || a.sourceCol - b.sourceCol);
+
+    return { outputGroups: outGroups, inputGroups: inGroups };
+  }, [connections, blocks]);
+
   const gw = gridWidth(grid.columns);
   const gh = gridHeight(grid.rows);
 
@@ -151,10 +194,15 @@ export function ConnectionLayer(_props: Props) {
         const dst = blockMap.get(conn.destId);
         if (!src || !dst) return null;
 
+        const outGroup = outputGroups.get(conn.sourceId) ?? [];
+        const inGroup = inputGroups.get(conn.destId) ?? [];
+        const outIdx = outGroup.findIndex((g) => g.connIdx === i);
+        const inIdx = inGroup.findIndex((g) => g.connIdx === i);
+
         const x1 = outputPortX(src.col);
-        const y1 = portY(src.row);
+        const y1 = connectionY(src.row, outGroup.length, outIdx);
         const x2 = inputPortX(dst.col);
-        const y2 = portY(dst.row);
+        const y2 = connectionY(dst.row, inGroup.length, inIdx);
 
         const wireColor = wireColors[i % wireColors.length];
         const isLive = liveConnections.has(i);
@@ -164,14 +212,34 @@ export function ConnectionLayer(_props: Props) {
             : wireColor + '26'
           : wireColor + 'bb';
 
+        const d = orthogonalPath(x1, y1, x2, y2);
+
         return (
-          <path
-            key={i}
-            d={orthogonalPath(x1, y1, x2, y2)}
-            stroke={stroke}
-            strokeWidth={2}
-            fill="none"
-          />
+          <g key={i}>
+            {/* Invisible wide hit area for clicking */}
+            <path
+              d={d}
+              stroke="transparent"
+              strokeWidth={12}
+              fill="none"
+              style={{ pointerEvents: 'stroke', cursor: 'pointer' }}
+              onMouseEnter={() => setHoveredConn(i)}
+              onMouseLeave={() => setHoveredConn((prev) => (prev === i ? null : prev))}
+              onClick={(e) => {
+                e.stopPropagation();
+                onConnectionClick?.(e, conn.sourceId, conn.destId);
+              }}
+            />
+            {/* Visible connection line */}
+            <path
+              d={d}
+              stroke={stroke}
+              strokeDasharray={hoveredConn === i ? '6 4' : undefined}
+              strokeWidth={2}
+              fill="none"
+              style={{ pointerEvents: 'none' }}
+            />
+          </g>
         );
       })}
 
@@ -180,7 +248,7 @@ export function ConnectionLayer(_props: Props) {
           const blk = blockMap.get(dragging.blockId);
           if (!blk) return null;
           const x1 = dragging.portType === 'output' ? outputPortX(blk.col) : inputPortX(blk.col);
-          const y1 = portY(blk.row);
+          const y1 = connectionY(blk.row, 1, 0);
           return (
             <line
               x1={x1}

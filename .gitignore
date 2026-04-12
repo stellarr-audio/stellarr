@@ -8,6 +8,7 @@ ui/dist/
 .cache/
 .claude/
 .DS_Store
+.superpowers/
 screenshots.json
 *.user
 .vscode/

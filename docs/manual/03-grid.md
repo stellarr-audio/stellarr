@@ -20,10 +20,11 @@ Drag any block to reposition it on the grid.
 
 Audio and MIDI flow through connections between blocks:
 
-1. Click and drag from a block's **right port** (output).
-2. Release on another block's **left port** (input).
+1. Hover over the **right edge** (output side) of a block -- the edge thickens to indicate it is interactive.
+2. Click and drag from the thickened edge toward another block.
+3. Release on the **left edge** (input side) of the destination block.
 
-A wire appears showing the connection. Audio and MIDI both travel through the same connection.
+A wire appears showing the connection. Audio and MIDI both travel through the same connection. When a block has multiple connections on one side, each wire is spaced equidistantly along the edge.
 
 ### Splice Insertion
 
@@ -36,7 +37,10 @@ This saves you from manually rewiring.
 
 ### Disconnecting
 
-Click on a connected port to remove that connection.
+Two ways to remove connections:
+
+- **Click on a wire** -- hover over a connection line (it turns dashed to show it is interactive), then click to see a "Disconnect" option.
+- **Click on a block edge** -- click the left or right edge of a block that has connections. A menu lists all connections on that side, each with a disconnect button.
 
 ## Copying and Pasting Blocks
 

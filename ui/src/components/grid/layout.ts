@@ -18,10 +18,6 @@ export function inputPortX(col: number): number {
   return col * STEP;
 }
 
-export function portY(row: number): number {
-  return row * STEP + CELL_SIZE / 2;
-}
-
 export function gridWidth(columns: number): number {
   return columns * STEP - GAP;
 }

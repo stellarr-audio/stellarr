@@ -79,8 +79,7 @@ function EdgeZone({
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
         onMouseDown={handleMouseDown}
-        onContextMenu={(e) => {
-          e.preventDefault();
+        onClick={(e) => {
           e.stopPropagation();
           if (onEdgeContextMenu) onEdgeContextMenu(e, blockId, side);
         }}

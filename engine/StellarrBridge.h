@@ -27,6 +27,7 @@ public:
     juce::var serialiseSession() const;
     void restoreSession(const juce::var& session);
     void sendSystemStats(double cpuPercent, float outputPeakLinear);
+    void sendBlockMetrics();
     void sendTunerData();
     void sendMidiMonitorData();
     bool isTunerActive() const { return tunerActive; }
@@ -101,6 +102,12 @@ private:
     void handleScreenshotSetup();
     void handleScreenshotReady();
 
+    // Loudness metering
+    void handleSetSelectedBlock(const juce::var& json);
+    void handleSetTargetLufs(const juce::var& json);
+    void handleSetLufsWindow(const juce::var& json);
+    juce::AudioProcessorGraph::Node* getNodeForBlockId(const juce::String& blockId);
+
     void sendPluginList();
     void sendScanDirectories();
     void sendPresetList();
@@ -157,4 +164,6 @@ private:
     int activeSceneIndex = -1;
     static constexpr int maxScenes = 16;
 
+    juce::String selectedBlockId;
+    juce::String lufsWindow { "shortTerm" }; // "shortTerm" or "momentary"
 };

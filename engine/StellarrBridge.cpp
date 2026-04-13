@@ -3,6 +3,8 @@
 #include "blocks/InputBlock.h"
 #include "blocks/OutputBlock.h"
 #include "blocks/PluginBlock.h"
+#include <cmath>
+#include <limits>
 
 StellarrBridge::StellarrBridge() = default;
 
@@ -340,6 +342,11 @@ void StellarrBridge::handleEvent(const juce::String& eventName, const juce::var&
     else if (eventName == "addBlockState")           handleBlockStateEvent(json, "add");
     else if (eventName == "recallBlockState")        handleBlockStateEvent(json, "recall");
     else if (eventName == "deleteBlockState")        handleBlockStateEvent(json, "delete");
+
+    // Loudness metering
+    else if (eventName == "setSelectedBlock")        handleSetSelectedBlock(json);
+    else if (eventName == "setTargetLufs")           handleSetTargetLufs(json);
+    else if (eventName == "setLufsWindow")           handleSetLufsWindow(json);
 }
 
 // -- Helpers ------------------------------------------------------------------
@@ -937,4 +944,109 @@ void StellarrBridge::handleSetReferencePitch(const juce::var& json)
     auto* detail = new juce::DynamicObject();
     detail->setProperty("hz", static_cast<double>(hz));
     emitToJs("referencePitchState", detail);
+}
+
+// -- Loudness metering --------------------------------------------------------
+
+juce::AudioProcessorGraph::Node* StellarrBridge::getNodeForBlockId(const juce::String& blockId)
+{
+    auto it = blockNodeMap.find(blockId);
+    if (it == blockNodeMap.end()) return nullptr;
+    return processor->getGraph().getNodeForId(it->second);
+}
+
+void StellarrBridge::handleSetSelectedBlock(const juce::var& json)
+{
+    auto newId = json.getProperty("blockId", "").toString();
+
+    // Disable measurement on previously selected block (unless it's the Output)
+    if (selectedBlockId.isNotEmpty() && selectedBlockId != newId)
+    {
+        if (auto* node = getNodeForBlockId(selectedBlockId))
+        {
+            if (auto* block = dynamic_cast<stellarr::Block*>(node->getProcessor()))
+                if (block->getBlockType() != stellarr::BlockType::output)
+                    block->setMeasureLoudness(false);
+        }
+    }
+
+    selectedBlockId = newId;
+
+    // Enable measurement on the newly selected block
+    if (selectedBlockId.isNotEmpty())
+    {
+        if (auto* node = getNodeForBlockId(selectedBlockId))
+        {
+            if (auto* block = dynamic_cast<stellarr::Block*>(node->getProcessor()))
+                block->setMeasureLoudness(true);
+        }
+    }
+}
+
+void StellarrBridge::handleSetTargetLufs(const juce::var& json)
+{
+    auto blockId = json.getProperty("blockId", "").toString();
+    auto value = json.getProperty("lufs", juce::var());
+
+    auto* node = getNodeForBlockId(blockId);
+    if (node == nullptr) return;
+
+    auto* output = dynamic_cast<stellarr::OutputBlock*>(node->getProcessor());
+    if (output == nullptr) return;
+
+    if (value.isVoid() || value.isUndefined() || value.isString())
+        output->setTargetLufs(std::numeric_limits<float>::quiet_NaN());
+    else
+        output->setTargetLufs(static_cast<float>(static_cast<double>(value)));
+}
+
+void StellarrBridge::handleSetLufsWindow(const juce::var& json)
+{
+    auto window = json.getProperty("window", "shortTerm").toString();
+    if (window != "momentary") window = "shortTerm";
+    lufsWindow = window;
+
+    if (appProperties != nullptr)
+        appProperties->getUserSettings()->setValue("lufsWindow", window);
+
+    auto* detail = new juce::DynamicObject();
+    detail->setProperty("window", lufsWindow);
+    emitToJs("lufsWindowState", detail);
+}
+
+void StellarrBridge::sendBlockMetrics()
+{
+    if (processor == nullptr) return;
+
+    juce::Array<juce::var> blocksArray;
+
+    for (const auto& [blockId, nodeId] : blockNodeMap)
+    {
+        auto* node = processor->getGraph().getNodeForId(nodeId);
+        if (node == nullptr) continue;
+        auto* block = dynamic_cast<stellarr::Block*>(node->getProcessor());
+        if (block == nullptr) continue;
+        if (! block->isMeasuringLoudness()) continue;
+
+        const float lufs = (lufsWindow == "momentary")
+            ? block->getMomentaryLufs()
+            : block->getShortTermLufs();
+
+        auto* obj = new juce::DynamicObject();
+        obj->setProperty("id", blockId);
+        obj->setProperty("lufs", static_cast<double>(lufs));
+
+        if (auto* output = dynamic_cast<stellarr::OutputBlock*>(node->getProcessor()))
+        {
+            if (output->hasTargetLufs())
+                obj->setProperty("targetLufs", static_cast<double>(output->getTargetLufs()));
+        }
+
+        blocksArray.add(juce::var(obj));
+    }
+
+    auto* detail = new juce::DynamicObject();
+    detail->setProperty("blocks", blocksArray);
+    detail->setProperty("window", lufsWindow);
+    emitToJs("blockMetrics", detail);
 }

@@ -14,20 +14,29 @@ void Block::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer& mid
         switch (mode)
         {
             case BypassMode::thru:
-                return; // audio passes through unchanged
+                // audio passes through unchanged — measure final output
+                if (measureLoudness.load(std::memory_order_relaxed))
+                    loudnessMeter.process(buffer);
+                return;
 
             case BypassMode::muteIn:
                 buffer.clear(); // silence input, but let process() run (tails ring)
                 process(buffer, midi);
+                if (measureLoudness.load(std::memory_order_relaxed))
+                    loudnessMeter.process(buffer);
                 return;
 
             case BypassMode::muteOut:
                 process(buffer, midi); // process runs (signal enters effect)
                 buffer.clear();        // but output is silenced (tails cut)
+                if (measureLoudness.load(std::memory_order_relaxed))
+                    loudnessMeter.process(buffer);
                 return;
 
             case BypassMode::mute:
                 buffer.clear(); // total silence
+                if (measureLoudness.load(std::memory_order_relaxed))
+                    loudnessMeter.process(buffer);
                 return;
 
             case BypassMode::muteFxIn:

@@ -970,6 +970,7 @@ juce::AudioProcessorGraph::Node* StellarrBridge::getNodeForBlockId(const juce::S
 void StellarrBridge::handleSetSelectedBlock(const juce::var& json)
 {
     auto newId = json.getProperty("blockId", "").toString();
+    DBG("[LUFS] setSelectedBlock: '" << newId << "' (was '" << selectedBlockId << "')");
 
     // Disable measurement on previously selected block (unless it's the Output)
     if (selectedBlockId.isNotEmpty() && selectedBlockId != newId)
@@ -978,7 +979,10 @@ void StellarrBridge::handleSetSelectedBlock(const juce::var& json)
         {
             if (auto* block = dynamic_cast<stellarr::Block*>(node->getProcessor()))
                 if (block->getBlockType() != stellarr::BlockType::output)
+                {
                     block->setMeasureLoudness(false);
+                    DBG("[LUFS] disabled measurement on " << selectedBlockId);
+                }
         }
     }
 
@@ -987,10 +991,20 @@ void StellarrBridge::handleSetSelectedBlock(const juce::var& json)
     // Enable measurement on the newly selected block
     if (selectedBlockId.isNotEmpty())
     {
-        if (auto* node = getNodeForBlockId(selectedBlockId))
+        auto* node = getNodeForBlockId(selectedBlockId);
+        if (node == nullptr)
         {
-            if (auto* block = dynamic_cast<stellarr::Block*>(node->getProcessor()))
-                block->setMeasureLoudness(true);
+            DBG("[LUFS] no node found for blockId '" << selectedBlockId << "'");
+        }
+        else if (auto* block = dynamic_cast<stellarr::Block*>(node->getProcessor()))
+        {
+            block->setMeasureLoudness(true);
+            DBG("[LUFS] enabled measurement on " << selectedBlockId
+                << " (type=" << stellarr::blockTypeToString(block->getBlockType()) << ")");
+        }
+        else
+        {
+            DBG("[LUFS] node found but not a Block for '" << selectedBlockId << "'");
         }
     }
 }
@@ -1031,6 +1045,7 @@ void StellarrBridge::sendBlockMetrics()
     if (processor == nullptr) return;
 
     juce::Array<juce::var> blocksArray;
+    int measuringCount = 0;
 
     for (const auto& [blockId, nodeId] : blockNodeMap)
     {
@@ -1039,6 +1054,7 @@ void StellarrBridge::sendBlockMetrics()
         auto* block = dynamic_cast<stellarr::Block*>(node->getProcessor());
         if (block == nullptr) continue;
         if (! block->isMeasuringLoudness()) continue;
+        ++measuringCount;
 
         const float lufs = (lufsWindow == "momentary")
             ? block->getMomentaryLufs()
@@ -1056,6 +1072,10 @@ void StellarrBridge::sendBlockMetrics()
 
         blocksArray.add(juce::var(obj));
     }
+
+    static int tickCounter = 0;
+    if (++tickCounter % 8 == 0) // every ~2s
+        DBG("[LUFS] sendBlockMetrics: " << measuringCount << " blocks measuring");
 
     auto* detail = new juce::DynamicObject();
     detail->setProperty("blocks", blocksArray);

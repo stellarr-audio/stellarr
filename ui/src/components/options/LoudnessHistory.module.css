@@ -20,3 +20,15 @@
   stroke: var(--color-primary);
   stroke-width: 1;
 }
+
+.gridLine {
+  stroke: var(--color-border);
+  stroke-width: 1;
+  stroke-dasharray: 1 3;
+}
+
+.label {
+  fill: var(--color-muted);
+  font-size: 8px;
+  font-variant-numeric: tabular-nums;
+}

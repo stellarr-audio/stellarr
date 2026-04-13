@@ -18,6 +18,7 @@ import {
   requestPasteBlock,
   requestToggleBlockBypass,
   requestRemoveConnection,
+  requestSetSelectedBlock,
 } from '../../bridge';
 import { GridBlockComponent } from './GridBlock';
 import { ConnectionLayer } from './ConnectionLayer';
@@ -101,6 +102,13 @@ export function Grid() {
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
   }, [selectedBlockId]);
+
+  // Notify engine of selected block changes for LUFS measurement
+  const clearLoudnessHistory = useStore((s) => s.clearLoudnessHistory);
+  useEffect(() => {
+    requestSetSelectedBlock(selectedBlockId ?? '');
+    clearLoudnessHistory();
+  }, [selectedBlockId, clearLoudnessHistory]);
 
   const occupiedSet = useMemo(() => new Set(blocks.map((b) => `${b.col},${b.row}`)), [blocks]);
 

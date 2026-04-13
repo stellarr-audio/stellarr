@@ -11,6 +11,7 @@ import { PluginSection } from './PluginSection';
 import { ParametersSection } from './ParametersSection';
 import { StatesSection } from './StatesSection';
 import { LoudnessHistory } from './LoudnessHistory';
+import { TargetLoudnessControl } from './TargetLoudnessControl';
 import { Select } from 'radix-ui';
 import { ChevronDownIcon } from '@radix-ui/react-icons';
 import {
@@ -83,6 +84,14 @@ export function OptionsPanel() {
                   }}
                 />
               </div>
+            </>
+          )}
+
+          {/* Target Loudness — Output block only */}
+          {block?.type === 'output' && (
+            <>
+              <div className={styles.divider} />
+              <TargetLoudnessControl blockId={block.id} />
             </>
           )}
 

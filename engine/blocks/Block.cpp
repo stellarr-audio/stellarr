@@ -135,12 +135,17 @@ void Block::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer& mid
         if (lvl < 0.999f || lvl > 1.001f)
             buffer.applyGain(lvl);
     }
+
+    if (measureLoudness.load(std::memory_order_relaxed))
+        loudnessMeter.process(buffer);
 }
 
 void Block::prepareToPlay(double sampleRate, int samplesPerBlock)
 {
     if (hasMix)
         dryBuffer.setSize(getTotalNumInputChannels(), samplesPerBlock, false, false, true);
+
+    loudnessMeter.prepare(sampleRate, getTotalNumOutputChannels());
 
     prepareBlock(sampleRate, samplesPerBlock);
 }

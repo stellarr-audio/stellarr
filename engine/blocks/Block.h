@@ -1,5 +1,6 @@
 #pragma once
 #include <juce_audio_processors/juce_audio_processors.h>
+#include "../dsp/LoudnessMeter.h"
 
 namespace stellarr
 {
@@ -185,6 +186,22 @@ public:
     void setStateInformation(const void*, int) override {}
     void releaseResources() override {}
 
+    // -- Loudness metering ---------------------------------------------------
+
+    void setMeasureLoudness(bool enabled)
+    {
+        measureLoudness.store(enabled, std::memory_order_relaxed);
+        if (!enabled) loudnessMeter.reset();
+    }
+
+    bool isMeasuringLoudness() const
+    {
+        return measureLoudness.load(std::memory_order_relaxed);
+    }
+
+    float getMomentaryLufs() const { return loudnessMeter.getMomentaryLufs(); }
+    float getShortTermLufs() const { return loudnessMeter.getShortTermLufs(); }
+
 private:
     static BusesProperties makeBuses(int numIn, int numOut)
     {
@@ -211,6 +228,8 @@ private:
     std::atomic<bool> bypassed { false };
     std::atomic<int> bypassMode { static_cast<int>(BypassMode::thru) };
     juce::AudioBuffer<float> dryBuffer;
+    std::atomic<bool> measureLoudness { false };
+    stellarr::dsp::LoudnessMeter loudnessMeter;
 };
 
 } // namespace stellarr

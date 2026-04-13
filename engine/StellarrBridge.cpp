@@ -475,6 +475,18 @@ void StellarrBridge::handleBridgeReady()
     handleGetTelemetryEnabled();
     handleGetReferencePitch();
 
+    // Restore LUFS window from settings
+    if (appProperties != nullptr)
+    {
+        auto savedWindow = appProperties->getUserSettings()->getValue("lufsWindow", "shortTerm");
+        if (savedWindow != "momentary") savedWindow = "shortTerm";
+        lufsWindow = savedWindow;
+
+        auto* detail = new juce::DynamicObject();
+        detail->setProperty("window", lufsWindow);
+        emitToJs("lufsWindowState", detail);
+    }
+
     juce::MessageManager::callAsync([this]()
     {
         sendStartupProgress("Scanning plugin libraries...", 30);

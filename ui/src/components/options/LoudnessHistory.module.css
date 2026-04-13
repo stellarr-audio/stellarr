@@ -1,0 +1,22 @@
+.history {
+  background: var(--color-cell);
+  border: 1px solid var(--color-border);
+  display: block;
+}
+
+.line {
+  fill: none;
+  stroke: var(--color-secondary);
+  stroke-width: 1.5;
+}
+
+.average {
+  stroke: var(--color-muted);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+}
+
+.target {
+  stroke: var(--color-primary);
+  stroke-width: 1;
+}

@@ -10,6 +10,7 @@ import { MetricsSection } from './MetricsSection';
 import { PluginSection } from './PluginSection';
 import { ParametersSection } from './ParametersSection';
 import { StatesSection } from './StatesSection';
+import { LoudnessHistory } from './LoudnessHistory';
 import { Select } from 'radix-ui';
 import { ChevronDownIcon } from '@radix-ui/react-icons';
 import {
@@ -90,6 +91,8 @@ export function OptionsPanel() {
 
           {/* States — plugin blocks only */}
           {block.type === 'plugin' && <StatesSection block={block} />}
+
+          {block && <LoudnessHistory blockId={block.id} />}
 
           <div
             className={styles.blockId}

@@ -284,6 +284,20 @@ export function requestRemoveScanDirectory(path: string): void {
   sendEvent('removeScanDirectory', JSON.stringify({ path }));
 }
 
+// -- Loudness metering commands -----------------------------------------------
+
+export function requestSetSelectedBlock(blockId: string): void {
+  sendEvent('setSelectedBlock', JSON.stringify({ blockId }));
+}
+
+export function requestSetTargetLufs(blockId: string, lufs: number | null): void {
+  sendEvent('setTargetLufs', JSON.stringify({ blockId, lufs }));
+}
+
+export function requestSetLufsWindow(window: 'momentary' | 'shortTerm'): void {
+  sendEvent('setLufsWindow', JSON.stringify({ window }));
+}
+
 // -- Core bridge -------------------------------------------------------------
 
 export function sendEvent(eventName: string, payload: string): void {
@@ -666,6 +680,33 @@ export function initBridge(): void {
       if (!wasEnabled) {
         Sentry.captureMessage('Telemetry enabled', 'info');
       }
+    }
+  });
+
+  juce.backend.addEventListener('blockMetrics', (detail: unknown) => {
+    const d = asRecord(detail);
+    const rawBlocks = Array.isArray(d.blocks) ? d.blocks : [];
+    const samples = rawBlocks.map((b: unknown) => {
+      const r = asRecord(b);
+      return {
+        id: String(r.id),
+        lufs: Number(r.lufs),
+        targetLufs: r.targetLufs !== undefined ? Number(r.targetLufs) : null,
+      };
+    });
+    useStore.getState().setBlockLufs(samples);
+
+    // Push history sample for currently selected block
+    const selectedId = useStore.getState().selectedBlockId;
+    const selectedSample = samples.find((s) => s.id === selectedId);
+    if (selectedSample) useStore.getState().pushLoudnessSample(selectedSample.lufs);
+  });
+
+  juce.backend.addEventListener('lufsWindowState', (detail: unknown) => {
+    const d = asRecord(detail);
+    const window = String(d.window);
+    if (window === 'momentary' || window === 'shortTerm') {
+      useStore.getState().setLufsWindow(window);
     }
   });
 

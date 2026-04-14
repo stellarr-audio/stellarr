@@ -7,9 +7,11 @@ interface Props {
 
 const TOTAL_WIDTH = 248;
 const TOTAL_HEIGHT = 100;
-const LABEL_WIDTH = 26;
+const LABEL_WIDTH = 32;
+const PAD_TOP = 10;
+const PAD_BOTTOM = 10;
 const PLOT_WIDTH = TOTAL_WIDTH - LABEL_WIDTH;
-const PLOT_HEIGHT = TOTAL_HEIGHT;
+const PLOT_HEIGHT = TOTAL_HEIGHT - PAD_TOP - PAD_BOTTOM;
 const LUFS_MIN = -60;
 const LUFS_MAX = 0;
 
@@ -17,7 +19,7 @@ const Y_LABELS = [0, -18, -30, -60];
 
 function lufsToY(lufs: number): number {
   const clamped = Math.max(LUFS_MIN, Math.min(LUFS_MAX, lufs));
-  return PLOT_HEIGHT - ((clamped - LUFS_MIN) / (LUFS_MAX - LUFS_MIN)) * PLOT_HEIGHT;
+  return PAD_TOP + PLOT_HEIGHT - ((clamped - LUFS_MIN) / (LUFS_MAX - LUFS_MIN)) * PLOT_HEIGHT;
 }
 
 export function LoudnessHistory({ blockId }: Props) {
@@ -38,13 +40,31 @@ export function LoudnessHistory({ blockId }: Props) {
 
   return (
     <svg className={styles.history} width={TOTAL_WIDTH} height={TOTAL_HEIGHT}>
+      {/* Y-axis unit label */}
+      <text
+        x={4}
+        y={TOTAL_HEIGHT / 2}
+        className={styles.unit}
+        textAnchor="middle"
+        dominantBaseline="central"
+        transform={`rotate(-90, 4, ${TOTAL_HEIGHT / 2})`}
+      >
+        LUFS
+      </text>
+
       {/* Y-axis grid lines */}
       {Y_LABELS.map((lufs) => {
         const y = lufsToY(lufs);
         return (
           <g key={lufs}>
             <line x1={LABEL_WIDTH} x2={TOTAL_WIDTH} y1={y} y2={y} className={styles.gridLine} />
-            <text x={LABEL_WIDTH - 4} y={y + 3} className={styles.label} textAnchor="end">
+            <text
+              x={LABEL_WIDTH - 4}
+              y={y}
+              className={styles.label}
+              textAnchor="end"
+              dominantBaseline="central"
+            >
               {lufs}
             </text>
           </g>

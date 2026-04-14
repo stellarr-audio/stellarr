@@ -1,22 +1,21 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useStore } from '../../store';
-import { Slider } from '../common/Slider';
 import { ToggleSwitch } from '../common/ToggleSwitch';
+import { Tooltip } from '../common/Tooltip';
 import { MidiAssignDialog } from '../common/MidiAssignDialog';
 import { TYPE_ABBREVIATIONS, formatMidiLabel } from '../common/constants';
-import { Pencil1Icon, PlayIcon, StopIcon } from '@radix-ui/react-icons';
+import { Pencil1Icon, PlayIcon, StopIcon, FrameIcon } from '@radix-ui/react-icons';
 import { ColorPicker } from './ColorPicker';
 import { PluginSection } from './PluginSection';
 import { ParametersSection } from './ParametersSection';
 import { StatesSection } from './StatesSection';
-import { LoudnessHistory } from './LoudnessHistory';
+import { SignalSection } from './SignalSection';
 import { TargetLoudnessControl } from './TargetLoudnessControl';
 import { Select } from 'radix-ui';
 import { ChevronDownIcon } from '@radix-ui/react-icons';
 import {
   requestToggleTestTone,
   requestToggleBlockBypass,
-  requestSetBlockLevel,
   requestRenameBlock,
   requestSetBlockColor,
   requestGetTestToneSamples,
@@ -43,68 +42,38 @@ export function OptionsPanel() {
 
           <div className={styles.divider} />
 
-          {/* Input block options */}
+          {/* Signal — Level slider + loudness history. Same for every block. */}
+          <SignalSection block={block} />
+
+          {/* Input block — test tone picker */}
           {block.type === 'input' && (
-            <TestToneSamplePicker blockId={block.id} playing={block.testTone ?? false} />
+            <>
+              <div className={styles.divider} />
+              <TestToneSamplePicker blockId={block.id} playing={block.testTone ?? false} />
+            </>
           )}
 
           {/* Plugin block — plugin select */}
           {block.type === 'plugin' && (
-            <PluginSection block={block} availablePlugins={availablePlugins} />
-          )}
-
-          {/* Level — for I/O blocks (plugin blocks get it via ParametersSection) */}
-          {(block.type === 'input' || block.type === 'output') && (
             <>
               <div className={styles.divider} />
-              <div>
-                <div className={styles.levelRow}>
-                  <span className={styles.levelLabel}>Level</span>
-                  <span className={styles.levelValue}>
-                    {(() => {
-                      const db = block.level ?? 0;
-                      if (db <= -60) return '-∞ dB';
-                      return `${db >= 0 ? '+' : ''}${db.toFixed(1)} dB`;
-                    })()}
-                  </span>
-                </div>
-                <Slider
-                  min={-60}
-                  max={12}
-                  step={0.1}
-                  value={block.level ?? 0}
-                  onChange={(v) => {
-                    useStore.getState().setBlockLevel(block.id, v);
-                    requestSetBlockLevel(block.id, v);
-                  }}
-                />
-              </div>
+              <PluginSection block={block} availablePlugins={availablePlugins} />
             </>
           )}
 
-          {/* Target Loudness — Output block only */}
-          {block?.type === 'output' && (
+          {/* Plugin block — parameters (Mix, Balance, Bypass mode) */}
+          {block.type === 'plugin' && <ParametersSection block={block} />}
+
+          {/* Output block — target loudness */}
+          {block.type === 'output' && (
             <>
               <div className={styles.divider} />
               <TargetLoudnessControl blockId={block.id} />
             </>
           )}
 
-          {/* Parameters — for non-I/O blocks */}
-          {block.type !== 'input' && block.type !== 'output' && <ParametersSection block={block} />}
-
-          {/* States — plugin blocks only */}
+          {/* Plugin block — states */}
           {block.type === 'plugin' && <StatesSection block={block} />}
-
-          {block && <LoudnessHistory blockId={block.id} />}
-
-          <div
-            className={styles.blockId}
-            title="Click to copy block ID"
-            onClick={() => navigator.clipboard.writeText(block.id)}
-          >
-            {block.id}
-          </div>
         </div>
       )}
     </div>
@@ -114,6 +83,7 @@ export function OptionsPanel() {
 function BlockHeader({ block }: { block: import('../../store').GridBlock }) {
   const [editing, setEditing] = useState(false);
   const [editValue, setEditValue] = useState('');
+  const [idCopied, setIdCopied] = useState(false);
 
   const abbreviation = TYPE_ABBREVIATIONS[block.type] || block.type.slice(0, 3).toUpperCase();
   const displayName = block.displayName || abbreviation;
@@ -129,6 +99,12 @@ function BlockHeader({ block }: { block: import('../../store').GridBlock }) {
     if (trimmed && trimmed !== displayName) {
       requestRenameBlock(block.id, trimmed);
     }
+  };
+
+  const copyId = () => {
+    navigator.clipboard.writeText(block.id);
+    setIdCopied(true);
+    setTimeout(() => setIdCopied(false), 1200);
   };
 
   return (
@@ -155,7 +131,22 @@ function BlockHeader({ block }: { block: import('../../store').GridBlock }) {
           <span className={`${styles.blockName} ${block.bypassed ? styles.blockNameBypassed : ''}`}>
             {displayName}
           </span>
-          <Pencil1Icon width={14} height={14} className={styles.editIcon} onClick={startEdit} />
+          <Tooltip content="Rename block">
+            <span className={styles.iconButton} onClick={startEdit}>
+              <Pencil1Icon width={14} height={14} />
+            </span>
+          </Tooltip>
+          <Tooltip
+            open={idCopied ? true : undefined}
+            content={idCopied ? 'Block ID copied' : 'Copy block ID'}
+          >
+            <span
+              className={`${styles.iconButton} ${idCopied ? styles.iconButtonCopied : ''}`}
+              onClick={copyId}
+            >
+              <FrameIcon width={14} height={14} />
+            </span>
+          </Tooltip>
         </div>
       )}
 
@@ -207,6 +198,7 @@ function BypassControl({ block }: { block: import('../../store').GridBlock }) {
 
 function TestToneSamplePicker({ blockId, playing }: { blockId: string; playing: boolean }) {
   const samples = useStore((s) => s.testToneSamples);
+  const sortedSamples = useMemo(() => samples.toSorted((a, b) => a.localeCompare(b)), [samples]);
   const block = useStore((s) => s.blocks.find((b) => b.id === blockId));
   const currentSample = block?.testToneSample || 'Synth (Default)';
 
@@ -234,7 +226,7 @@ function TestToneSamplePicker({ blockId, playing }: { blockId: string; playing: 
           <Select.Portal>
             <Select.Content position="popper" sideOffset={4} className={styles.sampleContent}>
               <Select.Viewport>
-                {samples.map((s) => (
+                {sortedSamples.map((s) => (
                   <Select.Item key={s} value={s} className={styles.sampleItem}>
                     <Select.ItemText>{s}</Select.ItemText>
                   </Select.Item>

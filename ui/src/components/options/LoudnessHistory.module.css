@@ -32,3 +32,10 @@
   font-size: 8px;
   font-variant-numeric: tabular-nums;
 }
+
+.unit {
+  fill: var(--color-muted);
+  font-size: 7px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}

@@ -56,8 +56,8 @@ StellarrEditor::StellarrEditor(StellarrProcessor& p)
     splashOverlay->setAlwaysOnTop(true);
 
     setResizable(true, true);
-    setSize(1440, 700);
-    setResizeLimits(1440, 700, 2560, 1600);
+    setSize(1440, 800);
+    setResizeLimits(1440, 800, 2560, 1600);
 
     juce::MessageManager::callAsync(
         [safeWebView = juce::Component::SafePointer(webView.get())]()
@@ -131,6 +131,7 @@ void StellarrEditor::timerCallback()
         auto& proc = dynamic_cast<StellarrProcessor&>(processor);
         bridge.sendSystemStats(proc.getCpuUsagePercent(),
                                proc.getOutputPeakLevel());
+        bridge.sendBlockMetrics();
     }
 
     // Tuner data at ~20Hz

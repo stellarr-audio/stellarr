@@ -97,6 +97,11 @@ interface StellarrState {
   midiMonitorEnabled: boolean;
   midiMappingActivity: Record<number, number>; // mapping index → timestamp of last activity
 
+  lufsWindow: 'momentary' | 'shortTerm';
+  lufsByBlockId: Record<string, number>;
+  targetLufsByBlockId: Record<string, number | null>;
+  loudnessHistory: number[]; // last N LUFS samples for currently selected block
+
   setLoading: (loading: boolean) => void;
   setLoadingStatus: (status: string, progress: number) => void;
   setConnected: (value: boolean) => void;
@@ -156,6 +161,11 @@ interface StellarrState {
   clearMidiMonitor: () => void;
   setMidiMonitorEnabled: (enabled: boolean) => void;
   updateMidiActivity: (events: MidiMonitorEvent[]) => void;
+
+  setLufsWindow: (window: 'momentary' | 'shortTerm') => void;
+  setBlockLufs: (samples: { id: string; lufs: number; targetLufs?: number | null }[]) => void;
+  pushLoudnessSample: (lufs: number) => void;
+  clearLoudnessHistory: () => void;
 
   addBlock: (block: GridBlock) => void;
   removeBlock: (blockId: string) => void;
@@ -222,6 +232,10 @@ export const useStore = create<StellarrState>((set) => ({
   midiMonitorEvents: [],
   midiMonitorEnabled: false,
   midiMappingActivity: {},
+  lufsWindow: 'shortTerm',
+  lufsByBlockId: {},
+  targetLufsByBlockId: {},
+  loudnessHistory: [],
   clipboardBlockType: null,
   selectedBlockId: null,
   draggingConnection: null,
@@ -352,6 +366,25 @@ export const useStore = create<StellarrState>((set) => ({
 
       return changed ? { midiMappingActivity: activity } : {};
     }),
+
+  setLufsWindow: (window) => set({ lufsWindow: window }),
+  setBlockLufs: (samples) =>
+    set((state) => {
+      const lufsByBlockId = { ...state.lufsByBlockId };
+      const targetLufsByBlockId = { ...state.targetLufsByBlockId };
+      for (const s of samples) {
+        lufsByBlockId[s.id] = s.lufs;
+        if (s.targetLufs !== undefined) targetLufsByBlockId[s.id] = s.targetLufs;
+      }
+      return { lufsByBlockId, targetLufsByBlockId };
+    }),
+  pushLoudnessSample: (lufs) =>
+    set((state) => {
+      const next = [...state.loudnessHistory, lufs];
+      if (next.length > 120) next.shift();
+      return { loudnessHistory: next };
+    }),
+  clearLoudnessHistory: () => set({ loudnessHistory: [] }),
 
   addBlock: (block) => set((s) => ({ blocks: [...s.blocks, block] })),
 

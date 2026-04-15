@@ -1,19 +1,31 @@
+/*
+ * Legacy token compatibility layer.
+ *
+ * All real tokens now live in `../design/tokens.css`. These --color-* names
+ * are retained as aliases so existing CSS modules keep working.
+ * Prefer using the new tokens (`var(--accent)`, `var(--bg)` etc.) in new
+ * code — these aliases may be removed in a later phase.
+ */
+
 :root {
-  --color-bg: #0d0b1a;
-  --color-surface: #161229;
-  --color-cell: #1a1530;
-  --color-cell-hover: #221d40;
-  --color-border: #2a2545;
-  --color-primary: #ff2d7b;
-  --color-secondary: #00b4ff;
-  --color-text: #e0dff0;
-  --color-muted: #5a5478;
-  --color-green: #00ff9d;
-  --color-block-bg: #1e1940;
-  --color-block-border: #3a3560;
-  --color-connection: #00b4ff88;
-  --color-dropdown-bg: #1a1535;
-  --color-danger: #cc4444;
-  --color-warning: #ffcc00;
-  --color-danger-bright: #ff4444;
+  --color-bg:         var(--bg);
+  --color-surface:    var(--surface);
+  --color-cell:       var(--surface);
+  --color-cell-hover: var(--surface);
+  --color-border:     var(--border);
+
+  --color-primary:    var(--accent);
+  --color-secondary:  var(--secondary);
+  --color-text:       var(--text);
+  --color-muted:      var(--text-muted);
+
+  --color-green:      var(--success);
+  --color-danger:       var(--danger);
+  --color-danger-bright: var(--danger);
+  --color-warning:    var(--secondary);  /* TODO (Phase 2): SystemStats uses --color-secondary as "default" and --color-warning as "caution" — both now amber. Needs dedicated "info" / muted token or SystemStats refactor. */
+
+  --color-block-bg:     var(--surface);
+  --color-block-border: var(--border);
+  --color-connection:   var(--text-muted);
+  --color-dropdown-bg:  var(--surface);
 }

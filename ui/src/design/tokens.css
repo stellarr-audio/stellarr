@@ -1,0 +1,25 @@
+/*
+ * Stellarr design tokens.
+ * Locked in Phase 0 — see docs/superpowers/specs/2026-04-15-phase-0-design-direction.md
+ * Edit here only; all components consume these tokens.
+ */
+
+:root {
+  /* Typography — identical across themes */
+  --text-xs: 13px;
+  --text-xs-weight: 500;
+
+  --text-base: 15px;
+  --text-base-weight: 400;
+  --text-base-strong-weight: 600;
+
+  /* --text-display reserved — concrete value TBD when Tuner screen is designed */
+
+  --line-height-body: 1.4;
+  --line-height-heading: 1.2;
+  --line-height-display: 1.0;
+
+  --letter-spacing-default: 0.01em;
+  --letter-spacing-label: 0.08em;
+  --letter-spacing-tight: -0.01em;
+}

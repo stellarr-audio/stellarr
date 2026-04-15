@@ -7,6 +7,16 @@ on:
 permissions:
   contents: write
 
+# Required secrets for signed + notarised builds (all optional — workflow
+# produces an unsigned DMG when they are absent):
+#
+#   APPLE_CERTIFICATE           base64-encoded .p12 Developer ID Application certificate
+#   APPLE_CERTIFICATE_PASSWORD  password for the .p12
+#   APPLE_SIGNING_IDENTITY      full cert Common Name, e.g.
+#                               "Developer ID Application: Your Name (TEAMID)"
+#   APPLE_TEAM_ID               10-character Team ID
+#   APPLE_ID                    Apple ID email used for notarisation
+#   APPLE_APP_PASSWORD          app-specific password generated at appleid.apple.com
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
   APP_NAME: Stellarr
@@ -14,6 +24,15 @@ env:
 jobs:
   build-release:
     runs-on: self-hosted
+    # Hoist signing secrets to job-level env so the step-level `if:`
+    # conditions can read them (they are evaluated before step env is applied).
+    env:
+      APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+      APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+      APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+      APPLE_ID: ${{ secrets.APPLE_ID }}
+      APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
     steps:
       - uses: actions/checkout@v5
         with:
@@ -43,9 +62,6 @@ jobs:
 
       - name: Import signing certificate
         if: env.APPLE_CERTIFICATE != ''
-        env:
-          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
-          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
         run: |
           CERT_FILE=$(mktemp /tmp/cert.XXXXXX.p12)
           KEYCHAIN=build.keychain
@@ -64,13 +80,10 @@ jobs:
 
       - name: Sign app bundle
         if: env.APPLE_CERTIFICATE != ''
-        env:
-          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
           APP_PATH="build-release/Stellarr_artefacts/Release/Standalone/${APP_NAME}.app"
           codesign --deep --force --options runtime \
-            --sign "Developer ID Application: Stellarr (${APPLE_TEAM_ID})" \
+            --sign "$APPLE_SIGNING_IDENTITY" \
             "$APP_PATH"
           codesign --verify --deep --strict "$APP_PATH"
 
@@ -92,22 +105,14 @@ jobs:
 
       - name: Sign DMG
         if: env.APPLE_CERTIFICATE != ''
-        env:
-          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
           DMG_NAME="${APP_NAME}-${GITHUB_REF_NAME}-macOS-arm64.dmg"
-          codesign --force --sign "Developer ID Application: Stellarr (${APPLE_TEAM_ID})" "$DMG_NAME"
+          codesign --force --sign "$APPLE_SIGNING_IDENTITY" "$DMG_NAME"
 
       # ── Notarisation (requires Apple ID secrets) ──
 
       - name: Notarise DMG
         if: env.APPLE_CERTIFICATE != ''
-        env:
-          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
           DMG_NAME="${APP_NAME}-${GITHUB_REF_NAME}-macOS-arm64.dmg"
           xcrun notarytool submit "$DMG_NAME" \
@@ -121,8 +126,6 @@ jobs:
 
       - name: Cleanup keychain
         if: always() && env.APPLE_CERTIFICATE != ''
-        env:
-          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
         run: security delete-keychain build.keychain || true
 
       # ── Upload to GitHub Release ──

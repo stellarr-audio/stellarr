@@ -1,7 +1,9 @@
 #include "TestUtils.h"
 #include "blocks/GainBlock.h"
 #include "blocks/InputBlock.h"
+#include "blocks/OutputBlock.h"
 #include "blocks/PluginBlock.h"
+#include "dsp/LoudnessMeter.h"
 #include "utils/ToneGenerator.h"
 
 static bool testPluginBlockPassThrough()
@@ -1483,6 +1485,390 @@ static bool testToneGeneratorOutput()
     return true;
 }
 
+// ---------------------------------------------------------------------------
+// Loudness measurement
+// ---------------------------------------------------------------------------
+
+// Run enough sine through the block to fill the meter's short-term window.
+static void feedSineIntoBlock(stellarr::Block& block, float amplitude, double seconds)
+{
+    const int totalSamples = static_cast<int>(seconds * kSampleRate);
+    int remaining = totalSamples;
+    while (remaining > 0)
+    {
+        const int n = std::min(kBlockSize, remaining);
+        juce::AudioBuffer<float> buffer(2, n);
+        const auto twoPi = static_cast<float>(juce::MathConstants<double>::twoPi);
+        for (int ch = 0; ch < 2; ++ch)
+        {
+            for (int i = 0; i < n; ++i)
+            {
+                const int sampleIdx = (totalSamples - remaining) + i;
+                buffer.setSample(ch, i,
+                    amplitude * std::sin(twoPi * 1000.0f
+                        * static_cast<float>(sampleIdx) / static_cast<float>(kSampleRate)));
+            }
+        }
+        juce::MidiBuffer midi;
+        block.processBlock(buffer, midi);
+        remaining -= n;
+    }
+}
+
+static bool testMeasureLoudnessDisabledByDefault()
+{
+    printf("Test: loudness meter is off by default on Block... ");
+
+    stellarr::GainBlock block;
+    block.prepareToPlay(kSampleRate, kBlockSize);
+
+    if (block.isMeasuringLoudness())
+    {
+        fprintf(stderr, "  expected measurement off by default\n");
+        printf("FAIL\n");
+        return false;
+    }
+
+    feedSineIntoBlock(block, 0.5f, 1.0);
+
+    // With measurement off, meter should stay at silence floor.
+    if (block.getShortTermLufs() > stellarr::dsp::LoudnessMeter::kSilenceFloor + 1e-3f)
+    {
+        fprintf(stderr, "  expected silence floor, got %f\n",
+                static_cast<double>(block.getShortTermLufs()));
+        printf("FAIL\n");
+        return false;
+    }
+
+    printf("PASS\n");
+    return true;
+}
+
+static bool testMeasureLoudnessEnabledReads()
+{
+    printf("Test: enabling measurement produces a non-floor reading... ");
+
+    stellarr::GainBlock block;
+    block.prepareToPlay(kSampleRate, kBlockSize);
+    block.setMeasureLoudness(true);
+
+    feedSineIntoBlock(block, 0.5f, 1.0);
+
+    const float lufs = block.getShortTermLufs();
+    if (lufs <= stellarr::dsp::LoudnessMeter::kSilenceFloor + 10.0f)
+    {
+        fprintf(stderr, "  expected reading above floor+10, got %f\n",
+                static_cast<double>(lufs));
+        printf("FAIL\n");
+        return false;
+    }
+
+    printf("PASS\n");
+    return true;
+}
+
+static bool testMeterRunsInBypassThru()
+{
+    printf("Test: meter reads through-signal in THRU bypass mode... ");
+
+    stellarr::GainBlock block;
+    block.prepareToPlay(kSampleRate, kBlockSize);
+    block.setMeasureLoudness(true);
+    block.setBypassed(true);
+    block.setBypassMode(stellarr::BypassMode::thru);
+
+    feedSineIntoBlock(block, 0.5f, 1.0);
+
+    // THRU passes input through unchanged — meter should register the signal.
+    if (block.getShortTermLufs() <= stellarr::dsp::LoudnessMeter::kSilenceFloor + 10.0f)
+    {
+        fprintf(stderr, "  expected non-floor in THRU bypass, got %f\n",
+                static_cast<double>(block.getShortTermLufs()));
+        printf("FAIL\n");
+        return false;
+    }
+
+    printf("PASS\n");
+    return true;
+}
+
+static bool testMeterReadsFloorInBypassMute()
+{
+    printf("Test: meter reads silence floor in MUTE bypass... ");
+
+    stellarr::GainBlock block;
+    block.prepareToPlay(kSampleRate, kBlockSize);
+    block.setMeasureLoudness(true);
+    block.setBypassed(true);
+    block.setBypassMode(stellarr::BypassMode::mute);
+
+    feedSineIntoBlock(block, 0.5f, 1.0);
+
+    // MUTE clears the output — meter should read floor (proves the meter
+    // *ran* but on silence; before the fix it would have been skipped).
+    if (block.getShortTermLufs() > stellarr::dsp::LoudnessMeter::kSilenceFloor + 1e-3f)
+    {
+        fprintf(stderr, "  expected silence floor in MUTE bypass, got %f\n",
+                static_cast<double>(block.getShortTermLufs()));
+        printf("FAIL\n");
+        return false;
+    }
+
+    printf("PASS\n");
+    return true;
+}
+
+static bool testMeterRunsInAllBypassModes()
+{
+    printf("Test: meter runs (does not crash or stay uninitialised) in every bypass mode... ");
+
+    const stellarr::BypassMode modes[] = {
+        stellarr::BypassMode::thru,
+        stellarr::BypassMode::muteIn,
+        stellarr::BypassMode::muteOut,
+        stellarr::BypassMode::mute,
+        stellarr::BypassMode::muteFxIn,
+        stellarr::BypassMode::muteFxOut,
+    };
+
+    for (auto mode : modes)
+    {
+        stellarr::GainBlock block;
+        block.prepareToPlay(kSampleRate, kBlockSize);
+        block.setMeasureLoudness(true);
+        block.setBypassed(true);
+        block.setBypassMode(mode);
+
+        // Just running without crashing is the primary assertion here;
+        // the specific LUFS value depends on the mode.
+        feedSineIntoBlock(block, 0.5f, 0.5);
+
+        const float m = block.getMomentaryLufs();
+        const float s = block.getShortTermLufs();
+
+        // Sanity: atomics should be readable and within sensible bounds.
+        if (! std::isfinite(m) || ! std::isfinite(s))
+        {
+            fprintf(stderr, "  mode %s produced non-finite reading (m=%f s=%f)\n",
+                    stellarr::bypassModeToString(mode).toRawUTF8(),
+                    static_cast<double>(m), static_cast<double>(s));
+            printf("FAIL\n");
+            return false;
+        }
+    }
+
+    printf("PASS\n");
+    return true;
+}
+
+static bool testMeterReflectsLevel()
+{
+    printf("Test: lowering block level reduces meter reading... ");
+
+    stellarr::GainBlock loud;
+    stellarr::GainBlock quiet;
+    loud.prepareToPlay(kSampleRate, kBlockSize);
+    quiet.prepareToPlay(kSampleRate, kBlockSize);
+    loud.setMeasureLoudness(true);
+    quiet.setMeasureLoudness(true);
+
+    loud.setLevel(1.0f);       // 0 dB
+    quiet.setLevelDb(-12.0f);  // -12 dB
+
+    feedSineIntoBlock(loud, 0.5f, 1.0);
+    feedSineIntoBlock(quiet, 0.5f, 1.0);
+
+    const float diff = loud.getShortTermLufs() - quiet.getShortTermLufs();
+    if (diff < 10.0f || diff > 14.0f)
+    {
+        fprintf(stderr, "  expected ~12 dB drop, got %f (loud=%f quiet=%f)\n",
+                static_cast<double>(diff),
+                static_cast<double>(loud.getShortTermLufs()),
+                static_cast<double>(quiet.getShortTermLufs()));
+        printf("FAIL\n");
+        return false;
+    }
+
+    printf("PASS\n");
+    return true;
+}
+
+static bool testOutputBlockMeasuresByDefault()
+{
+    printf("Test: OutputBlock has loudness measurement on by default... ");
+
+    stellarr::OutputBlock block;
+    block.prepareToPlay(kSampleRate, kBlockSize);
+
+    if (! block.isMeasuringLoudness())
+    {
+        fprintf(stderr, "  OutputBlock should enable measurement in its constructor\n");
+        printf("FAIL\n");
+        return false;
+    }
+
+    feedSineIntoBlock(block, 0.5f, 1.0);
+
+    if (block.getShortTermLufs() <= stellarr::dsp::LoudnessMeter::kSilenceFloor + 10.0f)
+    {
+        fprintf(stderr, "  OutputBlock did not register audio, got %f\n",
+                static_cast<double>(block.getShortTermLufs()));
+        printf("FAIL\n");
+        return false;
+    }
+
+    printf("PASS\n");
+    return true;
+}
+
+static bool testOutputBlockTargetLufsDefaultsNaN()
+{
+    printf("Test: OutputBlock target LUFS defaults to unset (NaN)... ");
+
+    stellarr::OutputBlock block;
+    if (block.hasTargetLufs())
+    {
+        fprintf(stderr, "  expected no target by default\n");
+        printf("FAIL\n");
+        return false;
+    }
+    if (! std::isnan(block.getTargetLufs()))
+    {
+        fprintf(stderr, "  expected NaN, got %f\n",
+                static_cast<double>(block.getTargetLufs()));
+        printf("FAIL\n");
+        return false;
+    }
+
+    printf("PASS\n");
+    return true;
+}
+
+static bool testOutputBlockTargetLufsSetGet()
+{
+    printf("Test: OutputBlock target LUFS set/get round-trip... ");
+
+    stellarr::OutputBlock block;
+    block.setTargetLufs(-18.0f);
+
+    if (! block.hasTargetLufs())
+    {
+        fprintf(stderr, "  expected hasTargetLufs() true after set\n");
+        printf("FAIL\n");
+        return false;
+    }
+    if (std::abs(block.getTargetLufs() - (-18.0f)) > 1e-6f)
+    {
+        fprintf(stderr, "  expected -18.0, got %f\n",
+                static_cast<double>(block.getTargetLufs()));
+        printf("FAIL\n");
+        return false;
+    }
+
+    // Clearing back to NaN.
+    block.setTargetLufs(std::numeric_limits<float>::quiet_NaN());
+    if (block.hasTargetLufs())
+    {
+        fprintf(stderr, "  clearing with NaN failed\n");
+        printf("FAIL\n");
+        return false;
+    }
+
+    printf("PASS\n");
+    return true;
+}
+
+static bool testOutputBlockTargetLufsJsonOmittedWhenUnset()
+{
+    printf("Test: OutputBlock toJson omits targetLufs when unset... ");
+
+    stellarr::OutputBlock block;
+    // Default NaN — should not appear in JSON.
+    auto json = block.toJson();
+    auto* obj = json.getDynamicObject();
+    if (obj == nullptr)
+    {
+        fprintf(stderr, "  toJson() returned null object\n");
+        printf("FAIL\n");
+        return false;
+    }
+
+    if (obj->hasProperty("targetLufs"))
+    {
+        fprintf(stderr, "  targetLufs should be omitted when unset\n");
+        printf("FAIL\n");
+        return false;
+    }
+
+    printf("PASS\n");
+    return true;
+}
+
+static bool testOutputBlockTargetLufsJsonRoundTrip()
+{
+    printf("Test: OutputBlock targetLufs round-trips through JSON... ");
+
+    stellarr::OutputBlock src;
+    src.setTargetLufs(-14.0f);
+
+    auto json = src.toJson();
+    auto* obj = json.getDynamicObject();
+    if (obj == nullptr || ! obj->hasProperty("targetLufs"))
+    {
+        fprintf(stderr, "  expected targetLufs property in JSON\n");
+        printf("FAIL\n");
+        return false;
+    }
+
+    stellarr::OutputBlock dest;
+    dest.fromJson(json);
+
+    if (! dest.hasTargetLufs())
+    {
+        fprintf(stderr, "  expected target after fromJson\n");
+        printf("FAIL\n");
+        return false;
+    }
+    if (std::abs(dest.getTargetLufs() - (-14.0f)) > 1e-6f)
+    {
+        fprintf(stderr, "  round-trip mismatch: got %f\n",
+                static_cast<double>(dest.getTargetLufs()));
+        printf("FAIL\n");
+        return false;
+    }
+
+    printf("PASS\n");
+    return true;
+}
+
+static bool testOutputBlockTargetLufsJsonAbsentDeserialisesToNaN()
+{
+    printf("Test: OutputBlock fromJson without targetLufs → NaN... ");
+
+    // Simulate loading an older preset that pre-dates the targetLufs field.
+    auto* obj = new juce::DynamicObject();
+    obj->setProperty("id", juce::Uuid().toString());
+    obj->setProperty("type", "output");
+    obj->setProperty("name", "Output");
+    obj->setProperty("level", -0.0);
+    juce::var json(obj);
+
+    stellarr::OutputBlock block;
+    block.setTargetLufs(-20.0f); // pre-set to a value so we can see it cleared
+    block.fromJson(json);
+
+    if (block.hasTargetLufs())
+    {
+        fprintf(stderr, "  expected NaN target when JSON has no key, got %f\n",
+                static_cast<double>(block.getTargetLufs()));
+        printf("FAIL\n");
+        return false;
+    }
+
+    printf("PASS\n");
+    return true;
+}
+
 int main()
 {
     int failures = 0;
@@ -1548,6 +1934,20 @@ int main()
 
     // ToneGenerator
     if (!testToneGeneratorOutput())      ++failures;
+
+    // Loudness measurement
+    if (!testMeasureLoudnessDisabledByDefault()) ++failures;
+    if (!testMeasureLoudnessEnabledReads())      ++failures;
+    if (!testMeterRunsInBypassThru())            ++failures;
+    if (!testMeterReadsFloorInBypassMute())      ++failures;
+    if (!testMeterRunsInAllBypassModes())        ++failures;
+    if (!testMeterReflectsLevel())               ++failures;
+    if (!testOutputBlockMeasuresByDefault())     ++failures;
+    if (!testOutputBlockTargetLufsDefaultsNaN())             ++failures;
+    if (!testOutputBlockTargetLufsSetGet())                  ++failures;
+    if (!testOutputBlockTargetLufsJsonOmittedWhenUnset())    ++failures;
+    if (!testOutputBlockTargetLufsJsonRoundTrip())           ++failures;
+    if (!testOutputBlockTargetLufsJsonAbsentDeserialisesToNaN()) ++failures;
 
     printf("\n%d test(s) failed\n", failures);
     return failures;

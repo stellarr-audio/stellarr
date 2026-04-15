@@ -18,7 +18,8 @@ You don't need to run every test case for every PR. Focus on the files relevant 
 | Tuner, InputBlock, reference pitch | [Tuner](06-tuner.md) |
 | MIDI mapping, MidiMapper, MIDI page | [MIDI](07-midi.md) |
 | Settings page, telemetry, persistence | [Settings](08-settings.md) |
-
+| LUFS meter, loudness history, target loudness | [Loudness Metering](09-loudness-metering.md) |
+    
 ## Setup
 
 ### Hardware

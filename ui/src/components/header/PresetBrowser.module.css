@@ -18,7 +18,7 @@
 }
 
 .iconBtn:hover {
-  background: #2a2545;
+  background: var(--color-border);
 }
 
 /* Dropdown trigger (preset / scene selectors) */
@@ -185,7 +185,7 @@
 }
 
 .sceneMidiBtn:hover {
-  background: #2a2545;
+  background: var(--color-border);
 }
 
 .sceneMidiBtnAssigned {
@@ -196,7 +196,7 @@
 
 /* MIDI tag next to scene name */
 .midiTag {
-  background: rgba(0, 180, 255, 0.094);
+  background: color-mix(in srgb, var(--color-primary) 9.4%, transparent);
   border: 1px solid var(--color-secondary);
   color: var(--color-secondary);
   font-size: 0.6rem;
@@ -240,7 +240,7 @@
 }
 
 .saveBtn:hover {
-  background: #2a2545;
+  background: var(--color-border);
 }
 
 .saveBtnDefault {
@@ -267,5 +267,5 @@
 }
 
 .saveChevron:hover {
-  background: #2a2545;
+  background: var(--color-border);
 }

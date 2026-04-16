@@ -35,5 +35,5 @@
 }
 
 .swatchSelected {
-  border-color: #ffffff;
+  border-color: var(--color-text);
 }

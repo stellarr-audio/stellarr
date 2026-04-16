@@ -12,7 +12,7 @@
 .sectionTitle {
   font-size: 1rem;
   font-weight: 600;
-  color: var(--color-secondary);
+  color: var(--color-primary);
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }

@@ -9,6 +9,7 @@ import {
   Link1Icon,
 } from '@radix-ui/react-icons';
 import { useStore } from '../../store';
+import { IconButton } from '../common/IconButton';
 import {
   requestNewSession,
   requestSaveSession,
@@ -104,25 +105,27 @@ export function PresetBrowser() {
   return (
     <div className={styles.container}>
       {/* Open */}
-      <button onClick={requestLoadSession} title="Open preset" className={styles.iconBtn}>
-        <UploadIcon width={16} height={16} />
-      </button>
+      <IconButton
+        icon={<UploadIcon width={16} height={16} />}
+        onClick={requestLoadSession}
+        title="Open preset"
+      />
 
       {/* Preset dropdown + MIDI assign */}
-      <div className={styles.sceneGroup}>
+      <div className={styles.inputGroup}>
         <PresetDropdown
           currentName={currentName}
           presetFiles={presetFiles}
           currentPresetIndex={currentPresetIndex}
           presetMidi={presetMidi}
         />
-        <button
+        <IconButton
+          inGroup
+          icon={<Link1Icon width={16} height={16} />}
           onClick={() => setPresetMidiOpen(true)}
           title={presetMidi ? `Preset MIDI: PC` : 'Assign MIDI Program Change to presets'}
-          className={presetMidi ? styles.sceneMidiBtnAssigned : styles.sceneMidiBtn}
-        >
-          <Link1Icon width={16} height={16} />
-        </button>
+          className={presetMidi ? styles.sceneMidiBtnAssigned : undefined}
+        />
       </div>
       <MidiAssignDialog
         open={presetMidiOpen}
@@ -134,20 +137,20 @@ export function PresetBrowser() {
       />
 
       {/* Scene dropdown + MIDI assign */}
-      <div className={styles.sceneGroup}>
+      <div className={styles.inputGroup}>
         <SceneDropdown
           currentName={currentSceneName}
           scenes={scenes}
           activeSceneIndex={activeSceneIndex}
           sceneMidi={sceneMidi}
         />
-        <button
+        <IconButton
+          inGroup
+          icon={<Link1Icon width={16} height={16} />}
           onClick={() => setSceneMidiOpen(true)}
           title={sceneMidi ? `Scene MIDI: ${formatMidiLabel(sceneMidi)}` : 'Assign MIDI to scenes'}
-          className={sceneMidi ? styles.sceneMidiBtnAssigned : styles.sceneMidiBtn}
-        >
-          <Link1Icon width={16} height={16} />
-        </button>
+          className={sceneMidi ? styles.sceneMidiBtnAssigned : undefined}
+        />
       </div>
       <MidiAssignDialog
         open={sceneMidiOpen}
@@ -159,23 +162,28 @@ export function PresetBrowser() {
 
       {/* Save split button */}
       <div className={styles.saveSplit}>
-        <button
+        <IconButton
+          inGroup
+          icon={
+            justSaved ? (
+              <CheckIcon width={16} height={16} />
+            ) : (
+              <BookmarkIcon width={16} height={16} />
+            )
+          }
           onClick={requestSaveSessionQuiet}
           title="Save preset"
-          className={justSaved ? styles.saveBtnSaved : styles.saveBtnDefault}
-        >
-          {justSaved ? (
-            <CheckIcon width={16} height={16} />
-          ) : (
-            <BookmarkIcon width={16} height={16} />
-          )}
-        </button>
+          className={justSaved ? styles.saveBtnSaved : undefined}
+        />
 
         <DropdownMenu.Root>
           <DropdownMenu.Trigger asChild>
-            <button title="Save options" className={styles.saveChevron}>
-              <ChevronDownIcon width={12} height={12} />
-            </button>
+            <IconButton
+              inGroup
+              icon={<ChevronDownIcon width={12} height={12} />}
+              title="Save options"
+              className={styles.saveChevron}
+            />
           </DropdownMenu.Trigger>
           <DropdownMenu.Portal>
             <DropdownMenu.Content

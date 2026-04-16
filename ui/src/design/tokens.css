@@ -25,6 +25,11 @@
 
   /* Shared radii */
   --radius: 6px;
+
+  /* Input dimensions — shared across all interactive elements */
+  --input-height: 32px;
+  --input-height-sm: 24px;
+  --input-padding-x: 0.6rem;
 }
 
 /* === Theme-agnostic palette ramps =========================================

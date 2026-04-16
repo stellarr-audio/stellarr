@@ -68,42 +68,9 @@
   flex-shrink: 0;
 }
 
-.removeBtn {
-  background: transparent;
-  border: none;
-  color: var(--color-muted);
-  font-size: var(--text-base);
-  cursor: pointer;
-  padding: 0 0.25rem;
-  flex-shrink: 0;
-  transition: color 0.15s ease;
-}
-
-.removeBtn:hover {
-  color: var(--color-danger);
-}
-
 .actions {
   display: flex;
   gap: 0.5rem;
-}
-
-.actionBtn {
-  background: transparent;
-  color: var(--color-text);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius);
-  padding: 0.5rem 1rem;
-  font-size: var(--text-base);
-  font-weight: var(--text-base-strong-weight);
-  letter-spacing: 0.04em;
-  cursor: pointer;
-  transition: border-color 0.15s ease, background 0.15s ease;
-}
-
-.actionBtn:hover {
-  border-color: var(--color-primary);
-  background: color-mix(in srgb, var(--color-primary) 6%, transparent);
 }
 
 .emptyText {

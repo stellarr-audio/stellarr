@@ -1,6 +1,6 @@
 .trigger {
-  width: 20px;
-  height: 20px;
+  width: var(--input-height-sm);
+  height: var(--input-height-sm);
   border: 1px solid var(--color-border);
   cursor: pointer;
   padding: 0;

@@ -51,32 +51,6 @@
   text-transform: uppercase;
 }
 
-.midiButton {
-  background: transparent;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius);
-  color: var(--color-muted);
-  font-size: 0.65rem;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  cursor: pointer;
-  padding: 0.2rem 0.4rem;
-  transition: border-color 0.15s ease;
-}
-
-.midiButton:hover {
-  color: var(--color-secondary);
-  border-color: var(--color-secondary);
-  background: color-mix(in srgb, var(--color-secondary) 8%, transparent);
-}
-
-.midiButtonAssigned {
-  background: color-mix(in srgb, var(--color-primary) 9.4%, transparent);
-  border-color: var(--color-secondary);
-  color: var(--color-secondary);
-}
-
 /* Bypass Mode */
 .bypassModeLabel {
   font-size: 1rem;
@@ -87,13 +61,14 @@
 
 .selectTrigger {
   width: 100%;
+  height: var(--input-height);
   text-align: left;
   background: var(--color-cell);
   color: var(--color-text);
   border: 1px solid var(--color-border);
   border-radius: var(--radius);
-  padding: 0.5rem 0.7rem;
-  font-size: 1rem;
+  padding: 0 var(--input-padding-x);
+  font-size: var(--text-base);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -118,7 +93,7 @@
 
 .selectItem {
   padding: 0.35rem 0.5rem;
-  font-size: 1rem;
+  font-size: var(--text-base);
   color: var(--color-text);
   cursor: pointer;
   outline: none;

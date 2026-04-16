@@ -4,39 +4,24 @@
   gap: 0.4rem;
 }
 
-/* Icon buttons (open, save icon) */
-.iconBtn {
-  background: transparent;
-  border: 1px solid var(--color-border);
-  color: var(--color-muted);
-  padding: 0.3rem;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
-}
-
-.iconBtn:hover {
-  color: var(--color-secondary);
-  border-color: var(--color-secondary);
-  background: color-mix(in srgb, var(--color-secondary) 8%, transparent);
-}
-
 /* Dropdown trigger (preset / scene selectors) */
 .dropdownTrigger {
+  height: var(--input-height);
   display: flex;
   align-items: stretch;
   background: transparent;
   border: 1px solid var(--color-border);
+  border-radius: var(--radius);
   padding: 0;
   cursor: pointer;
   outline: none;
-  transition: border-color 0.15s ease;
+  overflow: hidden;
+  transition: border-color 0.15s ease, background 0.15s ease;
 }
 
 .dropdownTrigger:hover {
-  border-color: var(--color-muted);
+  border-color: var(--color-secondary);
+  background: color-mix(in srgb, var(--color-secondary) 8%, transparent);
 }
 
 /* Label part of trigger (e.g. "Preset", "Scene") */
@@ -87,9 +72,11 @@
 .dropdownContent {
   background: var(--color-dropdown-bg);
   border: 1px solid var(--color-border);
+  border-radius: var(--radius);
   padding: 0.25rem 0;
   min-width: var(--radix-dropdown-menu-trigger-width);
   z-index: 20;
+  overflow: hidden;
 }
 
 .dropdownContentScrollable {
@@ -169,48 +156,49 @@
   align-items: center;
 }
 
-/* Scene group: dropdown + MIDI icon as one input group */
-.sceneGroup {
+/* Fused input group: dropdown + icon button share a border */
+.inputGroup {
   display: flex;
   align-items: stretch;
-}
-
-.sceneGroup > *:first-child {
-  border-right: none;
-}
-
-.sceneMidiBtn {
-  background: transparent;
+  height: var(--input-height);
   border: 1px solid var(--color-border);
-  color: var(--color-muted);
-  padding: 0.3rem 0.4rem;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.1s ease;
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-sizing: border-box;
+  transition: border-color 0.15s ease;
 }
 
-.sceneMidiBtn:hover {
-  background: var(--color-border);
+.inputGroup:hover {
+  border-color: var(--color-secondary);
+}
+
+/* Dropdown trigger inside input group loses its own border */
+.inputGroup .dropdownTrigger {
+  border: none;
+  border-radius: 0;
+  height: 100%;
+}
+
+/* Divider between dropdown and icon button */
+.inputGroup > *:last-child {
+  border-left: 1px solid var(--color-border);
 }
 
 .sceneMidiBtnAssigned {
-  composes: sceneMidiBtn;
   color: var(--color-secondary);
-  border-color: var(--color-secondary);
 }
 
 /* MIDI tag next to scene name */
 .midiTag {
   background: color-mix(in srgb, var(--color-primary) 9.4%, transparent);
   border: 1px solid var(--color-secondary);
+  border-radius: var(--radius);
   color: var(--color-secondary);
   font-size: 0.6rem;
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  padding: 0.05rem 0.25rem;
+  padding: 0.1rem 0.3rem;
   margin-left: 0.4rem;
   white-space: nowrap;
 }
@@ -223,56 +211,34 @@
   outline: none;
   display: flex;
   align-items: center;
+  transition: color 0.15s ease, background 0.15s ease;
 }
 
 .subTrigger:hover {
-  background: var(--color-border);
+  color: var(--color-secondary);
+  background: color-mix(in srgb, var(--color-secondary) 8%, transparent);
 }
 
 /* Save split button */
 .saveSplit {
   display: flex;
   align-items: stretch;
+  height: var(--input-height);
   border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-sizing: border-box;
+  transition: border-color 0.15s ease;
 }
 
-.saveBtn {
-  background: transparent;
-  border: none;
-  padding: 0.3rem 0.4rem;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  transition: color 0.2s ease, background 0.1s ease;
-}
-
-.saveBtn:hover {
-  background: var(--color-border);
-}
-
-.saveBtnDefault {
-  composes: saveBtn;
-  color: var(--color-muted);
+.saveSplit:hover {
+  border-color: var(--color-secondary);
 }
 
 .saveBtnSaved {
-  composes: saveBtn;
   color: var(--color-green);
 }
 
 .saveChevron {
-  background: transparent;
-  border: none;
   border-left: 1px solid var(--color-border);
-  color: var(--color-muted);
-  padding: 0.3rem 0.2rem;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  transition: background 0.1s ease;
-  outline: none;
-}
-
-.saveChevron:hover {
-  background: var(--color-border);
 }

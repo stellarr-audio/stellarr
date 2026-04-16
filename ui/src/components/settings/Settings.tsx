@@ -6,6 +6,7 @@ import {
   requestRemoveScanDirectory,
   requestSetTelemetryEnabled,
 } from '../../bridge';
+import { Button } from '../common/Button';
 import { ToggleSwitch } from '../common/ToggleSwitch';
 import styles from './Settings.module.css';
 
@@ -32,24 +33,23 @@ export function Settings() {
                   {dir.isDefault && <span className={styles.dirBadge}>System</span>}
                 </div>
                 {!dir.isDefault && (
-                  <button
+                  <Button
+                    variant="danger"
+                    size="sm"
                     onClick={() => requestRemoveScanDirectory(dir.path)}
-                    className={styles.removeBtn}
                   >
                     x
-                  </button>
+                  </Button>
                 )}
               </div>
             ))}
           </div>
 
           <div className={styles.actions}>
-            <button className={styles.actionBtn} onClick={requestPickScanDirectory}>
-              Add Directory
-            </button>
-            <button className={styles.actionBtn} onClick={requestScanPlugins} disabled={scanning}>
+            <Button onClick={requestPickScanDirectory}>Add Directory</Button>
+            <Button onClick={requestScanPlugins} disabled={scanning}>
               {scanning ? 'Scanning...' : 'Scan Now'}
-            </button>
+            </Button>
           </div>
         </Section>
 

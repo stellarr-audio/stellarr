@@ -45,22 +45,10 @@
 }
 
 .editInput {
-  background: transparent;
-  border: 1px solid var(--color-primary);
-  border-radius: var(--radius);
-  color: var(--color-text);
-  font-size: 1rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  padding: 0.3rem 0.5rem;
-  outline: none;
   width: 60px;
-  transition: border-color 0.15s ease;
-}
-
-.editInput:hover {
-  border-color: var(--color-muted);
 }
 
 .nameRow {
@@ -107,32 +95,6 @@
   gap: 0.3rem;
 }
 
-.midiButton {
-  background: transparent;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius);
-  color: var(--color-muted);
-  font-size: 0.65rem;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  cursor: pointer;
-  padding: 0.1rem 0.3rem;
-  transition: border-color 0.15s ease;
-}
-
-.midiButton:hover {
-  color: var(--color-secondary);
-  border-color: var(--color-secondary);
-  background: color-mix(in srgb, var(--color-secondary) 8%, transparent);
-}
-
-.midiButtonAssigned {
-  background: color-mix(in srgb, var(--color-primary) 9.4%, transparent);
-  border-color: var(--color-secondary);
-  color: var(--color-secondary);
-}
-
 .samplePicker {
   display: flex;
   flex-direction: column;
@@ -154,13 +116,14 @@
 
 .sampleTrigger {
   flex: 1;
+  height: var(--input-height);
   text-align: left;
   background: var(--color-cell);
   color: var(--color-text);
   border: 1px solid var(--color-border);
   border-radius: var(--radius);
-  padding: 0.5rem 0.7rem;
-  font-size: 0.9rem;
+  padding: 0 var(--input-padding-x);
+  font-size: var(--text-base);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -194,25 +157,6 @@
 
 .sampleItem:hover {
   background: var(--color-border);
-}
-
-.toneButton {
-  background: transparent;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius);
-  color: var(--color-muted);
-  padding: 0.3rem 0.5rem;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: border-color 0.15s ease;
-}
-
-.toneButton:hover {
-  color: var(--color-secondary);
-  border-color: var(--color-secondary);
-  background: color-mix(in srgb, var(--color-secondary) 8%, transparent);
 }
 
 .toneButtonPlaying {

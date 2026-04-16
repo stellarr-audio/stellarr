@@ -1,0 +1,36 @@
+.input {
+  height: var(--input-height);
+  padding: 0 var(--input-padding-x);
+  font-size: var(--text-base);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text);
+  background: var(--color-cell);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.15s ease;
+}
+
+.input:hover {
+  border-color: var(--color-secondary);
+}
+
+.input:focus {
+  border-color: var(--color-secondary);
+}
+
+/* When inside an InputGroup, remove own border/radius — group handles it */
+.inGroup {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  height: 100%;
+}
+
+.inGroup:hover,
+.inGroup:focus {
+  border-color: transparent;
+}

@@ -1,11 +1,12 @@
 .trigger {
   width: 100%;
+  height: var(--input-height);
   text-align: left;
   background: var(--color-cell);
-  border: 1px solid var(--color-border);
+  border: var(--trigger-border, 1px solid var(--color-border));
   border-radius: var(--trigger-radius, var(--radius));
-  padding: 0.5rem 0.7rem;
-  font-size: 1rem;
+  padding: 0 var(--input-padding-x);
+  font-size: var(--text-base);
   cursor: pointer;
   display: flex;
   align-items: center;

@@ -1,5 +1,6 @@
 import { useStore } from '../../store';
 import { ToggleSwitch } from '../common/ToggleSwitch';
+import { Input } from '../common/Input';
 import { InputGroup, InputGroupLabel } from '../common/InputGroup';
 import { requestSetTargetLufs } from '../../bridge';
 import styles from './TargetLoudnessControl.module.css';
@@ -34,9 +35,9 @@ export function TargetLoudnessControl({ blockId }: Props) {
       </div>
       {enabled && (
         <InputGroup>
-          <input
+          <Input
+            inGroup
             type="number"
-            className={styles.input}
             value={target ?? -18}
             onChange={onChange}
             min={-30}

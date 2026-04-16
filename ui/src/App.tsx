@@ -15,8 +15,10 @@ import { PresetBrowser } from './components/header/PresetBrowser';
 import { Logo } from './components/header/Logo';
 import { Footer } from './components/footer/Footer';
 import { Tooltip } from './components/common/Tooltip';
-import { TbLayoutGrid, TbWaveSine, TbPlug } from 'react-icons/tb';
+import { IconButton } from './components/common/IconButton';
+import { TbLayoutGrid, TbWaveSine, TbPlug, TbSun, TbMoon } from 'react-icons/tb';
 import { LuSettings } from 'react-icons/lu';
+import { useThemeStore, resolveTheme } from './store/theme';
 import { requestSetTunerEnabled, requestSaveSessionQuiet } from './bridge';
 import styles from './App.module.css';
 
@@ -96,8 +98,8 @@ function App() {
           <PresetBrowser />
         </div>
 
-        {/* Right: placeholder for future header controls */}
-        <div />
+        {/* Right: theme toggle */}
+        <ThemeToggle />
       </div>
 
       {/* Main area */}
@@ -153,6 +155,25 @@ function App() {
       {/* Footer: CPU / IN / OUT meters */}
       <Footer />
     </Tabs.Root>
+  );
+}
+
+function ThemeToggle() {
+  const theme = useThemeStore((s) => s.theme);
+  const setTheme = useThemeStore((s) => s.setTheme);
+  const resolved = resolveTheme(theme);
+
+  const flip = () => setTheme(resolved === 'dark' ? 'light' : 'dark');
+
+  const icon = resolved === 'dark' ? <TbMoon size={18} /> : <TbSun size={18} />;
+  const label = resolved === 'dark' ? 'Switch to light mode' : 'Switch to dark mode';
+
+  return (
+    <Tooltip content={label} side="bottom">
+      <span>
+        <IconButton icon={icon} onClick={flip} title={label} />
+      </span>
+    </Tooltip>
   );
 }
 

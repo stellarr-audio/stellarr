@@ -1,0 +1,55 @@
+.footer {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  padding: 0.5rem 1.25rem;
+  border-top: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+
+.meter {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1;
+}
+
+.label {
+  font-size: var(--text-xs);
+  font-weight: var(--text-xs-weight);
+  letter-spacing: var(--letter-spacing-label);
+  text-transform: uppercase;
+  color: var(--color-muted);
+  min-width: 2.5ch;
+}
+
+.track {
+  flex: 1;
+  height: 4px;
+  background: var(--color-border);
+  border-radius: 2px;
+  overflow: hidden;
+  display: flex;
+}
+
+.track.clickable {
+  cursor: pointer;
+}
+
+.fill {
+  height: 100%;
+  transition: width 0.15s ease;
+}
+
+.fillHot {
+  height: 100%;
+}
+
+.value {
+  font-size: var(--text-base);
+  font-weight: var(--text-base-strong-weight);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-muted);
+  text-align: right;
+  min-width: 5ch;
+}

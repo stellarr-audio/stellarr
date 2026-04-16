@@ -11,7 +11,10 @@ namespace stellarr
 class InputBlock final : public Block
 {
 public:
-    InputBlock() : Block("Input", 2, 2, false) {}
+    InputBlock() : Block("Input", 2, 2, false)
+    {
+        setMeasureLoudness(true); // Input always measures (footer IN meter)
+    }
 
     BlockType getBlockType() const override { return BlockType::input; }
 

@@ -12,8 +12,8 @@ import { MidiPage } from './components/midi/MidiPage';
 import { MidiMonitor } from './components/midi/MidiMonitor';
 import { LoadingScreen } from './components/header/LoadingScreen';
 import { PresetBrowser } from './components/header/PresetBrowser';
-import { SystemStats } from './components/header/SystemStats';
 import { Logo } from './components/header/Logo';
+import { Footer } from './components/footer/Footer';
 import { requestSetTunerEnabled, requestSaveSessionQuiet } from './bridge';
 import styles from './App.module.css';
 
@@ -85,8 +85,8 @@ function App() {
           <PresetBrowser />
         </div>
 
-        {/* Right: system stats */}
-        <SystemStats />
+        {/* Right: placeholder for future header controls */}
+        <div />
       </div>
 
       {/* Main area */}
@@ -138,6 +138,9 @@ function App() {
           <Settings />
         </Tabs.Content>
       </div>
+
+      {/* Footer: CPU / IN / OUT meters */}
+      <Footer />
     </Tabs.Root>
   );
 }

@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useStore } from '../../store';
 import { requestSetReferencePitch } from '../../bridge';
+import { Input } from '../common/Input';
+import { Button } from '../common/Button';
 import { InputGroup, InputGroupLabel } from '../common/InputGroup';
 import styles from './TunerPanel.module.css';
 
@@ -33,18 +35,22 @@ export function TunerPanel() {
         <span className={styles.sectionTitle}>Mode</span>
 
         <div className={styles.modeButtons}>
-          <button
-            className={`${styles.modeButton} ${tunerMode === 'needle' ? styles.modeButtonActive : ''}`}
+          <Button
+            size="sm"
+            active={tunerMode === 'needle'}
             onClick={() => setTunerMode('needle')}
+            className={styles.modeButton}
           >
             Needle
-          </button>
-          <button
-            className={`${styles.modeButton} ${tunerMode === 'strobe' ? styles.modeButtonActive : ''}`}
+          </Button>
+          <Button
+            size="sm"
+            active={tunerMode === 'strobe'}
             onClick={() => setTunerMode('strobe')}
+            className={styles.modeButton}
           >
             Strobe
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -55,9 +61,9 @@ export function TunerPanel() {
 
         <InputGroup>
           <InputGroupLabel>A4</InputGroupLabel>
-          <input
+          <Input
+            inGroup
             type="number"
-            className={styles.pitchInput}
             value={displayValue}
             min={420}
             max={460}
@@ -83,13 +89,15 @@ export function TunerPanel() {
 
         <div className={styles.presets}>
           {presets.map((hz) => (
-            <button
+            <Button
               key={hz}
-              className={`${styles.presetButton} ${referencePitch === hz ? styles.presetButtonActive : ''}`}
+              size="sm"
+              active={referencePitch === hz}
               onClick={() => requestSetReferencePitch(hz)}
+              className={styles.presetButton}
             >
               {hz}
-            </button>
+            </Button>
           ))}
         </div>
       </div>

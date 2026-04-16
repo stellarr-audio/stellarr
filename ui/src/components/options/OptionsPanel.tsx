@@ -2,6 +2,9 @@ import { useState, useEffect, useMemo } from 'react';
 import { useStore } from '../../store';
 import { ToggleSwitch } from '../common/ToggleSwitch';
 import { Tooltip } from '../common/Tooltip';
+import { Input } from '../common/Input';
+import { Button } from '../common/Button';
+import { IconButton } from '../common/IconButton';
 import { MidiAssignDialog } from '../common/MidiAssignDialog';
 import { TYPE_ABBREVIATIONS, formatMidiLabel } from '../common/constants';
 import { Pencil1Icon, PlayIcon, StopIcon, FrameIcon } from '@radix-ui/react-icons';
@@ -110,7 +113,7 @@ function BlockHeader({ block }: { block: import('../../store').GridBlock }) {
   return (
     <div className={styles.blockHeader}>
       {editing ? (
-        <input
+        <Input
           autoFocus
           maxLength={3}
           value={editValue}
@@ -169,13 +172,15 @@ function BypassControl({ block }: { block: import('../../store').GridBlock }) {
 
   return (
     <div className={styles.bypassControl}>
-      <button
+      <Button
+        size="sm"
+        variant="secondary"
+        active={!!existing}
         onClick={() => setDialogOpen(true)}
         title={existing ? `Bypass MIDI: CC ${existing.cc}` : 'Assign MIDI CC to bypass'}
-        className={`${styles.midiButton} ${existing ? styles.midiButtonAssigned : ''}`}
       >
         {midiLabel}
-      </button>
+      </Button>
       <ToggleSwitch
         enabled={!block.bypassed}
         onToggle={() => {
@@ -235,13 +240,12 @@ function TestToneSamplePicker({ blockId, playing }: { blockId: string; playing: 
             </Select.Content>
           </Select.Portal>
         </Select.Root>
-        <button
+        <IconButton
+          icon={playing ? <StopIcon width={14} height={14} /> : <PlayIcon width={14} height={14} />}
           onClick={() => requestToggleTestTone(blockId)}
           title={playing ? 'Stop test tone' : 'Play test tone'}
-          className={`${styles.toneButton} ${playing ? styles.toneButtonPlaying : ''}`}
-        >
-          {playing ? <StopIcon width={14} height={14} /> : <PlayIcon width={14} height={14} />}
-        </button>
+          className={playing ? styles.toneButtonPlaying : undefined}
+        />
       </div>
     </div>
   );

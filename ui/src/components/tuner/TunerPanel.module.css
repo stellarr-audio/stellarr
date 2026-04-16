@@ -46,47 +46,6 @@
 
 .modeButton {
   flex: 1;
-  background: transparent;
-  border: 1px solid var(--color-border);
-  color: var(--color-muted);
-  font-size: 0.85rem;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  padding: 0.3rem 0;
-  cursor: pointer;
-}
-
-.modeButton:hover {
-  border-color: var(--color-muted);
-  color: var(--color-text);
-}
-
-.modeButtonActive {
-  background: color-mix(in srgb, var(--color-primary) 9.4%, transparent);
-  border-color: var(--color-secondary);
-  color: var(--color-secondary);
-}
-
-.pitchInput {
-  flex: 1;
-  min-width: 0;
-  background: var(--color-cell);
-  border: none;
-  color: var(--color-text);
-  font-size: 0.85rem;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-  padding: 0.3rem 0.4rem;
-  text-align: center;
-  outline: none;
-  -moz-appearance: textfield;
-}
-
-.pitchInput::-webkit-inner-spin-button,
-.pitchInput::-webkit-outer-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
 }
 
 .presets {
@@ -96,23 +55,4 @@
 
 .presetButton {
   flex: 1;
-  background: transparent;
-  border: 1px solid var(--color-border);
-  color: var(--color-muted);
-  font-size: 0.85rem;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  padding: 0.3rem 0;
-  cursor: pointer;
-}
-
-.presetButton:hover {
-  border-color: var(--color-muted);
-  color: var(--color-text);
-}
-
-.presetButtonActive {
-  background: color-mix(in srgb, var(--color-primary) 9.4%, transparent);
-  border-color: var(--color-secondary);
-  color: var(--color-secondary);
 }

@@ -45,15 +45,9 @@
 }
 
 .editInput {
-  background: transparent;
-  border: 1px solid var(--color-primary);
-  color: var(--color-text);
-  font-size: 1rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  padding: 0.1rem 0.3rem;
-  outline: none;
   width: 60px;
 }
 
@@ -81,10 +75,11 @@
   color: var(--color-muted);
   cursor: pointer;
   opacity: 0.7;
+  transition: color 0.15s ease, opacity 0.15s ease;
 }
 
 .iconButton:hover {
-  color: var(--color-text);
+  color: var(--color-secondary);
   opacity: 1;
 }
 
@@ -100,24 +95,6 @@
   gap: 0.3rem;
 }
 
-.midiButton {
-  background: transparent;
-  border: 1px solid var(--color-border);
-  color: var(--color-muted);
-  font-size: 0.65rem;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  cursor: pointer;
-  padding: 0.1rem 0.3rem;
-}
-
-.midiButtonAssigned {
-  background: color-mix(in srgb, var(--color-primary) 9.4%, transparent);
-  border-color: var(--color-secondary);
-  color: var(--color-secondary);
-}
-
 .samplePicker {
   display: flex;
   flex-direction: column;
@@ -131,30 +108,39 @@
 }
 
 .sampleLabel {
-  font-size: 0.8rem;
-  color: var(--color-muted);
+  font-size: 1rem;
+  color: var(--color-text);
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.05em;
 }
 
 .sampleTrigger {
   flex: 1;
+  height: var(--input-height);
   text-align: left;
   background: var(--color-cell);
   color: var(--color-text);
   border: 1px solid var(--color-border);
-  padding: 0.35rem 0.5rem;
-  font-size: 0.9rem;
+  border-radius: var(--radius);
+  padding: 0 var(--input-padding-x);
+  font-size: var(--text-base);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: space-between;
   outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.sampleTrigger:hover {
+  border-color: var(--color-secondary);
+  background: color-mix(in srgb, var(--color-secondary) 8%, transparent);
 }
 
 .sampleContent {
   background: var(--color-dropdown-bg);
   border: 1px solid var(--color-border);
+  border-radius: var(--radius);
   width: var(--radix-select-trigger-width);
   max-height: 250px;
   overflow-y: auto;
@@ -171,21 +157,6 @@
 
 .sampleItem:hover {
   background: var(--color-border);
-}
-
-.toneButton {
-  background: transparent;
-  border: 1px solid var(--color-border);
-  color: var(--color-muted);
-  padding: 0 0.4rem;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.toneButton:hover {
-  border-color: var(--color-muted);
 }
 
 .toneButtonPlaying {

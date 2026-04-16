@@ -1,0 +1,33 @@
+.button {
+  height: var(--input-height);
+  min-width: var(--input-height);
+  padding: 0 var(--input-padding-x);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  color: var(--color-muted);
+  cursor: pointer;
+  box-sizing: border-box;
+  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+}
+
+.button:hover {
+  color: var(--color-secondary);
+  border-color: var(--color-secondary);
+  background: color-mix(in srgb, var(--color-secondary) 8%, transparent);
+}
+
+/* When inside an InputGroup, remove own border/radius — group handles it */
+.inGroup {
+  border: none;
+  border-radius: 0;
+  min-width: auto;
+  height: 100%;
+}
+
+.inGroup:hover {
+  border-color: transparent;
+}

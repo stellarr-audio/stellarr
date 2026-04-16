@@ -1,7 +1,16 @@
 .group {
   display: flex;
   align-items: stretch;
+  height: var(--input-height);
   border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-sizing: border-box;
+  transition: border-color 0.15s ease;
+}
+
+.group:hover {
+  border-color: var(--color-secondary);
 }
 
 .group:focus-within {
@@ -11,12 +20,12 @@
 .label {
   display: flex;
   align-items: center;
-  padding: 0.3rem 0.5rem;
-  font-size: 0.85rem;
-  font-weight: 600;
+  padding: 0 var(--input-padding-x);
+  font-size: var(--text-xs);
+  font-weight: var(--text-xs-weight);
   color: var(--color-muted);
   background: color-mix(in srgb, var(--color-border) 53%, transparent);
-  letter-spacing: 0.06em;
+  letter-spacing: var(--letter-spacing-label);
   text-transform: uppercase;
   white-space: nowrap;
 }

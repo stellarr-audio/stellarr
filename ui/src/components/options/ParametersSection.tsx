@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Select } from 'radix-ui';
 import { ChevronDownIcon } from '@radix-ui/react-icons';
 import { Slider } from '../common/Slider';
+import { Button } from '../common/Button';
 import { MidiAssignDialog } from '../common/MidiAssignDialog';
 import { formatMidiLabel } from '../common/constants';
 import { useStore } from '../../store';
@@ -36,13 +37,15 @@ function ParamLabel({
     <>
       <span className={styles.paramLabelContainer}>
         <span className={styles.paramLabelText}>{label}</span>
-        <button
+        <Button
+          size="sm"
+          variant="secondary"
+          active={!!existing}
           onClick={() => setDialogOpen(true)}
           title={existing ? `MIDI: CC ${existing.cc}` : `Assign MIDI CC to ${label}`}
-          className={`${styles.midiButton} ${existing ? styles.midiButtonAssigned : ''}`}
         >
           {midiLabel}
-        </button>
+        </Button>
       </span>
 
       <MidiAssignDialog

@@ -22,6 +22,14 @@
   --letter-spacing-default: 0.01em;
   --letter-spacing-label: 0.08em;
   --letter-spacing-tight: -0.01em;
+
+  /* Shared radii */
+  --radius: 6px;
+
+  /* Input dimensions — shared across all interactive elements */
+  --input-height: 32px;
+  --input-height-sm: 24px;
+  --input-padding-x: 0.6rem;
 }
 
 /* === Theme-agnostic palette ramps =========================================
@@ -105,7 +113,7 @@
      `background: var(--bg)` on the top-level container (not background-color). */
   --bg:           radial-gradient(ellipse 90% 70% at 40% -10%, #1e1a3e 0%, #0a0a1e 45%, var(--grey-dark-0) 100%);
   --surface:      rgba(255,255,255,0.03);
-  --border:       rgba(255,255,255,0.06);
+  --border:       rgba(255,255,255,0.1);
   --text:         var(--grey-dark-900);    /* #e8f1fc */
   --text-muted:   var(--grey-dark-500);    /* #6b7e96 */
   --text-subtle:  var(--grey-dark-400);    /* #9ba3b4 */

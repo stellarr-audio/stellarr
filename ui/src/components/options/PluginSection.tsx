@@ -1,4 +1,5 @@
 import { GearIcon } from '@radix-ui/react-icons';
+import { IconButton } from '../common/IconButton';
 import { PluginSelect } from './PluginSelect';
 import { requestSetBlockPlugin, requestOpenPluginEditor } from '../../bridge';
 import styles from './PluginSection.module.css';
@@ -14,7 +15,7 @@ export function PluginSection({ block, availablePlugins }: Props) {
     <div className={styles.container}>
       <div className={styles.sectionTitle}>Plugin</div>
 
-      <div className={styles.row}>
+      <div className={styles.inputGroup}>
         <div className={styles.selectWrapper}>
           <PluginSelect
             plugins={availablePlugins}
@@ -23,13 +24,12 @@ export function PluginSection({ block, availablePlugins }: Props) {
           />
         </div>
         {block.pluginId && (
-          <button
+          <IconButton
+            inGroup
+            icon={<GearIcon width={16} height={16} />}
             onClick={() => requestOpenPluginEditor(block.id)}
             title="Plugin Options"
-            className={styles.optionsButton}
-          >
-            <GearIcon width={16} height={16} />
-          </button>
+          />
         )}
       </div>
 

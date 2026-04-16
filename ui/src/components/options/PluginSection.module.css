@@ -6,34 +6,35 @@
 
 .sectionTitle {
   font-size: 1rem;
-  color: var(--color-primary);
+  color: var(--color-text);
   letter-spacing: 0.05em;
   text-transform: uppercase;
 }
 
-.row {
+.inputGroup {
   display: flex;
-  gap: 0.3rem;
   align-items: stretch;
+  height: var(--input-height);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-sizing: border-box;
+  transition: border-color 0.15s ease;
+}
+
+.inputGroup:hover {
+  border-color: var(--color-secondary);
 }
 
 .selectWrapper {
   flex: 1;
+  --trigger-radius: 0;
+  --trigger-border: none;
 }
 
-.optionsButton {
-  background: transparent;
-  border: 1px solid var(--color-border);
-  color: var(--color-muted);
-  padding: 0.3rem;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.optionsButton:hover {
-  border-color: var(--color-muted);
+/* Divider before icon button */
+.inputGroup > *:last-child {
+  border-left: 1px solid var(--color-border);
 }
 
 .emptyMessage {

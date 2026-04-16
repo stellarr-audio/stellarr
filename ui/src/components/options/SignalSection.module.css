@@ -32,20 +32,3 @@
   text-align: right;
 }
 
-.midiButton {
-  background: transparent;
-  border: 1px solid var(--color-border);
-  color: var(--color-muted);
-  font-size: 0.65rem;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  cursor: pointer;
-  padding: 0.1rem 0.3rem;
-}
-
-.midiButtonAssigned {
-  background: color-mix(in srgb, var(--color-primary) 9.4%, transparent);
-  border-color: var(--color-secondary);
-  color: var(--color-secondary);
-}

@@ -5,6 +5,7 @@
   cursor: pointer;
   padding: 0;
   flex-shrink: 0;
+  transition: border-color 0.15s ease;
 }
 
 .trigger:hover {

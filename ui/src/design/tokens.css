@@ -22,6 +22,9 @@
   --letter-spacing-default: 0.01em;
   --letter-spacing-label: 0.08em;
   --letter-spacing-tight: -0.01em;
+
+  /* Shared radii */
+  --radius: 6px;
 }
 
 /* === Theme-agnostic palette ramps =========================================

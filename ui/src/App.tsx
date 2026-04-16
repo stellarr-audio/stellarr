@@ -14,6 +14,9 @@ import { LoadingScreen } from './components/header/LoadingScreen';
 import { PresetBrowser } from './components/header/PresetBrowser';
 import { Logo } from './components/header/Logo';
 import { Footer } from './components/footer/Footer';
+import { Tooltip } from './components/common/Tooltip';
+import { TbLayoutGrid, TbWaveSine, TbPlug } from 'react-icons/tb';
+import { LuSettings } from 'react-icons/lu';
 import { requestSetTunerEnabled, requestSaveSessionQuiet } from './bridge';
 import styles from './App.module.css';
 
@@ -53,30 +56,38 @@ function App() {
           </div>
 
           <Tabs.List className={styles.tabList}>
-            <Tabs.Trigger
-              value="grid"
-              className={`${styles.tab} ${activeTab === 'grid' ? styles.tabActive : ''}`}
-            >
-              Grid
-            </Tabs.Trigger>
-            <Tabs.Trigger
-              value="tuner"
-              className={`${styles.tab} ${activeTab === 'tuner' ? styles.tabActive : ''}`}
-            >
-              Tuner
-            </Tabs.Trigger>
-            <Tabs.Trigger
-              value="midi"
-              className={`${styles.tab} ${activeTab === 'midi' ? styles.tabActive : ''}`}
-            >
-              MIDI
-            </Tabs.Trigger>
-            <Tabs.Trigger
-              value="settings"
-              className={`${styles.tab} ${activeTab === 'settings' ? styles.tabActive : ''}`}
-            >
-              System
-            </Tabs.Trigger>
+            <Tooltip content="Grid" side="bottom">
+              <Tabs.Trigger
+                value="grid"
+                className={`${styles.tab} ${activeTab === 'grid' ? styles.tabActive : ''}`}
+              >
+                <TbLayoutGrid size={20} />
+              </Tabs.Trigger>
+            </Tooltip>
+            <Tooltip content="Tuner" side="bottom">
+              <Tabs.Trigger
+                value="tuner"
+                className={`${styles.tab} ${activeTab === 'tuner' ? styles.tabActive : ''}`}
+              >
+                <TbWaveSine size={20} />
+              </Tabs.Trigger>
+            </Tooltip>
+            <Tooltip content="MIDI" side="bottom">
+              <Tabs.Trigger
+                value="midi"
+                className={`${styles.tab} ${activeTab === 'midi' ? styles.tabActive : ''}`}
+              >
+                <TbPlug size={20} />
+              </Tabs.Trigger>
+            </Tooltip>
+            <Tooltip content="System" side="bottom">
+              <Tabs.Trigger
+                value="settings"
+                className={`${styles.tab} ${activeTab === 'settings' ? styles.tabActive : ''}`}
+              >
+                <LuSettings size={20} />
+              </Tabs.Trigger>
+            </Tooltip>
           </Tabs.List>
         </div>
 

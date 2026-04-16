@@ -1,4 +1,6 @@
 import { useStore } from '../../store';
+import { ToggleSwitch } from '../common/ToggleSwitch';
+import { InputGroup, InputGroupLabel } from '../common/InputGroup';
 import { requestSetTargetLufs } from '../../bridge';
 import styles from './TargetLoudnessControl.module.css';
 
@@ -24,12 +26,14 @@ export function TargetLoudnessControl({ blockId }: Props) {
     <div className={styles.section}>
       <div className={styles.header}>
         <span className={styles.label}>Target Loudness</span>
-        <button className={styles.toggle} onClick={toggle}>
-          {enabled ? 'On' : 'Off'}
-        </button>
+        <ToggleSwitch
+          enabled={enabled}
+          onToggle={toggle}
+          title={enabled ? 'Disable target loudness' : 'Enable target loudness'}
+        />
       </div>
       {enabled && (
-        <div className={styles.row}>
+        <InputGroup>
           <input
             type="number"
             className={styles.input}
@@ -39,8 +43,8 @@ export function TargetLoudnessControl({ blockId }: Props) {
             max={-6}
             step={0.5}
           />
-          <span className={styles.unit}>LUFS</span>
-        </div>
+          <InputGroupLabel>LUFS</InputGroupLabel>
+        </InputGroup>
       )}
     </div>
   );

@@ -47,14 +47,20 @@
 .editInput {
   background: transparent;
   border: 1px solid var(--color-primary);
+  border-radius: var(--radius);
   color: var(--color-text);
   font-size: 1rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  padding: 0.1rem 0.3rem;
+  padding: 0.3rem 0.5rem;
   outline: none;
   width: 60px;
+  transition: border-color 0.15s ease;
+}
+
+.editInput:hover {
+  border-color: var(--color-muted);
 }
 
 .nameRow {
@@ -81,10 +87,11 @@
   color: var(--color-muted);
   cursor: pointer;
   opacity: 0.7;
+  transition: color 0.15s ease, opacity 0.15s ease;
 }
 
 .iconButton:hover {
-  color: var(--color-text);
+  color: var(--color-secondary);
   opacity: 1;
 }
 
@@ -103,6 +110,7 @@
 .midiButton {
   background: transparent;
   border: 1px solid var(--color-border);
+  border-radius: var(--radius);
   color: var(--color-muted);
   font-size: 0.65rem;
   font-weight: 600;
@@ -110,6 +118,13 @@
   text-transform: uppercase;
   cursor: pointer;
   padding: 0.1rem 0.3rem;
+  transition: border-color 0.15s ease;
+}
+
+.midiButton:hover {
+  color: var(--color-secondary);
+  border-color: var(--color-secondary);
+  background: color-mix(in srgb, var(--color-secondary) 8%, transparent);
 }
 
 .midiButtonAssigned {
@@ -131,10 +146,10 @@
 }
 
 .sampleLabel {
-  font-size: 0.8rem;
-  color: var(--color-muted);
+  font-size: 1rem;
+  color: var(--color-text);
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.05em;
 }
 
 .sampleTrigger {
@@ -143,18 +158,26 @@
   background: var(--color-cell);
   color: var(--color-text);
   border: 1px solid var(--color-border);
-  padding: 0.35rem 0.5rem;
+  border-radius: var(--radius);
+  padding: 0.5rem 0.7rem;
   font-size: 0.9rem;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: space-between;
   outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.sampleTrigger:hover {
+  border-color: var(--color-secondary);
+  background: color-mix(in srgb, var(--color-secondary) 8%, transparent);
 }
 
 .sampleContent {
   background: var(--color-dropdown-bg);
   border: 1px solid var(--color-border);
+  border-radius: var(--radius);
   width: var(--radix-select-trigger-width);
   max-height: 250px;
   overflow-y: auto;
@@ -176,16 +199,20 @@
 .toneButton {
   background: transparent;
   border: 1px solid var(--color-border);
+  border-radius: var(--radius);
   color: var(--color-muted);
-  padding: 0 0.4rem;
+  padding: 0.3rem 0.5rem;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: border-color 0.15s ease;
 }
 
 .toneButton:hover {
-  border-color: var(--color-muted);
+  color: var(--color-secondary);
+  border-color: var(--color-secondary);
+  background: color-mix(in srgb, var(--color-secondary) 8%, transparent);
 }
 
 .toneButtonPlaying {

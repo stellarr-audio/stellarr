@@ -6,15 +6,15 @@
 
 .sectionTitle {
   font-size: 1rem;
-  color: var(--color-primary);
+  color: var(--color-text);
   letter-spacing: 0.05em;
   text-transform: uppercase;
 }
 
 .row {
   display: flex;
-  gap: 0.3rem;
   align-items: stretch;
+  gap: 0.3rem;
 }
 
 .selectWrapper {
@@ -24,16 +24,20 @@
 .optionsButton {
   background: transparent;
   border: 1px solid var(--color-border);
+  border-radius: var(--radius);
   color: var(--color-muted);
-  padding: 0.3rem;
+  padding: 0 0.5rem;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
 }
 
 .optionsButton:hover {
-  border-color: var(--color-muted);
+  color: var(--color-secondary);
+  border-color: var(--color-secondary);
+  background: color-mix(in srgb, var(--color-secondary) 8%, transparent);
 }
 
 .emptyMessage {

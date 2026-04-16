@@ -11,13 +11,19 @@
 }
 
 .section {
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.section:last-child {
+  border-bottom: none;
 }
 
 .sectionTitle {
   font-size: 1rem;
   font-weight: 600;
-  color: var(--color-secondary);
+  color: var(--color-primary);
   letter-spacing: 0.1em;
   text-transform: uppercase;
   margin: 0 0 0.75rem 0;
@@ -66,10 +72,15 @@
   background: transparent;
   border: none;
   color: var(--color-muted);
-  font-size: 1rem;
+  font-size: var(--text-base);
   cursor: pointer;
   padding: 0 0.25rem;
   flex-shrink: 0;
+  transition: color 0.15s ease;
+}
+
+.removeBtn:hover {
+  color: var(--color-danger);
 }
 
 .actions {
@@ -81,16 +92,18 @@
   background: transparent;
   color: var(--color-text);
   border: 1px solid var(--color-border);
-  padding: 0.35rem 0.75rem;
-  font-size: 1rem;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  border-radius: var(--radius);
+  padding: 0.5rem 1rem;
+  font-size: var(--text-base);
+  font-weight: var(--text-base-strong-weight);
+  letter-spacing: 0.04em;
   cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
 }
 
 .actionBtn:hover {
-  border-color: var(--color-muted);
+  border-color: var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary) 6%, transparent);
 }
 
 .emptyText {

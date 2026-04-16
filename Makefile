@@ -1,4 +1,4 @@
-.PHONY: setup dev dev-ui dev-cpp debug debug-cpp release release-cpp run run-debug run-release test docs clean clear-cache screenshots
+.PHONY: setup dev dev-ui dev-cpp debug debug-cpp release release-cpp run run-debug run-release run-ui test docs clean clear-cache screenshots
 
 .DEFAULT_GOAL := dev
 
@@ -36,6 +36,9 @@ release-cpp:
 release: dev-ui release-cpp
 
 run: dev
+	open build/Stellarr_artefacts/Debug/Standalone/Stellarr.app
+
+run-ui: dev-ui
 	open build/Stellarr_artefacts/Debug/Standalone/Stellarr.app
 
 run-debug: debug

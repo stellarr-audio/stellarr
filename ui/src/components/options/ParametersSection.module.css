@@ -54,13 +54,21 @@
 .midiButton {
   background: transparent;
   border: 1px solid var(--color-border);
+  border-radius: var(--radius);
   color: var(--color-muted);
   font-size: 0.65rem;
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   cursor: pointer;
-  padding: 0.1rem 0.3rem;
+  padding: 0.2rem 0.4rem;
+  transition: border-color 0.15s ease;
+}
+
+.midiButton:hover {
+  color: var(--color-secondary);
+  border-color: var(--color-secondary);
+  background: color-mix(in srgb, var(--color-secondary) 8%, transparent);
 }
 
 .midiButtonAssigned {
@@ -83,20 +91,29 @@
   background: var(--color-cell);
   color: var(--color-text);
   border: 1px solid var(--color-border);
-  padding: 0.35rem 0.5rem;
+  border-radius: var(--radius);
+  padding: 0.5rem 0.7rem;
   font-size: 1rem;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: space-between;
   outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.selectTrigger:hover {
+  border-color: var(--color-secondary);
+  background: color-mix(in srgb, var(--color-secondary) 8%, transparent);
 }
 
 .selectContent {
   background: var(--color-dropdown-bg);
   border: 1px solid var(--color-border);
+  border-radius: var(--radius);
   width: var(--radix-select-trigger-width);
   z-index: 20;
+  overflow: hidden;
 }
 
 .selectItem {

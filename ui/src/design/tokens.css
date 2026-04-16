@@ -1,0 +1,112 @@
+/*
+ * Stellarr design tokens.
+ * Locked in Phase 0 — see docs/superpowers/specs/2026-04-15-phase-0-design-direction.md
+ * Edit here only; all components consume these tokens.
+ */
+
+:root {
+  /* Typography — identical across themes */
+  --text-xs: 13px;
+  --text-xs-weight: 500;
+
+  --text-base: 15px;
+  --text-base-weight: 400;
+  --text-base-strong-weight: 600;
+
+  /* --text-display reserved — concrete value TBD when Tuner screen is designed */
+
+  --line-height-body: 1.4;
+  --line-height-heading: 1.2;
+  --line-height-display: 1.0;
+
+  --letter-spacing-default: 0.01em;
+  --letter-spacing-label: 0.08em;
+  --letter-spacing-tight: -0.01em;
+}
+
+/* === Theme-agnostic palette ramps =========================================
+ * These are the raw colour values. Semantic aliases below pick from them
+ * per theme.
+ */
+:root {
+  /* Grey */
+  --grey-0:   #ffffff;
+  --grey-50:  #fafbfc;
+  --grey-100: #f1f3f5;
+  --grey-200: #e5e7eb;
+  --grey-300: #d1d5db;
+  --grey-400: #9ca3af;
+  --grey-500: #6b7280;
+  --grey-600: #4b5563;
+  --grey-700: #374151;
+  --grey-900: #1c1e22;
+
+  /* Grey — dark-theme aliases (same ramp, different intent) */
+  --grey-dark-0:   #050510;
+  --grey-dark-50:  #0a0a1e;
+  --grey-dark-100: #0f1a2e;
+  --grey-dark-200: #1a2438;
+  --grey-dark-300: #2a3348;
+  --grey-dark-400: #9ba3b4;
+  --grey-dark-500: #6b7e96;
+  --grey-dark-600: #8a9bb0;
+  --grey-dark-700: #c8d4e6;
+  --grey-dark-900: #e8f1fc;
+
+  /* Orchid (primary brand) */
+  --orchid-50:  #fdf4ff;
+  --orchid-100: #fae8ff;
+  --orchid-200: #f5d0fe;
+  --orchid-300: #f0abfc;
+  --orchid-400: #e879f9;
+  --orchid-500: #d946ef;
+  --orchid-600: #c026d3;
+  --orchid-700: #a21caf;
+  --orchid-800: #86198f;
+  --orchid-900: #701a75;
+
+  /* Amber (secondary) */
+  --amber-400: #fbbf24;
+  --amber-500: #f59e0b;
+
+  /* Emerald (success) */
+  --emerald-500: #10b981;
+
+  /* Rose (danger) */
+  --rose-600: #e11d48;
+}
+
+/* === Light theme ========================================================== */
+:root,
+[data-theme="light"] {
+  --accent:       var(--orchid-600);       /* #c026d3 */
+  --accent-text:  var(--orchid-700);       /* #a21caf */
+  --secondary:    var(--amber-500);        /* #f59e0b */
+  --success:      var(--emerald-500);      /* #10b981 */
+  --danger:       var(--rose-600);         /* #e11d48 */
+
+  --bg:           var(--grey-50);          /* #fafbfc */
+  --surface:      var(--grey-0);           /* #ffffff */
+  --border:       var(--grey-200);         /* #e5e7eb */
+  --text:         var(--grey-900);         /* #1c1e22 */
+  --text-muted:   var(--grey-500);         /* #6b7280 */
+  --text-subtle:  var(--grey-400);         /* #9ca3af */
+}
+
+/* === Dark theme =========================================================== */
+[data-theme="dark"] {
+  --accent:       var(--orchid-500);       /* #d946ef — brighter, carries glow */
+  --accent-text:  var(--orchid-300);       /* #f0abfc */
+  --secondary:    var(--amber-400);        /* #fbbf24 */
+  --success:      var(--emerald-500);      /* same */
+  --danger:       var(--rose-600);         /* same */
+
+  /* Dark --bg is a radial gradient per the Phase 0 spec. Apply via
+     `background: var(--bg)` on the top-level container (not background-color). */
+  --bg:           radial-gradient(ellipse 90% 70% at 40% -10%, #1e1a3e 0%, #0a0a1e 45%, var(--grey-dark-0) 100%);
+  --surface:      rgba(255,255,255,0.03);
+  --border:       rgba(255,255,255,0.06);
+  --text:         var(--grey-dark-900);    /* #e8f1fc */
+  --text-muted:   var(--grey-dark-500);    /* #6b7e96 */
+  --text-subtle:  var(--grey-dark-400);    /* #9ba3b4 */
+}

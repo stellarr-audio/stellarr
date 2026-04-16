@@ -67,7 +67,7 @@
 }
 
 .item:hover {
-  background: rgba(42, 37, 69, 0.53);
+  background: var(--color-border);
 }
 
 .itemManufacturer {

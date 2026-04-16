@@ -1,6 +1,7 @@
 build/
 build-release/
 node_modules/
+tmp/
 ui/dist/
 .env
 .env.*

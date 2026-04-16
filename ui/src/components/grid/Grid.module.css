@@ -33,7 +33,7 @@
 
 .cellDropTarget {
   border-color: var(--color-secondary);
-  background: rgba(0, 180, 255, 0.094);
+  background: color-mix(in srgb, var(--color-primary) 9.4%, transparent);
 }
 
 .cellPlus {

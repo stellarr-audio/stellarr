@@ -12,7 +12,7 @@
 .sectionTitle {
   font-size: 1rem;
   font-weight: 600;
-  color: var(--color-secondary);
+  color: var(--color-primary);
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -26,7 +26,7 @@
 
 .paramValue {
   font-size: 1rem;
-  color: var(--color-secondary);
+  color: var(--color-muted);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   min-width: 4ch;
@@ -64,7 +64,7 @@
 }
 
 .midiButtonAssigned {
-  background: rgba(0, 180, 255, 0.094);
+  background: color-mix(in srgb, var(--color-primary) 9.4%, transparent);
   border-color: var(--color-secondary);
   color: var(--color-secondary);
 }
@@ -108,5 +108,5 @@
 }
 
 .selectItem:hover {
-  background: rgba(42, 37, 69, 0.53);
+  background: var(--color-border);
 }

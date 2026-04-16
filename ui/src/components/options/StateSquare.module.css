@@ -5,7 +5,7 @@
 }
 
 .wrapperActive {
-  border: 2px solid #ffffff;
+  border: 2px solid var(--color-text);
 }
 
 .button {
@@ -16,7 +16,7 @@
   justify-content: center;
   background: transparent;
   border: none;
-  color: #ffffff;
+  color: var(--color-text);
   font-size: 0.9rem;
   font-weight: 700;
   cursor: pointer;
@@ -24,11 +24,11 @@
 }
 
 .buttonActive {
-  background: rgba(0, 180, 255, 0.133);
+  background: color-mix(in srgb, var(--color-primary) 13.3%, transparent);
 }
 
 .buttonDirty {
-  background: rgba(255, 170, 0, 0.302);
+  background: color-mix(in srgb, var(--color-warning) 30.2%, transparent);
 }
 
 .deleteButton {

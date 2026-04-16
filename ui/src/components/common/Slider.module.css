@@ -29,8 +29,8 @@
   width: 16px;
   height: 16px;
   border-radius: 9999px;
-  background: var(--color-secondary);
-  box-shadow: 0 0 4px color-mix(in srgb, var(--color-secondary) 27%, transparent);
+  background: var(--color-text);
+  box-shadow: 0 0 0 2px var(--color-surface);
   outline: none;
   cursor: grab;
 }

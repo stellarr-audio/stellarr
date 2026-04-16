@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { Tabs } from 'radix-ui';
 import { useStore } from './store';
+import { useSyncTheme } from './hooks/useSyncTheme';
 import { Grid } from './components/grid/Grid';
 import { GridOverlay } from './components/grid/GridOverlay';
 import { OptionsPanel } from './components/options/OptionsPanel';
@@ -17,6 +18,7 @@ import { requestSetTunerEnabled, requestSaveSessionQuiet } from './bridge';
 import styles from './App.module.css';
 
 function App() {
+  useSyncTheme();
   const loading = useStore((s) => s.loading);
   const selectBlock = useStore((s) => s.selectBlock);
   const activeTab = useStore((s) => s.activeTab);

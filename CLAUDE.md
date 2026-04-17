@@ -105,6 +105,7 @@ Follow [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/):
 - `make debug` — build UI + engine with tests
 - `make release` — optimised build
 - `make run` / `make run-debug` / `make run-release` — build and launch
+- `make run-ui` — UI-only rebuild + relaunch existing engine binary (fast iteration for CSS/React)
 - `make test` — build with tests and run them
 - Always run `make build-ui` or `npx tsc --noEmit` to catch TypeScript errors, not just `make`
 
@@ -144,3 +145,13 @@ macOS Apple Silicon, CMake 3.24+, Xcode CLI tools, Node.js 18+, npm. See `docs/C
 | Zustand store | `ui/src/store/index.ts` |
 | C++ tests | `engine/test/` |
 | User manual | `docs/manual/` |
+
+### Design system (UI)
+
+- **Spec:** `docs/superpowers/specs/2026-04-15-phase-0-design-direction.md` — the source of truth for tokens, typography, primitives
+- **Tokens:** `ui/src/design/tokens.css` — all colours, dimensions, typography. Do NOT add ad-hoc hex in CSS modules; pick a token or propose a new one
+- **Legacy alias layer:** `ui/src/styles/variables.css` — `--color-*` names alias new tokens for pre-existing CSS modules
+- **Primitive components:** `ui/src/components/common/{Input,IconButton,Button,InputGroup,ToggleSwitch}.tsx` — use these instead of raw `<input>` / `<button>` / Radix triggers where possible
+- **Icon set:** `react-icons` — Tabler (`react-icons/tb`) and Lucide (`react-icons/lu`); match existing imports before introducing a third set
+- **Theme:** `useThemeStore` + `useSyncTheme` (`ui/src/store/theme.ts`, `ui/src/hooks/useSyncTheme.ts`) — writes `data-theme="light|dark"` to `<html>`
+- Interaction pattern for bordered controls: amber hover (`--color-secondary` border + 8% tint); active state uses orchid (`--color-primary`)

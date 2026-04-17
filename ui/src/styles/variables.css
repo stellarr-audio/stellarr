@@ -13,6 +13,7 @@
   --color-cell:       var(--surface);
   --color-cell-hover: var(--surface);
   --color-border:     var(--border);
+  --color-divider:    var(--divider);
 
   --color-primary:    var(--accent);
   --color-secondary:  var(--secondary);

@@ -96,8 +96,8 @@ export function Settings() {
         <span className={styles.infoTitle}>Stellarr</span>
         <span className={styles.infoVersion}>v0.1.0</span>
         <p className={styles.infoDescription}>
-          Made by an AI and a human, together. Free and open, forever. For the love of music and
-          art.
+          Made by an AI and a human, together. Free and open, forever. For music. For noise. For
+          every unheard voice.
         </p>
       </div>
     </div>

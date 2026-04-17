@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { TbX } from 'react-icons/tb';
 import { useStore } from '../../store';
 import {
   requestScanPlugins,
@@ -7,6 +8,7 @@ import {
   requestSetTelemetryEnabled,
 } from '../../bridge';
 import { Button } from '../common/Button';
+import { IconButton } from '../common/IconButton';
 import { ToggleSwitch } from '../common/ToggleSwitch';
 import styles from './Settings.module.css';
 
@@ -23,7 +25,6 @@ export function Settings() {
   return (
     <div className={styles.container}>
       <div className={styles.content}>
-        {/* Libraries section */}
         <Section title="Libraries">
           <div className={styles.dirList}>
             {scanDirectories.map((dir) => (
@@ -33,13 +34,12 @@ export function Settings() {
                   {dir.isDefault && <span className={styles.dirBadge}>System</span>}
                 </div>
                 {!dir.isDefault && (
-                  <Button
-                    variant="danger"
+                  <IconButton
                     size="sm"
+                    icon={<TbX size={14} />}
+                    title="Remove directory"
                     onClick={() => requestRemoveScanDirectory(dir.path)}
-                  >
-                    x
-                  </Button>
+                  />
                 )}
               </div>
             ))}
@@ -53,7 +53,6 @@ export function Settings() {
           </div>
         </Section>
 
-        {/* Discovered plugins section */}
         <Section title={`Discovered Plugins (${availablePlugins.length})`}>
           {availablePlugins.length === 0 ? (
             <div className={styles.emptyText}>
@@ -73,7 +72,7 @@ export function Settings() {
             </div>
           )}
         </Section>
-        {/* Privacy section */}
+
         <Section title="Privacy">
           <div className={styles.privacyRow}>
             <div className={styles.privacyInfo}>
@@ -92,7 +91,6 @@ export function Settings() {
         </Section>
       </div>
 
-      {/* App info panel */}
       <div className={styles.infoPanel}>
         <span className={styles.infoTitle}>Stellarr</span>
         <span className={styles.infoVersion}>v0.1.0</span>

@@ -31,3 +31,10 @@
 .inGroup:hover {
   border-color: transparent;
 }
+
+/* Small variant */
+.sm {
+  height: var(--input-height-sm);
+  min-width: var(--input-height-sm);
+  padding: 0 0.35rem;
+}

@@ -1,6 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { useStore } from '../../store';
 import { requestSetMidiMonitorEnabled, requestInjectMidiCC } from '../../bridge';
+import { Button } from '../common/Button';
+import { Input } from '../common/Input';
+import { InputGroup, InputGroupLabel } from '../common/InputGroup';
 import styles from './MidiMonitor.module.css';
 
 export function MidiMonitor() {
@@ -9,7 +12,6 @@ export function MidiMonitor() {
   const setMonitorEnabled = useStore((s) => s.setMidiMonitorEnabled);
   const logRef = useRef<HTMLDivElement>(null);
 
-  // Auto-enable monitor when component mounts
   useEffect(() => {
     requestSetMidiMonitorEnabled(true);
     setMonitorEnabled(true);
@@ -19,20 +21,22 @@ export function MidiMonitor() {
     };
   }, [setMonitorEnabled]);
 
-  // Auto-scroll log
   useEffect(() => {
     if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight;
   }, [events]);
 
   return (
     <div className={styles.container}>
-      {/* Monitor */}
+      <span className={styles.panelTitle}>MIDI</span>
+
+      <div className={styles.divider} />
+
       <div className={styles.monitorSection}>
         <div className={styles.sectionHeader}>
           <span className={styles.sectionTitle}>Monitor</span>
-          <button onClick={clearMonitor} className={styles.clearBtn}>
+          <Button size="sm" onClick={clearMonitor}>
             Clear
-          </button>
+          </Button>
         </div>
 
         <div ref={logRef} className={styles.log}>
@@ -58,7 +62,8 @@ export function MidiMonitor() {
         </div>
       </div>
 
-      {/* Sender */}
+      <div className={styles.divider} />
+
       <div className={styles.senderSection}>
         <span className={styles.sectionTitle}>Send CC</span>
         <CcSender />
@@ -76,47 +81,47 @@ function CcSender() {
 
   return (
     <div className={styles.senderFields}>
-      <div className={styles.fieldRow}>
-        <div className={styles.fieldCol}>
-          <label className={styles.fieldLabel}>CC#</label>
-          <input
-            type="number"
-            min={0}
-            max={127}
-            value={cc}
-            onChange={(e) => setCc(Math.max(0, Math.min(127, parseInt(e.target.value) || 0)))}
-            className={styles.fieldInput}
-          />
-        </div>
-        <div className={styles.fieldCol}>
-          <label className={styles.fieldLabel}>Ch</label>
-          <input
-            type="number"
-            min={1}
-            max={16}
-            value={channel + 1}
-            onChange={(e) =>
-              setChannel(Math.max(0, Math.min(15, (parseInt(e.target.value) || 1) - 1)))
-            }
-            className={styles.fieldInput}
-          />
-        </div>
-        <div className={styles.fieldCol}>
-          <label className={styles.fieldLabel}>Value</label>
-          <input
-            type="number"
-            min={0}
-            max={127}
-            value={value}
-            onChange={(e) => setValue(Math.max(0, Math.min(127, parseInt(e.target.value) || 0)))}
-            className={styles.fieldInput}
-          />
-        </div>
-      </div>
+      <InputGroup>
+        <InputGroupLabel>CC#</InputGroupLabel>
+        <Input
+          inGroup
+          type="number"
+          min={0}
+          max={127}
+          value={cc}
+          onChange={(e) => setCc(Math.max(0, Math.min(127, parseInt(e.target.value) || 0)))}
+        />
+      </InputGroup>
 
-      <button onClick={send} className={styles.sendBtn}>
+      <InputGroup>
+        <InputGroupLabel>Ch</InputGroupLabel>
+        <Input
+          inGroup
+          type="number"
+          min={1}
+          max={16}
+          value={channel + 1}
+          onChange={(e) =>
+            setChannel(Math.max(0, Math.min(15, (parseInt(e.target.value) || 1) - 1)))
+          }
+        />
+      </InputGroup>
+
+      <InputGroup>
+        <InputGroupLabel>Val</InputGroupLabel>
+        <Input
+          inGroup
+          type="number"
+          min={0}
+          max={127}
+          value={value}
+          onChange={(e) => setValue(Math.max(0, Math.min(127, parseInt(e.target.value) || 0)))}
+        />
+      </InputGroup>
+
+      <Button onClick={send} className={styles.sendBtn}>
         Send
-      </button>
+      </Button>
     </div>
   );
 }

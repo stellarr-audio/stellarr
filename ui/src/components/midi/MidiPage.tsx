@@ -1,7 +1,9 @@
 import { useEffect, useState, useMemo } from 'react';
+import { TbX } from 'react-icons/tb';
 import { useStore } from '../../store';
-import { Cross2Icon } from '@radix-ui/react-icons';
 import { MidiAssignDialog } from '../common/MidiAssignDialog';
+import { Button } from '../common/Button';
+import { IconButton } from '../common/IconButton';
 import { PROGRAM_CHANGE_CC } from '../common/constants';
 import {
   requestRemoveMidiMapping,
@@ -32,7 +34,6 @@ export function MidiPage() {
     requestGetMidiMappings();
   }, []);
 
-  // Re-render periodically to fade activity dots
   useEffect(() => {
     const interval = setInterval(() => setTick((t) => t + 1), 200);
     return () => clearInterval(interval);
@@ -64,11 +65,11 @@ export function MidiPage() {
     <div className={styles.container}>
       <div className={styles.inner}>
         <div className={styles.titleRow}>
-          <div className={styles.title}>MIDI Mappings</div>
+          <span className={styles.title}>MIDI Mappings</span>
           {mappings.length > 0 && (
-            <button onClick={requestClearMidiMappings} className={styles.clearBtn}>
+            <Button variant="danger" size="sm" onClick={requestClearMidiMappings}>
               Clear All
-            </button>
+            </Button>
           )}
         </div>
 
@@ -80,7 +81,6 @@ export function MidiPage() {
           </div>
         ) : (
           <div className={styles.table}>
-            {/* Header */}
             <div className={styles.tableHeader}>
               <span className={styles.colActivity}>In</span>
               <span className={styles.colCc}>CC</span>
@@ -90,7 +90,6 @@ export function MidiPage() {
               <span className={styles.colRemove} />
             </div>
 
-            {/* Rows */}
             {sortedIndices.map((i) => {
               const m = mappings[i];
               const lastActive = activity[i] ?? 0;
@@ -108,15 +107,17 @@ export function MidiPage() {
                     {targetLabels[m.target] || m.target}
                     {m.blockId ? ` (${blockName(m.blockId)})` : ''}
                   </span>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      requestRemoveMidiMapping(i);
-                    }}
-                    className={styles.removeBtn}
-                  >
-                    <Cross2Icon width={14} height={14} />
-                  </button>
+                  <span className={styles.removeCell}>
+                    <IconButton
+                      size="sm"
+                      icon={<TbX size={14} />}
+                      title="Remove mapping"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        requestRemoveMidiMapping(i);
+                      }}
+                    />
+                  </span>
                 </div>
               );
             })}
@@ -124,7 +125,6 @@ export function MidiPage() {
         )}
       </div>
 
-      {/* Edit dialog */}
       {editMapping && (
         <MidiAssignDialog
           open={editIndex !== null}

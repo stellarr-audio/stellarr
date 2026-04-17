@@ -99,6 +99,12 @@ Follow [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/):
 - Delete branch after merge
 - Tag from main for releases (`git tag v1.x.x`)
 
+### Versioning + releases
+
+- SemVer: MINOR bump for new user-facing behaviour / design-system additions; PATCH for polish, fixes, refactors with no functional change.
+- **Before tagging a release**, bump `ui/package.json`'s `"version"` field in a `chore: bump to vX.Y.Z` commit. Run `npm install` in `ui/` to sync `ui/package-lock.json`. That's it — Vite injects `__APP_VERSION__` at build time and the Settings info panel reads from it.
+- Merge the bump PR, then tag from main (`git tag vX.Y.Z`) and `gh release create vX.Y.Z` with the changelog in the release body. The GitHub release body is the authoritative changelog — no `CHANGELOG.md` in-repo.
+
 ## Build Commands
 
 - `make dev` — build UI + engine (no tests), clears WebView cache

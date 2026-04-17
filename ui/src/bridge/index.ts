@@ -672,7 +672,7 @@ export function initBridge(): void {
     if (enabled && dsn && !Sentry.getClient()) {
       Sentry.init({
         dsn,
-        release: `stellarr@${import.meta.env.VITE_APP_VERSION ?? 'dev'}`,
+        release: `stellarr@${__APP_VERSION__}`,
         environment: (import.meta.env.VITE_SENTRY_ENV as string) ?? 'development',
       });
 

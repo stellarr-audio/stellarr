@@ -49,7 +49,6 @@ jobs:
         env:
           VITE_SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
           VITE_SENTRY_ENV: production
-          VITE_APP_VERSION: ${{ github.ref_name }}
         run: cd ui && npm run build
 
       - name: Configure CMake (Release)

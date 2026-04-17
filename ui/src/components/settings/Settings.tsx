@@ -36,6 +36,7 @@ export function Settings() {
                 {!dir.isDefault && (
                   <IconButton
                     size="sm"
+                    variant="danger"
                     icon={<TbX size={14} />}
                     title="Remove directory"
                     onClick={() => requestRemoveScanDirectory(dir.path)}

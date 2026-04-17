@@ -110,6 +110,7 @@ export function MidiPage() {
                   <span className={styles.removeCell}>
                     <IconButton
                       size="sm"
+                      variant="danger"
                       icon={<TbX size={14} />}
                       title="Remove mapping"
                       onClick={(e) => {

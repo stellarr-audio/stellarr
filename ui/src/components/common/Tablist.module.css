@@ -30,15 +30,11 @@
   color: var(--color-text);
 }
 
-.tabActive {
+.tabActive,
+.tabActive:hover {
   background: var(--color-surface);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-  color: var(--color-primary);
-}
-
-.tabActive:hover {
-  color: var(--color-primary);
-  background: color-mix(in srgb, var(--color-text) 6%, var(--color-surface));
+  color: var(--accent-text);
 }
 
 .stretch {

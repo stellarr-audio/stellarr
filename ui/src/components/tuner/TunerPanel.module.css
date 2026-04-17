@@ -34,7 +34,7 @@
 .sectionTitle {
   font-size: var(--text-base);
   font-weight: var(--text-base-strong-weight);
-  color: var(--color-secondary);
+  color: var(--color-primary);
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }

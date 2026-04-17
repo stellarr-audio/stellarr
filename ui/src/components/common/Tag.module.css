@@ -29,9 +29,9 @@
 
 .active,
 .active:hover {
-  border-color: var(--color-primary);
-  background: color-mix(in srgb, var(--color-primary) 10%, transparent);
-  color: var(--color-primary);
+  border-color: var(--color-secondary);
+  background: color-mix(in srgb, var(--color-secondary) 10%, transparent);
+  color: var(--color-secondary);
 }
 
 .tag:disabled {

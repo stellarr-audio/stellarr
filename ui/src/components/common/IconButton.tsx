@@ -6,6 +6,7 @@ interface IconButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> 
   /** When true, strips border/radius for use inside an InputGroup. */
   inGroup?: boolean;
   size?: 'default' | 'sm';
+  variant?: 'default' | 'danger';
 }
 
 export function IconButton({
@@ -13,11 +14,13 @@ export function IconButton({
   className,
   inGroup,
   size = 'default',
+  variant = 'default',
   ...props
 }: IconButtonProps) {
   const cls = [
     styles.button,
     size !== 'default' && styles[size],
+    variant !== 'default' && styles[variant],
     inGroup && styles.inGroup,
     className,
   ]

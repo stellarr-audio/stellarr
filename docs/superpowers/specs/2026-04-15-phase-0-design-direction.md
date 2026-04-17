@@ -1,8 +1,8 @@
 # Phase 0 · Design Direction
 
-**Status:** approved 2026-04-15
+**Status:** approved 2026-04-15; living doc — token/primitive sections updated as Phases 1 & 2 ship
 **Author:** brainstorm session (Claude + Rey)
-**Scope:** whole-app visual redesign, Phase 0 only — establishes the visual north star. Does not specify implementation.
+**Scope:** whole-app visual redesign. Establishes the visual north star + the design-system contract (tokens + primitives). Does not specify how features behave.
 
 ## Context
 
@@ -35,11 +35,11 @@ Both are **the same language**, not two languages. Surface treatments, border ha
 
 Three main UI sections:
 
-- **Header** — logo; icon tabs (Grid, Tuner, MIDI, Plugins, Settings); preset selector + scene buttons (A/B/C/D)
+- **Header** — logo; segmented icon tabs (Grid, Tuner, MIDI, System); preset + scene dropdowns with fused MIDI-assign buttons; theme toggle (sun/moon icon)
 - **Main area** — the Grid with a floating Options Panel for the selected block
-- **Footer** — CPU meter + Input meter + Output meter, each with label / rail / readout
+- **Footer** — CPU + IN + OUT meters, each with label / rail / readout
 
-The current sidebar options-panel convention is replaced by a floating panel inside the main area (scope deferred to Phase 4).
+The current sidebar options-panel convention is replaced by a floating panel inside the main area (scope deferred to Phase 4). A separate Plugins tab was considered in the mockups but is NOT part of the app — plugin management lives in the System tab's Settings page.
 
 ### 3. Colour palette
 
@@ -68,10 +68,13 @@ Full 10-step grey ramp shared across modes, with semantic aliases:
 |---|---|---|
 | `--bg` | grey-50 (`#fafbfc`) | radial gradient over grey-0 (`#050510`) through `#0a0a1e` and `#1e1a3e` |
 | `--surface` | grey-0 (`#ffffff`) | `rgba(255,255,255,0.03)` with `backdrop-filter: blur(20px)` |
-| `--border` | grey-200 (`#e5e7eb`) | `rgba(255,255,255,0.06)` |
+| `--border` | grey-200 (`#e5e7eb`) | `rgba(255,255,255,0.25)` — inputs, controls (higher opacity for visibility) |
+| `--divider` | grey-200 (`#e5e7eb`) | `rgba(255,255,255,0.1)` — chrome separators (subtler than `--border`) |
 | `--text` | grey-900 (`#1c1e22`) | grey-900 dark (`#e8f1fc`) |
 | `--text-muted` | grey-500 (`#6b7280`) | grey-500 dark (`#6b7e96`) |
 | `--text-subtle` | grey-400 (`#9ca3af`) | grey-400 dark (`#9ba3b4`) |
+
+Rule: inputs and other interactive bordered controls use `--border`. Chrome separators (header/footer dividers, panel edges) use `--divider`.
 
 Full 10-step ramps for Orchid, Amber, and Grey are captured in the brainstorm mockups (see appendix).
 
@@ -95,23 +98,72 @@ Full 10-step ramps for Orchid, Amber, and Grey are captured in the brainstorm mo
 - `font-variant-numeric: tabular-nums` everywhere digits could re-align (meters, parameter values, time readouts)
 - Line height: 1.4 for body, 1.2 for headings, 1.0 for display numerics
 
-### 5. Accessibility principles
+### 5. Dimension tokens
+
+Shared sizing tokens — all interactive elements read from these. One change here updates every input / button / select in the app.
+
+| Token | Value | Usage |
+|---|---|---|
+| `--radius` | 6px | border-radius on every input, button, select, dialog, tag |
+| `--input-height` | 32px | height of every input, button, select trigger, InputGroup |
+| `--input-height-sm` | 24px | small variant (badges, compact icon tags) |
+| `--input-padding-x` | 0.6rem | horizontal padding for text-bearing inputs |
+| `--border-container` | `none` light / `1px solid var(--color-border)` dark | optional outline for tinted containers (e.g. tab list) — visible only in dark mode |
+
+### 6. Primitive components
+
+Shipped in Phase 1 (`ui/src/components/common/`). All interactive elements in the app use these — no bespoke `<input>` / `<button>` styling.
+
+| Component | Purpose | Key props |
+|---|---|---|
+| `Input` | Text input | `inGroup` strips border/radius + sets `flex: 1` for use inside InputGroup |
+| `IconButton` | Bordered icon button | `icon` (ReactNode); `inGroup` strips border/radius |
+| `Button` | Text button | `variant`: `default` (orchid hover) / `secondary` (amber hover) / `danger` (red hover); `active` prop for toggle states; `size`: `default` / `sm` |
+| `InputGroup` + `InputGroupLabel` | Composable fused container | children can be Input/IconButton/Button with `inGroup`, or use `--trigger-border: none` + `--trigger-radius: 0` for Radix-styled triggers |
+| `ToggleSwitch` | On/off toggle (separate interaction pattern) | — |
+
+**Interaction pattern for bordered elements:**
+- Hover → `border-color: var(--color-secondary)` (amber) + `background: color-mix(in srgb, var(--color-secondary) 8%, transparent)`
+- Focus (inputs) → same amber border
+- Active (selected state) → `border-color: var(--color-primary)` (orchid) + orchid tint
+
+Dropdowns styled via Radix (PluginSelect `.trigger`, Select triggers) expose `--trigger-border` and `--trigger-radius` CSS variables so they can be fused into input groups without modifying their React markup.
+
+### 7. Accessibility principles
 
 - All accent tokens have been verified under simulated deuteranopia (~6% of men), protanopia (~2%), and tritanopia (< 0.01%). Warm Orchid retains its purple identity under CVD better than cool violets would.
 - Semantic state colours (success / danger) always appear alongside an icon (✓ / ⚠), never colour alone.
 - Contrast ratios meet or exceed WCAG 4.5:1 for body text on both light and dark backgrounds when using the designated `-text` variants.
 - Minimum text size is 13px everywhere.
 
-### 6. What is deliberately NOT decided in Phase 0
+### 8. What is deliberately NOT decided in Phase 0
 
-The following are scoped out of this spec and will be decided in their respective phases:
+Deferred to later phases:
 
-- **Grid / canvas mechanics** — whether we adopt React Flow, snap-to-grid behaviour, pan/zoom, dynamic sizing (Phase 3)
+- **Grid / canvas mechanics** — React Flow adoption, snap-to-grid, pan/zoom, dynamic sizing (Phase 3)
 - **Options panel interaction model** — floating vs docked, positioning, z-index layering, dismiss behaviour (Phase 4)
-- **Component primitives** — button, input, toggle, slider, dropdown etc. as actual code (Phase 1)
-- **Icon set** — choosing a library or commissioning custom (Phase 1)
-- **Motion / animation language** — hover transitions, focus reveals, glow pulsing (Phase 1)
+- **Motion / animation language** — hover transitions, focus reveals, glow pulsing (Phase 4 polish)
 - **`--text-display` concrete value** — deferred until Tuner redesign
+
+Delivered in Phase 1:
+- Design tokens + theme switching (`ui/src/design/tokens.css`, `useThemeStore`, `useSyncTheme`)
+- Primitive components (`Input`, `IconButton`, `Button`, `InputGroup`)
+- Icon set: `react-icons` (Tabler `tb/*` + Lucide `lu/*`)
+
+Delivered in Phase 2:
+- Footer with CPU / IN / OUT meters
+- Header with segmented icon tabs + preset/scene dropdowns + theme toggle
+- Token sweep across all existing components (no hardcoded hex remaining in CSS modules)
+
+## Implementation status (2026-04-17)
+
+| Phase | Scope | Status |
+|---|---|---|
+| 0 · Design direction | This doc | Locked, living as tokens evolve |
+| 1 · Design system | Tokens, theme switch, primitives | Shipped (PRs #35, #37) |
+| 2 · Header + footer | Footer meters, icon tabs, preset/scene chrome, theme toggle | Shipped (PR #36 + in-flight) |
+| 3 · Canvas migration | React Flow evaluation + grid/ConnectionLayer migration | Not started |
+| 4 · Options panel + polish | Floating panel, dialog polish, motion | Not started |
 
 ## Reference mockups
 
@@ -124,7 +176,3 @@ The Phase 0 exploration produced mockups that persist under `.superpowers/brains
 - `semantic-colours.html` — green/red selection with CVD sims
 
 These are non-authoritative references — the tokens in *this* doc are the truth.
-
-## Next steps
-
-Once this spec is approved, move to **Phase 1 planning**: translate these tokens into `ui/src/design/` CSS variables, set up the theme-switch mechanism, and identify which primitive components exist today that need migration.

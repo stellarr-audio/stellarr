@@ -105,6 +105,7 @@ Follow [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/):
 - `make debug` — build UI + engine with tests
 - `make release` — optimised build
 - `make run` / `make run-debug` / `make run-release` — build and launch
+- `make run-ui` — UI-only rebuild + relaunch existing engine binary (fast iteration for CSS/React)
 - `make test` — build with tests and run them
 - Always run `make build-ui` or `npx tsc --noEmit` to catch TypeScript errors, not just `make`
 
@@ -144,3 +145,84 @@ macOS Apple Silicon, CMake 3.24+, Xcode CLI tools, Node.js 18+, npm. See `docs/C
 | Zustand store | `ui/src/store/index.ts` |
 | C++ tests | `engine/test/` |
 | User manual | `docs/manual/` |
+
+## Design system (UI)
+
+**Source of truth:** [`docs/superpowers/specs/2026-04-15-phase-0-design-direction.md`](docs/superpowers/specs/2026-04-15-phase-0-design-direction.md) — tokens, typography, primitives, interaction patterns. Keep in sync with reality.
+
+### Golden rules
+
+- **No ad-hoc hex in CSS modules.** Pick an existing token. If none fits, propose a new token in `tokens.css` — never hardcode.
+- **No bespoke `<input>` / `<button>` styling.** Use the primitive components (`Input`, `IconButton`, `Button`, `InputGroup`, `ToggleSwitch`). Extending? Pass `className` for layout, not for colours/sizing.
+- **Primary (orchid) = active/selected.** Secondary (amber) = hover/interactive intent. Never flip these roles.
+- **Weight for hierarchy, not size.** Two text sizes only (13/15). If you need a third, the design failed — push back.
+- **Width of interactive elements uses `var(--input-height)`**: 32px. Never hardcode pixel heights on inputs/buttons/selects.
+
+### Key files
+
+| Role | Path |
+|---|---|
+| Tokens (source of truth) | `ui/src/design/tokens.css` |
+| Legacy alias layer (`--color-*`) | `ui/src/styles/variables.css` |
+| Primitive components | `ui/src/components/common/{Input,IconButton,Button,InputGroup,ToggleSwitch}.tsx` |
+| Theme store | `ui/src/store/theme.ts` |
+| Theme sync hook | `ui/src/hooks/useSyncTheme.ts` |
+
+### Palette (semantic tokens)
+
+| Token | Role | Light | Dark |
+|---|---|---|---|
+| `--color-primary` (`--accent`) | Selected, active, brand identity | `#c026d3` Orchid-600 | `#d946ef` Orchid-500 |
+| `--color-secondary` (`--secondary`) | Preset/scene indicator, hover hint, warning | `#f59e0b` Amber-500 | `#fbbf24` Amber-400 |
+| `--color-green` (`--success`) | Confirmation (always + ✓ icon) | `#10b981` Emerald-500 | same |
+| `--color-danger` (`--danger`) | Error, destructive, clip (always + ⚠ icon) | `#e11d48` Rose-600 | same |
+| `--color-border` | Interactive control borders (inputs, buttons, selects) | `#e5e7eb` | `rgba(255,255,255,0.25)` |
+| `--color-divider` | Chrome separators (header/footer/panel edges) | `#e5e7eb` | `rgba(255,255,255,0.1)` |
+| `--color-bg` | Page background | grey-50 | radial gradient navy |
+| `--color-surface` | Cards, elevated panels | white | `rgba(255,255,255,0.03)` + blur |
+| `--color-text` / `--color-muted` / `--text-subtle` | Text scale | grey-900 / 500 / 400 | grey-dark-900 / 500 / 400 |
+
+### Typography
+
+- Typeface: Switzer (variable, 300–900) — already loaded globally
+- Scale: `--text-xs` (13px, weight 500) · `--text-base` (15px, weight 400) · `--text-base-strong-weight` (600) · `--text-display` (reserved)
+- Minimum: 13px — anywhere
+- `font-variant-numeric: tabular-nums` for any aligning digits (meters, parameter values, timings)
+
+### Dimension tokens
+
+| Token | Value | Use |
+|---|---|---|
+| `--radius` | 6px | every interactive bordered element |
+| `--input-height` | 32px | default height for inputs/buttons/selects/InputGroup |
+| `--input-height-sm` | 24px | compact variant (badges, tags) |
+| `--input-padding-x` | 0.6rem | horizontal padding for text inputs/buttons |
+| `--border-container` | light: `none` / dark: `1px solid var(--color-border)` | optional outline for tinted containers (e.g. tab list) |
+
+### Interaction patterns
+
+- **Hover on bordered controls:** `border-color: var(--color-secondary)` + `background: color-mix(in srgb, var(--color-secondary) 8%, transparent)`. Transition 0.15s ease.
+- **Focus on text inputs:** `border-color: var(--color-secondary)` (same as hover); `outline: none`.
+- **Active/selected:** `color: var(--color-primary)` + orchid tint background. Never blue/grey.
+- **Section-title convention (Options panel):** orchid for grouping headers (Parameters, States). Neutral `var(--color-text)` for input labels (Plugin, Test Tone, Level, Target Loudness).
+- **Slider fill:** amber (`--color-secondary`). Thumb: neutral (`--color-text`) with surface ring.
+- **Radix-controlled triggers** (Select/DropdownMenu) expose `--trigger-border` and `--trigger-radius` CSS variables — set on a parent to fuse a trigger into an `InputGroup` without modifying its markup.
+
+### Icons
+
+- Library: [`react-icons`](https://react-icons.github.io/react-icons/)
+- Active sets: Tabler (`react-icons/tb`) + Lucide (`react-icons/lu`)
+- Before introducing a third set, check existing imports. Prefer Tabler for new icons where both have an equivalent.
+
+### Theme
+
+- Zustand store holds `theme: 'light' | 'dark' | 'system'`; persists under localStorage key `stellarr.theme`
+- `useSyncTheme()` (called in `App.tsx`) writes `data-theme="light"|"dark"` on `<html>` and subscribes to `prefers-color-scheme` changes when `'system'`
+- UI toggle in header flips between resolved light/dark (skips `'system'` to avoid invisible transitions)
+
+### Testing UI
+
+- Runner: Vitest + JSDOM + `@testing-library/react`
+- `cd ui && npm run test` — run all UI tests
+- `cd ui && npm run test:watch` — watch mode
+- Token tests use a `getVar()` helper (in `ui/src/design/__tests__/tokens.test.ts`) to resolve one level of `var()` indirection since JSDOM does not

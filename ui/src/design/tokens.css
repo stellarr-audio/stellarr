@@ -95,10 +95,14 @@
 
   --bg:           var(--grey-50);          /* #fafbfc */
   --surface:      var(--grey-0);           /* #ffffff */
-  --border:       var(--grey-200);         /* #e5e7eb */
+  --border:       var(--grey-200);         /* #e5e7eb — inputs, controls */
+  --divider:      var(--grey-200);         /* same as border in light */
   --text:         var(--grey-900);         /* #1c1e22 */
   --text-muted:   var(--grey-500);         /* #6b7280 */
   --text-subtle:  var(--grey-400);         /* #9ca3af */
+
+  /* Dark-only container outline (empty in light) */
+  --border-container: none;
 }
 
 /* === Dark theme =========================================================== */
@@ -113,8 +117,11 @@
      `background: var(--bg)` on the top-level container (not background-color). */
   --bg:           radial-gradient(ellipse 90% 70% at 40% -10%, #1e1a3e 0%, #0a0a1e 45%, var(--grey-dark-0) 100%);
   --surface:      rgba(255,255,255,0.03);
-  --border:       rgba(255,255,255,0.1);
+  --border:       rgba(255,255,255,0.25);  /* inputs, controls */
+  --divider:      rgba(255,255,255,0.1);   /* chrome separators */
   --text:         var(--grey-dark-900);    /* #e8f1fc */
   --text-muted:   var(--grey-dark-500);    /* #6b7e96 */
   --text-subtle:  var(--grey-dark-400);    /* #9ba3b4 */
+
+  --border-container: 1px solid var(--color-border);
 }

@@ -2,8 +2,9 @@ import { useState } from 'react';
 import { useStore } from '../../store';
 import { requestSetReferencePitch } from '../../bridge';
 import { Input } from '../common/Input';
-import { Button } from '../common/Button';
 import { InputGroup, InputGroupLabel } from '../common/InputGroup';
+import { Tablist, Tab } from '../common/Tablist';
+import { Tag } from '../common/Tag';
 import styles from './TunerPanel.module.css';
 
 const presets = [432, 440, 442, 444];
@@ -34,24 +35,15 @@ export function TunerPanel() {
       <div className={styles.content}>
         <span className={styles.sectionTitle}>Mode</span>
 
-        <div className={styles.modeButtons}>
-          <Button
-            size="sm"
-            active={tunerMode === 'needle'}
-            onClick={() => setTunerMode('needle')}
-            className={styles.modeButton}
-          >
-            Needle
-          </Button>
-          <Button
-            size="sm"
-            active={tunerMode === 'strobe'}
-            onClick={() => setTunerMode('strobe')}
-            className={styles.modeButton}
-          >
-            Strobe
-          </Button>
-        </div>
+        <Tablist
+          value={tunerMode}
+          onChange={(id) => setTunerMode(id as 'needle' | 'strobe')}
+          aria-label="Tuner mode"
+          stretch
+        >
+          <Tab id="needle">Needle</Tab>
+          <Tab id="strobe">Strobe</Tab>
+        </Tablist>
       </div>
 
       <div className={styles.divider} />
@@ -89,15 +81,14 @@ export function TunerPanel() {
 
         <div className={styles.presets}>
           {presets.map((hz) => (
-            <Button
+            <Tag
               key={hz}
-              size="sm"
               active={referencePitch === hz}
               onClick={() => requestSetReferencePitch(hz)}
-              className={styles.presetButton}
+              className={styles.presetTag}
             >
               {hz}
-            </Button>
+            </Tag>
           ))}
         </div>
       </div>

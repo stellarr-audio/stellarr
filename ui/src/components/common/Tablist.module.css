@@ -37,6 +37,11 @@
   color: var(--accent-text);
 }
 
+:global([data-theme='dark']) .tabActive,
+:global([data-theme='dark']) .tabActive:hover {
+  color: var(--color-secondary);
+}
+
 .stretch {
   flex: 1;
 }

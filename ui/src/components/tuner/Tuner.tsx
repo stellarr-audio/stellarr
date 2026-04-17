@@ -14,7 +14,7 @@ export function Tuner() {
   const hasSignal = confidence > 0.3 && note !== null;
 
   const centsColor =
-    Math.abs(cents) < 5 ? colors.green : Math.abs(cents) < 15 ? '#ffaa00' : colors.primary;
+    Math.abs(cents) < 5 ? colors.green : Math.abs(cents) < 15 ? colors.secondary : colors.primary;
 
   return (
     <div className={styles.container}>

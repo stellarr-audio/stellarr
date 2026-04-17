@@ -9,7 +9,7 @@ const SPEED_FACTOR = 1.8;
 function centsColor(cents: number): string {
   const abs = Math.abs(cents);
   if (abs < 5) return colors.green;
-  if (abs < 15) return '#ffaa00';
+  if (abs < 15) return colors.secondary;
   return colors.primary;
 }
 

@@ -1,5 +1,4 @@
 import { useEffect } from 'react';
-import { Tabs } from 'radix-ui';
 import { useStore } from './store';
 import { useSyncTheme } from './hooks/useSyncTheme';
 import { Grid } from './components/grid/Grid';
@@ -16,6 +15,7 @@ import { Logo } from './components/header/Logo';
 import { Footer } from './components/footer/Footer';
 import { Tooltip } from './components/common/Tooltip';
 import { IconButton } from './components/common/IconButton';
+import { Tablist, Tab } from './components/common/Tablist';
 import { TbLayoutGrid, TbWaveSine, TbPlug, TbSun, TbMoon } from 'react-icons/tb';
 import { LuSettings } from 'react-icons/lu';
 import { useThemeStore, resolveTheme } from './store/theme';
@@ -47,8 +47,11 @@ function App() {
     requestSetTunerEnabled(tab === 'tuner');
   };
 
+  const panelClass = (id: string) =>
+    `${styles.tabContent} ${activeTab === id ? styles.tabContentVisible : ''}`;
+
   return (
-    <Tabs.Root value={activeTab} onValueChange={handleTabChange} className={styles.root}>
+    <div className={styles.root}>
       {/* Header */}
       <div className={styles.header}>
         <div className={styles.headerLeft}>
@@ -57,40 +60,33 @@ function App() {
             <span className={styles.brandName}>Stellarr</span>
           </div>
 
-          <Tabs.List className={styles.tabList}>
+          <Tablist
+            value={activeTab}
+            onChange={handleTabChange}
+            aria-label="Main navigation"
+            className={styles.headerTablist}
+          >
             <Tooltip content="Grid" side="bottom">
-              <Tabs.Trigger
-                value="grid"
-                className={`${styles.tab} ${activeTab === 'grid' ? styles.tabActive : ''}`}
-              >
+              <Tab id="grid" title="Grid">
                 <TbLayoutGrid size={20} />
-              </Tabs.Trigger>
+              </Tab>
             </Tooltip>
             <Tooltip content="Tuner" side="bottom">
-              <Tabs.Trigger
-                value="tuner"
-                className={`${styles.tab} ${activeTab === 'tuner' ? styles.tabActive : ''}`}
-              >
+              <Tab id="tuner" title="Tuner">
                 <TbWaveSine size={20} />
-              </Tabs.Trigger>
+              </Tab>
             </Tooltip>
             <Tooltip content="MIDI" side="bottom">
-              <Tabs.Trigger
-                value="midi"
-                className={`${styles.tab} ${activeTab === 'midi' ? styles.tabActive : ''}`}
-              >
+              <Tab id="midi" title="MIDI">
                 <TbPlug size={20} />
-              </Tabs.Trigger>
+              </Tab>
             </Tooltip>
             <Tooltip content="System" side="bottom">
-              <Tabs.Trigger
-                value="settings"
-                className={`${styles.tab} ${activeTab === 'settings' ? styles.tabActive : ''}`}
-              >
+              <Tab id="settings" title="System">
                 <LuSettings size={20} />
-              </Tabs.Trigger>
+              </Tab>
             </Tooltip>
-          </Tabs.List>
+          </Tablist>
         </div>
 
         {/* Centre: preset browser */}
@@ -102,14 +98,9 @@ function App() {
         <ThemeToggle />
       </div>
 
-      {/* Main area */}
+      {/* Main area — all panels stay mounted; visibility toggled by activeTab */}
       <div className={styles.main}>
-        <Tabs.Content
-          value="grid"
-          forceMount
-          hidden={activeTab !== 'grid'}
-          className={`${styles.tabContent} ${activeTab === 'grid' ? styles.tabContentVisible : ''}`}
-        >
+        <div role="tabpanel" hidden={activeTab !== 'grid'} className={panelClass('grid')}>
           <div
             onClick={(e) => {
               if (e.target === e.currentTarget) selectBlock(null);
@@ -120,41 +111,26 @@ function App() {
             <Grid />
           </div>
           <OptionsPanel />
-        </Tabs.Content>
+        </div>
 
-        <Tabs.Content
-          value="tuner"
-          forceMount
-          hidden={activeTab !== 'tuner'}
-          className={`${styles.tabContent} ${activeTab === 'tuner' ? styles.tabContentVisible : ''}`}
-        >
+        <div role="tabpanel" hidden={activeTab !== 'tuner'} className={panelClass('tuner')}>
           <Tuner />
           <TunerPanel />
-        </Tabs.Content>
+        </div>
 
-        <Tabs.Content
-          value="midi"
-          forceMount
-          hidden={activeTab !== 'midi'}
-          className={`${styles.tabContent} ${activeTab === 'midi' ? styles.tabContentVisible : ''}`}
-        >
+        <div role="tabpanel" hidden={activeTab !== 'midi'} className={panelClass('midi')}>
           <MidiPage />
           <MidiMonitor />
-        </Tabs.Content>
+        </div>
 
-        <Tabs.Content
-          value="settings"
-          forceMount
-          hidden={activeTab !== 'settings'}
-          className={`${styles.tabContent} ${activeTab === 'settings' ? styles.tabContentVisible : ''}`}
-        >
+        <div role="tabpanel" hidden={activeTab !== 'settings'} className={panelClass('settings')}>
           <Settings />
-        </Tabs.Content>
+        </div>
       </div>
 
       {/* Footer: CPU / IN / OUT meters */}
       <Footer />
-    </Tabs.Root>
+    </div>
   );
 }
 

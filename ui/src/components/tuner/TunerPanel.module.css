@@ -11,8 +11,8 @@
 }
 
 .title {
-  font-size: 1rem;
-  font-weight: 600;
+  font-size: var(--text-base);
+  font-weight: var(--text-base-strong-weight);
   color: var(--color-muted);
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -32,20 +32,11 @@
 }
 
 .sectionTitle {
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--color-secondary);
+  font-size: var(--text-base);
+  font-weight: var(--text-base-strong-weight);
+  color: var(--color-primary);
   text-transform: uppercase;
   letter-spacing: 0.06em;
-}
-
-.modeButtons {
-  display: flex;
-  gap: 0.4rem;
-}
-
-.modeButton {
-  flex: 1;
 }
 
 .presets {
@@ -53,6 +44,6 @@
   gap: 0.4rem;
 }
 
-.presetButton {
+.presetTag {
   flex: 1;
 }

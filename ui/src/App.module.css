@@ -45,44 +45,8 @@
   text-shadow: 0 0 12px color-mix(in srgb, var(--color-primary) 27%, transparent);
 }
 
-.tabList {
-  display: flex;
-  align-items: center;
-  gap: 2px;
+.headerTablist {
   margin-left: 0.25rem;
-  padding: 3px;
-  background: color-mix(in srgb, var(--color-muted) 10%, transparent);
-  border: var(--border-container);
-  border-radius: 8px;
-}
-
-.tab {
-  background: transparent;
-  border: none;
-  color: var(--color-muted);
-  padding: 0.45rem 0.65rem;
-  border-radius: var(--radius);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  outline: none;
-  transition: color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
-}
-
-.tab:hover {
-  color: var(--color-text);
-}
-
-.tabActive {
-  background: var(--color-surface);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-  color: var(--color-primary);
-}
-
-.tabActive:hover {
-  color: var(--color-primary);
-  background: color-mix(in srgb, var(--color-text) 6%, var(--color-surface));
 }
 
 .headerCenter {

@@ -68,6 +68,10 @@ jobs:
 
           echo "$APPLE_CERTIFICATE" | base64 --decode > "$CERT_FILE"
 
+          # Remove any leftover keychain from a previous failed run on the
+          # self-hosted runner before creating a fresh one.
+          security delete-keychain "$KEYCHAIN" 2>/dev/null || true
+
           security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
           security set-keychain-settings -lut 3600 "$KEYCHAIN"
           security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"

@@ -62,7 +62,10 @@ jobs:
       - name: Import signing certificate
         if: env.APPLE_CERTIFICATE != ''
         run: |
-          CERT_FILE=$(mktemp /tmp/cert.XXXXXX.p12)
+          # macOS mktemp only substitutes trailing X's — a `.p12` suffix
+          # after the template causes "File exists" errors. Extension is
+          # not required by `security import`, which reads file format.
+          CERT_FILE=$(mktemp /tmp/stellarr-cert.XXXXXX)
           KEYCHAIN=build.keychain
           KEYCHAIN_PASSWORD=$(openssl rand -base64 24)
 

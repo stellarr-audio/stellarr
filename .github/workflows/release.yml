@@ -17,9 +17,18 @@ permissions:
 #   APPLE_TEAM_ID               10-character Team ID
 #   APPLE_ID                    Apple ID email used for notarisation
 #   APPLE_APP_PASSWORD          app-specific password generated at appleid.apple.com
+#
+# NOTE: This workflow targets a self-hosted macOS runner whose filesystem and
+# keychain state persist across runs. Every step that writes to /tmp, creates a
+# keychain, or configures a CMake build directory must assume arbitrary leftover
+# state from a previously failed run and clean up defensively.
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
   APP_NAME: Stellarr
+
+defaults:
+  run:
+    shell: bash -euo pipefail {0}
 
 jobs:
   build-release:
@@ -42,6 +51,14 @@ jobs:
         with:
           node-version: 24
 
+      # Runner is self-hosted — clean any leftover state from prior runs
+      # (failed or otherwise) before doing anything that assumes a clean slate.
+      - name: Clean runner state from previous runs
+        run: |
+          rm -f /tmp/stellarr-cert-*.p12 || true
+          rm -rf build-release || true
+          security delete-keychain build.keychain 2>/dev/null || true
+
       - name: Install UI dependencies
         run: cd ui && npm ci
 
@@ -62,18 +79,16 @@ jobs:
       - name: Import signing certificate
         if: env.APPLE_CERTIFICATE != ''
         run: |
-          # macOS mktemp only substitutes trailing X's — a `.p12` suffix
-          # after the template causes "File exists" errors. Extension is
-          # not required by `security import`, which reads file format.
-          CERT_FILE=$(mktemp /tmp/stellarr-cert.XXXXXX)
+          CERT_FILE="/tmp/stellarr-cert-$$.p12"
           KEYCHAIN=build.keychain
           KEYCHAIN_PASSWORD=$(openssl rand -base64 24)
 
-          echo "$APPLE_CERTIFICATE" | base64 --decode > "$CERT_FILE"
+          # Guarantee the decoded cert is removed on any exit (success, error,
+          # signal). Avoids leaving a .p12 on the self-hosted runner if a later
+          # security command fails mid-step.
+          trap 'rm -f "$CERT_FILE"' EXIT
 
-          # Remove any leftover keychain from a previous failed run on the
-          # self-hosted runner before creating a fresh one.
-          security delete-keychain "$KEYCHAIN" 2>/dev/null || true
+          echo "$APPLE_CERTIFICATE" | base64 --decode > "$CERT_FILE"
 
           security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
           security set-keychain-settings -lut 3600 "$KEYCHAIN"
@@ -81,8 +96,6 @@ jobs:
           security import "$CERT_FILE" -k "$KEYCHAIN" -P "$APPLE_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
           security set-key-partition-list -S apple-tool:,apple: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
           security list-keychains -d user -s "$KEYCHAIN" $(security list-keychains -d user | tr -d '"')
-
-          rm "$CERT_FILE"
 
       - name: Sign app bundle
         if: env.APPLE_CERTIFICATE != ''
@@ -130,9 +143,11 @@ jobs:
 
       # ── Cleanup ──
 
+      # Runs even if the secret was never set or an earlier step failed —
+      # the delete is a no-op when the keychain is absent.
       - name: Cleanup keychain
-        if: always() && env.APPLE_CERTIFICATE != ''
-        run: security delete-keychain build.keychain || true
+        if: always()
+        run: security delete-keychain build.keychain 2>/dev/null || true
 
       # ── Upload to GitHub Release ──
 

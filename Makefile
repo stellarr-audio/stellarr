@@ -1,4 +1,4 @@
-.PHONY: setup dev dev-ui dev-cpp debug debug-cpp release release-cpp run run-debug run-release run-ui test docs clean clear-cache screenshots
+.PHONY: setup dev dev-ui dev-cpp debug debug-cpp release release-cpp run run-debug run-release run-ui open test docs clean clear-cache screenshots
 
 .DEFAULT_GOAL := dev
 
@@ -46,6 +46,10 @@ run-debug: debug
 
 run-release: release
 	open build-release/Stellarr_artefacts/Release/Standalone/Stellarr.app
+
+# Launch the existing debug app binary without rebuilding.
+open:
+	open build/Stellarr_artefacts/Debug/Standalone/Stellarr.app
 
 test: debug
 	ctest --test-dir build --output-on-failure

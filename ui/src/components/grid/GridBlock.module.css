@@ -20,15 +20,8 @@
   justify-content: center;
 }
 
-.formatTag {
-  font-size: 0.6rem;
-  font-weight: 700;
-  color: var(--color-muted);
-  letter-spacing: 0.06em;
-}
-
 .blockType {
-  font-size: 1rem;
+  font-size: 1.15rem;
   font-weight: 700;
   letter-spacing: 0.12em;
 }

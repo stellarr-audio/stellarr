@@ -101,6 +101,9 @@
   --text-muted:   var(--grey-500);         /* #6b7280 */
   --text-subtle:  var(--grey-400);         /* #9ca3af */
 
+  --block-bg:     var(--grey-0);           /* opaque surface for canvas blocks */
+  --block-border: var(--grey-300);         /* #d1d5db — stronger than chrome border */
+
   /* Dark-only container outline (empty in light) */
   --border-container: none;
 }
@@ -122,6 +125,9 @@
   --text:         var(--grey-dark-900);    /* #e8f1fc */
   --text-muted:   var(--grey-dark-500);    /* #6b7e96 */
   --text-subtle:  var(--grey-dark-400);    /* #9ba3b4 */
+
+  --block-bg:     var(--grey-dark-200);    /* #1a2438 — opaque, stops canvas grid bleed-through */
+  --block-border: rgba(255,255,255,0.40);  /* stronger than chrome border */
 
   --border-container: 1px solid var(--color-border);
 }

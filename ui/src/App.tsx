@@ -1,8 +1,7 @@
 import { useEffect } from 'react';
 import { useStore } from './store';
 import { useSyncTheme } from './hooks/useSyncTheme';
-import { Grid } from './components/grid/Grid';
-import { GridOverlay } from './components/grid/GridOverlay';
+import { Canvas } from './components/canvas/Canvas';
 import { OptionsPanel } from './components/options/OptionsPanel';
 import { Settings } from './components/settings/Settings';
 import { Tuner } from './components/tuner/Tuner';
@@ -107,8 +106,7 @@ function App() {
             }}
             className={styles.gridArea}
           >
-            <GridOverlay />
-            <Grid />
+            <Canvas />
           </div>
           <OptionsPanel />
         </div>

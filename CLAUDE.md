@@ -43,6 +43,7 @@ When asked to review code (or variations like "pls review", "review and commit",
 - Use New Zealand English spelling consistent with the rest of the project
 - Do not create new manual pages without being asked — prefer extending existing ones
 - Reference other pages with relative Markdown links (e.g., `[MIDI](05-midi.md)`)
+- **Do not commit design specs, brainstorming specs, or implementation plans to the repo.** Brainstorming and plan artefacts from the superpowers skills are for in-session use only — they belong to the conversation, not the codebase. Durable project truth lives in `docs/manual/`, `CLAUDE.md`, PR descriptions, and GitHub release notes. If a decision needs to outlive the session, promote it into one of those surfaces.
 
 ## Git Workflow
 
@@ -154,7 +155,7 @@ macOS Apple Silicon, CMake 3.24+, Xcode CLI tools, Node.js 18+, npm. See `docs/C
 
 ## Design system (UI)
 
-**Source of truth:** [`docs/superpowers/specs/2026-04-15-phase-0-design-direction.md`](docs/superpowers/specs/2026-04-15-phase-0-design-direction.md) — tokens, typography, primitives, interaction patterns. Keep in sync with reality.
+**Source of truth:** this CLAUDE.md section plus the actual code in `ui/src/design/tokens.css` and `ui/src/components/common/`. Keep those in sync with reality.
 
 ### Golden rules
 

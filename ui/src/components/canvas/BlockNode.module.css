@@ -1,15 +1,15 @@
 .block {
   position: relative;
-  width: 140px;
-  height: 60px;
-  padding: 0 10px;
+  width: 120px;
+  height: 100px;
+  padding: 10px 12px;
   border-radius: var(--radius);
   background: color-mix(in srgb, var(--bc, var(--color-border)) 12%, var(--color-block-bg));
   border: 2px solid var(--bc, var(--color-block-border));
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: space-between;
   gap: 4px;
   box-sizing: border-box;
 }

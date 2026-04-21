@@ -2,9 +2,15 @@ import { useState } from 'react';
 import { DropdownMenu } from 'radix-ui';
 import { IconButton } from '../common/IconButton';
 import { Tooltip } from '../common/Tooltip';
-import { DotsHorizontalIcon, FrameIcon, CheckIcon, ChevronRightIcon } from '@radix-ui/react-icons';
+import {
+  DotsHorizontalIcon,
+  FrameIcon,
+  CheckIcon,
+  ChevronRightIcon,
+  TrashIcon,
+} from '@radix-ui/react-icons';
 import { BLOCK_COLORS } from './ColorPicker';
-import { requestSetBlockColor } from '../../bridge';
+import { requestSetBlockColor, requestRemoveBlock } from '../../bridge';
 import type { GridBlock } from '../../store';
 import styles from './OptionsPanel.module.css';
 
@@ -84,6 +90,16 @@ export function OptionsMenu({ block }: Props) {
               </DropdownMenu.SubContent>
             </DropdownMenu.Portal>
           </DropdownMenu.Sub>
+
+          <DropdownMenu.Separator className={styles.menuSeparator} />
+
+          <DropdownMenu.Item
+            onSelect={() => requestRemoveBlock(block.id)}
+            className={`${styles.menuItem} ${styles.menuItemDanger}`}
+          >
+            <TrashIcon width={14} height={14} />
+            <span>Delete block</span>
+          </DropdownMenu.Item>
         </DropdownMenu.Content>
       </DropdownMenu.Portal>
     </DropdownMenu.Root>

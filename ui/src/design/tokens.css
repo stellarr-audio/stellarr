@@ -31,12 +31,16 @@
   --input-height-sm: 24px;
   --input-padding-x: 0.6rem;
 
-  /* Z-index layers. Values chosen relative to existing usage:
-   *   grid internals (1-15), popovers in the Options panel (20),
-   *   modal dialogs (50), loudness window popup (100), tooltips (200).
-   * Panel sits above the grid but below its own popovers so colour-picker,
-   * dropdowns, and slider popups still appear in front of the panel. */
-  --z-floating-panel: 18;
+  /* Z-index layers — globally defined scale so every surface references a
+   * named layer rather than an ad-hoc number. Higher = closer to viewer. */
+  --z-grid:           2;    /* grid blocks / connections / overlay */
+  --z-grid-above:     10;   /* hover chrome, block menus sitting over the grid */
+  --z-floating-panel: 18;   /* Options panel shell */
+  --z-popover:        20;   /* widget popovers inside the Options panel (colour picker, param slider popup, select dropdowns, target-loudness popup base) */
+  --z-dropdown:       40;   /* Options panel overflow menu and its submenu */
+  --z-dialog:         50;   /* modal dialogs (MIDI assign, confirm, rename) */
+  --z-loudness-popup: 100;  /* LoudnessWindow popup */
+  --z-tooltip:        200;  /* Radix tooltips — always on top */
 }
 
 /* === Theme-agnostic palette ramps =========================================

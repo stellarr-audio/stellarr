@@ -16,7 +16,7 @@
   background: var(--color-dropdown-bg);
   border: 1px solid var(--color-border);
   padding: 0.5rem;
-  z-index: 20;
+  z-index: var(--z-popover);
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 0.35rem;

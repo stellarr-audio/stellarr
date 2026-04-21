@@ -94,11 +94,11 @@
 
 /* Overflow menu */
 .menuContent {
-  background: var(--color-surface);
+  background: var(--block-bg);
   border: 1px solid var(--color-border);
   min-width: 180px;
   padding: 0.25rem;
-  z-index: 60;
+  z-index: var(--z-dropdown);
   box-shadow: var(--shadow-md);
 }
 
@@ -122,14 +122,28 @@
   color: var(--color-green);
 }
 
+.menuItemDanger {
+  color: var(--color-danger);
+}
+
+.menuItemDanger[data-highlighted] {
+  background: color-mix(in srgb, var(--color-danger) 12%, transparent);
+}
+
+.menuSeparator {
+  height: 1px;
+  background: var(--color-divider);
+  margin: 0.25rem 0;
+}
+
 .menuSubContent {
-  background: var(--color-surface);
+  background: var(--block-bg);
   border: 1px solid var(--color-border);
   padding: 0.5rem;
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 0.3rem;
-  z-index: 61;
+  z-index: calc(var(--z-dropdown) + 1);
   box-shadow: var(--shadow-md);
 }
 
@@ -199,7 +213,7 @@
   width: var(--radix-select-trigger-width);
   max-height: 250px;
   overflow-y: auto;
-  z-index: 25;
+  z-index: var(--z-popover);
 }
 
 .sampleItem {

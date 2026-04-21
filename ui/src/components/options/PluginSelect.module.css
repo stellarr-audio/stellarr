@@ -37,7 +37,7 @@
   flex-direction: column;
   overflow: hidden;
   width: var(--radix-select-trigger-width);
-  z-index: 20;
+  z-index: var(--z-popover);
 }
 
 .searchWrapper {

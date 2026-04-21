@@ -85,6 +85,7 @@ export function Settings() {
             </div>
             <ToggleSwitch
               enabled={telemetryEnabled}
+              sharp
               onToggle={() => requestSetTelemetryEnabled(!telemetryEnabled)}
               title="Toggle crash reporting"
             />

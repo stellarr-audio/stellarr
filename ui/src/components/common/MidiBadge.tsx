@@ -7,6 +7,8 @@ interface Props {
   onClick: () => void;
   title?: string;
   className?: string;
+  /** Compact variant — matches IconButton size="sm" for titlebar clusters. */
+  size?: 'default' | 'sm';
 }
 
 /**
@@ -14,10 +16,15 @@ interface Props {
  * solid orchid when assigned. Shared across the options panel so every
  * MIDI-assignable control reads the same way at a glance.
  */
-export function MidiBadge({ mapping, onClick, title, className }: Props) {
+export function MidiBadge({ mapping, onClick, title, className, size = 'default' }: Props) {
   const label = mapping ? formatMidiLabel(mapping) : 'MIDI';
   const tooltip = title ?? (mapping ? `MIDI: CC ${mapping.cc}` : 'Assign MIDI CC');
-  const cls = [styles.badge, mapping ? styles.assigned : styles.unassigned, className]
+  const cls = [
+    styles.badge,
+    size !== 'default' && styles[size],
+    mapping ? styles.assigned : styles.unassigned,
+    className,
+  ]
     .filter(Boolean)
     .join(' ');
   return (

@@ -16,7 +16,7 @@ import { Footer } from './components/footer/Footer';
 import { Tooltip } from './components/common/Tooltip';
 import { IconButton } from './components/common/IconButton';
 import { Tablist, Tab } from './components/common/Tablist';
-import { TbLayoutGrid, TbWaveSine, TbPlug, TbSun, TbMoon } from 'react-icons/tb';
+import { TbLayoutGrid, TbWaveSine, TbPlug, TbSunHigh, TbMoon } from 'react-icons/tb';
 import { LuSettings } from 'react-icons/lu';
 import { useThemeStore, resolveTheme } from './store/theme';
 import { requestSetTunerEnabled, requestSaveSessionQuiet } from './bridge';
@@ -143,7 +143,7 @@ function ThemeToggle() {
 
   const flip = () => setTheme(resolved === 'dark' ? 'light' : 'dark');
 
-  const icon = resolved === 'dark' ? <TbMoon size={18} /> : <TbSun size={18} />;
+  const icon = resolved === 'dark' ? <TbMoon size={18} /> : <TbSunHigh size={18} />;
   const label = resolved === 'dark' ? 'Switch to light mode' : 'Switch to dark mode';
 
   return (

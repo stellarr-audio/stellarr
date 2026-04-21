@@ -29,8 +29,8 @@
   left: 16px;
 }
 
-/* Sharp variant — matches Options panel's sharp-edge theme. Sized taller
-   to align with IconButton size="sm" (24px) neighbours in the titlebar. */
+/* Sharp variant — matches Options panel's sharp-edge theme. Sized to line
+   up with IconButton size="sm" (24px) neighbours in the panel titlebar. */
 .toggle.sharp {
   border-radius: 0;
   width: 40px;

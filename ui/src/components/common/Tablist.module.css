@@ -5,7 +5,7 @@
   padding: 3px;
   background: color-mix(in srgb, var(--color-muted) 10%, transparent);
   border: var(--border-container);
-  border-radius: 8px;
+  border-radius: var(--radius);
 }
 
 .tab {

@@ -11,11 +11,6 @@
   flex-direction: column;
   overflow: hidden;
   z-index: var(--z-floating-panel);
-
-  /* Scope: kill rounded corners on interactive children inside the panel
-     as a preview of the broader design shift. Panel primitives outside
-     this scope retain their global --radius. */
-  --radius: 0px;
 }
 
 .titlebar {
@@ -171,12 +166,6 @@
   gap: 0.25rem;
 }
 
-.sampleRow {
-  display: flex;
-  gap: 0.3rem;
-  align-items: stretch;
-}
-
 .sampleLabel {
   font-size: var(--text-xs);
   color: var(--color-text);
@@ -185,13 +174,16 @@
   font-weight: var(--text-xs-weight);
 }
 
+/* Select.Trigger living inside an InputGroup — strip its own border/radius,
+   let the group frame both the trigger and the adjacent IconButton. */
 .sampleTrigger {
   flex: 1;
-  height: var(--input-height);
+  min-width: 0;
+  height: 100%;
   text-align: left;
-  background: var(--color-cell);
+  background: transparent;
   color: var(--color-text);
-  border: 1px solid var(--color-border);
+  border: none;
   padding: 0 var(--input-padding-x);
   font-size: var(--text-base);
   cursor: pointer;
@@ -199,12 +191,6 @@
   align-items: center;
   justify-content: space-between;
   outline: none;
-  transition: border-color 0.15s ease;
-}
-
-.sampleTrigger:hover {
-  border-color: var(--color-secondary);
-  background: color-mix(in srgb, var(--color-secondary) 8%, transparent);
 }
 
 .sampleContent {

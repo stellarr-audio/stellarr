@@ -277,7 +277,12 @@ function BypassControls({ block }: { block: import('../../store').GridBlock }) {
 
   return (
     <>
-      <MidiBadge mapping={existing} onClick={() => setDialogOpen(true)} title={tooltipLabel} />
+      <MidiBadge
+        mapping={existing}
+        onClick={() => setDialogOpen(true)}
+        title={tooltipLabel}
+        size="sm"
+      />
       <ToggleSwitch
         enabled={!block.bypassed}
         sharp
@@ -314,7 +319,7 @@ function TestToneSamplePicker({ blockId, playing }: { blockId: string; playing: 
   return (
     <div className={styles.samplePicker}>
       <span className={styles.sampleLabel}>Test Tone</span>
-      <div className={styles.sampleRow}>
+      <InputGroup>
         <Select.Root
           value={currentSample}
           onValueChange={(v) => requestSetTestToneSample(blockId, v)}
@@ -339,11 +344,12 @@ function TestToneSamplePicker({ blockId, playing }: { blockId: string; playing: 
         </Select.Root>
         <IconButton
           icon={playing ? <StopIcon width={14} height={14} /> : <PlayIcon width={14} height={14} />}
+          inGroup
           onClick={() => requestToggleTestTone(blockId)}
           title={playing ? 'Stop test tone' : 'Play test tone'}
           className={playing ? styles.toneButtonPlaying : undefined}
         />
-      </div>
+      </InputGroup>
     </div>
   );
 }

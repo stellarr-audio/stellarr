@@ -23,8 +23,9 @@
   --letter-spacing-label: 0.08em;
   --letter-spacing-tight: -0.01em;
 
-  /* Shared radii */
-  --radius: 6px;
+  /* Shared radii — sharp-edge direction. Every bordered interactive primitive
+     consumes this; adjust centrally here rather than per component. */
+  --radius: 0;
 
   /* Input dimensions — shared across all interactive elements */
   --input-height: 32px;

@@ -101,6 +101,10 @@
   --text-muted:   var(--grey-500);         /* #6b7280 */
   --text-subtle:  var(--grey-400);         /* #9ca3af */
 
+  /* Opaque block background — stops the canvas grid + edges bleeding through
+     when blocks are selected / bypassed (both apply a translucent tint). */
+  --block-bg:     var(--grey-0);           /* #ffffff */
+
   /* Dark-only container outline (empty in light) */
   --border-container: none;
 }
@@ -122,6 +126,9 @@
   --text:         var(--grey-dark-900);    /* #e8f1fc */
   --text-muted:   var(--grey-dark-500);    /* #6b7e96 */
   --text-subtle:  var(--grey-dark-400);    /* #9ba3b4 */
+
+  /* Opaque block background — see light-theme note. */
+  --block-bg:     var(--grey-dark-200);    /* #1a2438 */
 
   --border-container: 1px solid var(--color-border);
 }

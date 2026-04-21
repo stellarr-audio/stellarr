@@ -78,10 +78,16 @@ Follow [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/):
 
 ### Committing and PRs
 
-1. Stage only the files relevant to the task
-2. Push the branch and create a PR (draft if the work is untested or in progress)
-3. Wait for CI to pass before requesting merge
-4. After merge, delete the remote branch and switch back to `main` locally
+> **HIGH PRIORITY — non-negotiable gates.**
+>
+> 1. **Verify in the running app before committing.** Never commit or push until the user has confirmed the change actually works by running it. Type-check / tests / build passing is necessary but NOT sufficient. For UI or runtime-behaviour changes, state what to test and which command to run (`make run-ui`, `make open`, `make dev`) and wait for the user's sign-off before `git add` / `git commit`.
+> 2. **Never open a PR without explicit user confirmation.** Even after verification and committing, do not run `gh pr create` (or push a branch with the intent of opening a PR) until the user explicitly says so. Commits on a branch are fine; opening a PR is a separate decision the user makes.
+
+1. Stage only the files relevant to the task.
+2. Commit with a Conventional Commits message only after the user verifies the change works.
+3. Wait for the user to explicitly request a PR before pushing / opening one.
+4. Once a PR is open, wait for CI to pass before requesting merge.
+5. After merge, delete the remote branch and switch back to `main` locally.
 
 ### Branch naming
 

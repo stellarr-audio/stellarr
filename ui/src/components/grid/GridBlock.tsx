@@ -9,22 +9,26 @@ import {
 import type { GridBlock as GridBlockData } from '../../store';
 import { requestCopyBlock, requestRemoveBlock, requestOpenPluginEditor } from '../../bridge';
 import { useStore } from '../../store';
+import { useThemeStore, resolveTheme } from '../../store/theme';
 import { colors } from '../common/colors';
-import { PALETTE } from '../options/ColorPicker';
 import { CELL_SIZE, cellLeft, cellTop } from './layout';
 import { TYPE_ABBREVIATIONS } from '../common/constants';
 import styles from './GridBlock.module.css';
+
+// Zinc tones for Input / Output anchor blocks — neutral, identifiable, and
+// distinct from the warm accent palette so user-set block colours can't clash.
+const ANCHOR_LIGHT = '#52525b'; // zinc-600
+const ANCHOR_DARK = '#a1a1aa'; // zinc-400
+
+// Plain grey for plugin blocks without a user-assigned colour — mirrors the
+// resolved --color-muted token per theme (grey-500 / grey-dark-500).
+const PLUGIN_DEFAULT_LIGHT = '#6b7280';
+const PLUGIN_DEFAULT_DARK = '#6b7e96';
 
 interface Props {
   block: GridBlockData;
   onEdgeContextMenu?: (e: React.MouseEvent, blockId: string, side: 'input' | 'output') => void;
 }
-
-const typeColors: Record<string, string> = {
-  input: PALETTE.slateLight,
-  output: PALETTE.slateLight,
-  plugin: PALETTE.blue,
-};
 
 function EdgeZone({
   side,
@@ -100,16 +104,26 @@ export function GridBlockComponent({ block, onEdgeContextMenu }: Props) {
 
   const isSelected = selectedBlockId === block.id;
 
+  const themePref = useThemeStore((s) => s.theme);
+  const resolvedTheme = resolveTheme(themePref);
+  const isAnchor = block.type === 'input' || block.type === 'output';
+  const anchorColor = resolvedTheme === 'dark' ? ANCHOR_DARK : ANCHOR_LIGHT;
+  const pluginDefault = resolvedTheme === 'dark' ? PLUGIN_DEFAULT_DARK : PLUGIN_DEFAULT_LIGHT;
+
   const accentColor = block.pluginMissing
     ? colors.warning
-    : block.blockColor || typeColors[block.type] || colors.secondary;
+    : block.blockColor || (isAnchor ? anchorColor : pluginDefault);
 
-  // Border must stay inline — it depends on multiple dynamic values (isSelected, bypassed, accentColor)
-  const borderStyle = isSelected
-    ? `2px ${block.bypassed ? 'dashed' : 'solid'} #ffffff`
-    : block.bypassed
-      ? `2px dashed ${accentColor}cc`
-      : `1px solid ${accentColor}cc`;
+  // Border always carries the block's accent identity (or dashed when bypassed).
+  // Selection is conveyed by tinting the block's background toward the accent
+  // colour — no loud overrides on the border, no halo outside the footprint.
+  const borderStyle = block.bypassed ? `2px dashed ${accentColor}cc` : `1px solid ${accentColor}cc`;
+
+  // Stack the selection tint over the opaque block bg so wires routed behind
+  // the block don't bleed through when selected or bypassed.
+  const background = isSelected
+    ? `color-mix(in srgb, ${accentColor} 14%, var(--color-block-bg))`
+    : undefined;
 
   return (
     <div
@@ -128,21 +142,17 @@ export function GridBlockComponent({ block, onEdgeContextMenu }: Props) {
         width: CELL_SIZE,
         height: CELL_SIZE,
         border: borderStyle,
+        background,
         opacity: isDragging ? 0.3 : 1,
       }}
     >
-      {/* Top region — status icons / format tag */}
+      {/* Top region — status icons (format tag dropped in favour of bigger icons) */}
       <div className={styles.topRegion}>
         {block.type === 'input' && block.testTone && (
-          <SpeakerLoudIcon width={12} height={12} color={colors.green} />
+          <SpeakerLoudIcon width={18} height={18} color={colors.green} />
         )}
         {block.pluginMissing && (
-          <ExclamationTriangleIcon width={14} height={14} color={colors.warning} />
-        )}
-        {block.type === 'plugin' && block.pluginFormat && !block.pluginMissing && (
-          <span className={styles.formatTag}>
-            {block.pluginFormat === 'AudioUnit' ? 'AU' : block.pluginFormat}
-          </span>
+          <ExclamationTriangleIcon width={18} height={18} color={colors.warning} />
         )}
       </div>
 

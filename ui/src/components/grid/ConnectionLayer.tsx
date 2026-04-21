@@ -12,17 +12,6 @@ import {
 } from './layout';
 import styles from './ConnectionLayer.module.css';
 
-const wireColors = [
-  '#00b4ff',
-  '#ff2d7b',
-  '#00ff9d',
-  '#ffaa00',
-  '#a855f7',
-  '#00ffe0',
-  '#ff6b6b',
-  '#6bff6b',
-];
-
 interface Props {
   onConnectionClick?: (e: React.MouseEvent, sourceId: string, destId: string) => void;
 }
@@ -66,6 +55,60 @@ export function ConnectionLayer({ onConnectionClick }: Props) {
   const selectedBlockId = useStore((s) => s.selectedBlockId);
   const [hoveredConn, setHoveredConn] = useState<number | null>(null);
 
+  // Global "complete circuit" set — connections that sit on at least one
+  // Input → … → Output path. Independent of block selection. A connection is
+  // complete when its source is reachable from some input block AND its
+  // destination can reach some output block (mute-bypass blocks break paths).
+  const completeConnections = useMemo(() => {
+    const complete = new Set<number>();
+    if (connections.length === 0) return complete;
+
+    const bMap = new Map(blocks.map((b) => [b.id, b]));
+    const downstream = new Map<string, string[]>();
+    const upstream = new Map<string, string[]>();
+    for (const c of connections) {
+      downstream.set(c.sourceId, [...(downstream.get(c.sourceId) ?? []), c.destId]);
+      upstream.set(c.destId, [...(upstream.get(c.destId) ?? []), c.sourceId]);
+    }
+
+    const isMuted = (id: string) => {
+      const b = bMap.get(id);
+      const mode = b?.bypassMode ?? 'thru';
+      return Boolean(b?.bypassed && mode !== 'thru');
+    };
+
+    // BFS/DFS from the seeds along the given adjacency, EXCLUDING muted nodes
+    // entirely — a muted block breaks the signal chain, so neither it nor
+    // anything reachable only through it is "on a live path".
+    const floodFrom = (seeds: string[], adj: Map<string, string[]>): Set<string> => {
+      const visited = new Set<string>();
+      const stack: string[] = [];
+      for (const s of seeds) if (!isMuted(s)) stack.push(s);
+      while (stack.length) {
+        const id = stack.pop()!;
+        if (visited.has(id)) continue;
+        visited.add(id);
+        for (const next of adj.get(id) ?? []) {
+          if (!isMuted(next)) stack.push(next);
+        }
+      }
+      return visited;
+    };
+
+    const inputs = blocks.filter((b) => b.type === 'input').map((b) => b.id);
+    const outputs = blocks.filter((b) => b.type === 'output').map((b) => b.id);
+
+    const reachableFromInput = floodFrom(inputs, downstream);
+    const canReachOutput = floodFrom(outputs, upstream);
+
+    connections.forEach((c, i) => {
+      if (reachableFromInput.has(c.sourceId) && canReachOutput.has(c.destId)) {
+        complete.add(i);
+      }
+    });
+    return complete;
+  }, [blocks, connections]);
+
   // Find all connections on live routes (input→output) through the selected block.
   // Memoised so the DFS only re-runs when blocks, connections, or selection change.
   const liveConnections = useMemo(() => {
@@ -84,7 +127,8 @@ export function ConnectionLayer({ onConnectionClick }: Props) {
     // effectively cutting the signal chain — treat as a dead end in route tracing.
     const isMuted = (id: string) => {
       const b = bMap.get(id);
-      return b?.bypassed && b?.bypassMode === 'mute';
+      const mode = b?.bypassMode ?? 'thru';
+      return Boolean(b?.bypassed && mode !== 'thru');
     };
 
     // Memoised DFS: walk a direction collecting blocks that reach a target type.
@@ -205,13 +249,30 @@ export function ConnectionLayer({ onConnectionClick }: Props) {
         const x2 = inputPortX(dst.col);
         const y2 = connectionY(dst.row, inGroup.length, inIdx);
 
-        const wireColor = wireColors[i % wireColors.length];
-        const isLive = liveConnections.has(i);
-        const stroke = hasSelection
-          ? isLive
-            ? colors.warning
-            : wireColor + '26'
-          : wireColor + 'bb';
+        const isSelectedLive = liveConnections.has(i);
+        const isComplete = completeConnections.has(i);
+
+        // Stroke matrix:
+        //   selected-live + complete        -> amber 100%
+        //   selected-live + incomplete      -> muted 50%
+        //   other + complete + selection    -> muted 60%
+        //   other + complete + no selection -> muted 80%
+        //   other + incomplete              -> muted 50%
+        //
+        // Dash: complete = solid, incomplete = dashed.
+        const mutedAt = (pct: number) => `color-mix(in srgb, ${colors.muted} ${pct}%, transparent)`;
+
+        let stroke: string;
+        if (hasSelection && isSelectedLive) {
+          stroke = isComplete ? colors.warning : mutedAt(50);
+        } else if (isComplete) {
+          stroke = hasSelection ? mutedAt(60) : mutedAt(80);
+        } else {
+          stroke = mutedAt(50);
+        }
+
+        const strokeDasharray = isComplete ? undefined : '6 4';
+        const isHovered = hoveredConn === i;
 
         const d = orthogonalPath(x1, y1, x2, y2);
 
@@ -235,8 +296,8 @@ export function ConnectionLayer({ onConnectionClick }: Props) {
             <path
               d={d}
               stroke={stroke}
-              strokeDasharray={hoveredConn === i ? '6 4' : undefined}
-              strokeWidth={2}
+              strokeDasharray={strokeDasharray}
+              strokeWidth={isHovered ? 3 : 2}
               fill="none"
               style={{ pointerEvents: 'none' }}
             />

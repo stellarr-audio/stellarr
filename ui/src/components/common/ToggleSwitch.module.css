@@ -28,3 +28,23 @@
 .toggle.enabled .thumb {
   left: 16px;
 }
+
+/* Sharp variant — matches Options panel's sharp-edge theme. Sized taller
+   to align with IconButton size="sm" (24px) neighbours in the titlebar. */
+.toggle.sharp {
+  border-radius: 0;
+  width: 40px;
+  height: 20px;
+}
+
+.toggle.sharp .thumb {
+  border-radius: 0;
+  top: 3px;
+  left: 3px;
+  width: 14px;
+  height: 14px;
+}
+
+.toggle.sharp.enabled .thumb {
+  left: 23px;
+}

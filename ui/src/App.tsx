@@ -103,7 +103,9 @@ function App() {
         <div role="tabpanel" hidden={activeTab !== 'grid'} className={panelClass('grid')}>
           <div
             onClick={(e) => {
-              if (e.target === e.currentTarget) selectBlock(null);
+              const t = e.target as HTMLElement;
+              if (t.closest('[data-grid-block]') || t.closest('[data-options-panel]')) return;
+              selectBlock(null);
             }}
             className={styles.gridArea}
           >

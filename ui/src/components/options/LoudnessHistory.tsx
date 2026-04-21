@@ -39,7 +39,11 @@ export function LoudnessHistory({ blockId }: Props) {
   const targetY = targetLufs != null ? lufsToY(targetLufs) : null;
 
   return (
-    <svg className={styles.history} width={TOTAL_WIDTH} height={TOTAL_HEIGHT}>
+    <svg
+      className={styles.history}
+      viewBox={`0 0 ${TOTAL_WIDTH} ${TOTAL_HEIGHT}`}
+      preserveAspectRatio="none"
+    >
       {/* Y-axis unit label */}
       <text
         x={4}

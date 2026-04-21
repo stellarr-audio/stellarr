@@ -69,8 +69,12 @@ describe('palette tokens — light theme', () => {
     expect(getVar('--danger')).toBe('#e11d48');
   });
 
-  it('has --bg on grey-50', () => {
-    expect(getVar('--bg')).toBe('#fafbfc');
+  it('has --bg on grey-100 (playground surface)', () => {
+    expect(getVar('--bg')).toBe('#f1f3f5');
+  });
+
+  it('has --chrome on grey-0 (header + footer surface)', () => {
+    expect(getVar('--chrome')).toBe('#ffffff');
   });
 
   it('has --text on grey-900', () => {
@@ -97,5 +101,9 @@ describe('palette tokens — dark theme', () => {
 
   it('has --text as #e8f1fc (off-white)', () => {
     expect(getVar('--text')).toBe('#e8f1fc');
+  });
+
+  it('has --chrome on grey-dark-100 (header + footer surface over gradient bg)', () => {
+    expect(getVar('--chrome')).toBe('#0f1a2e');
   });
 });

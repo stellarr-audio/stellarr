@@ -2,9 +2,8 @@ import { useState } from 'react';
 import type { GridBlock } from '../../store';
 import { useStore } from '../../store';
 import { Slider } from '../common/Slider';
-import { Button } from '../common/Button';
 import { MidiAssignDialog } from '../common/MidiAssignDialog';
-import { formatMidiLabel } from '../common/constants';
+import { MidiBadge } from '../common/MidiBadge';
 import { requestSetBlockLevel } from '../../bridge';
 import { LoudnessHistory } from './LoudnessHistory';
 import styles from './SignalSection.module.css';
@@ -33,15 +32,11 @@ export function SignalSection({ block }: Props) {
       <div className={styles.header}>
         <span className={styles.labelRow}>
           <span className={styles.label}>Level</span>
-          <Button
-            size="sm"
-            variant="secondary"
-            active={!!existing}
+          <MidiBadge
+            mapping={existing}
             onClick={() => setDialogOpen(true)}
-            title={existing ? `MIDI: CC ${existing.cc}` : 'Assign MIDI CC to Level'}
-          >
-            {formatMidiLabel(existing)}
-          </Button>
+            title={existing ? `Level MIDI: CC ${existing.cc}` : 'Assign MIDI CC to Level'}
+          />
         </span>
         <span className={styles.value}>{formatDb(level)}</span>
       </div>

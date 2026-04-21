@@ -17,6 +17,10 @@
   border-color: var(--color-secondary);
 }
 
+.group.sm {
+  height: var(--input-height-sm);
+}
+
 .label {
   display: flex;
   align-items: center;

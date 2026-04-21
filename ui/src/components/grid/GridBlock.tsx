@@ -135,6 +135,7 @@ export function GridBlockComponent({ block, onEdgeContextMenu }: Props) {
         if (block.type === 'plugin' && block.pluginId && !block.pluginMissing)
           requestOpenPluginEditor(block.id);
       }}
+      data-grid-block
       className={styles.block}
       style={{
         left: cellLeft(block.col),

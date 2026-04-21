@@ -43,7 +43,8 @@ When asked to review code (or variations like "pls review", "review and commit",
 - Use New Zealand English spelling consistent with the rest of the project
 - Do not create new manual pages without being asked — prefer extending existing ones
 - Reference other pages with relative Markdown links (e.g., `[MIDI](05-midi.md)`)
-- **Do not commit design specs, brainstorming specs, or implementation plans to the repo.** Brainstorming and plan artefacts from the superpowers skills are for in-session use only — they belong to the conversation, not the codebase. Durable project truth lives in `docs/manual/`, `CLAUDE.md`, PR descriptions, and GitHub release notes. If a decision needs to outlive the session, promote it into one of those surfaces.
+- **Do not commit design specs, brainstorming specs, or implementation plans to the repo.** Durable project truth lives in `docs/manual/`, `CLAUDE.md`, PR descriptions, and GitHub release notes. If a decision needs to outlive the session, promote it into one of those surfaces.
+- **Working specs live under `.superpowers/brainstorm/<session-id>/`** (gitignored). The superpowers visual-brainstorming server writes its HTML mockups there; write per-feature spec markdown (e.g. `spec.md`) next to them. Survives restarts, invisible to git, discoverable by future sessions — list `.superpowers/brainstorm/` to pick up prior work. Default spec path: `.superpowers/brainstorm/<session-id>/spec.md` rather than `docs/superpowers/specs/` (which is off-limits).
 
 ## Git Workflow
 

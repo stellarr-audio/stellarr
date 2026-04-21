@@ -11,7 +11,6 @@ import { requestCopyBlock, requestRemoveBlock, requestOpenPluginEditor } from '.
 import { useStore } from '../../store';
 import { useThemeStore, resolveTheme } from '../../store/theme';
 import { colors } from '../common/colors';
-import { PALETTE } from '../options/ColorPicker';
 import { CELL_SIZE, cellLeft, cellTop } from './layout';
 import { TYPE_ABBREVIATIONS } from '../common/constants';
 import styles from './GridBlock.module.css';
@@ -21,14 +20,15 @@ import styles from './GridBlock.module.css';
 const ANCHOR_LIGHT = '#52525b'; // zinc-600
 const ANCHOR_DARK = '#a1a1aa'; // zinc-400
 
+// Plain grey for plugin blocks without a user-assigned colour — mirrors the
+// resolved --color-muted token per theme (grey-500 / grey-dark-500).
+const PLUGIN_DEFAULT_LIGHT = '#6b7280';
+const PLUGIN_DEFAULT_DARK = '#6b7e96';
+
 interface Props {
   block: GridBlockData;
   onEdgeContextMenu?: (e: React.MouseEvent, blockId: string, side: 'input' | 'output') => void;
 }
-
-const typeColors: Record<string, string> = {
-  plugin: PALETTE.blue,
-};
 
 function EdgeZone({
   side,
@@ -108,17 +108,22 @@ export function GridBlockComponent({ block, onEdgeContextMenu }: Props) {
   const resolvedTheme = resolveTheme(themePref);
   const isAnchor = block.type === 'input' || block.type === 'output';
   const anchorColor = resolvedTheme === 'dark' ? ANCHOR_DARK : ANCHOR_LIGHT;
+  const pluginDefault = resolvedTheme === 'dark' ? PLUGIN_DEFAULT_DARK : PLUGIN_DEFAULT_LIGHT;
 
   const accentColor = block.pluginMissing
     ? colors.warning
-    : block.blockColor || (isAnchor ? anchorColor : typeColors[block.type]) || colors.secondary;
+    : block.blockColor || (isAnchor ? anchorColor : pluginDefault);
 
   // Border always carries the block's accent identity (or dashed when bypassed).
   // Selection is conveyed by tinting the block's background toward the accent
   // colour — no loud overrides on the border, no halo outside the footprint.
   const borderStyle = block.bypassed ? `2px dashed ${accentColor}cc` : `1px solid ${accentColor}cc`;
 
-  const background = isSelected ? `color-mix(in srgb, ${accentColor} 14%, transparent)` : undefined;
+  // Stack the selection tint over the opaque block bg so wires routed behind
+  // the block don't bleed through when selected or bypassed.
+  const background = isSelected
+    ? `color-mix(in srgb, ${accentColor} 14%, var(--color-block-bg))`
+    : undefined;
 
   return (
     <div

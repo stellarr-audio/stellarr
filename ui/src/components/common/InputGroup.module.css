@@ -17,6 +17,18 @@
   border-color: var(--color-secondary);
 }
 
+.group.sm {
+  height: var(--input-height-sm);
+}
+
+/* Divider between adjacent children so buttons read as separate elements
+   inside the group. Children strip their own outer border via the
+   `inGroup` prop; the left border on each non-first child plays the role
+   of a separator. */
+.group > *:not(:first-child) {
+  border-left: 1px solid var(--color-border);
+}
+
 .label {
   display: flex;
   align-items: center;

@@ -87,7 +87,7 @@
   border: 1px solid var(--color-border);
   border-radius: var(--radius);
   width: var(--radix-select-trigger-width);
-  z-index: 20;
+  z-index: var(--z-popover);
   overflow: hidden;
 }
 

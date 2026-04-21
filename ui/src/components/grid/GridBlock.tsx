@@ -117,7 +117,7 @@ export function GridBlockComponent({ block, onEdgeContextMenu }: Props) {
   // Border always carries the block's accent identity (or dashed when bypassed).
   // Selection is conveyed by tinting the block's background toward the accent
   // colour — no loud overrides on the border, no halo outside the footprint.
-  const borderStyle = block.bypassed ? `2px dashed ${accentColor}cc` : `1px solid ${accentColor}cc`;
+  const borderStyle = block.bypassed ? `2px dashed ${accentColor}cc` : `2px solid ${accentColor}cc`;
 
   // Stack the selection tint over the opaque block bg so wires routed behind
   // the block don't bleed through when selected or bypassed.
@@ -135,6 +135,7 @@ export function GridBlockComponent({ block, onEdgeContextMenu }: Props) {
         if (block.type === 'plugin' && block.pluginId && !block.pluginMissing)
           requestOpenPluginEditor(block.id);
       }}
+      data-grid-block
       className={styles.block}
       style={{
         left: cellLeft(block.col),
@@ -148,13 +149,18 @@ export function GridBlockComponent({ block, onEdgeContextMenu }: Props) {
     >
       {/* Top region — status icons (format tag dropped in favour of bigger icons) */}
       <div className={styles.topRegion}>
-        {block.type === 'input' && block.testTone && (
-          <SpeakerLoudIcon width={18} height={18} color={colors.green} />
-        )}
         {block.pluginMissing && (
           <ExclamationTriangleIcon width={18} height={18} color={colors.warning} />
         )}
       </div>
+
+      {/* Test-tone indicator — pinned top-centre to line up with the corner
+          copy / remove buttons (all three sit at the same y). */}
+      {block.type === 'input' && block.testTone && (
+        <span className={`${styles.iconSlot} ${styles.testToneBadge}`}>
+          <SpeakerLoudIcon width={12} height={12} color={colors.green} />
+        </span>
+      )}
 
       {/* Middle region — block type */}
       <div className={styles.blockType} style={{ color: accentColor }}>
@@ -196,7 +202,7 @@ export function GridBlockComponent({ block, onEdgeContextMenu }: Props) {
 
       {/* Copy button — visible on block hover via CSS */}
       <div
-        className={styles.copyButton}
+        className={`${styles.iconSlot} ${styles.copyButton}`}
         onPointerDown={(e) => e.stopPropagation()}
         onClick={(e) => {
           e.stopPropagation();
@@ -209,7 +215,7 @@ export function GridBlockComponent({ block, onEdgeContextMenu }: Props) {
 
       {/* Remove button — visible on block hover via CSS */}
       <div
-        className={styles.removeButton}
+        className={`${styles.iconSlot} ${styles.removeButton}`}
         onPointerDown={(e) => e.stopPropagation()}
         onClick={(e) => {
           e.stopPropagation();

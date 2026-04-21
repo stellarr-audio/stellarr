@@ -180,6 +180,9 @@ interface StellarrState {
   selectedBlockId: string | null;
   selectBlock: (blockId: string | null) => void;
 
+  floatingPanelPos: { x: number; y: number } | null;
+  setFloatingPanelPos: (pos: { x: number; y: number } | null) => void;
+
   draggingConnection: {
     blockId: string;
     portType: 'input' | 'output';
@@ -238,6 +241,7 @@ export const useStore = create<StellarrState>((set) => ({
   loudnessHistory: [],
   clipboardBlockType: null,
   selectedBlockId: null,
+  floatingPanelPos: null,
   draggingConnection: null,
 
   setLoading: (loading) => set({ loading }),
@@ -410,6 +414,11 @@ export const useStore = create<StellarrState>((set) => ({
   syncGraph: (blocks, connections) => set({ blocks, connections }),
 
   setClipboardBlockType: (type) => set({ clipboardBlockType: type }),
-  selectBlock: (blockId) => set({ selectedBlockId: blockId }),
+  selectBlock: (blockId) =>
+    set((s) => ({
+      selectedBlockId: blockId,
+      floatingPanelPos: blockId === null ? null : s.floatingPanelPos,
+    })),
+  setFloatingPanelPos: (pos) => set({ floatingPanelPos: pos }),
   setDraggingConnection: (state) => set({ draggingConnection: state }),
 }));

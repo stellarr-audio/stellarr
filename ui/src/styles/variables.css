@@ -10,6 +10,7 @@
 :root {
   --color-bg:         var(--bg);
   --color-surface:    var(--surface);
+  --color-chrome:     var(--chrome);
   --color-cell:       var(--surface);
   --color-cell-hover: var(--surface);
   --color-border:     var(--border);

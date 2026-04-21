@@ -4,15 +4,16 @@ interface Props {
   enabled: boolean;
   onToggle: () => void;
   title?: string;
+  /** Sharp-edged variant — matches the floating Options panel's sharp theme. */
+  sharp?: boolean;
 }
 
-export function ToggleSwitch({ enabled, onToggle, title }: Props) {
+export function ToggleSwitch({ enabled, onToggle, title, sharp }: Props) {
+  const cls = [styles.toggle, enabled && styles.enabled, sharp && styles.sharp]
+    .filter(Boolean)
+    .join(' ');
   return (
-    <button
-      onClick={onToggle}
-      title={title}
-      className={`${styles.toggle} ${enabled ? styles.enabled : ''}`}
-    >
+    <button onClick={onToggle} title={title} className={cls}>
       <div className={styles.thumb} />
     </button>
   );

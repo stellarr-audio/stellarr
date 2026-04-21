@@ -20,16 +20,13 @@
   background: color-mix(in srgb, var(--color-secondary) 8%, transparent);
 }
 
-/* When inside an InputGroup, remove own border/radius — group handles it */
+/* When inside an InputGroup, remove own border/radius — the group frames
+   the outer edge and provides a left-border divider between children. */
 .inGroup {
   border: none;
   border-radius: 0;
   min-width: auto;
   height: 100%;
-}
-
-.inGroup:hover {
-  border-color: transparent;
 }
 
 /* Small variant */

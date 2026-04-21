@@ -10,11 +10,11 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  /* Cell bg — slightly darker than the page in light mode, slightly lighter
-     in dark mode — so empty cells read as discrete slots without shouting.
-     Border matches bg so idle cells disappear into the grid. */
+  /* Empty cell bg — slightly darker than page in light, slightly lighter
+     in dark. Border matches bg so idle cells read as recessed slots,
+     hover/drop states swap the border to amber for affordance. */
   background: var(--grey-200);
-  border: 1px solid var(--grey-200);
+  border: 2px solid var(--grey-200);
   cursor: pointer;
   transition: background 0.1s ease, border-color 0.1s ease;
 }
@@ -29,14 +29,18 @@
   pointer-events: none;
 }
 
-.cellHovered {
-  background: var(--color-cell-hover);
-  border-color: var(--color-muted);
+/* Hover / menu-open — border swaps to amber so the affordance reads
+   without the bg flipping on idle cells. */
+.cellHovered,
+.cellActive {
+  background: color-mix(in srgb, var(--color-secondary) 10%, var(--grey-200));
+  border-color: var(--color-secondary);
 }
 
-.cellActive {
-  background: var(--color-cell-hover);
-  border-color: var(--color-muted);
+:global([data-theme='dark']) .cellHovered,
+:global([data-theme='dark']) .cellActive {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: var(--color-secondary);
 }
 
 .cellDropTarget {
@@ -69,7 +73,7 @@
   background: var(--color-dropdown-bg);
   border: 1px solid var(--color-muted);
   min-width: 120px;
-  z-index: 15;
+  z-index: var(--z-grid-above);
 }
 
 .connMenuItem {

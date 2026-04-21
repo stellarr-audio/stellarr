@@ -8,10 +8,17 @@
   overflow: visible;
   user-select: none;
   cursor: grab;
-  z-index: 2;
+  z-index: var(--z-grid);
   padding: 4px 2px;
   background: var(--color-block-bg);
   outline: none;
+  transition: background 0.15s ease;
+}
+
+/* Hover tint — no border change. Inline `background` on selected blocks
+   wins via inline-style precedence, so selection tint stays on hover. */
+.block:hover {
+  background: color-mix(in srgb, var(--color-secondary) 6%, var(--color-block-bg));
 }
 
 .topRegion {
@@ -52,13 +59,29 @@
   color: var(--color-warning);
 }
 
-.copyButton {
+/* Fixed-size flex-centered slots so every icon lines up on the same y,
+   regardless of the glyph's own viewBox padding. */
+.iconSlot {
   position: absolute;
   top: 3px;
+  width: 14px;
+  height: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: calc(var(--z-grid) + 3);
+}
+
+.testToneBadge {
+  left: 50%;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.copyButton {
   left: 3px;
   color: var(--color-muted);
   cursor: pointer;
-  z-index: 5;
   display: none;
 }
 
@@ -67,18 +90,15 @@
 }
 
 .removeButton {
-  position: absolute;
-  top: 3px;
   right: 3px;
   color: var(--color-danger);
   cursor: pointer;
-  z-index: 5;
   display: none;
 }
 
 .block:hover .copyButton,
 .block:hover .removeButton {
-  display: block;
+  display: flex;
 }
 
 /* Edge zones — invisible hit areas along left/right block edges */
@@ -87,7 +107,7 @@
   top: 0;
   width: 10px;
   height: 100%;
-  z-index: 4;
+  z-index: calc(var(--z-grid) + 2);
   cursor: crosshair;
 }
 
@@ -104,7 +124,7 @@
   top: -2px;
   width: 4px;
   height: calc(100% + 4px);
-  z-index: 3;
+  z-index: calc(var(--z-grid) + 1);
   pointer-events: none;
 }
 

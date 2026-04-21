@@ -1,92 +1,182 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { useDrag } from '@use-gesture/react';
 import { useStore } from '../../store';
 import { ToggleSwitch } from '../common/ToggleSwitch';
 import { Tooltip } from '../common/Tooltip';
 import { Input } from '../common/Input';
-import { Button } from '../common/Button';
+import { InputGroup } from '../common/InputGroup';
 import { IconButton } from '../common/IconButton';
 import { MidiAssignDialog } from '../common/MidiAssignDialog';
-import { TYPE_ABBREVIATIONS, formatMidiLabel } from '../common/constants';
-import { Pencil1Icon, PlayIcon, StopIcon, FrameIcon } from '@radix-ui/react-icons';
-import { ColorPicker } from './ColorPicker';
+import { MidiBadge } from '../common/MidiBadge';
+import { TYPE_ABBREVIATIONS } from '../common/constants';
+import {
+  Pencil1Icon,
+  PlayIcon,
+  StopIcon,
+  Cross1Icon,
+  ChevronDownIcon,
+  CheckIcon,
+} from '@radix-ui/react-icons';
 import { PluginSection } from './PluginSection';
 import { ParametersSection } from './ParametersSection';
 import { StatesSection } from './StatesSection';
 import { SignalSection } from './SignalSection';
 import { TargetLoudnessControl } from './TargetLoudnessControl';
+import { OptionsMenu } from './OptionsMenu';
 import { Select } from 'radix-ui';
-import { ChevronDownIcon } from '@radix-ui/react-icons';
 import {
   requestToggleTestTone,
   requestToggleBlockBypass,
   requestRenameBlock,
-  requestSetBlockColor,
   requestGetTestToneSamples,
   requestSetTestToneSample,
 } from '../../bridge';
 import styles from './OptionsPanel.module.css';
 
+const PANEL_EDGE_GUTTER = 16;
+
 export function OptionsPanel() {
   const selectedBlockId = useStore((s) => s.selectedBlockId);
   const blocks = useStore((s) => s.blocks);
   const availablePlugins = useStore((s) => s.availablePlugins);
+  const selectBlock = useStore((s) => s.selectBlock);
+  const storedPos = useStore((s) => s.floatingPanelPos);
+  const setFloatingPanelPos = useStore((s) => s.setFloatingPanelPos);
 
   const block = selectedBlockId ? blocks.find((b) => b.id === selectedBlockId) : null;
 
+  const panelRef = useRef<HTMLDivElement | null>(null);
+
+  // Esc-to-close while a block is selected
+  useEffect(() => {
+    if (!block) return undefined;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        selectBlock(null);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [block, selectBlock]);
+
+  // Clamp panel position inside the parent (Grid tab panel) on resize.
+  useEffect(() => {
+    if (!storedPos) return undefined;
+    const onResize = () => {
+      const parent = panelRef.current?.parentElement;
+      if (!parent) return;
+      const panelEl = panelRef.current;
+      if (!panelEl) return;
+      const maxX = parent.clientWidth - panelEl.offsetWidth;
+      const maxY = parent.clientHeight - panelEl.offsetHeight;
+      const nx = Math.max(0, Math.min(storedPos.x, Math.max(0, maxX)));
+      const ny = Math.max(0, Math.min(storedPos.y, Math.max(0, maxY)));
+      if (nx !== storedPos.x || ny !== storedPos.y) {
+        setFloatingPanelPos({ x: nx, y: ny });
+      }
+    };
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, [storedPos, setFloatingPanelPos]);
+
+  const getBounds = useCallback(() => {
+    const parent = panelRef.current?.parentElement;
+    const panelEl = panelRef.current;
+    if (!parent || !panelEl) return { left: 0, top: 0, right: 0, bottom: 0 };
+    return {
+      left: 0,
+      top: 0,
+      right: Math.max(0, parent.clientWidth - panelEl.offsetWidth),
+      bottom: Math.max(0, parent.clientHeight - panelEl.offsetHeight),
+    };
+  }, []);
+
+  const bindDrag = useDrag(
+    ({ offset: [x, y] }) => {
+      setFloatingPanelPos({ x, y });
+    },
+    {
+      from: () => {
+        const pos = useStore.getState().floatingPanelPos;
+        if (pos) return [pos.x, pos.y];
+        // Default top-right offset
+        const parent = panelRef.current?.parentElement;
+        const panelEl = panelRef.current;
+        if (!parent || !panelEl) return [0, 0];
+        return [
+          Math.max(0, parent.clientWidth - panelEl.offsetWidth - PANEL_EDGE_GUTTER),
+          PANEL_EDGE_GUTTER,
+        ];
+      },
+      bounds: getBounds,
+      filterTaps: true,
+      // Don't grab pointer capture — otherwise clicks on child buttons
+      // (close, ⋯, bypass toggle) route to the titlebar instead of the target.
+      pointer: { capture: false },
+    },
+  );
+
+  if (!block) return null;
+
+  // Resolve position: stored, else default top-right once the panel is mounted.
+  // We render the panel with a placeholder offset first; a layout effect then
+  // snaps it into the correct default corner if no stored position exists.
+  const inlineStyle: React.CSSProperties = storedPos
+    ? { left: `${storedPos.x}px`, top: `${storedPos.y}px` }
+    : { right: `${PANEL_EDGE_GUTTER}px`, top: `${PANEL_EDGE_GUTTER}px` };
+
   return (
-    <div className={styles.panel}>
-      <div className={styles.title}>Options</div>
+    <div ref={panelRef} data-options-panel className={styles.panel} style={inlineStyle}>
+      <BlockHeader block={block} onClose={() => selectBlock(null)} bindDrag={bindDrag} />
 
-      {!block ? (
-        <div className={styles.emptyMessage}>Select a block to view options</div>
-      ) : (
-        <div className={styles.content}>
-          <BlockHeader block={block} />
+      <div className={styles.content}>
+        {/* Signal — Level slider + loudness history. Same for every block. */}
+        <SignalSection block={block} />
 
-          <div className={styles.divider} />
+        {/* Input block — test tone picker */}
+        {block.type === 'input' && (
+          <>
+            <div className={styles.divider} />
+            <TestToneSamplePicker blockId={block.id} playing={block.testTone ?? false} />
+          </>
+        )}
 
-          {/* Signal — Level slider + loudness history. Same for every block. */}
-          <SignalSection block={block} />
+        {/* Plugin block — plugin select */}
+        {block.type === 'plugin' && (
+          <>
+            <div className={styles.divider} />
+            <PluginSection block={block} availablePlugins={availablePlugins} />
+          </>
+        )}
 
-          {/* Input block — test tone picker */}
-          {block.type === 'input' && (
-            <>
-              <div className={styles.divider} />
-              <TestToneSamplePicker blockId={block.id} playing={block.testTone ?? false} />
-            </>
-          )}
+        {/* Plugin block — parameters (Mix, Balance, Bypass mode) */}
+        {block.type === 'plugin' && <ParametersSection block={block} />}
 
-          {/* Plugin block — plugin select */}
-          {block.type === 'plugin' && (
-            <>
-              <div className={styles.divider} />
-              <PluginSection block={block} availablePlugins={availablePlugins} />
-            </>
-          )}
+        {/* Output block — target loudness */}
+        {block.type === 'output' && (
+          <>
+            <div className={styles.divider} />
+            <TargetLoudnessControl blockId={block.id} />
+          </>
+        )}
 
-          {/* Plugin block — parameters (Mix, Balance, Bypass mode) */}
-          {block.type === 'plugin' && <ParametersSection block={block} />}
-
-          {/* Output block — target loudness */}
-          {block.type === 'output' && (
-            <>
-              <div className={styles.divider} />
-              <TargetLoudnessControl blockId={block.id} />
-            </>
-          )}
-
-          {/* Plugin block — states */}
-          {block.type === 'plugin' && <StatesSection block={block} />}
-        </div>
-      )}
+        {/* Plugin block — states */}
+        {block.type === 'plugin' && <StatesSection block={block} />}
+      </div>
     </div>
   );
 }
 
-function BlockHeader({ block }: { block: import('../../store').GridBlock }) {
+interface BlockHeaderProps {
+  block: import('../../store').GridBlock;
+  onClose: () => void;
+  bindDrag: () => Record<string, unknown>;
+}
+
+function BlockHeader({ block, onClose, bindDrag }: BlockHeaderProps) {
   const [editing, setEditing] = useState(false);
   const [editValue, setEditValue] = useState('');
-  const [idCopied, setIdCopied] = useState(false);
 
   const abbreviation = TYPE_ABBREVIATIONS[block.type] || block.type.slice(0, 3).toUpperCase();
   const displayName = block.displayName || abbreviation;
@@ -104,62 +194,77 @@ function BlockHeader({ block }: { block: import('../../store').GridBlock }) {
     }
   };
 
-  const copyId = () => {
-    navigator.clipboard.writeText(block.id);
-    setIdCopied(true);
-    setTimeout(() => setIdCopied(false), 1200);
-  };
+  const hasBypass = block.type !== 'input' && block.type !== 'output';
 
   return (
-    <div className={styles.blockHeader}>
-      {editing ? (
-        <Input
-          autoFocus
-          maxLength={3}
-          value={editValue}
-          onChange={(e) => setEditValue(e.target.value)}
-          onBlur={submitEdit}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') submitEdit();
-            if (e.key === 'Escape') setEditing(false);
-          }}
-          className={styles.editInput}
-        />
-      ) : (
-        <div className={styles.nameRow}>
-          <ColorPicker
-            color={block.blockColor}
-            onChange={(color) => requestSetBlockColor(block.id, color)}
-          />
-          <span className={`${styles.blockName} ${block.bypassed ? styles.blockNameBypassed : ''}`}>
-            {displayName}
-          </span>
-          <Tooltip content="Rename block">
-            <span className={styles.iconButton} onClick={startEdit}>
-              <Pencil1Icon width={14} height={14} />
-            </span>
-          </Tooltip>
-          <Tooltip
-            open={idCopied ? true : undefined}
-            content={idCopied ? 'Block ID copied' : 'Copy block ID'}
-          >
+    <div className={styles.titlebar}>
+      <div {...bindDrag()} className={styles.dragHandle}>
+        {editing ? (
+          <InputGroup size="sm" className={styles.editGroup}>
+            <Input
+              autoFocus
+              inGroup
+              maxLength={3}
+              value={editValue}
+              onChange={(e) => setEditValue(e.target.value)}
+              onBlur={submitEdit}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') submitEdit();
+                if (e.key === 'Escape') {
+                  e.stopPropagation();
+                  setEditing(false);
+                }
+              }}
+              className={styles.editInput}
+            />
+            <IconButton
+              icon={<CheckIcon width={12} height={12} />}
+              inGroup
+              onMouseDown={(e) => {
+                // Prevent the input's blur from firing before onClick.
+                e.preventDefault();
+              }}
+              onClick={submitEdit}
+              title="Confirm rename"
+            />
+          </InputGroup>
+        ) : (
+          <>
             <span
-              className={`${styles.iconButton} ${idCopied ? styles.iconButtonCopied : ''}`}
-              onClick={copyId}
+              className={`${styles.blockName} ${block.bypassed ? styles.blockNameBypassed : ''}`}
             >
-              <FrameIcon width={14} height={14} />
+              {displayName}
             </span>
-          </Tooltip>
-        </div>
-      )}
+            <Tooltip content="Rename block">
+              <IconButton
+                icon={<Pencil1Icon width={12} height={12} />}
+                size="sm"
+                onClick={startEdit}
+                title="Rename block"
+              />
+            </Tooltip>
+          </>
+        )}
+        <span className={styles.titleSpacer} />
+      </div>
 
-      {/* Bypass toggle + MIDI — non-I/O blocks only */}
-      {block.type !== 'input' && block.type !== 'output' && <BypassControl block={block} />}
+      <div className={styles.titlebarControls}>
+        {hasBypass && <BypassControls block={block} />}
+        <OptionsMenu block={block} />
+        <Tooltip content="Close panel">
+          <IconButton
+            icon={<Cross1Icon width={12} height={12} />}
+            size="sm"
+            onClick={onClose}
+            title="Close panel"
+          />
+        </Tooltip>
+      </div>
     </div>
   );
 }
 
-function BypassControl({ block }: { block: import('../../store').GridBlock }) {
+function BypassControls({ block }: { block: import('../../store').GridBlock }) {
   const mappings = useStore((s) => s.midiMappings);
   const [dialogOpen, setDialogOpen] = useState(false);
 
@@ -168,21 +273,19 @@ function BypassControl({ block }: { block: import('../../store').GridBlock }) {
   );
   const existing = existingIndex >= 0 ? mappings[existingIndex] : null;
 
-  const midiLabel = formatMidiLabel(existing);
+  const tooltipLabel = existing ? `Bypass MIDI: CC ${existing.cc}` : 'Assign MIDI CC to bypass';
 
   return (
-    <div className={styles.bypassControl}>
-      <Button
-        size="sm"
-        variant="secondary"
-        active={!!existing}
+    <>
+      <MidiBadge
+        mapping={existing}
         onClick={() => setDialogOpen(true)}
-        title={existing ? `Bypass MIDI: CC ${existing.cc}` : 'Assign MIDI CC to bypass'}
-      >
-        {midiLabel}
-      </Button>
+        title={tooltipLabel}
+        size="sm"
+      />
       <ToggleSwitch
         enabled={!block.bypassed}
+        sharp
         onToggle={() => {
           useStore.getState().setBlockBypassed(block.id, !block.bypassed);
           requestToggleBlockBypass(block.id);
@@ -197,7 +300,7 @@ function BypassControl({ block }: { block: import('../../store').GridBlock }) {
         blockId={block.id}
         existingIndex={existingIndex >= 0 ? existingIndex : undefined}
       />
-    </div>
+    </>
   );
 }
 
@@ -207,7 +310,6 @@ function TestToneSamplePicker({ blockId, playing }: { blockId: string; playing: 
   const block = useStore((s) => s.blocks.find((b) => b.id === blockId));
   const currentSample = block?.testToneSample || 'Synth (Default)';
 
-  // Fetch samples list on mount
   useEffect(() => {
     requestGetTestToneSamples();
   }, []);
@@ -217,7 +319,7 @@ function TestToneSamplePicker({ blockId, playing }: { blockId: string; playing: 
   return (
     <div className={styles.samplePicker}>
       <span className={styles.sampleLabel}>Test Tone</span>
-      <div className={styles.sampleRow}>
+      <InputGroup>
         <Select.Root
           value={currentSample}
           onValueChange={(v) => requestSetTestToneSample(blockId, v)}
@@ -242,11 +344,12 @@ function TestToneSamplePicker({ blockId, playing }: { blockId: string; playing: 
         </Select.Root>
         <IconButton
           icon={playing ? <StopIcon width={14} height={14} /> : <PlayIcon width={14} height={14} />}
+          inGroup
           onClick={() => requestToggleTestTone(blockId)}
           title={playing ? 'Stop test tone' : 'Play test tone'}
           className={playing ? styles.toneButtonPlaying : undefined}
         />
-      </div>
+      </InputGroup>
     </div>
   );
 }

@@ -75,7 +75,7 @@
   border-radius: var(--radius);
   padding: 0.25rem 0;
   min-width: var(--radix-dropdown-menu-trigger-width);
-  z-index: 20;
+  z-index: var(--z-popover);
   overflow: hidden;
 }
 
@@ -93,7 +93,7 @@
 .subContent {
   composes: dropdownContent;
   min-width: 100px;
-  z-index: 21;
+  z-index: calc(var(--z-popover) + 1);
 }
 
 /* Menu item */

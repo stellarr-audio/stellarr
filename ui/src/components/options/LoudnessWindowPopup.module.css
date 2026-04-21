@@ -2,7 +2,7 @@
   position: fixed;
   background: var(--color-dropdown-bg);
   border: 1px solid var(--color-muted);
-  z-index: 100;
+  z-index: var(--z-loudness-popup);
   display: flex;
   flex-direction: column;
   min-width: 180px;

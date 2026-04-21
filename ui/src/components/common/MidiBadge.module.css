@@ -1,0 +1,41 @@
+.badge {
+  height: var(--input-height);
+  padding: 0 0.6rem;
+  background: transparent;
+  border: 1px solid var(--color-border);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--color-muted);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+
+.badge.sm {
+  height: var(--input-height-sm);
+  padding: 0 0.5rem;
+  font-size: 10px;
+}
+
+.badge:hover {
+  border-color: var(--color-secondary);
+  color: var(--color-text);
+  background: color-mix(in srgb, var(--color-secondary) 8%, transparent);
+}
+
+.assigned {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.assigned:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary) 10%, transparent);
+}
+
+.unassigned {
+  border-style: dashed;
+}

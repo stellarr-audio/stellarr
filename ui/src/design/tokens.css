@@ -23,13 +23,25 @@
   --letter-spacing-label: 0.08em;
   --letter-spacing-tight: -0.01em;
 
-  /* Shared radii */
-  --radius: 6px;
+  /* Shared radii — sharp-edge direction. Every bordered interactive primitive
+     consumes this; adjust centrally here rather than per component. */
+  --radius: 0;
 
   /* Input dimensions — shared across all interactive elements */
   --input-height: 32px;
   --input-height-sm: 24px;
   --input-padding-x: 0.6rem;
+
+  /* Z-index layers — globally defined scale so every surface references a
+   * named layer rather than an ad-hoc number. Higher = closer to viewer. */
+  --z-grid:           2;    /* grid blocks / connections / overlay */
+  --z-grid-above:     10;   /* hover chrome, block menus sitting over the grid */
+  --z-floating-panel: 18;   /* Options panel shell */
+  --z-popover:        20;   /* widget popovers inside the Options panel (colour picker, param slider popup, select dropdowns, target-loudness popup base) */
+  --z-dropdown:       40;   /* Options panel overflow menu and its submenu */
+  --z-dialog:         50;   /* modal dialogs (MIDI assign, confirm, rename) */
+  --z-loudness-popup: 100;  /* LoudnessWindow popup */
+  --z-tooltip:        200;  /* Radix tooltips — always on top */
 }
 
 /* === Theme-agnostic palette ramps =========================================
@@ -93,8 +105,19 @@
   --success:      var(--emerald-500);      /* #10b981 */
   --danger:       var(--rose-600);         /* #e11d48 */
 
-  --bg:           var(--grey-50);          /* #fafbfc */
+  --bg:           var(--grey-100);         /* #f1f3f5 — grid "playground" grey */
   --surface:      var(--grey-0);           /* #ffffff */
+  --chrome:       var(--grey-0);           /* #ffffff — header / footer surface */
+  --panel-titlebar: transparent;           /* Light mode: rely on divider, no bg tint (avoids grey-on-grey) */
+
+  /* Shadow scale — tighter at lower end, looser at higher. Per-theme opacity
+     lives in the dark-theme block. Use `--shadow-md` for floating panels,
+     `--shadow-lg` for dropdowns, `--shadow-xl` for a looser hero lift. */
+  --shadow-xs: 0 1px 3px rgba(0, 0, 0, 0.08);
+  --shadow-sm: 0 2px 6px rgba(0, 0, 0, 0.12);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.16);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.20);
+  --shadow-xl: 0 12px 32px rgba(0, 0, 0, 0.25);
   --border:       var(--grey-200);         /* #e5e7eb — inputs, controls */
   --divider:      var(--grey-200);         /* same as border in light */
   --text:         var(--grey-900);         /* #1c1e22 */
@@ -121,6 +144,16 @@
      `background: var(--bg)` on the top-level container (not background-color). */
   --bg:           radial-gradient(ellipse 90% 70% at 40% -10%, #1e1a3e 0%, #0a0a1e 45%, var(--grey-dark-0) 100%);
   --surface:      rgba(255,255,255,0.03);
+  --chrome:       var(--grey-dark-100);    /* #0f1a2e — header / footer surface, sits above gradient bg */
+  --panel-titlebar: var(--grey-dark-100);  /* #0f1a2e — Options panel titlebar, darker than body */
+
+  /* Shadow scale — dark theme uses higher opacity to read over the ambient
+     radial gradient. Same stops as light. */
+  --shadow-xs: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-sm: 0 2px 6px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.55);
+  --shadow-xl: 0 12px 32px rgba(0, 0, 0, 0.6);
   --border:       rgba(255,255,255,0.25);  /* inputs, controls */
   --divider:      rgba(255,255,255,0.1);   /* chrome separators */
   --text:         var(--grey-dark-900);    /* #e8f1fc */

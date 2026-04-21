@@ -2,9 +2,8 @@ import { useState } from 'react';
 import { Select } from 'radix-ui';
 import { ChevronDownIcon } from '@radix-ui/react-icons';
 import { Slider } from '../common/Slider';
-import { Button } from '../common/Button';
 import { MidiAssignDialog } from '../common/MidiAssignDialog';
-import { formatMidiLabel } from '../common/constants';
+import { MidiBadge } from '../common/MidiBadge';
 import { useStore } from '../../store';
 import {
   requestSetBlockMix,
@@ -31,21 +30,15 @@ function ParamLabel({
   );
   const existing = existingIndex >= 0 ? mappings[existingIndex] : null;
 
-  const midiLabel = formatMidiLabel(existing);
-
   return (
     <>
       <span className={styles.paramLabelContainer}>
         <span className={styles.paramLabelText}>{label}</span>
-        <Button
-          size="sm"
-          variant="secondary"
-          active={!!existing}
+        <MidiBadge
+          mapping={existing}
           onClick={() => setDialogOpen(true)}
-          title={existing ? `MIDI: CC ${existing.cc}` : `Assign MIDI CC to ${label}`}
-        >
-          {midiLabel}
-        </Button>
+          title={existing ? `${label} MIDI: CC ${existing.cc}` : `Assign MIDI CC to ${label}`}
+        />
       </span>
 
       <MidiAssignDialog

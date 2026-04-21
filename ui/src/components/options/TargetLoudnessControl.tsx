@@ -29,6 +29,7 @@ export function TargetLoudnessControl({ blockId }: Props) {
         <span className={styles.label}>Target Loudness</span>
         <ToggleSwitch
           enabled={enabled}
+          sharp
           onToggle={toggle}
           title={enabled ? 'Disable target loudness' : 'Enable target loudness'}
         />

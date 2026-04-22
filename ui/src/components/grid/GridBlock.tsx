@@ -1,11 +1,7 @@
 import { useCallback, useState } from 'react';
 import { useDraggable } from '@dnd-kit/core';
-import {
-  CopyIcon,
-  Cross2Icon,
-  ExclamationTriangleIcon,
-  SpeakerLoudIcon,
-} from '@radix-ui/react-icons';
+import { CopyIcon, ExclamationTriangleIcon, SpeakerLoudIcon } from '@radix-ui/react-icons';
+import { IoCloseSharp } from 'react-icons/io5';
 import type { GridBlock as GridBlockData } from '../../store';
 import { requestCopyBlock, requestRemoveBlock, requestOpenPluginEditor } from '../../bridge';
 import { useStore } from '../../store';
@@ -222,7 +218,7 @@ export function GridBlockComponent({ block, onEdgeContextMenu }: Props) {
           requestRemoveBlock(block.id);
         }}
       >
-        <Cross2Icon width={14} height={14} />
+        <IoCloseSharp size={14} />
       </div>
     </div>
   );

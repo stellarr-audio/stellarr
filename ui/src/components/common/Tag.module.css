@@ -27,11 +27,16 @@
   border-color: var(--color-secondary);
 }
 
+/* Unified "selected" style — shared with StateSquare + Tablist secondary.
+   2px amber ring + 10% tint + neutral text. Keep the 1px base border and
+   add a 1px inset ring so total visual weight hits 2px without shifting
+   the tag's layout. */
 .active,
 .active:hover {
   border-color: var(--color-secondary);
+  box-shadow: inset 0 0 0 1px var(--color-secondary);
   background: color-mix(in srgb, var(--color-secondary) 10%, transparent);
-  color: var(--color-secondary);
+  color: var(--color-text);
 }
 
 .tag:disabled {

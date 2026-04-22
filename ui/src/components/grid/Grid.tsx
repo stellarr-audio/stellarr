@@ -20,6 +20,7 @@ import {
   requestRemoveConnection,
   requestSetSelectedBlock,
 } from '../../bridge';
+import { IoAddSharp, IoCloseSharp } from 'react-icons/io5';
 import { GridBlockComponent } from './GridBlock';
 import { ConnectionLayer } from './ConnectionLayer';
 import { BlockMenu } from './BlockMenu';
@@ -309,7 +310,11 @@ export function Grid() {
                 }}
                 onClick={() => handleCellClick(col, row)}
               >
-                {(isHovered || isMenuOpen) && <span className={styles.cellPlus}>+</span>}
+                {(isHovered || isMenuOpen) && (
+                  <span className={styles.cellPlus}>
+                    <IoAddSharp size={16} />
+                  </span>
+                )}
               </DroppableCell>
             );
 
@@ -387,7 +392,9 @@ export function Grid() {
                       }}
                     >
                       <span>{label}</span>
-                      <span className={styles.connMenuDisconnect}>&times;</span>
+                      <span className={styles.connMenuDisconnect}>
+                        <IoCloseSharp size={14} />
+                      </span>
                     </div>
                   );
                 })}

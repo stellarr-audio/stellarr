@@ -9,14 +9,8 @@ import { IconButton } from '../common/IconButton';
 import { MidiAssignDialog } from '../common/MidiAssignDialog';
 import { MidiBadge } from '../common/MidiBadge';
 import { TYPE_ABBREVIATIONS } from '../common/constants';
-import {
-  Pencil1Icon,
-  PlayIcon,
-  StopIcon,
-  Cross1Icon,
-  ChevronDownIcon,
-  CheckIcon,
-} from '@radix-ui/react-icons';
+import { Pencil1Icon, PlayIcon, StopIcon, ChevronDownIcon, CheckIcon } from '@radix-ui/react-icons';
+import { IoCloseSharp } from 'react-icons/io5';
 import { PluginSection } from './PluginSection';
 import { ParametersSection } from './ParametersSection';
 import { StatesSection } from './StatesSection';
@@ -253,7 +247,7 @@ function BlockHeader({ block, onClose, bindDrag }: BlockHeaderProps) {
         <OptionsMenu block={block} />
         <Tooltip content="Close panel">
           <IconButton
-            icon={<Cross1Icon width={12} height={12} />}
+            icon={<IoCloseSharp size={14} />}
             size="sm"
             onClick={onClose}
             title="Close panel"
@@ -277,12 +271,7 @@ function BypassControls({ block }: { block: import('../../store').GridBlock }) {
 
   return (
     <>
-      <MidiBadge
-        mapping={existing}
-        onClick={() => setDialogOpen(true)}
-        title={tooltipLabel}
-        size="sm"
-      />
+      <MidiBadge mapping={existing} onClick={() => setDialogOpen(true)} title={tooltipLabel} />
       <ToggleSwitch
         enabled={!block.bypassed}
         sharp

@@ -7,8 +7,9 @@ interface Props {
   onClick: () => void;
   title?: string;
   className?: string;
-  /** Compact variant — matches IconButton size="sm" for titlebar clusters. */
-  size?: 'default' | 'sm';
+  /** Larger variant — 32h instead of the default 24h. Rarely needed; default
+   *  matches IconButton size="sm" so all panel controls share one scale. */
+  size?: 'default' | 'lg';
 }
 
 /**
@@ -21,7 +22,7 @@ export function MidiBadge({ mapping, onClick, title, className, size = 'default'
   const tooltip = title ?? (mapping ? `MIDI: CC ${mapping.cc}` : 'Assign MIDI CC');
   const cls = [
     styles.badge,
-    size !== 'default' && styles[size],
+    size === 'lg' && styles.lg,
     mapping ? styles.assigned : styles.unassigned,
     className,
   ]

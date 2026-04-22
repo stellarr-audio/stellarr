@@ -1,49 +1,72 @@
+/* Tablist — InputGroup-aligned sharp-edge pattern.
+   Outer: 1px solid border frame at default input height.
+   Children: no own border, left-border divider between them.
+   Hover: amber tint. Active: accent fill with white glyph/text. */
+
 .tablist {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  padding: 3px;
-  background: color-mix(in srgb, var(--color-muted) 10%, transparent);
-  border: var(--border-container);
+  display: inline-flex;
+  height: var(--input-height);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius);
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .tab {
-  background: transparent;
-  border: none;
-  color: var(--color-muted);
-  padding: 0.45rem 0.65rem;
-  border-radius: var(--radius);
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 0.4rem;
-  cursor: pointer;
-  outline: none;
+  padding: 0 0.9rem;
+  min-width: 44px;
+  background: transparent;
+  border: none;
+  border-left: 1px solid var(--color-border);
+  color: var(--color-muted);
   font-family: inherit;
   font-size: var(--text-xs);
   font-weight: 500;
-  transition: color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+  cursor: pointer;
+  outline: none;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.tab:first-child {
+  border-left: none;
 }
 
 .tab:hover {
+  background: color-mix(in srgb, var(--color-secondary) 10%, transparent);
   color: var(--color-text);
 }
 
+.tab:focus-visible {
+  background: color-mix(in srgb, var(--color-secondary) 14%, transparent);
+}
+
+/* Active tab — default primary (orchid). */
 .tabActive,
-.tabActive:hover {
-  background: var(--color-surface);
-  box-shadow: var(--shadow-md);
-  color: var(--accent-text);
+.tabActive:hover,
+.tabActive:focus-visible {
+  background: var(--color-primary);
+  color: #ffffff;
 }
 
-:global([data-theme='dark']) .tabActive,
-:global([data-theme='dark']) .tabActive:hover {
-  color: var(--color-secondary);
+/* Secondary accent variant — unified "selected" style: 2px amber ring
+   (inset so the tab keeps its left-divider layout) + 10% amber tint +
+   neutral text. Matches Tag and StateSquare active states. */
+.accentSecondary .tabActive,
+.accentSecondary .tabActive:hover,
+.accentSecondary .tabActive:focus-visible {
+  background: color-mix(in srgb, var(--color-secondary) 10%, transparent);
+  box-shadow: inset 0 0 0 2px var(--color-secondary);
+  color: var(--color-text);
 }
 
+/* Stretch: each tab fills equally. */
 .stretch {
-  flex: 1;
+  display: flex;
+  width: 100%;
 }
 
 .stretch .tab {

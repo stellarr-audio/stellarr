@@ -13,6 +13,7 @@ interface TablistContextValue {
   onChange: (id: string) => void;
   register: (id: string, el: HTMLButtonElement | null) => void;
   focusSibling: (id: string, direction: 1 | -1) => void;
+  accent: 'primary' | 'secondary';
 }
 
 const TablistContext = createContext<TablistContextValue | null>(null);
@@ -22,6 +23,8 @@ interface TablistProps {
   onChange: (id: string) => void;
   children: ReactNode;
   stretch?: boolean;
+  /** Active-tab accent. Primary (orchid) for nav; secondary (amber) for inline mode switches. */
+  accent?: 'primary' | 'secondary';
   className?: string;
   'aria-label'?: string;
 }
@@ -31,6 +34,7 @@ export function Tablist({
   onChange,
   children,
   stretch,
+  accent = 'primary',
   className,
   'aria-label': ariaLabel,
 }: TablistProps) {
@@ -56,10 +60,17 @@ export function Tablist({
     onChange(next);
   };
 
-  const cls = [styles.tablist, stretch && styles.stretch, className].filter(Boolean).join(' ');
+  const cls = [
+    styles.tablist,
+    stretch && styles.stretch,
+    accent === 'secondary' && styles.accentSecondary,
+    className,
+  ]
+    .filter(Boolean)
+    .join(' ');
 
   return (
-    <TablistContext.Provider value={{ value, onChange, register, focusSibling }}>
+    <TablistContext.Provider value={{ value, onChange, register, focusSibling, accent }}>
       <div role="tablist" aria-label={ariaLabel} className={cls}>
         {children}
       </div>

@@ -29,5 +29,5 @@
   --color-block-bg:     var(--block-bg);
   --color-block-border: var(--border);
   --color-connection:   var(--text-muted);
-  --color-dropdown-bg:  var(--surface);
+  --color-dropdown-bg:  var(--block-bg);
 }

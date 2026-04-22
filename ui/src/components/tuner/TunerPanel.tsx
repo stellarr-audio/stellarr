@@ -40,6 +40,7 @@ export function TunerPanel() {
           onChange={(id) => setTunerMode(id as 'needle' | 'strobe')}
           aria-label="Tuner mode"
           stretch
+          accent="secondary"
         >
           <Tab id="needle">Needle</Tab>
           <Tab id="strobe">Strobe</Tab>

@@ -3,6 +3,7 @@ import { useStore } from './store';
 import { useSyncTheme } from './hooks/useSyncTheme';
 import { Grid } from './components/grid/Grid';
 import { GridOverlay } from './components/grid/GridOverlay';
+import { GridResizer } from './components/grid/GridResizer';
 import { OptionsPanel } from './components/options/OptionsPanel';
 import { Settings } from './components/settings/Settings';
 import { Tuner } from './components/tuner/Tuner';
@@ -16,8 +17,7 @@ import { Footer } from './components/footer/Footer';
 import { Tooltip } from './components/common/Tooltip';
 import { IconButton } from './components/common/IconButton';
 import { Tablist, Tab } from './components/common/Tablist';
-import { TbLayoutGrid, TbWaveSine, TbPlug, TbSunHigh, TbMoon } from 'react-icons/tb';
-import { LuSettings } from 'react-icons/lu';
+import { TbLayoutGrid, TbWaveSine, TbPlug, TbSunHigh, TbMoon, TbSettings } from 'react-icons/tb';
 import { useThemeStore, resolveTheme } from './store/theme';
 import { requestSetTunerEnabled, requestSaveSessionQuiet } from './bridge';
 import styles from './App.module.css';
@@ -83,7 +83,7 @@ function App() {
             </Tooltip>
             <Tooltip content="System" side="bottom">
               <Tab id="settings" title="System">
-                <LuSettings size={20} />
+                <TbSettings size={20} />
               </Tab>
             </Tooltip>
           </Tablist>
@@ -110,7 +110,9 @@ function App() {
             className={styles.gridArea}
           >
             <GridOverlay />
-            <Grid />
+            <GridResizer>
+              <Grid />
+            </GridResizer>
           </div>
           <OptionsPanel />
         </div>

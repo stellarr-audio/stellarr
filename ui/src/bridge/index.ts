@@ -155,6 +155,10 @@ export function requestSaveSessionQuiet(): void {
   sendEvent('saveSessionQuiet', '');
 }
 
+export function requestSetGridSize(columns: number, rows: number): void {
+  sendEvent('setGridSize', JSON.stringify({ columns, rows }));
+}
+
 export function requestLoadSession(): void {
   sendEvent('loadSession', '');
 }
@@ -537,6 +541,15 @@ export function initBridge(): void {
       } satisfies Connection;
     });
     useStore.getState().syncGraph(blocks, connections);
+  });
+
+  juce.backend.addEventListener('gridState', (detail: unknown) => {
+    const d = asRecord(detail);
+    const columns = Number(d.columns);
+    const rows = Number(d.rows);
+    if (Number.isFinite(columns) && Number.isFinite(rows)) {
+      useStore.getState().setGridSize(columns, rows);
+    }
   });
 
   juce.backend.addEventListener('scanStarted', () => {

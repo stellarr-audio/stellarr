@@ -13,8 +13,8 @@ juce::var StellarrBridge::serialiseSession() const
     session->setProperty("version", 1);
 
     auto* gridObj = new juce::DynamicObject();
-    gridObj->setProperty("columns", 12);
-    gridObj->setProperty("rows", 6);
+    gridObj->setProperty("columns", gridCols);
+    gridObj->setProperty("rows", gridRows);
     session->setProperty("grid", juce::var(gridObj));
 
     // Blocks
@@ -314,7 +314,22 @@ void StellarrBridge::restoreSession(const juce::var& session)
     // Resume graph-level routing
     processor->suspendProcessing(false);
 
+    // Restore grid dimensions (falls back to current defaults if absent)
+    if (obj->hasProperty("grid"))
+    {
+        if (auto* gridObj = obj->getProperty("grid").getDynamicObject())
+        {
+            auto cols = gridObj->getProperty("columns");
+            auto rows = gridObj->getProperty("rows");
+            if (cols.isInt() || cols.isInt64() || cols.isDouble())
+                gridCols = static_cast<int>(cols);
+            if (rows.isInt() || rows.isInt64() || rows.isDouble())
+                gridRows = static_cast<int>(rows);
+        }
+    }
+
     sendGraphState();
+    emitGridState();
 }
 
 // -- Preset management --------------------------------------------------------
@@ -385,7 +400,13 @@ void StellarrBridge::handleNewSession()
 
     persistPresetInfo();
 
+    // Reset grid size to the UI default when starting a new session so the
+    // new preset doesn't inherit the previous session's custom dimensions.
+    gridCols = 12;
+    gridRows = 6;
+
     sendGraphState();
+    emitGridState();
     sendPresetList();
 }
 
@@ -579,4 +600,32 @@ void StellarrBridge::sendPresetList()
     detail->setProperty("files", files);
     detail->setProperty("currentIndex", currentPresetIndex);
     emitToJs("presetListUpdated", detail);
+}
+
+// -- Grid dimensions ----------------------------------------------------------
+
+void StellarrBridge::emitGridState()
+{
+    auto* detail = new juce::DynamicObject();
+    detail->setProperty("columns", gridCols);
+    detail->setProperty("rows", gridRows);
+    emitToJs("gridState", detail);
+}
+
+void StellarrBridge::handleSetGridSize(const juce::var& json)
+{
+    auto* obj = json.getDynamicObject();
+    if (obj == nullptr) return;
+
+    auto cols = obj->getProperty("columns");
+    auto rows = obj->getProperty("rows");
+    if (!(cols.isInt() || cols.isInt64() || cols.isDouble())) return;
+    if (!(rows.isInt() || rows.isInt64() || rows.isDouble())) return;
+
+    gridCols = juce::jmax(1, static_cast<int>(cols));
+    gridRows = juce::jmax(1, static_cast<int>(rows));
+
+    // Autosave so the new dimensions survive a restart, matching how block
+    // edits persist.
+    handleSaveSessionQuiet();
 }

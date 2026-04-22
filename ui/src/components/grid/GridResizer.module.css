@@ -1,0 +1,94 @@
+.frame {
+  position: relative;
+  box-sizing: content-box;
+}
+
+/* Grid itself anchors inside the frame after the gutters. */
+.gridSurface {
+  position: absolute;
+}
+
+/* Chip base shared by all states. */
+.chipBase {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-weight: 700;
+  font-size: 13px;
+  user-select: none;
+  line-height: 1;
+}
+
+.chipDelete {
+  composes: chipBase;
+  color: var(--color-danger);
+  background: transparent;
+  cursor: pointer;
+  transition: background 0.1s ease, color 0.1s ease;
+}
+
+.chipDelete:hover {
+  background: var(--color-danger);
+  color: #ffffff;
+}
+
+.chipLocked {
+  composes: chipBase;
+  color: var(--color-muted);
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.chipDisabled {
+  composes: chipBase;
+  color: var(--color-muted);
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.chipAdd {
+  composes: chipBase;
+  color: var(--color-secondary);
+  background: transparent;
+  cursor: pointer;
+  transition: background 0.1s ease, color 0.1s ease;
+}
+
+.chipAdd:hover {
+  background: var(--color-secondary);
+  color: #ffffff;
+}
+
+/* Hover preview line — 1px dashed through the centre of the target row/col.
+   Caller sets width:0 for a vertical line or height:0 for a horizontal one;
+   we render the correct side from the corresponding border. */
+.previewBase {
+  position: absolute;
+  pointer-events: none;
+  z-index: var(--z-grid-above);
+}
+
+.previewColDanger {
+  composes: previewBase;
+  border-left: 2px dashed var(--color-danger);
+  filter: drop-shadow(0 0 4px color-mix(in srgb, var(--color-danger) 50%, transparent));
+}
+
+.previewRowDanger {
+  composes: previewBase;
+  border-top: 2px dashed var(--color-danger);
+  filter: drop-shadow(0 0 4px color-mix(in srgb, var(--color-danger) 50%, transparent));
+}
+
+.previewColAdd {
+  composes: previewBase;
+  border-left: 2px dashed var(--color-secondary);
+  filter: drop-shadow(0 0 4px color-mix(in srgb, var(--color-secondary) 50%, transparent));
+}
+
+.previewRowAdd {
+  composes: previewBase;
+  border-top: 2px dashed var(--color-secondary);
+  filter: drop-shadow(0 0 4px color-mix(in srgb, var(--color-secondary) 50%, transparent));
+}

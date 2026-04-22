@@ -183,6 +183,7 @@ void StellarrBridge::handleEvent(const juce::String& eventName, const juce::var&
     else if (eventName == "renamePreset")           handleRenamePreset(json);
     else if (eventName == "deletePreset")           handleDeletePreset(json);
     else if (eventName == "getPresetList")          handleGetPresetList();
+    else if (eventName == "setGridSize")            handleSetGridSize(json);
 
     // Scenes
     else if (eventName == "addScene")               handleAddScene();

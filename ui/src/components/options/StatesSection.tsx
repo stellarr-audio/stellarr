@@ -1,4 +1,4 @@
-import { PlusIcon } from '@radix-ui/react-icons';
+import { IoAddSharp } from 'react-icons/io5';
 import { StateSquare } from './StateSquare';
 import {
   requestAddBlockState,
@@ -42,7 +42,7 @@ export function StatesSection({ block }: Props) {
               title="Add new state"
               className={styles.addButton}
             >
-              <PlusIcon width={14} height={14} />
+              <IoAddSharp size={14} />
             </button>
           )}
         </div>

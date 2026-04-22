@@ -1,4 +1,4 @@
-import { Cross2Icon } from '@radix-ui/react-icons';
+import { IoCloseSharp } from 'react-icons/io5';
 import styles from './StateSquare.module.css';
 
 interface Props {
@@ -28,7 +28,7 @@ export function StateSquare({ index, isActive, isDirty, canDelete, onRecall, onD
           title={`Delete State ${index + 1}`}
           className={styles.deleteButton}
         >
-          <Cross2Icon width={10} height={10} />
+          <IoCloseSharp size={10} />
         </button>
       )}
     </div>

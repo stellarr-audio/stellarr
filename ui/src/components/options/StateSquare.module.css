@@ -1,19 +1,26 @@
 .wrapper {
+  box-sizing: border-box;
   display: flex;
   align-items: stretch;
+  height: var(--input-height);
   border: 1px solid var(--color-border);
   border-radius: var(--radius);
   overflow: hidden;
-  transition: border-color 0.15s ease;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .wrapper:hover {
   border-color: var(--color-secondary);
 }
 
+/* Unified "selected" style — shared with Tag + Tablist secondary.
+   2px amber ring + 10% tint. Use inset shadow for the extra pixel so the
+   wrapper's outer box stays exactly var(--input-height) tall regardless
+   of active/inactive. */
 .wrapperActive {
-  border: 2px solid var(--color-secondary);
-  background: color-mix(in srgb, var(--color-secondary) 8%, transparent);
+  border-color: var(--color-secondary);
+  box-shadow: inset 0 0 0 1px var(--color-secondary);
+  background: color-mix(in srgb, var(--color-secondary) 10%, transparent);
 }
 
 .button {

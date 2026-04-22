@@ -106,6 +106,10 @@ private:
     void handleSetSelectedBlock(const juce::var& json);
     void handleSetTargetLufs(const juce::var& json);
     void handleSetLufsWindow(const juce::var& json);
+
+    // Grid dimensions (persisted with session)
+    void handleSetGridSize(const juce::var& json);
+    void emitGridState();
     juce::AudioProcessorGraph::Node* getNodeForBlockId(const juce::String& blockId);
 
     void sendPluginList();
@@ -166,4 +170,8 @@ private:
 
     juce::String selectedBlockId;
     juce::String lufsWindow { "shortTerm" }; // "shortTerm" or "momentary"
+
+    // Grid size — persisted with the session. Defaults match the UI.
+    int gridCols = 12;
+    int gridRows = 6;
 };

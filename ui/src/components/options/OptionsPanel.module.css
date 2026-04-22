@@ -13,6 +13,15 @@
   z-index: var(--z-floating-panel);
 }
 
+/* Dark mode: the ambient gradient washes out subtle shadows — stack a
+   stronger drop plus a tight contact shadow so the panel reads as clearly
+   lifted above the canvas. */
+[data-theme='dark'] .panel {
+  box-shadow:
+    0 9px 48px 8px rgba(0, 0, 0, 0.85),
+    0 4px 12px 2px rgba(0, 0, 0, 0.8);
+}
+
 .titlebar {
   display: flex;
   align-items: center;

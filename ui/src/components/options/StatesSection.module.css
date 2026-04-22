@@ -24,8 +24,9 @@
 }
 
 .addButton {
-  width: 32px;
-  height: 32px;
+  box-sizing: border-box;
+  width: var(--input-height);
+  height: var(--input-height);
   display: flex;
   align-items: center;
   justify-content: center;

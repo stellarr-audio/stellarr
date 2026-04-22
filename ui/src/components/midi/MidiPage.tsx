@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
-import { TbX } from 'react-icons/tb';
+import { IoCloseSharp } from 'react-icons/io5';
 import { useStore } from '../../store';
 import { MidiAssignDialog } from '../common/MidiAssignDialog';
 import { Button } from '../common/Button';
@@ -111,7 +111,7 @@ export function MidiPage() {
                     <IconButton
                       size="sm"
                       variant="danger"
-                      icon={<TbX size={14} />}
+                      icon={<IoCloseSharp size={14} />}
                       title="Remove mapping"
                       onClick={(e) => {
                         e.stopPropagation();

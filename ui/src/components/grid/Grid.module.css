@@ -72,6 +72,7 @@
   position: absolute;
   background: var(--color-dropdown-bg);
   border: 1px solid var(--color-muted);
+  box-shadow: var(--shadow-md);
   min-width: 120px;
   z-index: var(--z-grid-above);
 }

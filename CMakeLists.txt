@@ -10,8 +10,7 @@ include(FetchContent)
 FetchContent_Declare(
     JUCE
     GIT_REPOSITORY https://github.com/juce-framework/JUCE.git
-    GIT_TAG develop
-    GIT_SHALLOW TRUE
+    GIT_TAG 28e4d7b520d798f7f32b9fd6e1e022ee192feaf3
 )
 FetchContent_MakeAvailable(JUCE)
 
@@ -20,7 +19,7 @@ set(SENTRY_BUILD_SHARED_LIBS OFF CACHE BOOL "")
 FetchContent_Declare(
     sentry
     GIT_REPOSITORY https://github.com/getsentry/sentry-native.git
-    GIT_TAG 0.13.4
+    GIT_TAG 0.13.7
     GIT_SHALLOW TRUE
     GIT_SUBMODULES ""
 )

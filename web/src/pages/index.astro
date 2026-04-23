@@ -1,0 +1,338 @@
+---
+import '../styles/global.css';
+
+// Bright near-layer stars — each its own DOM element so it can
+// twinkle independently with its own phase and duration.
+const nearStars: { x: number; y: number; size: number; tint: string; delay: number; dur: number }[] = [
+  { x: 8,  y: 10, size: 7, tint: 'white',    delay: 0,   dur: 9  },
+  { x: 24, y: 40, size: 6, tint: 'orchid',   delay: 2.4, dur: 12 },
+  { x: 42, y: 18, size: 5, tint: 'white',    delay: 4.1, dur: 10 },
+  { x: 58, y: 62, size: 8, tint: 'amber',    delay: 1.2, dur: 13 },
+  { x: 72, y: 28, size: 5, tint: 'lavender', delay: 6.3, dur: 11 },
+  { x: 90, y: 52, size: 6, tint: 'white',    delay: 3.0, dur: 10 },
+  { x: 15, y: 78, size: 5, tint: 'orchid',   delay: 5.5, dur: 12 },
+  { x: 35, y: 88, size: 7, tint: 'white',    delay: 1.8, dur: 11 },
+  { x: 63, y: 92, size: 5, tint: 'lavender', delay: 7.2, dur: 13 },
+  { x: 82, y: 85, size: 8, tint: 'amber',    delay: 0.6, dur: 14 },
+  { x: 5,  y: 55, size: 4, tint: 'white',    delay: 3.9, dur: 10 },
+  { x: 48, y: 48, size: 6, tint: 'white',    delay: 8.1, dur: 12 },
+  { x: 95, y: 20, size: 5, tint: 'white',    delay: 2.1, dur: 11 },
+  { x: 28, y: 65, size: 5, tint: 'orchid',   delay: 4.8, dur: 12 },
+  { x: 78, y: 70, size: 6, tint: 'white',    delay: 6.5, dur: 13 },
+];
+---
+
+<!doctype html>
+<html lang="en" data-theme="system" data-theme-resolved="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Stellarr — Your plugins. Your rig. Your rules.</title>
+  <meta name="description" content="An open-source, forever-free virtual effects board for macOS." />
+  <link rel="stylesheet" href="https://api.fontshare.com/v2/css?f[]=switzer@300,400,500,600,700,800&display=swap" />
+
+  <!-- Resolve theme before first paint — avoids flash -->
+  <script is:inline>
+    (function () {
+      const KEY = 'stellarr.site.theme';
+      const saved = localStorage.getItem(KEY) || 'system';
+      const resolved =
+        saved === 'system'
+          ? matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+          : saved;
+      document.documentElement.setAttribute('data-theme', saved);
+      document.documentElement.setAttribute('data-theme-resolved', resolved);
+    })();
+  </script>
+</head>
+
+<body>
+  <div class="starfield" aria-hidden="true">
+    <div class="starfield-near">
+      {nearStars.map((s) => (
+        <span
+          class={`star star-${s.tint}`}
+          style={`left:${s.x}%;top:${s.y}%;--size:${s.size * 2}px;--delay:${s.delay}s;--dur:${s.dur}s`}
+        />
+      ))}
+    </div>
+  </div>
+
+  <nav class="top">
+    <div class="wrap" style="display:flex;align-items:center;width:100%;padding:0">
+      <a href="/" class="logo">
+        <span class="logo-mark"></span>Stellarr
+      </a>
+      <ul>
+        <li>
+          <a class="link" href="/docs/" aria-label="Documentation">
+            <!-- react-icons/io5 IoBookOutline -->
+            <svg class="nav-icon" viewBox="0 0 512 512" fill="none" stroke="currentColor" stroke-width="32" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M256 160c16-63.16 76.43-95.41 208-96a15.94 15.94 0 0 1 16 16v288a16 16 0 0 1-16 16c-128 0-177.45 25.81-208 64-30.37-38-80-64-208-64-9.88 0-16-8.05-16-17.93V80a15.94 15.94 0 0 1 16-16c131.57.59 192 32.84 208 96zm0 0v288"/>
+            </svg>
+            <span class="nav-label">Docs</span>
+          </a>
+        </li>
+        <li>
+          <a class="link" href="https://github.com/stellarr-audio/stellarr" aria-label="GitHub" target="_blank" rel="noopener noreferrer">
+            <!-- react-icons/io5 IoLogoGithub -->
+            <svg class="nav-icon" viewBox="0 0 512 512" fill="currentColor">
+              <path d="M256 32C132.3 32 32 134.9 32 261.7c0 101.5 64.2 187.5 153.2 217.9a17.56 17.56 0 0 0 3.8.4c8.3 0 11.5-6.1 11.5-11.4 0-5.5-.2-19.9-.3-39.1a102.4 102.4 0 0 1-22.6 2.7c-43.1 0-52.9-33.5-52.9-33.5-10.2-26.5-24.9-33.6-24.9-33.6-19.5-13.7-.1-14.1 1.4-14.1h.1c22.5 2 34.3 23.8 34.3 23.8 11.2 19.6 26.2 25.1 39.6 25.1a63 63 0 0 0 25.6-6c2-14.8 7.8-24.9 14.2-30.7-49.7-5.8-102-25.5-102-113.5 0-25.1 8.7-45.6 23-61.6-2.3-5.8-10-29.2 2.2-60.8a18.64 18.64 0 0 1 5-.5c8.1 0 26.4 3.1 56.6 24.1a208.21 208.21 0 0 1 112.2 0c30.2-21 48.5-24.1 56.6-24.1a18.64 18.64 0 0 1 5 .5c12.2 31.6 4.5 55 2.2 60.8 14.3 16.1 23 36.6 23 61.6 0 88.2-52.4 107.6-102.3 113.3 8 7.1 15.2 21.1 15.2 42.5 0 30.7-.3 55.5-.3 63 0 5.4 3.1 11.5 11.4 11.5a19.35 19.35 0 0 0 4-.4C415.9 449.2 480 363.1 480 261.7 480 134.9 379.7 32 256 32z"/>
+            </svg>
+            <span class="nav-label">GitHub</span>
+          </a>
+        </li>
+        <li>
+          <button class="theme-toggle" id="theme-toggle" aria-label="Toggle theme">
+            <!-- react-icons/io5 IoMoonOutline — shown when currently light, click → go dark -->
+            <svg class="icon icon-dark" viewBox="0 0 512 512" fill="none" stroke="currentColor" stroke-width="32" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M160 136c0-30.62 4.51-61.61 16-88C99.57 81.27 48 159.32 48 248c0 119.29 96.71 216 216 216 88.68 0 166.73-51.57 200-128-26.39 11.49-57.38 16-88 16-119.29 0-216-96.71-216-216z"/>
+            </svg>
+            <!-- react-icons/io5 IoSunnyOutline — shown when currently dark, click → go light -->
+            <svg class="icon icon-light" viewBox="0 0 512 512" fill="none" stroke="currentColor" stroke-width="32" stroke-linecap="round" stroke-miterlimit="10">
+              <path d="M256 48v48m0 320v48m147.08-355.08-33.94 33.94M142.86 369.14l-33.94 33.94M464 256h-48m-320 0H48m355.08 147.08-33.94-33.94M142.86 142.86l-33.94-33.94"/>
+              <circle cx="256" cy="256" r="80"/>
+            </svg>
+          </button>
+        </li>
+        <li><a class="cta" href="https://github.com/stellarr-audio/stellarr/releases/latest" target="_blank" rel="noopener noreferrer">Download</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <section class="hero">
+    <div class="glow g-nebula"></div>
+    <div class="glow g-orchid"></div>
+    <div class="glow g-amber"></div>
+    <div class="glow g-lavender"></div>
+    <div class="wrap">
+      <h1>
+        <span class="line">Your plugins.</span><br class="desktop-br" />
+        <span class="line">Your rig.</span>
+        <span class="line"><em>Your rules.</em></span>
+      </h1>
+      <p class="subhead">An open-source, forever-free virtual effects board for macOS.</p>
+      <div class="ctas">
+        <a href="https://github.com/stellarr-audio/stellarr/releases/latest" class="btn-primary" target="_blank" rel="noopener noreferrer">
+          <!-- react-icons/io5 IoDownloadOutline -->
+          <svg class="btn-icon" viewBox="0 0 512 512" fill="none" stroke="currentColor" stroke-width="32" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M336 176h40a40 40 0 0 1 40 40v208a40 40 0 0 1-40 40H136a40 40 0 0 1-40-40V216a40 40 0 0 1 40-40h40"/>
+            <path d="m176 272 80 80 80-80M256 48v288"/>
+          </svg>
+          Download for macOS
+        </a>
+        <a href="/docs/" class="btn-secondary">
+          Read the docs
+          <!-- react-icons/io5 IoArrowForwardOutline -->
+          <svg class="btn-icon" viewBox="0 0 512 512" fill="none" stroke="currentColor" stroke-width="48" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m268 112 144 144-144 144m124-144H100"/>
+          </svg>
+        </a>
+      </div>
+      <div class="hero-pills">
+        <span class="pill">
+          <!-- IoLogoApple -->
+          <svg class="pill-icon" viewBox="0 0 512 512" fill="currentColor">
+            <path d="M349.13 136.86c-40.32 0-57.36 19.24-85.44 19.24-28.79 0-50.75-19.1-85.69-19.1-34.2 0-70.67 20.88-93.83 56.45-32.52 50.16-27 144.63 25.67 225.11 18.84 28.81 44 61.12 77 61.47h.6c28.68 0 37.2-18.78 76.67-19h.6c38.88 0 46.68 18.89 75.24 18.89h.6c33-.35 59.51-36.15 78.35-64.85 13.56-20.64 18.6-31 29-54.35-76.19-28.92-88.43-136.93-13.08-178.34-23-28.8-55.32-45.48-85.79-45.48z"/>
+            <path d="M340.25 32c-24 1.63-52 16.91-68.4 36.86-14.88 18.08-27.12 44.9-22.32 70.91h1.92c25.56 0 51.72-15.39 67-35.11 14.72-18.77 25.88-45.37 21.8-72.66z"/>
+          </svg>
+          <strong>Apple Silicon</strong>
+        </span>
+        <span class="pill">
+          <!-- IoLaptopOutline -->
+          <svg class="pill-icon" viewBox="0 0 512 512" fill="none" stroke="currentColor" stroke-width="32" stroke-linejoin="round" stroke-linecap="round" stroke-miterlimit="10">
+            <rect width="416" height="304" x="48" y="96" rx="32.14" ry="32.14"/>
+            <path d="M16 416h480"/>
+          </svg>
+          <strong>macOS 11+</strong>
+        </span>
+        <span class="pill">
+          <!-- IoMusicalNotesOutline -->
+          <svg class="pill-icon" viewBox="0 0 512 512" fill="none" stroke="currentColor" stroke-width="32" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M192 218v-6c0-14.84 10-27 24.24-30.59l174.59-46.68A20 20 0 0 1 416 154v22"/>
+            <path d="M416 295.94v80c0 13.91-8.93 25.59-22 30l-22 8c-25.9 8.72-52-10.42-52-38h0a33.37 33.37 0 0 1 23-32l51-18.15c13.07-4.4 22-15.94 22-29.85V58a10 10 0 0 0-12.6-9.61L204 102a16.48 16.48 0 0 0-12 16v226c0 13.91-8.93 25.6-22 30l-52 18c-13.88 4.68-22 17.22-22 32h0c0 27.58 26.52 46.55 52 38l22-8c13.07-4.4 22-16.08 22-30v-80"/>
+          </svg>
+          <strong>VST3 · AU</strong>
+        </span>
+        <span class="pill">
+          <!-- IoShieldCheckmarkOutline -->
+          <svg class="pill-icon" viewBox="0 0 512 512" fill="none" stroke="currentColor" stroke-width="32" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M336 176 225.2 304 176 255.8"/>
+            <path d="M463.1 112.37C373.68 96.33 336.71 84.45 256 48c-80.71 36.45-117.68 48.33-207.1 64.37C32.7 369.13 240.58 457.79 256 464c15.42-6.21 223.3-94.87 207.1-351.63z"/>
+          </svg>
+          <strong>AGPLv3</strong>
+        </span>
+      </div>
+    </div>
+  </section>
+
+  <section class="shots">
+    <div class="glow g-peach"></div>
+    <div class="glow g-orchid"></div>
+    <div class="wrap">
+      <div class="shot">
+        <img src="/stellarr-dark.png" alt="Stellarr screenshot" id="screenshot" />
+      </div>
+    </div>
+  </section>
+
+  <div class="section-sep"><span class="section-sep-dot"></span></div>
+
+  <section class="features">
+    <div class="glow g-amber"></div>
+    <div class="glow g-lavender"></div>
+    <div class="wrap">
+      <div class="head">
+        <h2>Yours to <em>wire.</em></h2>
+        <p class="features-sub">A rig that doesn't make the rules.</p>
+      </div>
+      <div class="feature-grid">
+        <article class="feature-card">
+          <div class="feature-shot">
+            {/* <img src="/features/grid-dark.png" alt="Grid" /> */}
+            <span class="placeholder">Grid screenshot</span>
+          </div>
+          <div class="feature-body">
+            <h3>Signal grid</h3>
+            <p>Drop plugins into a grid, draw connections, route in parallel. No hidden matrix.</p>
+          </div>
+        </article>
+
+        <article class="feature-card">
+          <div class="feature-shot">
+            {/* <img src="/features/scenes-dark.png" alt="Scenes & states" /> */}
+            <span class="placeholder">Scenes screenshot</span>
+          </div>
+          <div class="feature-body">
+            <h3>Scenes and states</h3>
+            <p>Snapshot any routing, recall it instantly. Bank through scenes with a footswitch or a MIDI PC.</p>
+          </div>
+        </article>
+
+        <article class="feature-card">
+          <div class="feature-shot">
+            {/* <img src="/features/midi-dark.png" alt="MIDI mapping" /> */}
+            <span class="placeholder">MIDI mapping screenshot</span>
+          </div>
+          <div class="feature-body">
+            <h3>MIDI mapping</h3>
+            <p>Bind any parameter to any controller. CC, PC, notes — mapped with a single right-click, or via learn-mode capture.</p>
+          </div>
+        </article>
+
+        <article class="feature-card">
+          <div class="feature-shot">
+            {/* <img src="/features/tuner-dark.png" alt="Tuner" /> */}
+            <span class="placeholder">Tuner screenshot</span>
+          </div>
+          <div class="feature-body">
+            <h3>Built-in tuner</h3>
+            <p>A cents-level tuner, baked right in. Nothing extra to load, nothing extra to route — tap the icon and you're in.</p>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <div class="section-sep"><span class="section-sep-dot"></span></div>
+
+  <section class="faq">
+    <div class="glow g-amber"></div>
+    <div class="wrap">
+      <div class="head">
+        <h2>Questions <em>answered.</em></h2>
+        <p class="faq-sub">Short versions. Docs has the full picture.</p>
+      </div>
+      <div class="faq-list">
+        <div class="faq-item">
+          <div class="faq-q">Is Stellarr free?</div>
+          <div class="faq-a">Yes. Free as in beer and as in speech. Released under AGPLv3, source on <a href="https://github.com/stellarr-audio/stellarr" target="_blank" rel="noopener noreferrer">GitHub</a>.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q">What Macs are supported?</div>
+          <div class="faq-a">Apple Silicon Macs on macOS 11 or newer. Intel and earlier macOS not supported.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q">Which plugin formats?</div>
+          <div class="faq-a">VST3 and AU. Any host-compatible plugin you already own works.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q">Is it stable?</div>
+          <div class="faq-a">Pre-1.0. Use it, expect rough edges, report what breaks.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q">How do I report bugs or contribute?</div>
+          <div class="faq-a">Open an issue or PR on <a href="https://github.com/stellarr-audio/stellarr" target="_blank" rel="noopener noreferrer">GitHub</a>. Guide in <a href="https://github.com/stellarr-audio/stellarr/blob/main/docs/CONTRIBUTING.md" target="_blank" rel="noopener noreferrer">CONTRIBUTING.md</a>.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="wrap">
+    <footer class="bottom">
+      <div>© 2026 Stellarr · AGPLv3</div>
+      <div class="links">
+        <a href="/docs/">Docs</a>
+        <a href="https://github.com/stellarr-audio/stellarr" target="_blank" rel="noopener noreferrer">GitHub</a>
+        <a href="https://github.com/stellarr-audio/stellarr/releases" target="_blank" rel="noopener noreferrer">Releases</a>
+      </div>
+    </footer>
+  </div>
+
+  <script is:inline>
+    const KEY = 'stellarr.site.theme';
+    const root = document.documentElement;
+    const toggle = document.getElementById('theme-toggle');
+    const screenshot = document.getElementById('screenshot');
+    const mq = matchMedia('(prefers-color-scheme: dark)');
+
+    const DARK_IMG  = '/stellarr-dark.png';
+    const LIGHT_IMG = '/stellarr-light.png';
+
+    function resolve(choice) {
+      if (choice === 'system') return mq.matches ? 'dark' : 'light';
+      return choice;
+    }
+
+    function apply(choice) {
+      const resolved = resolve(choice);
+      root.setAttribute('data-theme', choice);
+      root.setAttribute('data-theme-resolved', resolved);
+      if (screenshot) screenshot.src = (resolved === 'dark') ? DARK_IMG : LIGHT_IMG;
+      toggle.setAttribute('title', `Switch to ${resolved === 'dark' ? 'light' : 'dark'} mode`);
+      toggle.setAttribute('aria-label', `Switch to ${resolved === 'dark' ? 'light' : 'dark'} mode`);
+    }
+
+    apply(localStorage.getItem(KEY) || 'system');
+
+    toggle.addEventListener('click', () => {
+      const resolved = root.getAttribute('data-theme-resolved');
+      const next = resolved === 'dark' ? 'light' : 'dark';
+      localStorage.setItem(KEY, next);
+      apply(next);
+    });
+
+    mq.addEventListener('change', () => {
+      if (!localStorage.getItem(KEY)) apply('system');
+    });
+
+    // Parallax starfield — write scroll-linked offsets as CSS custom
+    // properties. Throttled with rAF to stay smooth. Cross-browser.
+    const rootStyle = document.documentElement.style;
+    let parallaxTicking = false;
+    function updateParallax() {
+      const y = window.scrollY;
+      rootStyle.setProperty('--parallax-far',  (-y * 0.15) + 'px');
+      rootStyle.setProperty('--parallax-near', (-y * 0.45) + 'px');
+      parallaxTicking = false;
+    }
+    window.addEventListener('scroll', () => {
+      if (!parallaxTicking) {
+        requestAnimationFrame(updateParallax);
+        parallaxTicking = true;
+      }
+    }, { passive: true });
+    updateParallax();
+  </script>
+</body>
+</html>

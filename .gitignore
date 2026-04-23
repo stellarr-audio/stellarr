@@ -3,6 +3,8 @@ build-release/
 node_modules/
 tmp/
 ui/dist/
+web/dist/
+web/.astro/
 .env
 .env.*
 !.env.example

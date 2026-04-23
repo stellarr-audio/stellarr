@@ -10,6 +10,7 @@ export default defineConfig({
     starlight({
       title: 'STELLARR',
       logo: { src: '../assets/logo.svg', replacesTitle: false },
+      favicon: '/favicon.ico',
       // GoatCounter — privacy-friendly analytics, no cookies, no consent
       // banner required. Same instance the old Docsify manual used.
       head: [

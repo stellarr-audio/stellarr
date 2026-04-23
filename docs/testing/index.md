@@ -14,15 +14,15 @@ You don't need to run every test case for every PR. Focus on the files relevant 
 
 | If you changed... | Test |
 |---|---|
-| Preset loading, graph management, plugin lifecycle | [Preset Switching](01-preset-switching.md) |
-| `StellarrStandaloneApp.cpp`, audio I/O | [Audio Devices](02-audio-devices.md) |
-| Plugin loading, Options panel, block creation | [Plugin Management](03-plugin-management.md) |
-| Connection layer, block bypass, graph topology | [Grid and Routing](04-grid-routing.md) |
-| Scene management, block state recall | [Scenes](05-scenes.md) |
-| Tuner, InputBlock, reference pitch | [Tuner](06-tuner.md) |
-| MIDI mapping, MidiMapper, MIDI page | [MIDI](07-midi.md) |
-| Settings page, telemetry, persistence | [Settings](08-settings.md) |
-| LUFS meter, loudness history, target loudness | [Loudness Metering](09-loudness-metering.md) |
+| Preset loading, graph management, plugin lifecycle | [Preset Switching](/docs/testing/01-preset-switching/) |
+| `StellarrStandaloneApp.cpp`, audio I/O | [Audio Devices](/docs/testing/02-audio-devices/) |
+| Plugin loading, Options panel, block creation | [Plugin Management](/docs/testing/03-plugin-management/) |
+| Connection layer, block bypass, graph topology | [Grid and Routing](/docs/testing/04-grid-routing/) |
+| Scene management, block state recall | [Scenes](/docs/testing/05-scenes/) |
+| Tuner, InputBlock, reference pitch | [Tuner](/docs/testing/06-tuner/) |
+| MIDI mapping, MidiMapper, MIDI page | [MIDI](/docs/testing/07-midi/) |
+| Settings page, telemetry, persistence | [Settings](/docs/testing/08-settings/) |
+| LUFS meter, loudness history, target loudness | [Loudness Metering](/docs/testing/09-loudness-metering/) |
     
 ## Setup
 

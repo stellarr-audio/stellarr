@@ -35,6 +35,9 @@
   --sl-color-accent-low:  #fef3c7;   /* amber-100-ish */
   --sl-color-accent:      #f59e0b;   /* amber-500 */
   --sl-color-accent-high: #b45309;   /* amber-700 */
+  /* In-content links use the deeper amber so prose stays readable
+     against the white body bg. */
+  --sl-color-text-accent: #b45309;
 
   --sl-color-white:      #0a0c1a;
   --sl-color-gray-1:     #1c1e22;

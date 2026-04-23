@@ -1,4 +1,9 @@
-# System
+---
+title: System
+description: Audio device selection, buffer sizes, and performance.
+sidebar:
+  order: 8
+---
 
 The System tab manages plugin libraries and shows app information.
 
@@ -39,12 +44,19 @@ A list of all plugins Stellarr has found, showing:
 
 If no plugins appear, check that your plugin directories are correctly configured and click **Scan Now**.
 
-## System Stats
+## Performance Meters (Footer)
 
-In the top-right corner of the header bar, two bars show real-time performance:
+The footer of the app runs three live meters:
 
-- **CPU** -- Audio processing load as a percentage. Colour changes from green (< 40%) to yellow (40--70%) to red (> 70%).
-- **OUT** -- Output level meter showing peak amplitude in **dBFS** (decibels relative to full scale). Green below -6 dB, yellow from -6 to 0 dB, red above 0 dB. When the output exceeds 0 dBFS the signal is **clipping** -- the value flashes red. Shows "-inf" at silence.
+- **CPU** — Audio processing load as a percentage. Green below ~40%, amber 40–70%, red above 70%.
+- **IN** — Input level from your audio interface in **dBFS**. Helps you set input gain before the first block.
+- **OUT** — Output level after the final block, in **dBFS**. Red when the signal clips above 0 dBFS.
+
+When a plugin block is selected, the footer also shows that block's **live LUFS** reading. See [Block Options](/docs/block-options/) for setting per-block loudness targets.
+
+## Theme
+
+Click the sun/moon icon in the header to switch between **Dark** and **Light** themes. Your choice is persisted across sessions. If you've never clicked the toggle, Stellarr follows your system appearance automatically.
 
 ## Audio & MIDI Settings
 

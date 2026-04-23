@@ -1,6 +1,11 @@
-# Block Options
+---
+title: Block Options
+description: Per-block settings for plugins, parameters, and state.
+sidebar:
+  order: 4
+---
 
-Select any block on the grid to see its options in the right-side panel.
+Select any block on the grid to open the **Options panel** — a floating panel you can drag by its header to position anywhere on screen. Close it with the **×** in its top-right, or simply click an empty area of the grid.
 
 ## Block Header
 
@@ -68,4 +73,14 @@ Plugin blocks can save up to **16 states**. Each state captures:
 - Click the **X** on a state to delete it (must keep at least one).
 - Click the **+** button to add a new state.
 
-States are saved when you save the preset. See [Presets, Scenes & States](07-presets-scenes-states.md) for the full picture.
+States are saved when you save the preset. See [Presets, Scenes & States](/docs/presets-scenes-states/) for the full picture.
+
+### Target Loudness (LUFS)
+
+Plugin blocks can have a **target loudness** set in LUFS. Stellarr measures the block's post-processing loudness live and displays it in the footer for the currently selected block.
+
+- Open the **Loudness** control in the Options panel to set a target value in LUFS (e.g. −18 LUFS for broadcast-style headroom).
+- The footer's loudness meter fills green below the target, shifts amber near it, and goes red when clipping is imminent.
+- A small history graph is available from the Loudness popup, giving you a running window of recent measurements while you dial a plugin in.
+
+Setting a target is optional — the meter still shows your current LUFS without one, it just loses the "matched" colour feedback.

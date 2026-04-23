@@ -1,4 +1,9 @@
-# Privacy & Telemetry
+---
+title: Privacy & Telemetry
+description: What Stellarr does and doesn't collect.
+sidebar:
+  order: 9
+---
 
 Stellarr respects your privacy. Crash reporting is **off by default** and only activates when you explicitly opt in.
 

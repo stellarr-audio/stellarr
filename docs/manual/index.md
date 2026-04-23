@@ -1,4 +1,9 @@
-# Introduction
+---
+title: Introduction
+description: What Stellarr is, who it's for, and the core ideas.
+sidebar:
+  order: 1
+---
 
 ## What is Stellarr?
 

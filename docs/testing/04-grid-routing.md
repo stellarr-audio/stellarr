@@ -1,4 +1,8 @@
-# Grid and Routing
+---
+title: Grid and Routing
+sidebar:
+  order: 4
+---
 
 Test whenever you touch the connection layer, block bypass, block movement, splice logic, or graph topology.
 

@@ -1,4 +1,8 @@
-# Preset Switching
+---
+title: Preset Switching
+sidebar:
+  order: 1
+---
 
 Test whenever you touch preset loading, `restoreSession`, `clearGraph`, plugin lifecycle, or `StellarrProcessor` graph management.
 

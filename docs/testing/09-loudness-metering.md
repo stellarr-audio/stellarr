@@ -1,4 +1,8 @@
-# Loudness Metering
+---
+title: Loudness Metering
+sidebar:
+  order: 9
+---
 
 Test whenever you touch the LUFS DSP (`dsp/KWeighting.h`, `dsp/LoudnessMeter.h`), the meter plumbing in `Block`/`OutputBlock`, or the Signal section in the options panel.
 

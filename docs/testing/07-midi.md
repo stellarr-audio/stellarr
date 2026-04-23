@@ -1,4 +1,8 @@
-# MIDI
+---
+title: MIDI
+sidebar:
+  order: 7
+---
 
 Test whenever you touch MIDI mapping, MidiMapper, the MIDI page, or MIDI-triggered actions.
 

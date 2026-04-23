@@ -1,4 +1,8 @@
-# Settings
+---
+title: Settings
+sidebar:
+  order: 8
+---
 
 Test whenever you touch the Settings page, telemetry, plugin scan, or application preferences.
 
@@ -55,4 +59,4 @@ Test whenever you touch the Settings page, telemetry, plugin scan, or applicatio
 3. Change a setting (e.g. buffer size)
 4. Close the dialog
 
-**Expected:** Setting takes effect immediately. Persists after relaunch (see [Audio Devices](02-audio-devices.md) for full persistence tests).
+**Expected:** Setting takes effect immediately. Persists after relaunch (see [Audio Devices](/docs/testing/02-audio-devices/) for full persistence tests).

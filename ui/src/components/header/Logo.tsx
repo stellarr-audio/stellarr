@@ -1,3 +1,4 @@
+import logoUrl from '../../../../assets/logo.svg?url';
 import styles from './Logo.module.css';
 
 interface Props {
@@ -9,7 +10,7 @@ interface Props {
 export function Logo({ size = 20, className, style }: Props) {
   return (
     <img
-      src="/logo.svg"
+      src={logoUrl}
       width={size}
       height={size}
       alt="Stellarr"

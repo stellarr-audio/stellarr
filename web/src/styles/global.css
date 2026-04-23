@@ -1,0 +1,599 @@
+:root {
+  /* Brand accents — same on both themes */
+  --orchid-50:  #fdf4ff;
+  --orchid-400: #e879f9;
+  --orchid-500: #d946ef;
+  --orchid-600: #c026d3;
+  --orchid-700: #a21caf;
+  --amber-400:  #fbbf24;
+  --amber-500:  #f59e0b;
+  --amber-600:  #d97706;
+  --amber-700:  #b45309;
+
+  /* Dimension tokens */
+  --glow-blur: 90px;
+}
+
+/* ---- DARK THEME ---- */
+html[data-theme-resolved="dark"] {
+  --bg:        #05060e;
+  --bg-2:      #0a0c1a;
+  --surface:   rgba(255,255,255,0.03);
+  --surface-2: rgba(255,255,255,0.05);
+
+  --text:    #f5f3ff;
+  --text-70: rgba(245,243,255,0.72);
+  --text-50: rgba(245,243,255,0.5);
+  --text-30: rgba(245,243,255,0.32);
+
+  --hairline:   rgba(255,255,255,0.08);
+  --hairline-2: rgba(255,255,255,0.14);
+
+  --accent:       var(--orchid-500);
+  --accent-hover: var(--orchid-400);
+  --btn-primary-color: var(--amber-500);
+  --feature-icon-color: var(--amber-400);
+  --pill-dot-green: #34d399;
+  --pill-bg:       var(--surface);
+  --pill-bg-hover: var(--surface-2);
+  --pill-border:   transparent;
+
+  --glow-opacity: 0.45;
+  --shot-shadow: drop-shadow(0 30px 60px rgba(0,0,0,0.6));
+}
+
+/* ---- LIGHT THEME ---- */
+html[data-theme-resolved="light"] {
+  --bg:        #fbfbfd;
+  --bg-2:      #f4f4f8;
+  --surface:   rgba(10,12,26,0.03);
+  --surface-2: rgba(10,12,26,0.06);
+
+  --text:    #0a0c1a;
+  --text-70: rgba(10,12,26,0.72);
+  --text-50: rgba(10,12,26,0.5);
+  --text-30: rgba(10,12,26,0.38);
+
+  --hairline:   rgba(10,12,26,0.08);
+  --hairline-2: rgba(10,12,26,0.16);
+
+  --accent:       var(--amber-500);
+  --accent-hover: var(--amber-600);
+  --btn-primary-color: var(--orchid-600);
+  --feature-icon-color: var(--orchid-600);
+  --pill-dot-green: #059669;
+  --pill-bg:       color-mix(in srgb, var(--amber-500) 7%, var(--bg));
+  --pill-bg-hover: color-mix(in srgb, var(--amber-500) 14%, var(--bg));
+  --pill-border:   transparent;
+
+  --glow-opacity: 0.22;
+  --shot-shadow: drop-shadow(0 20px 40px rgba(10,12,26,0.25));
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { background: var(--bg); transition: background 0.3s ease; }
+body {
+  font-family: 'Switzer', system-ui, -apple-system, sans-serif;
+  font-size: 16px; line-height: 1.5;
+  color: var(--text);
+  background: var(--bg);
+  min-height: 100vh;
+  overflow-x: hidden;
+  transition: background 0.3s ease, color 0.3s ease;
+}
+a { color: inherit; text-decoration: none; }
+
+.glow {
+  position: absolute; pointer-events: none; z-index: 0;
+  border-radius: 100%;
+  filter: blur(var(--glow-blur));
+  opacity: var(--glow-opacity);
+  transition: opacity 0.3s ease;
+}
+.glow.g-orchid   { background: var(--orchid-500); }
+.glow.g-amber    { background: var(--amber-500); }
+.glow.g-lavender { background: #a78bfa; }
+.glow.g-peach    { background: #fda4af; }
+.glow.g-nebula   { background: radial-gradient(circle, #4c1d95 0%, #1e1b4b 70%, transparent 100%); filter: blur(80px); }
+
+/* ===========================================================
+   COSMIC STARFIELD — SVG-backed pinpoints (crisp, not fuzzy).
+   Two tiled layers at different sizes + twinkle animations.
+   Dark mode only.
+   =========================================================== */
+.starfield {
+  position: fixed; inset: 0;
+  pointer-events: none; z-index: 0;
+  display: none;
+}
+html[data-theme-resolved="dark"] .starfield { display: block; }
+
+.starfield::before,
+.starfield::after {
+  content: '';
+  position: absolute; inset: 0;
+  background-repeat: repeat;
+}
+
+/* Layer 1 — small white pinpoints, "far" depth. Sparse tile. */
+.starfield::before {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 600 600'><g fill='white'><circle cx='45' cy='80' r='1'/><circle cx='180' cy='250' r='0.8'/><circle cx='320' cy='120' r='1.2'/><circle cx='500' cy='380' r='1'/><circle cx='100' cy='450' r='0.8'/><circle cx='420' cy='540' r='1'/><circle cx='550' cy='60' r='0.8'/><circle cx='260' cy='400' r='1'/><circle cx='80' cy='280' r='0.8'/><circle cx='380' cy='220' r='1'/></g></svg>");
+  background-size: 600px 600px;
+  transform: translate3d(0, var(--parallax-far, 0px), 0);
+  animation: twinkle-a 5s ease-in-out infinite;
+  will-change: transform;
+}
+
+/* Layer 2 — near-depth stars are real DOM nodes inside .starfield-near.
+   Each one twinkles on its own phase. Parent applies parallax offset. */
+.starfield-near {
+  position: absolute; inset: 0;
+  transform: translate3d(0, var(--parallax-near, 0px), 0);
+  will-change: transform;
+}
+.star {
+  position: absolute;
+  width: var(--size); height: var(--size);
+  pointer-events: none;
+  animation: star-twinkle var(--dur) ease-in-out infinite;
+  animation-delay: var(--delay);
+  transform: translate(-50%, -50%);
+}
+.star-white    { background: radial-gradient(circle, rgba(255,255,255,1) 0%, rgba(255,255,255,0.95) 15%, rgba(255,255,255,0) 65%); }
+.star-orchid   { background: radial-gradient(circle, rgba(232,121,249,1) 0%, rgba(232,121,249,0.9) 15%, rgba(232,121,249,0) 65%); }
+.star-amber    { background: radial-gradient(circle, rgba(251,191,36,1) 0%, rgba(251,191,36,0.9) 15%, rgba(251,191,36,0) 65%); }
+.star-lavender { background: radial-gradient(circle, rgba(167,139,250,1) 0%, rgba(167,139,250,0.9) 15%, rgba(167,139,250,0) 65%); }
+
+@keyframes twinkle-a {
+  0%, 100% { opacity: 0.7; }
+  50%      { opacity: 1; }
+}
+@keyframes star-twinkle {
+  0%, 42%, 58%, 100% { opacity: 0.3; transform: translate(-50%, -50%) scale(0.85); }
+  50%                { opacity: 1;   transform: translate(-50%, -50%) scale(1); }
+}
+
+/* ===========================================================
+   DAYLIGHT — light-mode atmosphere. Aurora gradient pools
+   (far depth) + tinted 4-point sparkles (near depth). Only
+   visible in light mode. Mirrors the dark-mode starfield
+   in mechanics but with motion instead of opacity twinkle.
+   =========================================================== */
+.daylight {
+  position: fixed; inset: 0;
+  pointer-events: none; z-index: 0;
+  display: none;
+}
+html[data-theme-resolved="light"] .daylight { display: block; }
+
+/* Aurora — slow-drifting pastel gradient pools */
+.daylight-aurora {
+  position: absolute; inset: -20%;
+  transform: translate3d(0, var(--parallax-far, 0px), 0);
+  will-change: transform;
+}
+.daylight-aurora::before,
+.daylight-aurora::after {
+  content: ''; position: absolute; inset: 0;
+  /* Orchid and amber pools swapped so orchid now dominates where amber
+     was, leaving amber free to be the CTA colour without clashing. */
+  background:
+    radial-gradient(ellipse 80% 40% at 30% 50%, rgba(251,191,36,0.45),  transparent 62%),
+    radial-gradient(ellipse 60% 50% at 70% 60%, rgba(232,121,249,0.40), transparent 62%),
+    radial-gradient(ellipse 50% 60% at 50% 30%, rgba(167,139,250,0.38), transparent 62%);
+  filter: blur(60px);
+  animation: aurora-shift 32s ease-in-out infinite alternate;
+}
+.daylight-aurora::after {
+  animation-duration: 44s;
+  animation-direction: alternate-reverse;
+  mix-blend-mode: screen;
+}
+@keyframes aurora-shift {
+  0%   { transform: translate(0, 0) scale(1); }
+  50%  { transform: translate(40px, -30px) scale(1.08); }
+  100% { transform: translate(-30px, 20px) scale(1.02); }
+}
+
+/* Sparkles — pure CSS cross shapes, pseudo-element based (no SVG mask).
+   Each .sparkle is a positioning container; ::before and ::after are the
+   two bars of the cross. Rotates + scales on flash. */
+.daylight-sparkles {
+  position: absolute; inset: 0;
+  transform: translate3d(0, var(--parallax-near, 0px), 0);
+  will-change: transform;
+}
+.sparkle {
+  position: absolute;
+  width: var(--size); height: var(--size);
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.4) rotate(0deg);
+  animation: sparkle-flash var(--dur) ease-in-out infinite;
+  animation-delay: var(--delay);
+  pointer-events: none;
+  will-change: opacity, transform;
+}
+.sparkle::before,
+.sparkle::after {
+  content: '';
+  position: absolute;
+  top: 50%; left: 50%;
+  background: var(--sparkle-color);
+  border-radius: 999px;
+  box-shadow: 0 0 8px var(--sparkle-color);
+}
+.sparkle::before {
+  width: 100%; height: 14%;
+  transform: translate(-50%, -50%);
+}
+.sparkle::after {
+  width: 14%; height: 100%;
+  transform: translate(-50%, -50%);
+}
+.sparkle-orchid   { --sparkle-color: var(--orchid-600); }
+.sparkle-amber    { --sparkle-color: var(--amber-500); }
+.sparkle-lavender { --sparkle-color: #8b5cf6; }
+
+@keyframes sparkle-flash {
+  /* Flash itself stays ~800ms absolute (40% of a 2s cycle). Shorter
+     cycles here just shorten the idle gap between flashes. */
+  0%, 30%, 70%, 100% { opacity: 0;    transform: translate(-50%, -50%) scale(0.4) rotate(0deg); }
+  50%                { opacity: 0.95; transform: translate(-50%, -50%) scale(1)   rotate(45deg); }
+}
+
+/* NAV */
+nav.top {
+  position: sticky; top: 0; z-index: 50;
+  padding: 14px 22px;
+  display: flex; align-items: center;
+  background: color-mix(in srgb, var(--bg) 70%, transparent);
+  backdrop-filter: blur(24px);
+  border-bottom: 1px solid var(--hairline);
+}
+nav.top .logo {
+  display: flex; align-items: center; gap: 10px;
+  font-weight: 700; font-size: 16px; letter-spacing: 0.08em;
+  color: var(--text);
+}
+nav.top .logo-mark {
+  width: 22px; height: 22px;
+  display: block;
+}
+nav.top ul {
+  margin-left: auto; display: flex; gap: 8px; list-style: none; align-items: center;
+}
+nav.top a.link {
+  padding: 8px 14px; font-size: 14px; font-weight: 500;
+  color: var(--text-70);
+  display: inline-flex; align-items: center; gap: 8px;
+  transition: all 0.15s;
+}
+nav.top a.link:hover { color: var(--text); background: var(--surface-2); }
+nav.top a.link .nav-icon { width: 16px; height: 16px; display: none; }
+nav.top a.cta {
+  height: 36px; padding: 0 16px;
+  display: inline-flex; align-items: center;
+  font-size: 14px; font-weight: 600;
+  background: transparent;
+  color: var(--btn-primary-color);
+  border: 1.5px solid var(--btn-primary-color);
+  transition: transform 0.15s, background 0.15s;
+}
+nav.top a.cta:hover {
+  background: color-mix(in srgb, var(--btn-primary-color) 10%, transparent);
+}
+
+/* Theme toggle — flips between dark and light. No system button;
+   system is the implicit default when no choice has been saved. */
+.theme-toggle {
+  appearance: none; background: transparent; border: 1px solid var(--hairline-2);
+  width: 36px; height: 36px;
+  display: inline-flex; align-items: center; justify-content: center;
+  color: var(--text-70); cursor: pointer;
+  transition: color 0.15s, background 0.15s, border-color 0.15s;
+}
+.theme-toggle:hover { color: var(--text); border-color: var(--accent); }
+.theme-toggle svg { width: 16px; height: 16px; }
+.theme-toggle .icon { display: none; }
+/* Show the icon of the mode you'd switch TO, not the current mode.
+   In dark, show sun (click = go light). In light, show moon. */
+html[data-theme-resolved="dark"]  .theme-toggle .icon-light { display: inline; }
+html[data-theme-resolved="light"] .theme-toggle .icon-dark  { display: inline; }
+
+.wrap { max-width: 1200px; margin: 0 auto; padding: 0 32px; position: relative; }
+
+/* HERO */
+section.hero {
+  position: relative;
+  padding: 120px 0 0;
+  min-height: 70vh;
+  text-align: center;
+  display: flex; flex-direction: column; justify-content: center;
+}
+section.hero .glow.g-nebula   { width: 900px; height: 900px; top: -200px; left: 50%; transform: translateX(-50%); opacity: calc(var(--glow-opacity) * 0.6); }
+section.hero .glow.g-orchid   { width: 580px; height: 580px; top: -120px; left: 50%; transform: translateX(-50%); opacity: calc(var(--glow-opacity) + 0.05); }
+section.hero .glow.g-amber    { width: 380px; height: 380px; top: 60px;  left: 10%; opacity: calc(var(--glow-opacity) * 0.55); }
+section.hero .glow.g-lavender { width: 420px; height: 420px; top: 180px; right: 5%; opacity: calc(var(--glow-opacity) * 0.65); }
+
+section.hero h1 {
+  position: relative; z-index: 1;
+  font-size: clamp(48px, 7.5vw, 96px);
+  font-weight: 700;
+  line-height: 1.0;
+  letter-spacing: -0.04em;
+  max-width: 1000px;
+  margin: 0 auto 32px;
+}
+section.hero h1 em {
+  font-style: italic; font-weight: 400;
+  background: linear-gradient(120deg, var(--amber-500) 0%, var(--orchid-600) 60%);
+  -webkit-background-clip: text; background-clip: text;
+  color: transparent;
+}
+section.hero p.subhead {
+  position: relative; z-index: 1;
+  font-size: 20px;
+  color: var(--text-70);
+  max-width: 600px;
+  margin: 0 auto 32px;
+  line-height: 1.45;
+}
+section.hero .ctas {
+  position: relative; z-index: 1;
+  display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;
+}
+
+.btn-primary, .btn-secondary {
+  height: 52px; padding: 0 26px;
+  display: inline-flex; align-items: center; gap: 10px;
+  font-family: inherit; font-size: 15px; font-weight: 600;
+  cursor: pointer;
+  background: transparent;
+  transition: all 0.15s;
+}
+.btn-icon { width: 18px; height: 18px; flex-shrink: 0; }
+
+/* Primary outline — amber in dark, orchid in light (theme-driven). */
+.btn-primary {
+  color: var(--btn-primary-color);
+  border: 1.5px solid var(--btn-primary-color);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--btn-primary-color) 22%, transparent);
+}
+.btn-primary:hover {
+  background: color-mix(in srgb, var(--btn-primary-color) 10%, transparent);
+  box-shadow: 0 12px 32px color-mix(in srgb, var(--btn-primary-color) 32%, transparent);
+}
+
+/* Secondary = text-color outline, text-color label. Adapts per theme. */
+.btn-secondary {
+  color: var(--text);
+  border: 1.5px solid var(--text);
+}
+.btn-secondary:hover {
+  background: color-mix(in srgb, var(--text) 8%, transparent);
+}
+
+/* SCREENSHOT — auto-swap with theme */
+section.shots {
+  position: relative;
+  padding: 0 0 60px;
+  margin-top: clamp(-80px, -5vh, -40px);
+  z-index: 2;
+}
+section.shots .glow.g-peach  { width: 360px; height: 360px; top: 40%; left: -8%; opacity: calc(var(--glow-opacity) * 0.4); }
+section.shots .glow.g-orchid { width: 400px; height: 400px; top: 40%; right: -10%; opacity: calc(var(--glow-opacity) * 0.4); }
+
+.shot {
+  position: relative; z-index: 1;
+  width: 100%;
+  line-height: 0;
+  filter: var(--shot-shadow);
+}
+.shot img {
+  display: block;
+  width: 100%; height: auto;
+}
+
+/* Section divider — hairline with a small orchid dot centred */
+.section-sep {
+  position: relative;
+  margin: 0 auto;
+  max-width: 1200px;
+  padding: 0 32px;
+  height: 48px;
+  display: flex; align-items: center; justify-content: center;
+}
+.section-sep::before {
+  content: '';
+  position: absolute; left: 32px; right: 32px; top: 50%;
+  height: 1px; background: var(--hairline);
+}
+.section-sep-dot {
+  position: relative; z-index: 1;
+  width: 6px; height: 6px;
+  background: var(--accent);
+  box-shadow: 0 0 10px var(--accent);
+}
+
+/* Pills */
+.pill {
+  position: relative;
+  display: inline-flex; align-items: center; gap: 10px;
+  padding: 8px 16px 8px 14px;
+  background: var(--pill-bg);
+  border: 1px solid var(--pill-border);
+  font-size: 13px; font-weight: 500;
+  color: var(--text-70);
+  transition: color 0.15s, background 0.15s, border-color 0.15s;
+}
+.pill::before {
+  content: ''; position: absolute; left: 0; top: 6px; bottom: 6px;
+  width: 2px; background: var(--accent);
+  opacity: 0; transition: opacity 0.15s;
+}
+.pill:hover { color: var(--text); background: var(--pill-bg-hover); }
+.pill:hover::before { opacity: 1; }
+.pill .pill-icon { width: 16px; height: 16px; flex-shrink: 0; color: var(--text); }
+.pill strong { color: var(--text); font-weight: 600; letter-spacing: -0.005em; }
+
+.hero-pills {
+  position: relative; z-index: 1;
+  display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;
+  margin: 32px auto 0; max-width: 760px;
+}
+
+/* FEATURES — bento-style 2×2 grid */
+section.features { position: relative; padding: 40px 0 60px; }
+section.features .glow.g-amber { width: 360px; height: 360px; top: 40%; left: -10%; opacity: calc(var(--glow-opacity) * 0.3); }
+section.features .glow.g-lavender { width: 380px; height: 380px; top: 40%; right: -10%; opacity: calc(var(--glow-opacity) * 0.3); }
+
+section.features .head { text-align: center; margin-bottom: 48px; position: relative; z-index: 1; }
+section.features h2 {
+  font-size: clamp(36px, 5vw, 56px);
+  font-weight: 700; letter-spacing: -0.03em;
+  line-height: 1.05; margin-bottom: 12px;
+}
+section.features h2 em {
+  font-style: italic; font-weight: 400;
+  background: linear-gradient(120deg, var(--amber-500), var(--orchid-600));
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+section.features .features-sub { color: var(--text-50); font-size: 16px; }
+
+.feature-grid {
+  position: relative; z-index: 1;
+  max-width: 1136px; margin: 0 auto;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+}
+.feature-card {
+  background: var(--pill-bg);
+  border: 1px solid var(--hairline);
+  display: flex; flex-direction: row;
+  align-items: stretch;
+  overflow: hidden;
+  min-height: 140px;
+  transition: background 0.15s, border-color 0.15s;
+}
+.feature-card:hover { background: var(--pill-bg-hover); border-color: var(--hairline-2); }
+html[data-theme-resolved="light"] .feature-card,
+html[data-theme-resolved="light"] .feature-card:hover { border-color: transparent; }
+
+.feature-icon {
+  flex: 0 0 140px;
+  align-self: stretch;
+  display: flex; align-items: center; justify-content: center;
+  background:
+    linear-gradient(135deg,
+      color-mix(in srgb, var(--accent) 18%, var(--bg-2)) 0%,
+      color-mix(in srgb, var(--amber-500) 8%, var(--bg-2)) 100%);
+  border-right: 1px solid var(--hairline);
+  color: var(--feature-icon-color);
+}
+.feature-icon svg { width: 40px; height: 40px; }
+
+.feature-body {
+  flex: 1;
+  padding: 24px 26px;
+  display: flex; flex-direction: column; justify-content: center;
+}
+.feature-body h3 {
+  font-size: 22px; font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+.feature-body p {
+  color: var(--text-70);
+  font-size: 15px; line-height: 1.5;
+}
+
+@media (max-width: 680px) {
+  .feature-grid { grid-template-columns: 1fr; gap: 12px; }
+  section.features { padding: 32px 0 50px; }
+  /* Icon tile on mobile — smaller, stays on the left */
+  .feature-card  { min-height: 0; }
+  .feature-icon  { flex: 0 0 96px; }
+  .feature-icon svg { width: 32px; height: 32px; }
+}
+
+/* FAQ */
+section.faq { position: relative; padding: 40px 0 80px; }
+section.faq .glow.g-amber { width: 340px; height: 340px; top: 20%; left: 50%; transform: translateX(-50%); opacity: calc(var(--glow-opacity) * 0.28); }
+section.faq .head { text-align: center; margin-bottom: 56px; position: relative; z-index: 1; }
+section.faq h2 {
+  font-size: clamp(36px, 5vw, 56px);
+  font-weight: 700; letter-spacing: -0.03em;
+  line-height: 1.05; margin-bottom: 12px;
+}
+section.faq h2 em {
+  font-style: italic; font-weight: 400;
+  background: linear-gradient(120deg, var(--amber-500), var(--orchid-600));
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+section.faq .faq-sub { color: var(--text-50); font-size: 16px; }
+.faq-list {
+  position: relative; z-index: 1;
+  max-width: 780px; margin: 0 auto;
+  display: flex; flex-direction: column; gap: 12px;
+}
+.faq-item {
+  padding: 22px 26px;
+  border: 1px solid var(--hairline);
+  background: var(--pill-bg);
+  transition: all 0.15s;
+}
+.faq-item:hover { border-color: var(--hairline-2); background: var(--pill-bg-hover); }
+html[data-theme-resolved="light"] .faq-item,
+html[data-theme-resolved="light"] .faq-item:hover { border-color: transparent; }
+/* In dark mode the starfield shows through; bump the fill opacity so
+   question text stays readable over the busier background. */
+html[data-theme-resolved="dark"] .faq-item        { background: rgba(255,255,255,0.07); }
+html[data-theme-resolved="dark"] .faq-item:hover  { background: rgba(255,255,255,0.10); }
+.faq-q {
+  font-size: 17px; font-weight: 600;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+.faq-a { margin-top: 12px; color: var(--text-70); font-size: 15px; line-height: 1.6; }
+.faq-a a { color: var(--amber-500); text-decoration: underline; text-underline-offset: 3px; }
+
+/* FOOTER */
+footer.bottom {
+  padding: 40px 0 60px;
+  border-top: 1px solid var(--hairline);
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 13px; color: var(--text-50);
+}
+footer.bottom .links { display: flex; gap: 22px; }
+footer.bottom a:hover { color: var(--amber-500); }
+
+@media (max-width: 680px) {
+  nav.top { padding: 12px 16px; }
+  .wrap { padding: 0 20px; }
+  section.hero { padding: 80px 0 70px; }
+  footer.bottom { flex-direction: column; gap: 16px; padding: 32px 0; }
+
+  /* Compact mobile nav: icons only, no Download CTA (app is desktop-only). */
+  nav.top a.link { padding: 8px; }
+  nav.top a.link .nav-label { display: none; }
+  nav.top a.link .nav-icon  { display: inline; }
+  nav.top a.cta             { display: none; }
+
+  /* Hero: also drop the primary Download CTA — download not useful on mobile */
+  section.hero .btn-primary { display: none; }
+}
+
+@media (max-width: 680px) {
+  /* Scale glow orbs down on mobile so they don't saturate the whole
+     viewport and wash out the text. */
+  section.hero .glow.g-orchid   { width: 320px; height: 320px; top: -80px;  opacity: calc(var(--glow-opacity) * 0.65); }
+  section.hero .glow.g-amber    { width: 200px; height: 200px; top: 30px;   opacity: calc(var(--glow-opacity) * 0.35); }
+  section.hero .glow.g-lavender { width: 220px; height: 220px; top: 120px;  opacity: calc(var(--glow-opacity) * 0.45); }
+
+  /* Smaller peek on mobile so image doesn't overlap the hero pills */
+  section.shots { margin-top: -24px; padding-bottom: 50px; }
+
+  /* Stack the three lines of the headline on separate lines */
+  section.hero h1 .line        { display: block; }
+  section.hero h1 .desktop-br  { display: none; }
+}

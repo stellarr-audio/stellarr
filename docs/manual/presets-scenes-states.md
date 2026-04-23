@@ -1,4 +1,9 @@
-# Presets, Scenes & States
+---
+title: Presets, Scenes & States
+description: Capture, recall, and switch rig snapshots.
+sidebar:
+  order: 7
+---
 
 Stellarr has a three-tier system for saving and recalling your sound:
 
@@ -25,7 +30,7 @@ When you save, a checkmark briefly flashes to confirm.
 
 ### MIDI Preset Switching
 
-Click the **Link icon** next to the preset dropdown to assign MIDI Program Change control. When assigned, each preset in the dropdown shows a **PC:N** tag indicating which Program Change value selects it (e.g., PC:0 for the first file, PC:1 for the second). See [MIDI](05-midi.md) for details.
+Click the **Link icon** next to the preset dropdown to assign MIDI Program Change control. When assigned, each preset in the dropdown shows a **PC:N** tag indicating which Program Change value selects it (e.g., PC:0 for the first file, PC:1 for the second). See [MIDI](/docs/midi/) for details.
 
 ### Preset Folder
 
@@ -50,6 +55,10 @@ The scene controls are in the header bar next to the preset dropdown:
 - **Dots menu** (per scene) -- **Rename** or **Delete** a scene.
 
 Every preset starts with one scene called "Scene 1". You can have up to 16 scenes.
+
+### Stage Display
+
+Above the grid, the active preset and scene names are displayed in large type — preset on the left, scene on the right, separated by a small diamond. The two names are colour-coded so the distinction is readable from across a stage. Both react instantly when you switch.
 
 ### How Scene Switching Works
 

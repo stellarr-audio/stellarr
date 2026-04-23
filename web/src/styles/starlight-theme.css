@@ -1,0 +1,104 @@
+/* Starlight token bridge — maps Stellarr's brand palette into Starlight's
+ * CSS variable system. Runs on all /docs/* routes. Starlight toggles
+ * data-theme="dark" / "light" on <html>; this file overrides per-theme.
+ */
+
+:root {
+  --sl-font: 'Switzer', system-ui, -apple-system, sans-serif;
+  --sl-font-system: 'Switzer', system-ui, -apple-system, sans-serif;
+  --sl-font-system-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+}
+
+/* ---- DARK ---- */
+:root[data-theme='dark'] {
+  --sl-color-accent-low:  #3b0944;
+  --sl-color-accent:      #d946ef;   /* orchid-500 */
+  --sl-color-accent-high: #f0abfc;   /* orchid-300 */
+
+  --sl-color-white:      #f5f3ff;
+  --sl-color-gray-1:     #e8e2f1;
+  --sl-color-gray-2:     #c8c0d2;
+  --sl-color-gray-3:     #9a91a8;
+  --sl-color-gray-4:     #655f74;
+  --sl-color-gray-5:     #3a3545;
+  --sl-color-gray-6:     #1c1a24;
+  --sl-color-gray-7:     #0f0e17;
+  --sl-color-black:      #05060e;
+
+  --sl-color-bg:         #05060e;
+  --sl-color-bg-nav:     rgba(10,12,26,0.7);
+  --sl-color-bg-sidebar: #0a0c1a;
+}
+
+/* ---- LIGHT ---- */
+:root[data-theme='light'] {
+  --sl-color-accent-low:  #fef3c7;   /* amber-100-ish */
+  --sl-color-accent:      #f59e0b;   /* amber-500 */
+  --sl-color-accent-high: #b45309;   /* amber-700 */
+  /* In-content links use the deeper amber so prose stays readable
+     against the white body bg. */
+  --sl-color-text-accent: #b45309;
+
+  --sl-color-white:      #0a0c1a;
+  --sl-color-gray-1:     #1c1e22;
+  --sl-color-gray-2:     #374151;
+  --sl-color-gray-3:     #6b7280;
+  --sl-color-gray-4:     #9ca3af;
+  --sl-color-gray-5:     #d1d5db;
+  --sl-color-gray-6:     #e5e7eb;
+  --sl-color-gray-7:     #f4f4f8;
+  --sl-color-black:      #fbfbfd;
+
+  --sl-color-bg:         #fbfbfd;
+  --sl-color-bg-nav:     rgba(251,251,253,0.75);
+  --sl-color-bg-sidebar: #f4f4f8;
+}
+
+/* Logo lockup — matches the landing nav exactly:
+   22px mark, 16px all-caps Switzer at weight 700 with 0.08em tracking,
+   theme-adaptive text colour (near-black in light / near-white in dark). */
+.site-title {
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  gap: 10px;
+  color: var(--sl-color-white);
+}
+.site-title img { width: 22px; height: 22px; }
+
+/* =================================================================
+   Light-mode sidebar readability. Amber accent washes out on white
+   for fine-grain interactive text; bump it with deeper shades + use
+   dark text on the amber fill for the active nav item.
+   ================================================================= */
+
+/* Left sidebar: highlighted page — near-black text on amber-500 fill.
+   Note: Starlight's `--sl-color-white` is the *text* colour (near-black
+   in light mode); `--sl-color-black` is the *background* colour. */
+:root[data-theme='light'] .sidebar-content a[aria-current='page'] {
+  color: var(--sl-color-white);              /* near-black dark text */
+  background-color: var(--sl-color-accent);  /* amber-500 fill */
+  font-weight: 600;
+}
+/* Hover state on non-active links — deeper amber (amber-700) to match
+   the right sidebar's active/hover colour. Active link keeps its dark
+   text on amber fill when hovered. */
+:root[data-theme='light'] .sidebar-content a:not([aria-current='page']):hover,
+:root[data-theme='light'] .sidebar-content a:not([aria-current='page']):focus {
+  color: var(--sl-color-accent-high);  /* amber-700 */
+}
+
+/* Right sidebar (table of contents): amber-500 text is too low-contrast
+   on white. Use text-accent-high (amber-700) for active link state and
+   bump link-hover into the same deeper shade. */
+:root[data-theme='light'] starlight-toc nav a[aria-current='true'],
+:root[data-theme='light'] starlight-toc nav a:hover {
+  color: var(--sl-color-accent-high);  /* amber-700 = #b45309 */
+}
+:root[data-theme='light'] starlight-toc nav a[aria-current='true'] {
+  font-weight: 600;
+  border-inline-start-color: var(--sl-color-accent-high);
+  text-decoration: underline;
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 4px;
+}

@@ -2,7 +2,7 @@
   <img src="assets/icon.svg" alt="Stellarr" width="64" height="64" />
 </p>
 
-<h1 align="center">Stellarr</h1>
+<h1 align="center">STELLARR</h1>
 
 <p align="center">
   Open-source signal processing for musicians.<br/>
@@ -15,7 +15,8 @@
 </p>
 
 <p align="center">
-  <a href="https://stellarr.org">Manual</a> &middot;
+  <a href="https://stellarr.org">Website</a> &middot;
+  <a href="https://stellarr.org/docs/">Docs</a> &middot;
   <a href="docs/CONTRIBUTING.md">Contributing</a> &middot;
   <a href="LICENSE">Licence</a>
 </p>
@@ -70,15 +71,15 @@ See [Contributing](docs/CONTRIBUTING.md) for the full development guide.
 
 ## Documentation
 
-The [user manual](docs/manual/01-introduction.md) covers everything from quick start to MIDI mapping.
+The [user manual](https://stellarr.org/docs/) covers everything from quick start to MIDI mapping. Markdown sources live at [`docs/manual/`](docs/manual/); dev test cases at [`docs/testing/`](docs/testing/).
 
-To browse it locally with navigation and search:
+To browse the site locally with hot reload:
 
 ```
 make docs
 ```
 
-Then open [http://localhost:3001](http://localhost:3001).
+Then open [http://localhost:4321](http://localhost:4321).
 
 ## Privacy
 
@@ -86,7 +87,7 @@ Stellarr includes optional crash reporting powered by [Sentry](https://sentry.io
 
 When enabled, only anonymous crash data is sent (stack traces, app version, OS version). No plugin names, preset content, audio data, file paths, or personal information is ever collected. If you don't opt in, no data leaves your machine.
 
-Full details in the [Privacy & Telemetry](https://stellarr.org/#/09-privacy) page.
+Full details in the [Privacy & Telemetry](https://stellarr.org/docs/privacy/) page.
 
 ## Licence
 

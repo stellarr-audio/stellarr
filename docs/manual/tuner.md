@@ -1,4 +1,9 @@
-# Tuner
+---
+title: Tuner
+description: Accurate, always-on pitch detection.
+sidebar:
+  order: 6
+---
 
 Stellarr includes a built-in chromatic tuner for quick tuning between songs or during setup.
 
@@ -12,15 +17,23 @@ Stellarr includes a built-in chromatic tuner for quick tuning between songs or d
 
 The tuner is designed to be readable from across a stage:
 
-- **Note name** -- Very large text (e.g., **E**, **A**, **G#**). Colour-coded:
-  - **Green** -- within 5 cents of in-tune
-  - **Yellow** -- within 15 cents
-  - **Pink** -- more than 15 cents off
+- **Note name** -- Very large text (e.g., **E**, **A**, **G#**). The colour shifts with how in-tune you are:
+  - **Green** — within 5 cents of in-tune
+  - **Amber** — within 15 cents
+  - **Orchid** — more than 15 cents off
 - **Octave** -- Shown next to the note name (e.g., **4** for A4 = 440 Hz).
 - **Frequency** -- Precise frequency in Hz (e.g., 440.0 Hz).
-- **Cents bar** -- A horizontal gauge from -50 to +50 cents. A needle shows your current offset. Centre = perfectly in tune.
 
 When no signal is detected, the display shows dashes.
+
+## Needle vs Strobe
+
+The tuner has two visualisation modes, toggled via the tabs inside the Tuner page:
+
+- **Needle** — A horizontal cents bar from −50 to +50. A single needle shows your current offset. Centre = perfectly in tune.
+- **Strobe** — A classic strobe band. Vertical stripes scroll left or right; when the note is perfectly in tune they stand still. Faster scroll means further off.
+
+Pick whichever you read better. The mode is remembered across sessions.
 
 ## Auto-Mute
 

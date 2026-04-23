@@ -1,4 +1,8 @@
-# Settings
+---
+title: Settings
+sidebar:
+  order: 8
+---
 
 Test whenever you touch the Settings page, telemetry, plugin scan, or application preferences.
 

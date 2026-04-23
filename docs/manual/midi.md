@@ -1,4 +1,9 @@
-# MIDI
+---
+title: MIDI
+description: Map parameters to controllers, banks, and footswitches.
+sidebar:
+  order: 5
+---
 
 Stellarr supports full MIDI control for live performance and studio use.
 

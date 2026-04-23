@@ -1,4 +1,8 @@
-# Audio Devices
+---
+title: Audio Devices
+sidebar:
+  order: 2
+---
 
 Test whenever you touch `StellarrStandaloneApp.cpp`, audio I/O code, or the JUCE `AudioDeviceManager` integration.
 

@@ -1,4 +1,9 @@
-# System
+---
+title: System
+description: Audio device selection, buffer sizes, and performance.
+sidebar:
+  order: 8
+---
 
 The System tab manages plugin libraries and shows app information.
 

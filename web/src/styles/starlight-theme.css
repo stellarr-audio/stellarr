@@ -1,0 +1,55 @@
+/* Starlight token bridge — maps Stellarr's brand palette into Starlight's
+ * CSS variable system. Runs on all /docs/* routes. Starlight toggles
+ * data-theme="dark" / "light" on <html>; this file overrides per-theme.
+ */
+
+:root {
+  --sl-font: 'Switzer', system-ui, -apple-system, sans-serif;
+  --sl-font-system: 'Switzer', system-ui, -apple-system, sans-serif;
+  --sl-font-system-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+}
+
+/* ---- DARK ---- */
+:root[data-theme='dark'] {
+  --sl-color-accent-low:  #3b0944;
+  --sl-color-accent:      #d946ef;   /* orchid-500 */
+  --sl-color-accent-high: #f0abfc;   /* orchid-300 */
+
+  --sl-color-white:      #f5f3ff;
+  --sl-color-gray-1:     #e8e2f1;
+  --sl-color-gray-2:     #c8c0d2;
+  --sl-color-gray-3:     #9a91a8;
+  --sl-color-gray-4:     #655f74;
+  --sl-color-gray-5:     #3a3545;
+  --sl-color-gray-6:     #1c1a24;
+  --sl-color-gray-7:     #0f0e17;
+  --sl-color-black:      #05060e;
+
+  --sl-color-bg:         #05060e;
+  --sl-color-bg-nav:     rgba(10,12,26,0.7);
+  --sl-color-bg-sidebar: #0a0c1a;
+}
+
+/* ---- LIGHT ---- */
+:root[data-theme='light'] {
+  --sl-color-accent-low:  #fae8ff;
+  --sl-color-accent:      #c026d3;   /* orchid-600 */
+  --sl-color-accent-high: #86198f;   /* orchid-800 */
+
+  --sl-color-white:      #0a0c1a;
+  --sl-color-gray-1:     #1c1e22;
+  --sl-color-gray-2:     #374151;
+  --sl-color-gray-3:     #6b7280;
+  --sl-color-gray-4:     #9ca3af;
+  --sl-color-gray-5:     #d1d5db;
+  --sl-color-gray-6:     #e5e7eb;
+  --sl-color-gray-7:     #f4f4f8;
+  --sl-color-black:      #fbfbfd;
+
+  --sl-color-bg:         #fbfbfd;
+  --sl-color-bg-nav:     rgba(251,251,253,0.75);
+  --sl-color-bg-sidebar: #f4f4f8;
+}
+
+/* Switzer font for the logo lockup */
+.site-title { letter-spacing: -0.02em; }

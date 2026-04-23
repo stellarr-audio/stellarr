@@ -1,4 +1,9 @@
-# Tuner
+---
+title: Tuner
+description: Accurate, always-on pitch detection.
+sidebar:
+  order: 6
+---
 
 Stellarr includes a built-in chromatic tuner for quick tuning between songs or during setup.
 

@@ -1,4 +1,9 @@
-# Block Options
+---
+title: Block Options
+description: Per-block settings for plugins, parameters, and state.
+sidebar:
+  order: 4
+---
 
 Select any block on the grid to see its options in the right-side panel.
 
@@ -68,4 +73,4 @@ Plugin blocks can save up to **16 states**. Each state captures:
 - Click the **X** on a state to delete it (must keep at least one).
 - Click the **+** button to add a new state.
 
-States are saved when you save the preset. See [Presets, Scenes & States](07-presets-scenes-states.md) for the full picture.
+States are saved when you save the preset. See [Presets, Scenes & States](/docs/presets-scenes-states/) for the full picture.

@@ -37,12 +37,12 @@ When asked to review code (or variations like "pls review", "review and commit",
 
 ## Documentation
 
-- User manual lives in `docs/manual/` as numbered Markdown files served via Docsify
+- User manual lives in `docs/manual/` as Markdown files with Starlight frontmatter (`title`, `description`, `sidebar:{order}`). Dev test cases live in `docs/testing/` with the same frontmatter shape. Both are rendered by the Astro site in `web/` and served at `stellarr.org/docs/*`.
 - When adding or significantly changing a user-facing feature, update the relevant manual page
 - Match the existing tone: concise, second-person, no jargon without explanation
 - Use New Zealand English spelling consistent with the rest of the project
 - Do not create new manual pages without being asked — prefer extending existing ones
-- Reference other pages with relative Markdown links (e.g., `[MIDI](05-midi.md)`)
+- Reference other pages with absolute URL paths (e.g., `[MIDI](/docs/midi/)`) — Starlight resolves them.
 - **Do not commit design specs, brainstorming specs, or implementation plans to the repo.** Durable project truth lives in `docs/manual/`, `CLAUDE.md`, PR descriptions, and GitHub release notes. If a decision needs to outlive the session, promote it into one of those surfaces.
 - **Working specs live under `.superpowers/brainstorm/<session-id>/`** (gitignored). The superpowers visual-brainstorming server writes its HTML mockups there; write per-feature spec markdown (e.g. `spec.md`) next to them. Survives restarts, invisible to git, discoverable by future sessions — list `.superpowers/brainstorm/` to pick up prior work. Default spec path: `.superpowers/brainstorm/<session-id>/spec.md` rather than `docs/superpowers/specs/` (which is off-limits).
 
@@ -159,6 +159,8 @@ macOS Apple Silicon, CMake 3.24+, Xcode CLI tools, Node.js 18+, npm. See `docs/C
 | Zustand store | `ui/src/store/index.ts` |
 | C++ tests | `engine/test/` |
 | User manual | `docs/manual/` |
+| Dev test cases | `docs/testing/` |
+| Website (Astro + Starlight) | `web/` |
 
 ## Design system (UI)
 

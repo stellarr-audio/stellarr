@@ -1,4 +1,8 @@
-# Manual Testing Guide
+---
+title: Manual Testing Guide
+sidebar:
+  order: 0
+---
 
 Automated tests (`make test`) cover graph integrity, audio routing, and state serialisation. This guide covers what they can't: real plugin behaviour, audible quality, GUI interactions, and hardware-dependent flows.
 

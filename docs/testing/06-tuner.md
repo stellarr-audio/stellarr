@@ -1,4 +1,8 @@
-# Tuner
+---
+title: Tuner
+sidebar:
+  order: 6
+---
 
 Test whenever you touch the tuner, InputBlock pitch detection, reference pitch, tuner modes, or the Tuner tab lifecycle.
 

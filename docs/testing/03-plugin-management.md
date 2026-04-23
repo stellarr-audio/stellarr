@@ -1,4 +1,8 @@
-# Plugin Management
+---
+title: Plugin Management
+sidebar:
+  order: 3
+---
 
 Test whenever you touch plugin loading, the Options panel, block creation, or the plugin scan system.
 

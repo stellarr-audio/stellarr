@@ -1,4 +1,9 @@
-# Quick Start
+---
+title: Quick Start
+description: Get a rig running in a few minutes.
+sidebar:
+  order: 2
+---
 
 Get up and running in under five minutes.
 
@@ -42,6 +47,6 @@ Click the save icon in the header bar, or use **Save As** from the dropdown to c
 
 ## What's Next?
 
-- **[Grid](03-grid.md)** -- Learn about blocks, connections, and the signal chain
-- **[Presets, Scenes & States](07-presets-scenes-states.md)** -- Save and recall configurations
-- **[MIDI](05-midi.md)** -- Control everything with your MIDI hardware
+- **[Grid](/docs/grid/)** -- Learn about blocks, connections, and the signal chain
+- **[Presets, Scenes & States](/docs/presets-scenes-states/)** -- Save and recall configurations
+- **[MIDI](/docs/midi/)** -- Control everything with your MIDI hardware

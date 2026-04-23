@@ -1,4 +1,8 @@
-# Scenes
+---
+title: Scenes
+sidebar:
+  order: 5
+---
 
 Test whenever you touch scene management, block state recall, or the scene dropdown in the preset browser.
 

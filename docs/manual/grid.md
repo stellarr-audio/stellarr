@@ -1,4 +1,9 @@
-# The Grid
+---
+title: The Grid
+description: Blocks, connections, and how signal flows on the grid.
+sidebar:
+  order: 3
+---
 
 The Grid is where you build your signal chain. It's a visual workspace where blocks are placed and connected with wires.
 

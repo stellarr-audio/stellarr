@@ -1,6 +1,25 @@
 ---
 import '../styles/global.css';
 
+// Light-mode sparkles — 4-point star sprites that briefly flash.
+const sparkles: { x: number; y: number; size: number; tint: string; delay: number; dur: number }[] = [
+  { x: 10, y: 12, size: 14, tint: 'orchid',   delay: 0,   dur: 2.0 },
+  { x: 25, y: 38, size: 11, tint: 'amber',    delay: 0.6, dur: 2.3 },
+  { x: 44, y: 22, size: 13, tint: 'lavender', delay: 1.2, dur: 2.1 },
+  { x: 60, y: 55, size: 16, tint: 'orchid',   delay: 0.2, dur: 2.4 },
+  { x: 78, y: 30, size: 11, tint: 'amber',    delay: 0.9, dur: 1.9 },
+  { x: 92, y: 48, size: 13, tint: 'lavender', delay: 1.6, dur: 2.5 },
+  { x: 15, y: 72, size: 14, tint: 'orchid',   delay: 0.4, dur: 2.5 },
+  { x: 38, y: 85, size: 11, tint: 'amber',    delay: 1.1, dur: 2.0 },
+  { x: 58, y: 90, size: 13, tint: 'lavender', delay: 0.1, dur: 2.3 },
+  { x: 80, y: 80, size: 15, tint: 'orchid',   delay: 1.0, dur: 2.0 },
+  { x: 5,  y: 52, size: 11, tint: 'amber',    delay: 1.5, dur: 2.4 },
+  { x: 50, y: 42, size: 16, tint: 'orchid',   delay: 0.5, dur: 2.2 },
+  { x: 70, y: 10, size: 11, tint: 'lavender', delay: 1.4, dur: 2.1 },
+  { x: 30, y: 60, size: 13, tint: 'amber',    delay: 0.7, dur: 2.3 },
+  { x: 86, y: 68, size: 14, tint: 'orchid',   delay: 0.3, dur: 2.2 },
+];
+
 // Bright near-layer stars — each its own DOM element so it can
 // twinkle independently with its own phase and duration.
 const nearStars: { x: number; y: number; size: number; tint: string; delay: number; dur: number }[] = [
@@ -53,6 +72,18 @@ const nearStars: { x: number; y: number; size: number; tint: string; delay: numb
         <span
           class={`star star-${s.tint}`}
           style={`left:${s.x}%;top:${s.y}%;--size:${s.size * 2}px;--delay:${s.delay}s;--dur:${s.dur}s`}
+        />
+      ))}
+    </div>
+  </div>
+
+  <div class="daylight" aria-hidden="true">
+    <div class="daylight-aurora"></div>
+    <div class="daylight-sparkles">
+      {sparkles.map((s) => (
+        <span
+          class={`sparkle sparkle-${s.tint}`}
+          style={`left:${s.x}%;top:${s.y}%;--size:${s.size}px;--delay:${s.delay}s;--dur:${s.dur}s`}
         />
       ))}
     </div>

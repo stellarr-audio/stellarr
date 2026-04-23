@@ -149,6 +149,94 @@ html[data-theme-resolved="dark"] .starfield { display: block; }
   50%                { opacity: 1;   transform: translate(-50%, -50%) scale(1); }
 }
 
+/* ===========================================================
+   DAYLIGHT — light-mode atmosphere. Aurora gradient pools
+   (far depth) + tinted 4-point sparkles (near depth). Only
+   visible in light mode. Mirrors the dark-mode starfield
+   in mechanics but with motion instead of opacity twinkle.
+   =========================================================== */
+.daylight {
+  position: fixed; inset: 0;
+  pointer-events: none; z-index: 0;
+  display: none;
+}
+html[data-theme-resolved="light"] .daylight { display: block; }
+
+/* Aurora — slow-drifting pastel gradient pools */
+.daylight-aurora {
+  position: absolute; inset: -20%;
+  transform: translate3d(0, var(--parallax-far, 0px), 0);
+  will-change: transform;
+}
+.daylight-aurora::before,
+.daylight-aurora::after {
+  content: ''; position: absolute; inset: 0;
+  /* Orchid and amber pools swapped so orchid now dominates where amber
+     was, leaving amber free to be the CTA colour without clashing. */
+  background:
+    radial-gradient(ellipse 80% 40% at 30% 50%, rgba(251,191,36,0.45),  transparent 62%),
+    radial-gradient(ellipse 60% 50% at 70% 60%, rgba(232,121,249,0.40), transparent 62%),
+    radial-gradient(ellipse 50% 60% at 50% 30%, rgba(167,139,250,0.38), transparent 62%);
+  filter: blur(60px);
+  animation: aurora-shift 32s ease-in-out infinite alternate;
+}
+.daylight-aurora::after {
+  animation-duration: 44s;
+  animation-direction: alternate-reverse;
+  mix-blend-mode: screen;
+}
+@keyframes aurora-shift {
+  0%   { transform: translate(0, 0) scale(1); }
+  50%  { transform: translate(40px, -30px) scale(1.08); }
+  100% { transform: translate(-30px, 20px) scale(1.02); }
+}
+
+/* Sparkles — pure CSS cross shapes, pseudo-element based (no SVG mask).
+   Each .sparkle is a positioning container; ::before and ::after are the
+   two bars of the cross. Rotates + scales on flash. */
+.daylight-sparkles {
+  position: absolute; inset: 0;
+  transform: translate3d(0, var(--parallax-near, 0px), 0);
+  will-change: transform;
+}
+.sparkle {
+  position: absolute;
+  width: var(--size); height: var(--size);
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.4) rotate(0deg);
+  animation: sparkle-flash var(--dur) ease-in-out infinite;
+  animation-delay: var(--delay);
+  pointer-events: none;
+  will-change: opacity, transform;
+}
+.sparkle::before,
+.sparkle::after {
+  content: '';
+  position: absolute;
+  top: 50%; left: 50%;
+  background: var(--sparkle-color);
+  border-radius: 999px;
+  box-shadow: 0 0 8px var(--sparkle-color);
+}
+.sparkle::before {
+  width: 100%; height: 14%;
+  transform: translate(-50%, -50%);
+}
+.sparkle::after {
+  width: 14%; height: 100%;
+  transform: translate(-50%, -50%);
+}
+.sparkle-orchid   { --sparkle-color: var(--orchid-600); }
+.sparkle-amber    { --sparkle-color: var(--amber-500); }
+.sparkle-lavender { --sparkle-color: #8b5cf6; }
+
+@keyframes sparkle-flash {
+  /* Flash itself stays ~800ms absolute (40% of a 2s cycle). Shorter
+     cycles here just shorten the idle gap between flashes. */
+  0%, 30%, 70%, 100% { opacity: 0;    transform: translate(-50%, -50%) scale(0.4) rotate(0deg); }
+  50%                { opacity: 0.95; transform: translate(-50%, -50%) scale(1)   rotate(45deg); }
+}
+
 /* NAV */
 nav.top {
   position: sticky; top: 0; z-index: 50;
@@ -495,7 +583,9 @@ footer.bottom a:hover { color: var(--amber-500); }
 
   /* Hero: also drop the primary Download CTA — download not useful on mobile */
   section.hero .btn-primary { display: none; }
+}
 
+@media (max-width: 680px) {
   /* Scale glow orbs down on mobile so they don't saturate the whole
      viewport and wash out the text. */
   section.hero .glow.g-orchid   { width: 320px; height: 320px; top: -80px;  opacity: calc(var(--glow-opacity) * 0.65); }

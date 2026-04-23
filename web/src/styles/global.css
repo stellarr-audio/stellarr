@@ -7,6 +7,8 @@
   --orchid-700: #a21caf;
   --amber-400:  #fbbf24;
   --amber-500:  #f59e0b;
+  --amber-600:  #d97706;
+  --amber-700:  #b45309;
 
   /* Dimension tokens */
   --glow-blur: 90px;
@@ -54,8 +56,8 @@ html[data-theme-resolved="light"] {
   --hairline:   rgba(10,12,26,0.08);
   --hairline-2: rgba(10,12,26,0.16);
 
-  --accent:       var(--orchid-600);
-  --accent-hover: var(--orchid-700);
+  --accent:       var(--amber-500);
+  --accent-hover: var(--amber-600);
   --btn-primary-color: var(--orchid-600);
   --pill-dot-green: #059669;
   --pill-bg:       color-mix(in srgb, var(--amber-500) 7%, var(--bg));

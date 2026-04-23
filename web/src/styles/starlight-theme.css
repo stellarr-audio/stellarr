@@ -32,9 +32,9 @@
 
 /* ---- LIGHT ---- */
 :root[data-theme='light'] {
-  --sl-color-accent-low:  #fae8ff;
-  --sl-color-accent:      #c026d3;   /* orchid-600 */
-  --sl-color-accent-high: #86198f;   /* orchid-800 */
+  --sl-color-accent-low:  #fef3c7;   /* amber-100-ish */
+  --sl-color-accent:      #f59e0b;   /* amber-500 */
+  --sl-color-accent-high: #b45309;   /* amber-700 */
 
   --sl-color-white:      #0a0c1a;
   --sl-color-gray-1:     #1c1e22;
@@ -53,3 +53,40 @@
 
 /* Switzer font for the logo lockup */
 .site-title { letter-spacing: -0.02em; }
+
+/* =================================================================
+   Light-mode sidebar readability. Amber accent washes out on white
+   for fine-grain interactive text; bump it with deeper shades + use
+   dark text on the amber fill for the active nav item.
+   ================================================================= */
+
+/* Left sidebar: highlighted page — near-black text on amber-500 fill.
+   Note: Starlight's `--sl-color-white` is the *text* colour (near-black
+   in light mode); `--sl-color-black` is the *background* colour. */
+:root[data-theme='light'] .sidebar-content a[aria-current='page'] {
+  color: var(--sl-color-white);              /* near-black dark text */
+  background-color: var(--sl-color-accent);  /* amber-500 fill */
+  font-weight: 600;
+}
+/* Hover state on non-active links — deeper amber (amber-700) to match
+   the right sidebar's active/hover colour. Active link keeps its dark
+   text on amber fill when hovered. */
+:root[data-theme='light'] .sidebar-content a:not([aria-current='page']):hover,
+:root[data-theme='light'] .sidebar-content a:not([aria-current='page']):focus {
+  color: var(--sl-color-accent-high);  /* amber-700 */
+}
+
+/* Right sidebar (table of contents): amber-500 text is too low-contrast
+   on white. Use text-accent-high (amber-700) for active link state and
+   bump link-hover into the same deeper shade. */
+:root[data-theme='light'] starlight-toc nav a[aria-current='true'],
+:root[data-theme='light'] starlight-toc nav a:hover {
+  color: var(--sl-color-accent-high);  /* amber-700 = #b45309 */
+}
+:root[data-theme='light'] starlight-toc nav a[aria-current='true'] {
+  font-weight: 600;
+  border-inline-start-color: var(--sl-color-accent-high);
+  text-decoration: underline;
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 4px;
+}

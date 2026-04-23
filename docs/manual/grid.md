@@ -97,6 +97,16 @@ This makes it easy to trace your signal flow at a glance, even in complex multi-
 
 Above the grid, the current preset name and active scene name are shown in large text, separated by a diamond. This is visible from across the room during a performance.
 
+## Grid Size
+
+You can resize the grid to fit the rig you're building.
+
+- Hover the edges of the grid to reveal the **add row** / **add column** controls on the right and bottom edges.
+- Hover a single row or column to reveal a **delete** affordance for that line (if it's empty).
+- Bounds: 1–20 columns, 1–12 rows.
+
+Changes apply immediately and are saved with the preset.
+
 ## Keyboard Shortcuts
 
 | Key | Action |

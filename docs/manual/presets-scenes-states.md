@@ -56,6 +56,10 @@ The scene controls are in the header bar next to the preset dropdown:
 
 Every preset starts with one scene called "Scene 1". You can have up to 16 scenes.
 
+### Stage Display
+
+Above the grid, the active preset and scene names are displayed in large type — preset on the left, scene on the right, separated by a small diamond. The two names are colour-coded so the distinction is readable from across a stage. Both react instantly when you switch.
+
 ### How Scene Switching Works
 
 Scene switching is **instant** -- there is no audio gap. Since all plugins are already loaded and running, Stellarr applies the new parameters directly without suspending audio processing.

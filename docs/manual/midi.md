@@ -45,7 +45,7 @@ The **Preset** and **Scene** dropdowns each have a **Link icon** button on their
 - **Preset Link icon** -- Opens the MIDI assign dialog in **Program Change** mode. The CC field is hidden; the mapping responds to MIDI Program Change messages, where the PC value maps directly to the preset index in the active folder.
 - **Scene Link icon** -- Opens the MIDI assign dialog for scene switching. Assign a CC number, and the CC value selects the scene index (value 0 = first scene, value 1 = second, etc.).
 
-When a mapping is active, the Link icon turns **blue** to indicate it is assigned.
+When a mapping is active, the Link icon fills with the brand accent to indicate it is assigned.
 
 ### What Can Be Mapped
 

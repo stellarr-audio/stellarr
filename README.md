@@ -87,6 +87,8 @@ Stellarr includes optional crash reporting powered by [Sentry](https://sentry.io
 
 When enabled, only anonymous crash data is sent (stack traces, app version, OS version). No plugin names, preset content, audio data, file paths, or personal information is ever collected. If you don't opt in, no data leaves your machine.
 
+The website itself (stellarr.org) uses [GoatCounter](https://www.goatcounter.com) for cookie-free visitor counting — no personal data, no fingerprinting, no consent banner needed.
+
 Full details in the [Privacy & Telemetry](https://stellarr.org/docs/privacy/) page.
 
 ## Licence

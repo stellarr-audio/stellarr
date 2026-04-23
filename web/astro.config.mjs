@@ -10,6 +10,18 @@ export default defineConfig({
     starlight({
       title: 'STELLARR',
       logo: { src: '../assets/logo.svg', replacesTitle: false },
+      // GoatCounter — privacy-friendly analytics, no cookies, no consent
+      // banner required. Same instance the old Docsify manual used.
+      head: [
+        {
+          tag: 'script',
+          attrs: {
+            src: 'https://gc.zgo.at/count.js',
+            'data-goatcounter': 'https://stellarr.goatcounter.com/count',
+            async: true,
+          },
+        },
+      ],
       customCss: [
         './src/styles/starlight-theme.css',
       ],

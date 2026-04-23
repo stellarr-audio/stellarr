@@ -3,6 +3,8 @@
  * data-theme="dark" / "light" on <html>; this file overrides per-theme.
  */
 
+@import './fonts.css';
+
 :root {
   --sl-font: 'Switzer', system-ui, -apple-system, sans-serif;
   --sl-font-system: 'Switzer', system-ui, -apple-system, sans-serif;

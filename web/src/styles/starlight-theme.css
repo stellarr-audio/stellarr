@@ -54,8 +54,17 @@
   --sl-color-bg-sidebar: #f4f4f8;
 }
 
-/* Switzer font for the logo lockup */
-.site-title { letter-spacing: -0.02em; }
+/* Logo lockup — matches the landing nav exactly:
+   22px mark, 16px all-caps Switzer at weight 700 with 0.08em tracking,
+   theme-adaptive text colour (near-black in light / near-white in dark). */
+.site-title {
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  gap: 10px;
+  color: var(--sl-color-white);
+}
+.site-title img { width: 22px; height: 22px; }
 
 /* =================================================================
    Light-mode sidebar readability. Amber accent washes out on white

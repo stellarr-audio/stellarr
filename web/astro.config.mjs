@@ -8,7 +8,7 @@ export default defineConfig({
   integrations: [
     react(),
     starlight({
-      title: 'Stellarr',
+      title: 'STELLARR',
       logo: { src: '../assets/logo.svg', replacesTitle: false },
       customCss: [
         './src/styles/starlight-theme.css',

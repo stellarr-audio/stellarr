@@ -2,7 +2,7 @@
   <img src="assets/icon.svg" alt="Stellarr" width="64" height="64" />
 </p>
 
-<h1 align="center">Stellarr</h1>
+<h1 align="center">STELLARR</h1>
 
 <p align="center">
   Open-source signal processing for musicians.<br/>

@@ -252,7 +252,7 @@ nav.top {
 }
 nav.top .logo {
   display: flex; align-items: center; gap: 10px;
-  font-weight: 700; font-size: 16px; letter-spacing: -0.02em;
+  font-weight: 700; font-size: 16px; letter-spacing: 0.08em;
   color: var(--text);
 }
 nav.top .logo-mark {

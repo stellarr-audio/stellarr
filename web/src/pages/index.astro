@@ -1,5 +1,8 @@
 ---
 import '../styles/global.css';
+import { TbRouteSquare, TbWaveSine } from 'react-icons/tb';
+import { RiClapperboardAiLine } from 'react-icons/ri';
+import { SiMidi } from 'react-icons/si';
 
 // Light-mode sparkles — 4-point star sprites that briefly flash.
 const sparkles: { x: number; y: number; size: number; tint: string; delay: number; dur: number }[] = [
@@ -219,10 +222,7 @@ const nearStars: { x: number; y: number; size: number; tint: string; delay: numb
       </div>
       <div class="feature-grid">
         <article class="feature-card">
-          <div class="feature-shot">
-            {/* <img src="/features/grid-dark.png" alt="Grid" /> */}
-            <span class="placeholder">Grid screenshot</span>
-          </div>
+          <div class="feature-icon"><TbRouteSquare /></div>
           <div class="feature-body">
             <h3>Signal grid</h3>
             <p>Drop plugins into a grid, draw connections, route in parallel. No hidden matrix.</p>
@@ -230,10 +230,7 @@ const nearStars: { x: number; y: number; size: number; tint: string; delay: numb
         </article>
 
         <article class="feature-card">
-          <div class="feature-shot">
-            {/* <img src="/features/scenes-dark.png" alt="Scenes & states" /> */}
-            <span class="placeholder">Scenes screenshot</span>
-          </div>
+          <div class="feature-icon"><RiClapperboardAiLine /></div>
           <div class="feature-body">
             <h3>Scenes and states</h3>
             <p>Snapshot any routing, recall it instantly. Bank through scenes with a footswitch or a MIDI PC.</p>
@@ -241,10 +238,7 @@ const nearStars: { x: number; y: number; size: number; tint: string; delay: numb
         </article>
 
         <article class="feature-card">
-          <div class="feature-shot">
-            {/* <img src="/features/midi-dark.png" alt="MIDI mapping" /> */}
-            <span class="placeholder">MIDI mapping screenshot</span>
-          </div>
+          <div class="feature-icon"><SiMidi /></div>
           <div class="feature-body">
             <h3>MIDI mapping</h3>
             <p>Bind any parameter to any controller. CC, PC, notes — mapped with a single right-click, or via learn-mode capture.</p>
@@ -252,10 +246,7 @@ const nearStars: { x: number; y: number; size: number; tint: string; delay: numb
         </article>
 
         <article class="feature-card">
-          <div class="feature-shot">
-            {/* <img src="/features/tuner-dark.png" alt="Tuner" /> */}
-            <span class="placeholder">Tuner screenshot</span>
-          </div>
+          <div class="feature-icon"><TbWaveSine /></div>
           <div class="feature-body">
             <h3>Built-in tuner</h3>
             <p>A cents-level tuner, baked right in. Nothing extra to load, nothing extra to route — tap the icon and you're in.</p>

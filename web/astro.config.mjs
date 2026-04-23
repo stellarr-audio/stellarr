@@ -1,10 +1,12 @@
 import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
+import react from '@astrojs/react';
 
 // Stellarr's site: custom landing at `/`, Starlight-powered manual at `/docs/*`.
 export default defineConfig({
   site: 'https://stellarr.org',
   integrations: [
+    react(),
     starlight({
       title: 'Stellarr',
       logo: { src: './src/assets/logo.svg', replacesTitle: false },

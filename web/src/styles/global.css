@@ -256,9 +256,8 @@ nav.top .logo {
   color: var(--text);
 }
 nav.top .logo-mark {
-  width: 18px; height: 18px;
-  background: var(--accent);
-  box-shadow: 0 0 16px color-mix(in srgb, var(--accent) 80%, transparent);
+  width: 22px; height: 22px;
+  display: block;
 }
 nav.top ul {
   margin-left: auto; display: flex; gap: 8px; list-style: none; align-items: center;

@@ -9,7 +9,7 @@ export default defineConfig({
     react(),
     starlight({
       title: 'Stellarr',
-      logo: { src: './src/assets/logo.svg', replacesTitle: false },
+      logo: { src: '../assets/logo.svg', replacesTitle: false },
       customCss: [
         './src/styles/starlight-theme.css',
       ],

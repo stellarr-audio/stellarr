@@ -1,5 +1,6 @@
 ---
 import '../styles/global.css';
+import logoUrl from '../../../assets/logo.svg?url';
 import { TbRouteSquare, TbWaveSine } from 'react-icons/tb';
 import { RiClapperboardAiLine } from 'react-icons/ri';
 import { SiMidi } from 'react-icons/si';
@@ -95,7 +96,8 @@ const nearStars: { x: number; y: number; size: number; tint: string; delay: numb
   <nav class="top">
     <div class="wrap" style="display:flex;align-items:center;width:100%;padding:0">
       <a href="/" class="logo">
-        <span class="logo-mark"></span>Stellarr
+        <img src={logoUrl} width="22" height="22" alt="Stellarr" class="logo-mark" />
+        Stellarr
       </a>
       <ul>
         <li>

@@ -53,6 +53,21 @@ If you do not enable crash reporting:
 - No network requests are made
 - No data leaves your machine
 
+## Website Analytics
+
+The Stellarr website (stellarr.org and its docs) uses [GoatCounter](https://www.goatcounter.com) for basic visitor counting.
+
+What GoatCounter does:
+
+- Counts page views and referrers
+- **No cookies**, **no fingerprinting**, **no personal data**
+- GDPR-compliant without requiring a consent banner
+- Retains a hashed, salted proxy of the IP for 8 hours (for deduplication), never the raw IP
+
+What it does not do: track you across sessions, build a profile, share with third parties, or sell data.
+
+The app itself never talks to GoatCounter — this is purely website analytics.
+
 ## Open Source
 
 Stellarr is open source. You can inspect the telemetry implementation yourself in the [source code](https://github.com/stellarr-audio/stellarr) to verify these claims.

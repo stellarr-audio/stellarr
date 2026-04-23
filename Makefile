@@ -58,7 +58,7 @@ screenshots:
 	./scripts/screenshots.sh
 
 docs:
-	npx serve docs/manual -p 3001
+	cd web && npm install --silent && npm run dev
 
 clean:
-	rm -rf build build-release ui/dist ui/node_modules
+	rm -rf build build-release ui/dist ui/node_modules web/dist web/node_modules web/.astro

@@ -24,8 +24,10 @@ engine/test/     Audio processing and integration tests
 ui/              React + TypeScript frontend (Vite, Zustand, Radix UI, CSS Modules)
 ui/src/bridge/   JS-side bridge (sendEvent / addEventListener)
 ui/src/store/    Zustand state store
-docs/manual/     User manual (Markdown, served via Docsify)
-assets/          App icons and samples
+docs/manual/     User manual (Markdown, with Starlight frontmatter)
+docs/testing/    Dev manual-test cases (Markdown, with Starlight frontmatter)
+web/             Astro site — landing at / and Starlight docs at /docs/*
+assets/          Brand assets (logo, icon) and samples
 ```
 
 ## Architecture
@@ -46,7 +48,7 @@ assets/          App icons and samples
 | `make run` | Build and launch (debug) |
 | `make run-release` | Build and launch (release) |
 | `make test` | Build with tests and run them |
-| `make docs` | Serve user manual locally on port 3001 |
+| `make docs` | Run the Astro site dev server (landing + manual, hot reload) on port 4321 |
 | `make clean` | Remove build/, ui/dist/, and ui/node_modules/ |
 
 ### First build

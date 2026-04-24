@@ -1,5 +1,13 @@
 import { create } from 'zustand';
 
+export type TabId = 'grid' | 'tuner' | 'midi' | 'settings';
+export type BadgeReason = 'update' | 'error' | 'midi-conflict';
+export type BadgeSeverity = 'info' | 'warn' | 'danger';
+export interface Badge {
+  reason: BadgeReason;
+  severity: BadgeSeverity;
+}
+
 export interface GridBlock {
   id: string;
   type: string;
@@ -197,6 +205,9 @@ interface StellarrState {
       mouseY: number;
     } | null,
   ) => void;
+
+  badges: Partial<Record<TabId, Badge>>;
+  setBadge: (tab: TabId, badge: Badge | null) => void;
 }
 
 export const useStore = create<StellarrState>((set) => ({
@@ -243,6 +254,7 @@ export const useStore = create<StellarrState>((set) => ({
   selectedBlockId: null,
   floatingPanelPos: null,
   draggingConnection: null,
+  badges: {},
 
   setLoading: (loading) => set({ loading }),
   setLoadingStatus: (status, progress) => set({ loadingStatus: status, loadingProgress: progress }),
@@ -421,4 +433,12 @@ export const useStore = create<StellarrState>((set) => ({
     })),
   setFloatingPanelPos: (pos) => set({ floatingPanelPos: pos }),
   setDraggingConnection: (state) => set({ draggingConnection: state }),
+
+  setBadge: (tab, badge) =>
+    set((state) => {
+      const next = { ...state.badges };
+      if (badge === null) delete next[tab];
+      else next[tab] = badge;
+      return { badges: next };
+    }),
 }));

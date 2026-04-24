@@ -11,6 +11,7 @@ import { Button } from '../common/Button';
 import { IconButton } from '../common/IconButton';
 import { ToggleSwitch } from '../common/ToggleSwitch';
 import { Row } from './Row';
+import { SoftwareUpdates } from './SoftwareUpdates';
 import styles from './Settings.module.css';
 
 export function Settings() {
@@ -27,6 +28,10 @@ export function Settings() {
   return (
     <div className={styles.container}>
       <div className={styles.content}>
+        <Section title="Software Updates">
+          <SoftwareUpdates />
+        </Section>
+
         <Section title="Libraries">
           <Row
             info={

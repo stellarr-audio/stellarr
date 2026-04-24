@@ -98,7 +98,7 @@ export function Settings() {
         <span className={styles.infoVersion}>v{__APP_VERSION__}</span>
         <p className={styles.infoDescription}>
           Made by an AI and a human, together. Free and open, forever. For music. For noise. For
-          every unheard voice.
+          every unheard noise.
         </p>
       </div>
     </div>

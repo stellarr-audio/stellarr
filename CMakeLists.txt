@@ -213,7 +213,12 @@ if(BUILD_TESTING)
     function(add_stellarr_test NAME SOURCE)
         add_executable(${NAME} ${SOURCE})
         target_include_directories(${NAME} PRIVATE ${TEST_INCLUDE_DIR})
-        target_link_libraries(${NAME} PRIVATE ${TEST_LIBS})
+        # The shared-code library pulls in UpdaterShim.mm, which references
+        # Sparkle symbols. Test executables only need the symbols to resolve
+        # at link time — they never actually exercise the update path — so
+        # passing the framework flag is enough; no rpath or bundle copy.
+        target_link_libraries(${NAME} PRIVATE ${TEST_LIBS} "-F${sparkle_SOURCE_DIR}" "-framework Sparkle")
+        target_link_options(${NAME} PRIVATE "-Wl,-rpath,${sparkle_SOURCE_DIR}")
         add_test(NAME ${NAME} COMMAND ${NAME})
     endfunction()
 

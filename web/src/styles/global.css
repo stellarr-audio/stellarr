@@ -73,14 +73,20 @@ html[data-theme-resolved="light"] {
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
-html { background: var(--bg); transition: background 0.3s ease; }
+html {
+  background: var(--bg);
+  transition: background 0.3s ease;
+  /* Paired with body overflow to stop horizontal scroll on mobile Safari,
+     where html (not body) is the scroll container. */
+  overflow-x: clip;
+}
 body {
   font-family: 'Switzer', system-ui, -apple-system, sans-serif;
   font-size: 16px; line-height: 1.5;
   color: var(--text);
   background: var(--bg);
   min-height: 100vh;
-  overflow-x: hidden;
+  overflow-x: clip;
   transition: background 0.3s ease, color 0.3s ease;
 }
 a { color: inherit; text-decoration: none; }
@@ -311,6 +317,11 @@ section.hero {
   min-height: 70vh;
   text-align: center;
   display: flex; flex-direction: column; justify-content: center;
+  /* Atmospheric glows extend past section bounds with negative insets
+     (`right: 5%`, `left: 10%`, oversized widths). Clip horizontally
+     only so nothing leaks into document width on narrow viewports —
+     vertical stays free for glows with negative top (nebula, orchid). */
+  overflow-x: clip;
 }
 section.hero .glow.g-nebula   { width: 900px; height: 900px; top: -200px; left: 50%; transform: translateX(-50%); opacity: calc(var(--glow-opacity) * 0.6); }
 section.hero .glow.g-orchid   { width: 580px; height: 580px; top: -120px; left: 50%; transform: translateX(-50%); opacity: calc(var(--glow-opacity) + 0.05); }
@@ -381,6 +392,7 @@ section.shots {
   padding: 0 0 60px;
   margin-top: clamp(-80px, -5vh, -40px);
   z-index: 2;
+  overflow-x: clip;
 }
 section.shots .glow.g-peach  { width: 360px; height: 360px; top: 40%; left: -8%; opacity: calc(var(--glow-opacity) * 0.4); }
 section.shots .glow.g-orchid { width: 400px; height: 400px; top: 40%; right: -10%; opacity: calc(var(--glow-opacity) * 0.4); }
@@ -445,7 +457,7 @@ section.shots .glow.g-orchid { width: 400px; height: 400px; top: 40%; right: -10
 }
 
 /* FEATURES — bento-style 2×2 grid */
-section.features { position: relative; padding: 40px 0 60px; }
+section.features { position: relative; padding: 40px 0 60px; overflow-x: clip; }
 section.features .glow.g-amber { width: 360px; height: 360px; top: 40%; left: -10%; opacity: calc(var(--glow-opacity) * 0.3); }
 section.features .glow.g-lavender { width: 380px; height: 380px; top: 40%; right: -10%; opacity: calc(var(--glow-opacity) * 0.3); }
 
@@ -519,7 +531,7 @@ html[data-theme-resolved="light"] .feature-card:hover { border-color: transparen
 }
 
 /* FAQ */
-section.faq { position: relative; padding: 40px 0 80px; }
+section.faq { position: relative; padding: 40px 0 80px; overflow-x: clip; }
 section.faq .glow.g-amber { width: 340px; height: 340px; top: 20%; left: 50%; transform: translateX(-50%); opacity: calc(var(--glow-opacity) * 0.28); }
 section.faq .head { text-align: center; margin-bottom: 56px; position: relative; z-index: 1; }
 section.faq h2 {

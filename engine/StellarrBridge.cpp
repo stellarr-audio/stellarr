@@ -473,6 +473,15 @@ void StellarrBridge::handleBridgeReady()
 {
     sendStartupProgress("Connecting to engine...", 10);
     sendWelcome();
+
+    auto* cfg = new juce::DynamicObject();
+   #if STELLARR_IS_DEV
+    cfg->setProperty("flavour", "dev");
+   #else
+    cfg->setProperty("flavour", "prod");
+   #endif
+    emitToJs("appConfig", cfg);
+
     handleGetTelemetryEnabled();
     handleGetReferencePitch();
 

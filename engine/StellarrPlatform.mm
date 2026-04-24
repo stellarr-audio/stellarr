@@ -39,3 +39,10 @@ void stellarrMakeWebViewInspectable(void* nativeView)
         webView.enclosingScrollView.backgroundColor = [NSColor colorWithRed:0.05 green:0.04 blue:0.1 alpha:1.0];
     }
 }
+
+juce::File stellarrGetBundleResource(const juce::String& subpath)
+{
+    return juce::File::getSpecialLocation(juce::File::currentApplicationFile)
+        .getChildFile("Contents/Resources")
+        .getChildFile(subpath);
+}

@@ -6,7 +6,7 @@ StellarrEditor::StellarrEditor(StellarrProcessor& p)
     : AudioProcessorEditor(p)
 {
     stellarrSetDarkAppearance();
-    auto uiDir = juce::File(STELLARR_UI_DIR);
+    auto uiDir = stellarrGetBundleResource("ui");
 
     auto options = bridge.configureOptions(
         juce::WebBrowserComponent::Options{}

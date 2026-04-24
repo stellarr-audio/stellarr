@@ -161,9 +161,6 @@ target_compile_definitions(Stellarr
         JUCE_PLUGINHOST_VST3=1
         JUCE_PLUGINHOST_AU=1
         JUCE_MODAL_LOOPS_PERMITTED=1
-    PRIVATE
-        STELLARR_UI_DIR="${CMAKE_SOURCE_DIR}/ui/dist"
-        STELLARR_SAMPLES_DIR="${CMAKE_SOURCE_DIR}/assets/samples/ui/public/inputs"
 )
 
 if(DEFINED STELLARR_SENTRY_DSN)
@@ -200,6 +197,25 @@ add_custom_command(TARGET Stellarr_Standalone POST_BUILD
             "${SPARKLE_FRAMEWORK_DIR}"
             "$<TARGET_BUNDLE_DIR:Stellarr_Standalone>/Contents/Frameworks/Sparkle.framework"
     COMMENT "Embedding Sparkle.framework into ${STELLARR_APP_NAME}.app"
+)
+
+# Bundle UI assets (ui/dist) and test-tone samples into the .app so the
+# shipped DMG is self-contained. Without this, the app points at absolute
+# paths on the build machine and fails to load anything on a user's system.
+# ditto is used for both so any future symlinks or extended attributes
+# survive intact.
+add_custom_command(TARGET Stellarr_Standalone POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E rm -rf
+            "$<TARGET_BUNDLE_DIR:Stellarr_Standalone>/Contents/Resources/ui"
+    COMMAND ditto
+            "${CMAKE_SOURCE_DIR}/ui/dist"
+            "$<TARGET_BUNDLE_DIR:Stellarr_Standalone>/Contents/Resources/ui"
+    COMMAND ${CMAKE_COMMAND} -E rm -rf
+            "$<TARGET_BUNDLE_DIR:Stellarr_Standalone>/Contents/Resources/samples"
+    COMMAND ditto
+            "${CMAKE_SOURCE_DIR}/assets/samples/ui/public/inputs"
+            "$<TARGET_BUNDLE_DIR:Stellarr_Standalone>/Contents/Resources/samples"
+    COMMENT "Embedding UI assets + test-tone samples into ${STELLARR_APP_NAME}.app"
 )
 
 target_link_libraries(Stellarr

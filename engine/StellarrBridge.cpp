@@ -1,5 +1,6 @@
 #include "StellarrBridge.h"
 #include "StellarrProcessor.h"
+#include "StellarrPlatform.h"
 #include "UpdaterShim.h"
 #include "blocks/InputBlock.h"
 #include "blocks/OutputBlock.h"
@@ -225,7 +226,7 @@ void StellarrBridge::handleEvent(const juce::String& eventName, const juce::var&
     }
     else if (eventName == "getTestToneSamples")
     {
-        juce::File samplesDir(STELLARR_SAMPLES_DIR);
+        auto samplesDir = stellarrGetBundleResource("samples");
         juce::Array<juce::var> files;
 
         if (samplesDir.isDirectory())
@@ -268,7 +269,7 @@ void StellarrBridge::handleEvent(const juce::String& eventName, const juce::var&
                 }
                 else
                 {
-                    juce::File samplesDir(STELLARR_SAMPLES_DIR);
+                    auto samplesDir = stellarrGetBundleResource("samples");
                     auto file = samplesDir.getChildFile(sampleName + ".wav");
                     inputBlock->loadTestToneSample(file);
                 }

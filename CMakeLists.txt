@@ -46,6 +46,34 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(JUCE)
 
+# Sparkle — macOS auto-update framework. Pinned release; bump deliberately.
+set(SPARKLE_VERSION "2.9.1")
+FetchContent_Declare(
+    sparkle
+    URL      https://github.com/sparkle-project/Sparkle/releases/download/${SPARKLE_VERSION}/Sparkle-${SPARKLE_VERSION}.tar.xz
+    URL_HASH SHA256=c0dde519fd2a43ddfc6a1eb76aec284d7d888fe281414f9177de3164d98ba4c7
+)
+FetchContent_MakeAvailable(sparkle)
+
+set(SPARKLE_FRAMEWORK_DIR "${sparkle_SOURCE_DIR}/Sparkle.framework")
+if(NOT EXISTS "${SPARKLE_FRAMEWORK_DIR}")
+    message(FATAL_ERROR "Sparkle.framework not found at ${SPARKLE_FRAMEWORK_DIR}")
+endif()
+
+# Sparkle EdDSA public keys baked into the app bundle's Info.plist so
+# downloaded updates can be verified locally before install. The matching
+# private keys live in the macOS Keychain (stellarr-prod / stellarr-dev
+# accounts) and in GitHub Actions secrets SPARKLE_PRIVATE_KEY_{PROD,DEV}.
+# Rotate via `make regen-sparkle-keys-prod` or `make regen-sparkle-keys-dev`.
+set(STELLARR_SUPUBLIC_EDKEY_PROD "BU95nWg2poMoFLKgS29ukTwH0lChg79Id1xji3A50Pc=")
+set(STELLARR_SUPUBLIC_EDKEY_DEV  "eJoHZUY/sMumVIF63iF+nilbcFXm2GpZUSwkYLWydbQ=")
+
+if(STELLARR_FLAVOUR STREQUAL "dev")
+    set(STELLARR_SUPUBLIC_EDKEY "${STELLARR_SUPUBLIC_EDKEY_DEV}")
+else()
+    set(STELLARR_SUPUBLIC_EDKEY "${STELLARR_SUPUBLIC_EDKEY_PROD}")
+endif()
+
 set(SENTRY_BACKEND "inproc" CACHE STRING "")
 set(SENTRY_BUILD_SHARED_LIBS OFF CACHE BOOL "")
 FetchContent_Declare(
@@ -56,6 +84,27 @@ FetchContent_Declare(
     GIT_SUBMODULES ""
 )
 FetchContent_MakeAvailable(sentry)
+
+# JUCE's PLIST_TO_MERGE expects a full <plist><dict>...</dict></plist> XML
+# document; it merges each <key>/<value> pair from our <dict> into the final
+# Info.plist it generates for the target.
+set(STELLARR_SPARKLE_PLIST_TEMPLATE [=[<?xml version="1.0" encoding="UTF-8"?>
+<plist version="1.0">
+<dict>
+    <key>SUFeedURL</key>
+    <string>@STELLARR_FEED_URL@</string>
+    <key>SUPublicEDKey</key>
+    <string>@STELLARR_SUPUBLIC_EDKEY@</string>
+    <key>SUEnableAutomaticChecks</key>
+    <true/>
+    <key>SUAutomaticallyUpdate</key>
+    <false/>
+    <key>SUScheduledCheckInterval</key>
+    <integer>86400</integer>
+</dict>
+</plist>
+]=])
+string(CONFIGURE "${STELLARR_SPARKLE_PLIST_TEMPLATE}" STELLARR_SPARKLE_PLIST @ONLY)
 
 juce_add_plugin(Stellarr
     COMPANY_NAME "Stellarr"
@@ -69,6 +118,7 @@ juce_add_plugin(Stellarr
     PRODUCT_NAME "${STELLARR_APP_NAME}"
     ICON_BIG "${CMAKE_SOURCE_DIR}/assets/icon.png"
     ICON_SMALL "${CMAKE_SOURCE_DIR}/assets/icon.png"
+    PLIST_TO_MERGE "${STELLARR_SPARKLE_PLIST}"
 )
 
 target_sources(Stellarr
@@ -81,6 +131,7 @@ target_sources(Stellarr
         engine/bridge/SceneHandler.cpp
         engine/bridge/PresetHandler.cpp
         engine/bridge/MidiHandler.cpp
+        engine/bridge/UpdateHandler.cpp
         engine/blocks/Block.cpp
         engine/blocks/PluginBlock.cpp
         engine/blocks/InputBlock.cpp
@@ -89,6 +140,7 @@ target_sources(Stellarr
         engine/PluginManager.cpp
         engine/StellarrPlatform.mm
         engine/StellarrStandaloneApp.cpp
+        engine/UpdaterShim.mm
 )
 
 target_compile_definitions(Stellarr
@@ -113,6 +165,23 @@ if(STELLARR_FLAVOUR STREQUAL "dev")
 else()
     target_compile_definitions(Stellarr PRIVATE STELLARR_IS_DEV=0)
 endif()
+
+# Sparkle framework: add search path so UpdaterShim.mm can #import <Sparkle/*>
+# on the shared-code target, link against the framework on the Standalone
+# target, and copy the framework into the .app bundle after link so the
+# loader finds it at @rpath/Sparkle.framework.
+target_compile_options(Stellarr PRIVATE "-F${sparkle_SOURCE_DIR}")
+target_link_libraries(Stellarr_Standalone PRIVATE "-F${sparkle_SOURCE_DIR}" "-framework Sparkle")
+target_link_options(Stellarr_Standalone PRIVATE "-Wl,-rpath,@executable_path/../Frameworks")
+
+add_custom_command(TARGET Stellarr_Standalone POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E make_directory
+            "$<TARGET_BUNDLE_DIR:Stellarr_Standalone>/Contents/Frameworks"
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+            "${SPARKLE_FRAMEWORK_DIR}"
+            "$<TARGET_BUNDLE_DIR:Stellarr_Standalone>/Contents/Frameworks/Sparkle.framework"
+    COMMENT "Embedding Sparkle.framework into ${STELLARR_APP_NAME}.app"
+)
 
 target_link_libraries(Stellarr
     PRIVATE

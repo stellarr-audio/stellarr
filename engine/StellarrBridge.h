@@ -2,16 +2,19 @@
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <juce_gui_extra/juce_gui_extra.h>
 #include <map>
+#include <memory>
 #include <vector>
 #include "Telemetry.h"
 
 class StellarrProcessor;
 namespace stellarr { class Block; class PluginBlock; }
+namespace stellarr::update { class Shim; struct State; }
 
 class StellarrBridge
 {
 public:
     StellarrBridge();
+    ~StellarrBridge();
 
     void setProcessor(StellarrProcessor* proc);
     void setAppProperties(juce::ApplicationProperties* props);
@@ -147,6 +150,15 @@ private:
 
     // Generic block state handler
     void handleBlockStateEvent(const juce::var& json, const juce::String& action);
+
+    // Software updates (Sparkle)
+    void ensureUpdateShim();
+    void handleUpdateCheck();
+    void handleUpdateInstall();
+    void handleUpdateOpenReleaseNotes();
+    void sendUpdateState(const stellarr::update::State& state);
+
+    std::unique_ptr<stellarr::update::Shim> updateShim;
 
     juce::WebBrowserComponent* webView = nullptr;
     StellarrProcessor* processor = nullptr;

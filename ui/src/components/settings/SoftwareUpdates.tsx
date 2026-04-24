@@ -30,10 +30,7 @@ export function SoftwareUpdates() {
   const { status } = state;
 
   const canInstall = status === 'available' || status === 'ready';
-  const checkLabel =
-    status === 'checking' ? 'Checking…' :
-    status === 'downloading' ? 'Downloading…' :
-    'Check for updates';
+  const checkLabel = status === 'checking' ? 'Checking…' : 'Check for updates';
   const installLabel =
     status === 'downloading' ? `Downloading… ${Math.round(state.downloadProgress * 100)}%` :
     status === 'ready' ? 'Restart & install' :

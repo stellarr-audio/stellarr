@@ -35,10 +35,7 @@ purge-user-state:
 	rm -rf /Applications/Stellarr.app "/Applications/Stellarr Dev.app"
 	rm -f  "$$HOME/Library/Application Support/Stellarr.settings"
 	rm -f  "$$HOME/Library/Application Support/Stellarr Dev.settings"
-	# JUCE has historically written prod prefs under a mixed-case bundle ID
-	# (com.Stellarr.Stellarr.plist) alongside the lowercase one — wipe both.
 	rm -f  "$$HOME/Library/Preferences/com.stellarr.stellarr.plist"
-	rm -f  "$$HOME/Library/Preferences/com.Stellarr.Stellarr.plist"
 	rm -f  "$$HOME/Library/Preferences/com.stellarr.stellarr.dev.plist"
 	rm -rf "$$HOME/Library/Caches/com.stellarr.stellarr"
 	rm -rf "$$HOME/Library/Caches/com.stellarr.stellarr.dev"

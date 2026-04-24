@@ -13,6 +13,7 @@
 }
 
 .tab {
+  position: relative;          /* anchor for TabBadge */
   display: flex;
   align-items: center;
   justify-content: center;

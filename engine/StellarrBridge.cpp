@@ -1,5 +1,6 @@
 #include "StellarrBridge.h"
 #include "StellarrProcessor.h"
+#include "UpdaterShim.h"
 #include "blocks/InputBlock.h"
 #include "blocks/OutputBlock.h"
 #include "blocks/PluginBlock.h"
@@ -7,6 +8,7 @@
 #include <limits>
 
 StellarrBridge::StellarrBridge() = default;
+StellarrBridge::~StellarrBridge() = default;
 
 void StellarrBridge::setProcessor(StellarrProcessor* proc)
 {
@@ -51,6 +53,11 @@ void StellarrBridge::handleEvent(const juce::String& eventName, const juce::var&
     if (eventName == "bridgeReady")                 handleBridgeReady();
     else if (eventName == "uiReady")                { if (onUiReady) onUiReady(); handleScreenshotSetup(); }
     else if (eventName == "screenshotReady")          { handleScreenshotReady(); }
+
+    // Software updates (Sparkle)
+    else if (eventName == "update/check")            handleUpdateCheck();
+    else if (eventName == "update/install")          handleUpdateInstall();
+    else if (eventName == "update/open-release-notes") handleUpdateOpenReleaseNotes(json);
 
     // Graph
     else if (eventName == "addBlock")               handleAddBlock(json);
@@ -473,6 +480,15 @@ void StellarrBridge::handleBridgeReady()
 {
     sendStartupProgress("Connecting to engine...", 10);
     sendWelcome();
+
+    auto* cfg = new juce::DynamicObject();
+   #if STELLARR_IS_DEV
+    cfg->setProperty("flavour", "dev");
+   #else
+    cfg->setProperty("flavour", "prod");
+   #endif
+    emitToJs("appConfig", cfg);
+
     handleGetTelemetryEnabled();
     handleGetReferencePitch();
 

@@ -1,0 +1,19 @@
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--row-gap);
+  padding: 10px 2px;
+}
+
+.info {
+  flex: 1;
+  min-width: 0;
+}
+
+.actions {
+  width: var(--row-actions-width);
+  flex-shrink: 0;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}

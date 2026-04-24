@@ -1,0 +1,23 @@
+.dot {
+  position: absolute;
+  top: 4px;
+  right: 12px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.dot[data-severity='info'] {
+  background: var(--color-secondary);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--color-secondary) 60%, transparent);
+}
+
+.dot[data-severity='warn'] {
+  background: var(--color-secondary);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--color-secondary) 60%, transparent);
+}
+
+.dot[data-severity='danger'] {
+  background: var(--color-danger);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--color-danger) 60%, transparent);
+}

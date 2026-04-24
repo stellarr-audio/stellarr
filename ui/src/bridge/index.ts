@@ -10,6 +10,20 @@ import type {
   MidiMonitorEvent,
 } from '../store';
 
+export type UpdateStatus =
+  | 'idle' | 'checking' | 'available' | 'no-update'
+  | 'downloading' | 'ready' | 'error';
+
+export interface UpdateStatePayload {
+  status: UpdateStatus;
+  latestVersion: string;
+  releasedAt: string;
+  sizeBytes: number;
+  releaseNotesUrl: string;
+  downloadProgress: number;
+  error: string;
+}
+
 declare global {
   interface Window {
     __JUCE__?: {
@@ -287,6 +301,13 @@ export function requestPickScanDirectory(): void {
 export function requestRemoveScanDirectory(path: string): void {
   sendEvent('removeScanDirectory', JSON.stringify({ path }));
 }
+
+// -- Software update commands -------------------------------------------------
+
+export const requestCheckForUpdates  = () => sendEvent('update/check', '');
+export const requestInstallUpdate    = () => sendEvent('update/install', '');
+export const requestOpenReleaseNotes = (url: string) =>
+  sendEvent('update/open-release-notes', JSON.stringify({ url }));
 
 // -- Loudness metering commands -----------------------------------------------
 
@@ -737,6 +758,29 @@ export function initBridge(): void {
     if (window === 'momentary' || window === 'shortTerm') {
       useStore.getState().setLufsWindow(window);
     }
+  });
+
+  juce.backend.addEventListener('appConfig', (detail: unknown) => {
+    const d = asRecord(detail);
+    const flavour = String(d.flavour);
+    if (flavour === 'prod' || flavour === 'dev') {
+      useStore.getState().setFlavour(flavour);
+    }
+  });
+
+  juce.backend.addEventListener('updateState', (detail: unknown) => {
+    const d = asRecord(detail);
+    const status = String(d.status) as UpdateStatus;
+    if (!['idle', 'checking', 'available', 'no-update', 'downloading', 'ready', 'error'].includes(status)) return;
+    useStore.getState().setSoftwareUpdate({
+      status,
+      latestVersion:    String(d.latestVersion ?? ''),
+      releasedAt:       String(d.releasedAt ?? ''),
+      sizeBytes:        Number(d.sizeBytes ?? 0),
+      releaseNotesUrl:  String(d.releaseNotesUrl ?? ''),
+      downloadProgress: Number(d.downloadProgress ?? 0),
+      error:            String(d.error ?? ''),
+    });
   });
 
   bridgeReady = true;

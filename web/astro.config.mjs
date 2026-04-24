@@ -60,6 +60,7 @@ export default defineConfig({
             { label: 'MIDI',               slug: 'docs/testing/07-midi' },
             { label: 'Settings',           slug: 'docs/testing/08-settings' },
             { label: 'Loudness Metering',  slug: 'docs/testing/09-loudness-metering' },
+            { label: 'Software Updates',   slug: 'docs/testing/10-software-updates' },
           ],
         },
       ],

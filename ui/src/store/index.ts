@@ -1,4 +1,13 @@
 import { create } from 'zustand';
+import type { UpdateStatePayload } from '../bridge';
+
+export type TabId = 'grid' | 'tuner' | 'midi' | 'settings';
+export type BadgeReason = 'update' | 'error' | 'midi-conflict';
+export type BadgeSeverity = 'info' | 'warn' | 'danger';
+export interface Badge {
+  reason: BadgeReason;
+  severity: BadgeSeverity;
+}
 
 export interface GridBlock {
   id: string;
@@ -80,6 +89,7 @@ interface StellarrState {
   availablePlugins: PluginInfo[];
   scanning: boolean;
   telemetryEnabled: boolean;
+  flavour: 'prod' | 'dev';
   presetDirectory: string;
   presetFiles: string[];
   currentPresetIndex: number;
@@ -130,6 +140,7 @@ interface StellarrState {
   setAvailablePlugins: (plugins: PluginInfo[]) => void;
   setScanning: (scanning: boolean) => void;
   setTelemetryEnabled: (enabled: boolean) => void;
+  setFlavour: (flavour: 'prod' | 'dev') => void;
   setBlockPlugin: (
     blockId: string,
     pluginId: string,
@@ -197,6 +208,12 @@ interface StellarrState {
       mouseY: number;
     } | null,
   ) => void;
+
+  badges: Partial<Record<TabId, Badge>>;
+  setBadge: (tab: TabId, badge: Badge | null) => void;
+
+  softwareUpdate: UpdateStatePayload;
+  setSoftwareUpdate: (s: UpdateStatePayload) => void;
 }
 
 export const useStore = create<StellarrState>((set) => ({
@@ -219,6 +236,7 @@ export const useStore = create<StellarrState>((set) => ({
   availablePlugins: [],
   scanning: false,
   telemetryEnabled: false,
+  flavour: 'prod',
   presetDirectory: '',
   presetFiles: [],
   currentPresetIndex: -1,
@@ -243,6 +261,16 @@ export const useStore = create<StellarrState>((set) => ({
   selectedBlockId: null,
   floatingPanelPos: null,
   draggingConnection: null,
+  badges: {},
+  softwareUpdate: {
+    status: 'idle',
+    latestVersion: '',
+    releasedAt: '',
+    sizeBytes: 0,
+    releaseNotesUrl: '',
+    downloadProgress: 0,
+    error: '',
+  },
 
   setLoading: (loading) => set({ loading }),
   setLoadingStatus: (status, progress) => set({ loadingStatus: status, loadingProgress: progress }),
@@ -271,6 +299,7 @@ export const useStore = create<StellarrState>((set) => ({
   setAvailablePlugins: (plugins) => set({ availablePlugins: plugins, scanning: false }),
   setScanning: (scanning) => set({ scanning }),
   setTelemetryEnabled: (enabled) => set({ telemetryEnabled: enabled }),
+  setFlavour: (flavour) => set({ flavour }),
 
   setBlockPlugin: (blockId, pluginId, pluginName, pluginFormat, hasEditor) =>
     set((s) => ({
@@ -421,4 +450,14 @@ export const useStore = create<StellarrState>((set) => ({
     })),
   setFloatingPanelPos: (pos) => set({ floatingPanelPos: pos }),
   setDraggingConnection: (state) => set({ draggingConnection: state }),
+
+  setBadge: (tab, badge) =>
+    set((state) => {
+      const next = { ...state.badges };
+      if (badge === null) delete next[tab];
+      else next[tab] = badge;
+      return { badges: next };
+    }),
+
+  setSoftwareUpdate: (s) => set({ softwareUpdate: s }),
 }));

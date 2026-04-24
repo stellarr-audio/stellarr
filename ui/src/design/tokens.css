@@ -32,6 +32,11 @@
   --input-height-sm: 24px;
   --input-padding-x: 0.6rem;
 
+  /* Settings row standard — shared column widths let blurb text align
+     across sections regardless of which controls they carry. */
+  --row-gap: 24px;
+  --row-actions-width: 320px;
+
   /* Z-index layers — globally defined scale so every surface references a
    * named layer rather than an ad-hoc number. Higher = closer to viewer. */
   --z-grid:           2;    /* grid blocks / connections / overlay */
@@ -118,8 +123,8 @@
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.16);
   --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.20);
   --shadow-xl: 0 12px 32px rgba(0, 0, 0, 0.25);
-  --border:       var(--grey-200);         /* #e5e7eb — inputs, controls */
-  --divider:      var(--grey-200);         /* same as border in light */
+  --border:       var(--grey-300);         /* #d1d5db — inputs, controls (darker for visibility on white) */
+  --divider:      var(--grey-200);         /* #e5e7eb — chrome separators stay subtle */
   --text:         var(--grey-900);         /* #1c1e22 */
   --text-muted:   var(--grey-500);         /* #6b7280 */
   --text-subtle:  var(--grey-400);         /* #9ca3af */

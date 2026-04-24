@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useStore } from './store';
 import { useSyncTheme } from './hooks/useSyncTheme';
+import { useSyncUpdateBadge } from './hooks/useSyncUpdateBadge';
 import { Grid } from './components/grid/Grid';
 import { GridOverlay } from './components/grid/GridOverlay';
 import { GridResizer } from './components/grid/GridResizer';
@@ -17,6 +18,7 @@ import { Footer } from './components/footer/Footer';
 import { Tooltip } from './components/common/Tooltip';
 import { IconButton } from './components/common/IconButton';
 import { Tablist, Tab } from './components/common/Tablist';
+import { TabBadge } from './components/common/TabBadge';
 import { TbLayoutGrid, TbWaveSine, TbPlug, TbSunHigh, TbMoon, TbSettings } from 'react-icons/tb';
 import { useThemeStore, resolveTheme } from './store/theme';
 import { requestSetTunerEnabled, requestSaveSessionQuiet } from './bridge';
@@ -24,10 +26,12 @@ import styles from './App.module.css';
 
 function App() {
   useSyncTheme();
+  useSyncUpdateBadge();
   const loading = useStore((s) => s.loading);
   const selectBlock = useStore((s) => s.selectBlock);
   const activeTab = useStore((s) => s.activeTab);
   const setActiveTab = useStore((s) => s.setActiveTab);
+  const settingsBadge = useStore((s) => s.badges.settings);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -84,6 +88,7 @@ function App() {
             <Tooltip content="System" side="bottom">
               <Tab id="settings" title="System">
                 <TbSettings size={20} />
+                <TabBadge badge={settingsBadge} />
               </Tab>
             </Tooltip>
           </Tablist>

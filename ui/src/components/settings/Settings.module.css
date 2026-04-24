@@ -73,9 +73,11 @@
   flex-shrink: 0;
 }
 
-.actions {
-  display: flex;
-  gap: 0.5rem;
+.blurb {
+  font-size: var(--text-xs);
+  color: var(--color-muted);
+  line-height: 1.55;
+  margin: 0;
 }
 
 .emptyText {
@@ -117,20 +119,6 @@
   color: var(--color-muted);
   letter-spacing: 0.06em;
   text-transform: uppercase;
-}
-
-.privacyRow {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 0.5rem 0.25rem;
-}
-
-.privacyInfo {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
 }
 
 .privacyLabel {

@@ -10,6 +10,7 @@ import {
 import { Button } from '../common/Button';
 import { IconButton } from '../common/IconButton';
 import { ToggleSwitch } from '../common/ToggleSwitch';
+import { Row } from './Row';
 import styles from './Settings.module.css';
 
 export function Settings() {
@@ -26,6 +27,23 @@ export function Settings() {
     <div className={styles.container}>
       <div className={styles.content}>
         <Section title="Libraries">
+          <Row
+            info={
+              <p className={styles.blurb}>
+                Folders Stellarr scans for audio plugins. System paths are included by default. Add
+                more to pick up plugins installed in custom locations.
+              </p>
+            }
+            actions={
+              <>
+                <Button onClick={requestPickScanDirectory}>Add Directory</Button>
+                <Button onClick={requestScanPlugins} disabled={scanning}>
+                  {scanning ? 'Scanning...' : 'Scan Now'}
+                </Button>
+              </>
+            }
+          />
+
           <div className={styles.dirList}>
             {scanDirectories.map((dir) => (
               <div key={dir.path} className={styles.dirRow}>
@@ -44,13 +62,6 @@ export function Settings() {
                 )}
               </div>
             ))}
-          </div>
-
-          <div className={styles.actions}>
-            <Button onClick={requestPickScanDirectory}>Add Directory</Button>
-            <Button onClick={requestScanPlugins} disabled={scanning}>
-              {scanning ? 'Scanning...' : 'Scan Now'}
-            </Button>
           </div>
         </Section>
 
@@ -75,21 +86,25 @@ export function Settings() {
         </Section>
 
         <Section title="Privacy">
-          <div className={styles.privacyRow}>
-            <div className={styles.privacyInfo}>
-              <span className={styles.privacyLabel}>Send crash reports</span>
-              <span className={styles.privacyDescription}>
-                Anonymous crash data only. No plugin names, presets, audio, or personal information.
-                Takes effect on next launch.
-              </span>
-            </div>
-            <ToggleSwitch
-              enabled={telemetryEnabled}
-              sharp
-              onToggle={() => requestSetTelemetryEnabled(!telemetryEnabled)}
-              title="Toggle crash reporting"
-            />
-          </div>
+          <Row
+            info={
+              <>
+                <span className={styles.privacyLabel}>Send crash reports</span>
+                <span className={styles.privacyDescription}>
+                  Anonymous crash data only. No plugin names, presets, audio, or personal
+                  information. Takes effect on next launch.
+                </span>
+              </>
+            }
+            actions={
+              <ToggleSwitch
+                enabled={telemetryEnabled}
+                sharp
+                onToggle={() => requestSetTelemetryEnabled(!telemetryEnabled)}
+                title="Toggle crash reporting"
+              />
+            }
+          />
         </Section>
       </div>
 

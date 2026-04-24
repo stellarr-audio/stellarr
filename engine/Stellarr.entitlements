@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!--
+        Hardened-runtime relaxations required for hosting third-party audio
+        plugins. Without these the app only loads Apple-signed Audio Units
+        and a handful of notarised vendors; every other AU/VST3 fails
+        library validation silently during scan.
+
+        disable-library-validation:
+            Allow loading dylibs signed by teams other than ours. Every
+            third-party plugin is signed by its vendor, not Apple and not us.
+        allow-jit / allow-unsigned-executable-memory:
+            A lot of modern plugins (NAM, Neural DSP, modelling synths)
+            JIT-compile DSP graphs at load time. Both entitlements are
+            needed because different plugin toolchains use different
+            memory-protection flows.
+        allow-dyld-environment-variables:
+            Some vendor loaders rely on DYLD_* env vars to locate support
+            frameworks.
+    -->
+    <key>com.apple.security.cs.disable-library-validation</key>
+    <true/>
+    <key>com.apple.security.cs.allow-jit</key>
+    <true/>
+    <key>com.apple.security.cs.allow-unsigned-executable-memory</key>
+    <true/>
+    <key>com.apple.security.cs.allow-dyld-environment-variables</key>
+    <true/>
+</dict>
+</plist>

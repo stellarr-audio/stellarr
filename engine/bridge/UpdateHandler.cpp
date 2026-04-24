@@ -60,8 +60,13 @@ void StellarrBridge::handleUpdateInstall()
     updateShim->installUpdate();
 }
 
-void StellarrBridge::handleUpdateOpenReleaseNotes()
+void StellarrBridge::handleUpdateOpenReleaseNotes(const juce::var& json)
 {
     ensureUpdateShim();
-    updateShim->openReleaseNotes();
+
+    juce::String url;
+    if (auto* obj = json.getDynamicObject())
+        url = obj->getProperty("url").toString();
+
+    updateShim->openReleaseNotes(url.toStdString());
 }

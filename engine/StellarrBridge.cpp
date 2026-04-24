@@ -57,7 +57,7 @@ void StellarrBridge::handleEvent(const juce::String& eventName, const juce::var&
     // Software updates (Sparkle)
     else if (eventName == "update/check")            handleUpdateCheck();
     else if (eventName == "update/install")          handleUpdateInstall();
-    else if (eventName == "update/open-release-notes") handleUpdateOpenReleaseNotes();
+    else if (eventName == "update/open-release-notes") handleUpdateOpenReleaseNotes(json);
 
     // Graph
     else if (eventName == "addBlock")               handleAddBlock(json);

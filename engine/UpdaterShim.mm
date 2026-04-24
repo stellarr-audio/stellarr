@@ -321,11 +321,12 @@ void Shim::installUpdate()
     [impl->updater checkForUpdates];
 }
 
-void Shim::openReleaseNotes()
+void Shim::openReleaseNotes(const std::string& url)
 {
-    const auto& url = impl->driver.currentState.releaseNotesUrl;
-    if (url.empty()) return;
-    NSString* s = [NSString stringWithUTF8String:url.c_str()];
+    const std::string& target = !url.empty() ? url
+                                              : impl->driver.currentState.releaseNotesUrl;
+    if (target.empty()) return;
+    NSString* s = [NSString stringWithUTF8String:target.c_str()];
     NSURL* u = [NSURL URLWithString:s];
     if (u != nil) [[NSWorkspace sharedWorkspace] openURL:u];
 }

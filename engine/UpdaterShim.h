@@ -56,8 +56,10 @@ public:
     // ready-to-install prompt).
     void installUpdate();
 
-    // Open the stashed release notes URL in the user's default browser.
-    void openReleaseNotes();
+    // Open a release-notes URL in the user's default browser. If url is
+    // empty, falls back to the URL stashed by the last update-found event
+    // (may itself be empty if no update has been announced).
+    void openReleaseNotes(const std::string& url = "");
 
 private:
     struct Impl;

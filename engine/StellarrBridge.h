@@ -155,7 +155,7 @@ private:
     void ensureUpdateShim();
     void handleUpdateCheck();
     void handleUpdateInstall();
-    void handleUpdateOpenReleaseNotes();
+    void handleUpdateOpenReleaseNotes(const juce::var& json);
     void sendUpdateState(const stellarr::update::State& state);
 
     std::unique_ptr<stellarr::update::Shim> updateShim;

@@ -133,7 +133,9 @@ jobs:
           DMG_NAME="${APP_NAME}-${GITHUB_REF_NAME}-macOS-arm64.dmg"
 
           STAGING=$(mktemp -d)
-          cp -R "$APP_PATH" "$STAGING/"
+          # ditto (not cp -R) — cp -R dereferences symlinks and breaks
+          # the embedded Sparkle.framework's Versions/Current layout.
+          ditto "$APP_PATH" "$STAGING/$(basename "$APP_PATH")"
           ln -s /Applications "$STAGING/Applications"
 
           hdiutil create -volname "$APP_NAME" -srcfolder "$STAGING" \

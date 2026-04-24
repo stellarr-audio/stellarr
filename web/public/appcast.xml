@@ -6,6 +6,14 @@
     <description>Stellarr software updates.</description>
     <language>en</language>
     <item>
+      <title>Stellarr 0.14.5</title>
+      <link>https://github.com/stellarr-audio/stellarr/releases/tag/v0.14.5</link>
+      <pubDate>Fri, 24 Apr 2026 21:47:26 +0000</pubDate>
+      <sparkle:version>0.14.5</sparkle:version>
+      <sparkle:shortVersionString>0.14.5</sparkle:shortVersionString>
+      <enclosure url="https://github.com/stellarr-audio/stellarr/releases/download/v0.14.5/Stellarr-v0.14.5-macOS-arm64.dmg" length="133393177" type="application/octet-stream" sparkle:edSignature="H5nwzaJZ5gvwsNCwhav/Pa38J6qlZ1SS9Ar0HS4B29rHamTbXWkk1p2TrFGgKDcC144NN4VyVlEJlzqPfZnnAQ=="/>
+    </item>
+    <item>
       <title>Stellarr 0.14.4</title>
       <link>https://github.com/stellarr-audio/stellarr/releases/tag/v0.14.4</link>
       <pubDate>Fri, 24 Apr 2026 21:03:24 +0000</pubDate>

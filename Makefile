@@ -1,4 +1,4 @@
-.PHONY: setup dev dev-ui dev-cpp debug debug-cpp release release-cpp run run-debug run-release run-ui open test docs web clean clear-cache screenshots regen-sparkle-keys-prod regen-sparkle-keys-dev dev-updater-serve
+.PHONY: setup dev dev-ui dev-cpp debug debug-cpp release release-cpp run run-debug run-release run-ui open test docs web clean clear-cache purge-user-state screenshots regen-sparkle-keys-prod regen-sparkle-keys-dev dev-updater-serve
 
 .DEFAULT_GOAL := dev
 
@@ -15,7 +15,38 @@ setup:
 	cd ui && npm install
 
 clear-cache:
-	rm -rf ~/Library/Caches/com.Stellarr.Stellarr ~/Library/WebKit/com.Stellarr.Stellarr
+	rm -rf ~/Library/Caches/com.stellarr.stellarr ~/Library/WebKit/com.stellarr.stellarr
+	rm -rf ~/Library/Caches/com.stellarr.stellarr.dev ~/Library/WebKit/com.stellarr.stellarr.dev
+
+# Wipe every Stellarr artefact a user install could leave on disk, for both
+# prod and dev flavours. Use before installing a freshly-downloaded DMG to
+# simulate a never-installed machine — the only way to verify a release
+# behaves correctly on real user hardware. Destructive: removes settings,
+# presets, engine state, plugin scan cache, WebView cache.
+purge-user-state:
+	@echo "This removes ALL Stellarr user state (prod + dev flavours):"
+	@echo "  /Applications/Stellarr.app, Stellarr Dev.app"
+	@echo "  ~/Library/Application Support/Stellarr*.settings"
+	@echo "  ~/Library/Preferences/com.*stellarr.stellarr*.plist"
+	@echo "  ~/Library/Caches/com.stellarr.stellarr*"
+	@echo "  ~/Library/WebKit/com.stellarr.stellarr*"
+	@echo "  ~/Library/Saved Application State/com.stellarr.stellarr*.savedState"
+	@read -p "Continue? [y/N] " ans && [ "$$ans" = "y" ] || { echo "aborted"; exit 1; }
+	rm -rf /Applications/Stellarr.app "/Applications/Stellarr Dev.app"
+	rm -f  "$$HOME/Library/Application Support/Stellarr.settings"
+	rm -f  "$$HOME/Library/Application Support/Stellarr Dev.settings"
+	rm -f  "$$HOME/Library/Preferences/com.stellarr.stellarr.plist"
+	rm -f  "$$HOME/Library/Preferences/com.stellarr.stellarr.dev.plist"
+	rm -rf "$$HOME/Library/Caches/com.stellarr.stellarr"
+	rm -rf "$$HOME/Library/Caches/com.stellarr.stellarr.dev"
+	rm -rf "$$HOME/Library/WebKit/com.stellarr.stellarr"
+	rm -rf "$$HOME/Library/WebKit/com.stellarr.stellarr.dev"
+	rm -rf "$$HOME/Library/Saved Application State/com.stellarr.stellarr.savedState"
+	rm -rf "$$HOME/Library/Saved Application State/com.stellarr.stellarr.dev.savedState"
+	@echo ""
+	@echo "Purged. Download the DMG via a browser (not curl) so the quarantine"
+	@echo "xattr is attached — that is what real users get and what Gatekeeper"
+	@echo "checks on first launch."
 
 dev-ui: setup clear-cache
 	cd ui && rm -rf dist && npm run build

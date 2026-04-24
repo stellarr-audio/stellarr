@@ -44,6 +44,13 @@ describe('typography tokens', () => {
   });
 });
 
+describe('dimension tokens', () => {
+  it('defines row-standard dimensions', () => {
+    expect(getVar('--row-gap')).toBe('24px');
+    expect(getVar('--row-actions-width')).toBe('270px');
+  });
+});
+
 describe('palette tokens — light theme', () => {
   beforeEach(() => {
     document.documentElement.setAttribute('data-theme', 'light');

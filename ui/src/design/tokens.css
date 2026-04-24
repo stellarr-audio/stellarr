@@ -32,6 +32,11 @@
   --input-height-sm: 24px;
   --input-padding-x: 0.6rem;
 
+  /* Settings row standard — shared column widths let blurb text align
+     across sections regardless of which controls they carry. */
+  --row-gap: 24px;
+  --row-actions-width: 270px;
+
   /* Z-index layers — globally defined scale so every surface references a
    * named layer rather than an ad-hoc number. Higher = closer to viewer. */
   --z-grid:           2;    /* grid blocks / connections / overlay */

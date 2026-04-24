@@ -1,5 +1,18 @@
 cmake_minimum_required(VERSION 3.24)
-project(Stellarr VERSION 0.1.0 LANGUAGES C CXX)
+
+# Read the canonical version from ui/package.json so the UI, the engine, and
+# the app bundle's Info.plist never drift. JSON is parsed line-by-line via a
+# regex rather than a CMake JSON module, which keeps the minimum CMake
+# version at 3.24 (already required elsewhere).
+file(READ "${CMAKE_SOURCE_DIR}/ui/package.json" STELLARR_PKG_JSON)
+string(REGEX MATCH "\"version\"[ \t]*:[ \t]*\"([^\"]+)\"" _ "${STELLARR_PKG_JSON}")
+set(STELLARR_VERSION "${CMAKE_MATCH_1}")
+if(NOT STELLARR_VERSION)
+  message(FATAL_ERROR "Could not parse version from ui/package.json")
+endif()
+message(STATUS "Stellarr version: ${STELLARR_VERSION}")
+
+project(Stellarr VERSION ${STELLARR_VERSION} LANGUAGES C CXX OBJCXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)

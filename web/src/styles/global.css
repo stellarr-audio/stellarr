@@ -73,20 +73,14 @@ html[data-theme-resolved="light"] {
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
-html {
-  background: var(--bg);
-  transition: background 0.3s ease;
-  /* Paired with body overflow to stop horizontal scroll on mobile Safari,
-     where html (not body) is the scroll container. */
-  overflow-x: clip;
-}
+html { background: var(--bg); transition: background 0.3s ease; }
 body {
   font-family: 'Switzer', system-ui, -apple-system, sans-serif;
   font-size: 16px; line-height: 1.5;
   color: var(--text);
   background: var(--bg);
   min-height: 100vh;
-  overflow-x: clip;
+  overflow-x: hidden;
   transition: background 0.3s ease, color 0.3s ease;
 }
 a { color: inherit; text-decoration: none; }
@@ -174,10 +168,16 @@ html[data-theme-resolved="dark"] .starfield { display: block; }
 }
 html[data-theme-resolved="light"] .daylight { display: block; }
 
-/* Aurora — slow-drifting pastel gradient pools */
+/* Aurora — slow-drifting pastel gradient pools.
+   The blur lives on the parent, not on the animated pseudo-elements.
+   Desktop Firefox (post-135) re-rasterises a 60px blur every animation
+   frame when filter and transform share an element, which caused a
+   full-page flash. Keeping blur on the parent means the pseudos can
+   animate cheap transforms inside an already-blurred compositor layer. */
 .daylight-aurora {
   position: absolute; inset: -20%;
   transform: translate3d(0, var(--parallax-far, 0px), 0);
+  filter: blur(60px);
   will-change: transform;
 }
 .daylight-aurora::before,
@@ -189,7 +189,6 @@ html[data-theme-resolved="light"] .daylight { display: block; }
     radial-gradient(ellipse 80% 40% at 30% 50%, rgba(251,191,36,0.45),  transparent 62%),
     radial-gradient(ellipse 60% 50% at 70% 60%, rgba(232,121,249,0.40), transparent 62%),
     radial-gradient(ellipse 50% 60% at 50% 30%, rgba(167,139,250,0.38), transparent 62%);
-  filter: blur(60px);
   animation: aurora-shift 32s ease-in-out infinite alternate;
 }
 .daylight-aurora::after {
@@ -201,6 +200,19 @@ html[data-theme-resolved="light"] .daylight { display: block; }
   0%   { transform: translate(0, 0) scale(1); }
   50%  { transform: translate(40px, -30px) scale(1.08); }
   100% { transform: translate(-30px, 20px) scale(1.02); }
+}
+
+/* Firefox-only workaround. Firefox 135+ repaints the blurred aurora
+   each animation frame when a filtered ancestor contains transform-
+   animated descendants, producing a visible full-page flash in light
+   mode. Disable the drift on Firefox only; every other browser keeps
+   it. The aurora still moves on scroll via the parent's parallax
+   transform, so it does not read as fully static. */
+@-moz-document url-prefix() {
+  .daylight-aurora::before,
+  .daylight-aurora::after {
+    animation: none;
+  }
 }
 
 /* Sparkles — pure CSS cross shapes, pseudo-element based (no SVG mask).

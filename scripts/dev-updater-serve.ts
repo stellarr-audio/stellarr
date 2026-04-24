@@ -18,7 +18,7 @@
  */
 import { createServer } from 'node:http';
 import { createReadStream, existsSync, mkdirSync, mkdtempSync, readFileSync, statSync, writeFileSync } from 'node:fs';
-import { basename, join, resolve } from 'node:path';
+import { basename, join, resolve, sep } from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { tmpdir, homedir } from 'node:os';
 import { parseArgs } from 'node:util';
@@ -132,20 +132,31 @@ function startServer(serveDir: string, port: number): void {
     '.dmg':  'application/octet-stream',
   };
 
+  const rootDir = resolve(serveDir);
+
   const server = createServer((req, res) => {
     const urlPath = decodeURIComponent((req.url ?? '/').split('?')[0]);
-    const safe = urlPath.replace(/\.\.+/g, '.');  // deny path traversal
-    const filePath = join(serveDir, safe === '/' ? 'appcast.xml' : safe);
+    const requested = urlPath === '/' ? 'appcast.xml' : urlPath.replace(/^\/+/, '');
 
-    if (!existsSync(filePath) || !statSync(filePath).isFile()) {
+    // Containment check: resolve the requested path to an absolute path,
+    // then confirm it still lives inside the serve root. Covers ../,
+    // URL-encoded traversal, and absolute-URL cases.
+    const candidate = resolve(rootDir, requested);
+    if (candidate !== rootDir && !candidate.startsWith(rootDir + sep)) {
+      res.writeHead(403);
+      res.end('Forbidden');
+      return;
+    }
+
+    if (!existsSync(candidate) || !statSync(candidate).isFile()) {
       res.writeHead(404);
       res.end('Not found');
       return;
     }
 
-    const ext = filePath.slice(filePath.lastIndexOf('.'));
+    const ext = candidate.slice(candidate.lastIndexOf('.'));
     res.writeHead(200, { 'Content-Type': mime[ext] ?? 'application/octet-stream' });
-    createReadStream(filePath).pipe(res);
+    createReadStream(candidate).pipe(res);
   });
 
   server.listen(port, 'localhost', () => {

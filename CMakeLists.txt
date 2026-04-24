@@ -143,6 +143,16 @@ target_sources(Stellarr
         engine/UpdaterShim.mm
 )
 
+# UpdaterShim uses Objective-C++ blocks captured from Sparkle's user-driver
+# protocol. Under MRC, copying a @property block pointer into a local and
+# then niling the property frees the block before we invoke it. Enabling ARC
+# just for this file gives us correct block lifetime semantics without
+# touching the rest of the codebase (JUCE's .mm files remain MRC).
+set_source_files_properties(
+    engine/UpdaterShim.mm
+    PROPERTIES COMPILE_FLAGS "-fobjc-arc"
+)
+
 target_compile_definitions(Stellarr
     PUBLIC
         JUCE_WEB_BROWSER=1

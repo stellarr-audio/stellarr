@@ -149,8 +149,10 @@ private:
         if (auto* proc = dynamic_cast<StellarrProcessor*>(holder->processor.get()))
             proc->setAppProperties(&appProperties);
 
+        const String windowTitle = getApplicationName() + " v" + getApplicationVersion();
+
         return new StellarrFilterWindow(
-            getApplicationName(),
+            windowTitle,
             LookAndFeel::getDefaultLookAndFeel().findColour(ResizableWindow::backgroundColourId),
             std::move(holder));
     }

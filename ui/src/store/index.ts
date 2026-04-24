@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import type { UpdateStatePayload } from '../bridge';
 
 export type TabId = 'grid' | 'tuner' | 'midi' | 'settings';
 export type BadgeReason = 'update' | 'error' | 'midi-conflict';
@@ -210,6 +211,9 @@ interface StellarrState {
 
   badges: Partial<Record<TabId, Badge>>;
   setBadge: (tab: TabId, badge: Badge | null) => void;
+
+  softwareUpdate: UpdateStatePayload;
+  setSoftwareUpdate: (s: UpdateStatePayload) => void;
 }
 
 export const useStore = create<StellarrState>((set) => ({
@@ -258,6 +262,15 @@ export const useStore = create<StellarrState>((set) => ({
   floatingPanelPos: null,
   draggingConnection: null,
   badges: {},
+  softwareUpdate: {
+    status: 'idle',
+    latestVersion: '',
+    releasedAt: '',
+    sizeBytes: 0,
+    releaseNotesUrl: '',
+    downloadProgress: 0,
+    error: '',
+  },
 
   setLoading: (loading) => set({ loading }),
   setLoadingStatus: (status, progress) => set({ loadingStatus: status, loadingProgress: progress }),
@@ -445,4 +458,6 @@ export const useStore = create<StellarrState>((set) => ({
       else next[tab] = badge;
       return { badges: next };
     }),
+
+  setSoftwareUpdate: (s) => set({ softwareUpdate: s }),
 }));

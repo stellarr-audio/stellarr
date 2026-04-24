@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useStore } from './store';
 import { useSyncTheme } from './hooks/useSyncTheme';
+import { useSyncUpdateBadge } from './hooks/useSyncUpdateBadge';
 import { Grid } from './components/grid/Grid';
 import { GridOverlay } from './components/grid/GridOverlay';
 import { GridResizer } from './components/grid/GridResizer';
@@ -25,6 +26,7 @@ import styles from './App.module.css';
 
 function App() {
   useSyncTheme();
+  useSyncUpdateBadge();
   const loading = useStore((s) => s.loading);
   const selectBlock = useStore((s) => s.selectBlock);
   const activeTab = useStore((s) => s.activeTab);

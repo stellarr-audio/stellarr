@@ -56,8 +56,8 @@ StellarrEditor::StellarrEditor(StellarrProcessor& p)
     splashOverlay->setAlwaysOnTop(true);
 
     setResizable(true, true);
-    setSize(1440, 800);
-    setResizeLimits(1440, 800, 2560, 1600);
+    setSize(1440, 830);
+    setResizeLimits(1440, 830, 2560, 1600);
 
     juce::MessageManager::callAsync(
         [safeWebView = juce::Component::SafePointer(webView.get())]()

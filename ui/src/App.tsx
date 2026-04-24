@@ -100,21 +100,27 @@ function App() {
 
       {/* Main area — all panels stay mounted; visibility toggled by activeTab */}
       <div className={styles.main}>
-        <div role="tabpanel" hidden={activeTab !== 'grid'} className={panelClass('grid')}>
+        <div
+          role="tabpanel"
+          hidden={activeTab !== 'grid'}
+          className={`${panelClass('grid')} ${styles.gridPanel}`}
+        >
+          <GridOverlay />
           <div
             onClick={(e) => {
               const t = e.target as HTMLElement;
               if (t.closest('[data-grid-block]') || t.closest('[data-options-panel]')) return;
               selectBlock(null);
             }}
-            className={styles.gridArea}
+            className={styles.gridBody}
           >
-            <GridOverlay />
-            <GridResizer>
-              <Grid />
-            </GridResizer>
+            <div className={styles.gridArea}>
+              <GridResizer>
+                <Grid />
+              </GridResizer>
+            </div>
+            <OptionsPanel />
           </div>
-          <OptionsPanel />
         </div>
 
         <div role="tabpanel" hidden={activeTab !== 'tuner'} className={panelClass('tuner')}>

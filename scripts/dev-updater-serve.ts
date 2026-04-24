@@ -18,7 +18,7 @@
  */
 import { createServer } from 'node:http';
 import { createReadStream, existsSync, mkdirSync, mkdtempSync, readFileSync, statSync, writeFileSync } from 'node:fs';
-import { basename, join, resolve, sep } from 'node:path';
+import { basename, join, resolve } from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { tmpdir, homedir } from 'node:os';
 import { parseArgs } from 'node:util';
@@ -89,12 +89,18 @@ function rfc2822Now(): string {
        + `${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}:${pad(d.getUTCSeconds())} +0000`;
 }
 
+interface ServePlan {
+  /** Map from exact URL path to absolute on-disk file path. */
+  routes: Record<string, string>;
+  artefactUrlPath: string;
+}
+
 function prepareServeDir(
   artefact: string,
   version: string,
   signature: string,
   port: number,
-): string {
+): ServePlan {
   const serveDir = join(tmpdir(), `stellarr-dev-updater-${Date.now()}`);
   mkdirSync(serveDir, { recursive: true });
 
@@ -103,9 +109,13 @@ function prepareServeDir(
   writeFileSync(artefactDest, readFileSync(artefact));
 
   const size = statSync(artefactDest).size;
+  const artefactUrlPath = `/${encodeURIComponent(artefactName)}`;
   const feedUrl = `http://localhost:${port}/appcast.xml`;
   const notesUrl = `http://localhost:${port}/release-notes.html`;
-  const artefactUrl = `http://localhost:${port}/${encodeURIComponent(artefactName)}`;
+  const artefactUrl = `http://localhost:${port}${artefactUrlPath}`;
+
+  const appcastPath = join(serveDir, 'appcast.xml');
+  const notesPath   = join(serveDir, 'release-notes.html');
 
   const appcast = buildAppcast('Stellarr (local dev)', feedUrl, {
     version,
@@ -115,48 +125,49 @@ function prepareServeDir(
     pubDate:   rfc2822Now(),
     notesUrl,
   });
-  writeFileSync(join(serveDir, 'appcast.xml'), appcast);
+  writeFileSync(appcastPath, appcast);
 
   const notes = `<!doctype html><meta charset="utf-8"><title>Stellarr ${version}</title>`
               + `<h1>Stellarr ${version}</h1>`
               + `<p>Local development release notes placeholder.</p>`;
-  writeFileSync(join(serveDir, 'release-notes.html'), notes);
+  writeFileSync(notesPath, notes);
 
-  return serveDir;
+  return {
+    routes: {
+      '/':                    appcastPath,
+      '/appcast.xml':         appcastPath,
+      '/release-notes.html':  notesPath,
+      [artefactUrlPath]:      artefactDest,
+    },
+    artefactUrlPath,
+  };
 }
 
-function startServer(serveDir: string, port: number): void {
+function startServer(plan: ServePlan, port: number): void {
   const mime: Record<string, string> = {
     '.xml':  'application/xml; charset=utf-8',
     '.html': 'text/html; charset=utf-8',
     '.dmg':  'application/octet-stream',
   };
 
-  const rootDir = resolve(serveDir);
-
   const server = createServer((req, res) => {
-    const urlPath = decodeURIComponent((req.url ?? '/').split('?')[0]);
-    const requested = urlPath === '/' ? 'appcast.xml' : urlPath.replace(/^\/+/, '');
+    // Explicit URL-path allowlist: the only paths we ever serve are the
+    // three we wrote, keyed by exact URL. User input never reaches
+    // path/fs APIs — if the key isn't in the map, it's a 404.
+    const urlPath = (req.url ?? '/').split('?')[0];
+    const filePath = Object.prototype.hasOwnProperty.call(plan.routes, urlPath)
+      ? plan.routes[urlPath]
+      : undefined;
 
-    // Containment check: resolve the requested path to an absolute path,
-    // then confirm it still lives inside the serve root. Covers ../,
-    // URL-encoded traversal, and absolute-URL cases.
-    const candidate = resolve(rootDir, requested);
-    if (candidate !== rootDir && !candidate.startsWith(rootDir + sep)) {
-      res.writeHead(403);
-      res.end('Forbidden');
-      return;
-    }
-
-    if (!existsSync(candidate) || !statSync(candidate).isFile()) {
+    if (filePath === undefined) {
       res.writeHead(404);
       res.end('Not found');
       return;
     }
 
-    const ext = candidate.slice(candidate.lastIndexOf('.'));
+    const ext = filePath.slice(filePath.lastIndexOf('.'));
     res.writeHead(200, { 'Content-Type': mime[ext] ?? 'application/octet-stream' });
-    createReadStream(candidate).pipe(res);
+    createReadStream(filePath).pipe(res);
   });
 
   server.listen(port, 'localhost', () => {
@@ -201,8 +212,8 @@ function main(): void {
 
   const { devPrivKey, signUpdate } = resolvePaths();
   const signature = signArtefact(signUpdate, artefact, devPrivKey);
-  const serveDir = prepareServeDir(artefact, values.version, signature, port);
-  startServer(serveDir, port);
+  const plan = prepareServeDir(artefact, values.version, signature, port);
+  startServer(plan, port);
 }
 
 main();

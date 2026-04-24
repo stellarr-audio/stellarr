@@ -47,7 +47,7 @@ describe('typography tokens', () => {
 describe('dimension tokens', () => {
   it('defines row-standard dimensions', () => {
     expect(getVar('--row-gap')).toBe('24px');
-    expect(getVar('--row-actions-width')).toBe('270px');
+    expect(getVar('--row-actions-width')).toBe('320px');
   });
 });
 

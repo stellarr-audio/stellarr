@@ -1,11 +1,10 @@
 .dot {
   position: absolute;
-  top: 5px;
-  right: 5px;
-  width: 9px;
-  height: 9px;
+  top: 4px;
+  right: 12px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
-  border: 2px solid var(--color-bg);
 }
 
 .dot[data-severity='info'] {

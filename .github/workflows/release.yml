@@ -181,7 +181,10 @@ jobs:
           trap 'rm -P "$KEYFILE" 2>/dev/null || rm -f "$KEYFILE"' EXIT
           printf '%s' "$SPARKLE_PRIVATE_KEY" > "$KEYFILE"
 
-          SIGNATURE=$("$SIGN" "$DMG_NAME" --ed-key-file "$KEYFILE")
+          # -p prints just the bare signature; without it sign_update emits
+          # a full XML attribute fragment that would double-nest when our
+          # appcast renderer wraps it in another attribute.
+          SIGNATURE=$("$SIGN" -p "$DMG_NAME" --ed-key-file "$KEYFILE")
           echo "SPARKLE_SIGNATURE=$SIGNATURE" >> "$GITHUB_ENV"
 
       - name: Prepare appcast update

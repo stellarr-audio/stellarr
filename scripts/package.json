@@ -1,0 +1,10 @@
+{
+  "name": "stellarr-scripts",
+  "description": "Dev tooling scripts (TypeScript, run via Node 24 native type stripping)",
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "typescript": "^5.6.0"
+  }
+}

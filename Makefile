@@ -1,4 +1,4 @@
-.PHONY: setup dev dev-ui dev-cpp debug debug-cpp release release-cpp run run-debug run-release run-ui open test docs web clean clear-cache screenshots regen-sparkle-keys-prod regen-sparkle-keys-dev
+.PHONY: setup dev dev-ui dev-cpp debug debug-cpp release release-cpp run run-debug run-release run-ui open test docs web clean clear-cache screenshots regen-sparkle-keys-prod regen-sparkle-keys-dev dev-updater-serve
 
 .DEFAULT_GOAL := dev
 
@@ -108,6 +108,19 @@ regen-sparkle-keys-prod:
 	@gh secret set SPARKLE_PRIVATE_KEY_PROD < /tmp/stellarr-prod-keygen/priv
 	@rm -P /tmp/stellarr-prod-keygen/priv && rmdir /tmp/stellarr-prod-keygen
 	@echo "Prod secret uploaded. Paste the new pub key into STELLARR_SUPUBLIC_EDKEY_PROD in CMakeLists.txt."
+
+# Serve a local Sparkle appcast for testing the update flow. Requires
+# regen-sparkle-keys-dev to have been run once, and a built DMG to
+# advertise as the "new" version.
+#
+# Usage:
+#   make dev-updater-serve DMG=path/to/Stellarr-Dev-v0.99.1.dmg VERSION=0.99.1
+dev-updater-serve:
+	@if [ -z "$(DMG)" ] || [ -z "$(VERSION)" ]; then \
+		echo "Usage: make dev-updater-serve DMG=<path> VERSION=<x.y.z>"; \
+		exit 1; \
+	fi
+	@./scripts/dev-updater-serve.ts --dmg "$(DMG)" --version "$(VERSION)"
 
 regen-sparkle-keys-dev:
 	$(SPARKLE_GEN_GUARD)

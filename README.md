@@ -22,7 +22,7 @@
 </p>
 
 <p align="center">
-  <img src="assets/screenshot.png" alt="Stellarr screenshot" width="800" />
+  <img src="web/public/images/stellarr-dark.png" alt="Stellarr screenshot" width="800" />
 </p>
 
 ## What is Stellarr?

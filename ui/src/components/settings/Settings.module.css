@@ -163,6 +163,16 @@
   font-variant-numeric: tabular-nums;
 }
 
+.devMarker {
+  font-size: var(--text-xs);
+  color: var(--color-secondary);
+  text-align: center;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
 .infoDescription {
   font-size: var(--text-base);
   color: var(--color-muted);

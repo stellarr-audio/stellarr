@@ -88,6 +88,7 @@ interface StellarrState {
   availablePlugins: PluginInfo[];
   scanning: boolean;
   telemetryEnabled: boolean;
+  flavour: 'prod' | 'dev';
   presetDirectory: string;
   presetFiles: string[];
   currentPresetIndex: number;
@@ -138,6 +139,7 @@ interface StellarrState {
   setAvailablePlugins: (plugins: PluginInfo[]) => void;
   setScanning: (scanning: boolean) => void;
   setTelemetryEnabled: (enabled: boolean) => void;
+  setFlavour: (flavour: 'prod' | 'dev') => void;
   setBlockPlugin: (
     blockId: string,
     pluginId: string,
@@ -230,6 +232,7 @@ export const useStore = create<StellarrState>((set) => ({
   availablePlugins: [],
   scanning: false,
   telemetryEnabled: false,
+  flavour: 'prod',
   presetDirectory: '',
   presetFiles: [],
   currentPresetIndex: -1,
@@ -283,6 +286,7 @@ export const useStore = create<StellarrState>((set) => ({
   setAvailablePlugins: (plugins) => set({ availablePlugins: plugins, scanning: false }),
   setScanning: (scanning) => set({ scanning }),
   setTelemetryEnabled: (enabled) => set({ telemetryEnabled: enabled }),
+  setFlavour: (flavour) => set({ flavour }),
 
   setBlockPlugin: (blockId, pluginId, pluginName, pluginFormat, hasEditor) =>
     set((s) => ({

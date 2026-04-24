@@ -739,6 +739,14 @@ export function initBridge(): void {
     }
   });
 
+  juce.backend.addEventListener('appConfig', (detail: unknown) => {
+    const d = asRecord(detail);
+    const flavour = String(d.flavour);
+    if (flavour === 'prod' || flavour === 'dev') {
+      useStore.getState().setFlavour(flavour);
+    }
+  });
+
   bridgeReady = true;
   callNativeFunction('sendToNative', 'bridgeReady', '');
   console.log('[Bridge] TX bridgeReady');

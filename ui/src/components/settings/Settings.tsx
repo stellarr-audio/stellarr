@@ -22,6 +22,7 @@ export function Settings() {
   );
   const scanning = useStore((s) => s.scanning);
   const telemetryEnabled = useStore((s) => s.telemetryEnabled);
+  const flavour = useStore((s) => s.flavour);
 
   return (
     <div className={styles.container}>
@@ -111,6 +112,13 @@ export function Settings() {
       <div className={styles.infoPanel}>
         <span className={styles.infoTitle}>Stellarr</span>
         <span className={styles.infoVersion}>v{__APP_VERSION__}</span>
+        {flavour === 'dev' && (
+          <span className={styles.devMarker}>
+            Development build
+            <br />
+            Staging update feed
+          </span>
+        )}
         <p className={styles.infoDescription}>
           Made by an AI and a human, together. Free and open, forever. For music. For noise. For
           every unheard noise.

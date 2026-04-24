@@ -110,8 +110,10 @@ Follow [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/):
 ### Versioning + releases
 
 - SemVer: MINOR bump for new user-facing behaviour / design-system additions; PATCH for polish, fixes, refactors with no functional change.
-- **Before tagging a release**, bump `ui/package.json`'s `"version"` field in a `chore: bump to vX.Y.Z` commit. Run `npm install` in `ui/` to sync `ui/package-lock.json`. That's it — Vite injects `__APP_VERSION__` at build time and the Settings info panel reads from it.
+- **Before tagging a release**, bump `ui/package.json`'s `"version"` field in a `chore: bump to vX.Y.Z` commit. Run `npm install` in `ui/` to sync `ui/package-lock.json`. That's it — CMake reads the version from `ui/package.json` at configure time (single source of truth for UI, engine, Info.plist, and window title), Vite injects `__APP_VERSION__` at build time.
 - Merge the bump PR, then tag from main (`git tag vX.Y.Z`) and `gh release create vX.Y.Z` with the changelog in the release body. The GitHub release body is the authoritative changelog — no `CHANGELOG.md` in-repo.
+- The release workflow signs the DMG with the Sparkle EdDSA private key (GitHub Actions secret `SPARKLE_PRIVATE_KEY_PROD`) and opens a bot PR against `main` that appends the new release to `web/public/appcast.xml`. Merging that PR publishes the update to existing installs via `stellarr.org/appcast.xml`. No manual appcast edits.
+- Rotate Sparkle signing keys with `make regen-sparkle-keys-prod` / `make regen-sparkle-keys-dev`. Prod rotation invalidates update trust for every already-installed build — only rotate on a deliberate key-compromise response.
 
 ## Build Commands
 
@@ -209,7 +211,7 @@ macOS Apple Silicon, CMake 3.24+, Xcode CLI tools, Node.js 18+, npm. See `docs/C
 
 | Token | Value | Use |
 |---|---|---|
-| `--radius` | 6px | every interactive bordered element |
+| `--radius` | 0 | every interactive bordered element (sharp-edge direction) |
 | `--input-height` | 32px | default height for inputs/buttons/selects/InputGroup |
 | `--input-height-sm` | 24px | compact variant (badges, tags) |
 | `--input-padding-x` | 0.6rem | horizontal padding for text inputs/buttons |

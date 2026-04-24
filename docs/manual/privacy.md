@@ -50,8 +50,43 @@ Data is only sent at the moment a crash or unhandled error occurs. Stellarr does
 If you do not enable crash reporting:
 
 - No crash data is sent to Sentry or any other external service
-- No network requests are made
-- No data leaves your machine
+- No data leaves your machine beyond the unavoidable update-check traffic described below
+
+## Software Update Checks
+
+Stellarr checks [stellarr.org/appcast.xml](https://stellarr.org/appcast.xml) on launch and once a day while running to see whether a newer version is available. See [Software Updates](/docs/system/#software-updates) for the user-facing controls.
+
+### What the update check sends
+
+Each check is a plain HTTP GET to the appcast URL. The server (stellarr.org, hosted on GitHub Pages) can see the minimum any web server sees:
+
+- **Your IP address** — standard for any HTTP request.
+- **A Sparkle user-agent string** — identifies the update framework version.
+- **The current Stellarr app version** — sent in the user-agent, so the server could serve version-targeted responses. Stellarr today serves the same appcast to everyone.
+
+The same is true of the DMG download itself, which is fetched from the GitHub Releases CDN when you click **Install update**.
+
+### What the update check does NOT send
+
+Stellarr deliberately disables Sparkle's optional "system profile" feature. We never send:
+
+- CPU type, model identifier, or hardware information
+- Operating system version (beyond what any browser UA would reveal)
+- Preferred language
+- Plugin counts, preset usage, or any in-app state
+- Any information about what you do with the app
+
+This is enforced both in the app's Info.plist (no `SUSendProfileInfo` key) and at runtime — the update driver hard-codes `sendSystemProfile: NO` when Sparkle asks.
+
+### Turning checks off
+
+Checks happen automatically but nothing is downloaded or installed without you pressing a button. If you want to disable the check itself, quit Stellarr and run:
+
+```
+defaults write com.stellarr.stellarr SUEnableAutomaticChecks -bool NO
+```
+
+(Use `com.stellarr.stellarr.dev` for a dev build.) You can still use **Check for updates** in Settings to check manually.
 
 ## Website Analytics
 

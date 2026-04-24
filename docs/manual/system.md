@@ -5,7 +5,45 @@ sidebar:
   order: 8
 ---
 
-The System tab manages plugin libraries and shows app information.
+The System tab manages plugin libraries, software updates, and app information.
+
+## Software Updates
+
+Stellarr checks for new versions on launch and once a day while you're running it. When a new version is available, an amber banner appears in the Software Updates section and a small amber dot appears on the System tab icon.
+
+### Updates never install themselves
+
+Installing an update restarts Stellarr. That's fine at your desk, but potentially catastrophic ten minutes before a gig. Stellarr never triggers an install without you pressing a button. Even if you leave the app running for weeks, a new release sits patiently in the Software Updates section until you decide it's a good time.
+
+### The section
+
+When no update is available:
+
+- Status line reads "You're on the latest version (vX.Y.Z)" with a green dot.
+- **Check for updates** stays available so you can poll on demand.
+
+When an update is available:
+
+- An amber banner shows the new version, release date, and download size.
+- **View release notes →** opens the GitHub release page in your default browser so you can read what's changing.
+- **Install update** downloads the release, verifies its signature, and installs it after a confirmation step. Stellarr quits and relaunches at the new version.
+
+### How updates are verified
+
+Every Stellarr release is signed twice:
+
+1. **Apple Developer ID** — macOS verifies this before running the app at all.
+2. **EdDSA (Ed25519)** — Stellarr's own signing key, verified by the update framework before an installer is launched.
+
+If either signature is wrong, the update is refused.
+
+### Dev builds
+
+If your window title reads `Stellarr Dev vX.Y.Z`, you're running a development build. Dev builds check a separate staging feed signed with a different key, and the Settings info panel shows a **Development build** marker. Dev builds can live in `/Applications` alongside a normal Stellarr install without overlapping.
+
+### Rolling back
+
+If a new release misbehaves, grab the previous DMG from the [Releases page](https://github.com/stellarr-audio/stellarr/releases) and install over the top. Your settings live in `~/Library/Application Support/Stellarr/` and are not wiped by reinstallation.
 
 ## Plugin Libraries
 

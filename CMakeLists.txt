@@ -12,6 +12,25 @@ if(NOT STELLARR_VERSION)
 endif()
 message(STATUS "Stellarr version: ${STELLARR_VERSION}")
 
+set(STELLARR_FLAVOUR "prod" CACHE STRING "Build flavour: prod | dev")
+set_property(CACHE STELLARR_FLAVOUR PROPERTY STRINGS prod dev)
+
+if(NOT STELLARR_FLAVOUR STREQUAL "prod" AND NOT STELLARR_FLAVOUR STREQUAL "dev")
+  message(FATAL_ERROR "STELLARR_FLAVOUR must be prod or dev (got: ${STELLARR_FLAVOUR})")
+endif()
+
+if(STELLARR_FLAVOUR STREQUAL "dev")
+  set(STELLARR_APP_NAME "Stellarr Dev")
+  set(STELLARR_BUNDLE_ID "com.stellarr.stellarr.dev")
+  set(STELLARR_FEED_URL  "https://stellarr.org/appcast-staging.xml")
+else()
+  set(STELLARR_APP_NAME "Stellarr")
+  set(STELLARR_BUNDLE_ID "com.stellarr.stellarr")
+  set(STELLARR_FEED_URL  "https://stellarr.org/appcast.xml")
+endif()
+
+message(STATUS "Stellarr flavour: ${STELLARR_FLAVOUR} (${STELLARR_APP_NAME} / ${STELLARR_BUNDLE_ID})")
+
 project(Stellarr VERSION ${STELLARR_VERSION} LANGUAGES C CXX OBJCXX)
 
 set(CMAKE_CXX_STANDARD 20)
@@ -40,14 +59,14 @@ FetchContent_MakeAvailable(sentry)
 
 juce_add_plugin(Stellarr
     COMPANY_NAME "Stellarr"
-    BUNDLE_ID "com.stellarr.stellarr"
+    BUNDLE_ID "${STELLARR_BUNDLE_ID}"
     NEEDS_MIDI_INPUT TRUE
     NEEDS_MIDI_OUTPUT TRUE
     EDITOR_WANTS_KEYBOARD_FOCUS TRUE
     MICROPHONE_PERMISSION_ENABLED TRUE
     MICROPHONE_PERMISSION_TEXT "Stellarr needs microphone access to process audio input from your audio interface."
     FORMATS Standalone
-    PRODUCT_NAME "Stellarr"
+    PRODUCT_NAME "${STELLARR_APP_NAME}"
     ICON_BIG "${CMAKE_SOURCE_DIR}/assets/icon.png"
     ICON_SMALL "${CMAKE_SOURCE_DIR}/assets/icon.png"
 )
@@ -87,6 +106,12 @@ target_compile_definitions(Stellarr
 
 if(DEFINED STELLARR_SENTRY_DSN)
     target_compile_definitions(Stellarr PRIVATE STELLARR_SENTRY_DSN="${STELLARR_SENTRY_DSN}")
+endif()
+
+if(STELLARR_FLAVOUR STREQUAL "dev")
+    target_compile_definitions(Stellarr PRIVATE STELLARR_IS_DEV=1)
+else()
+    target_compile_definitions(Stellarr PRIVATE STELLARR_IS_DEV=0)
 endif()
 
 target_link_libraries(Stellarr

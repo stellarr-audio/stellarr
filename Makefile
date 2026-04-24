@@ -8,6 +8,9 @@ export
 
 SENTRY_CMAKE_FLAG := $(if $(VITE_SENTRY_DSN),-DSTELLARR_SENTRY_DSN="$(VITE_SENTRY_DSN)",)
 
+STELLARR_FLAVOUR ?= prod
+FLAVOUR_CMAKE_FLAG := -DSTELLARR_FLAVOUR=$(STELLARR_FLAVOUR)
+
 setup:
 	cd ui && npm install
 
@@ -18,19 +21,19 @@ dev-ui: setup clear-cache
 	cd ui && rm -rf dist && npm run build
 
 dev-cpp:
-	cmake -B build -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=OFF -DCMAKE_EXPORT_COMPILE_COMMANDS=ON $(SENTRY_CMAKE_FLAG)
+	cmake -B build -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=OFF -DCMAKE_EXPORT_COMPILE_COMMANDS=ON $(SENTRY_CMAKE_FLAG) $(FLAVOUR_CMAKE_FLAG)
 	cmake --build build -j4
 
 dev: dev-ui dev-cpp
 
 debug-cpp:
-	cmake -B build -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=ON -DCMAKE_EXPORT_COMPILE_COMMANDS=ON $(SENTRY_CMAKE_FLAG)
+	cmake -B build -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=ON -DCMAKE_EXPORT_COMPILE_COMMANDS=ON $(SENTRY_CMAKE_FLAG) $(FLAVOUR_CMAKE_FLAG)
 	cmake --build build -j4
 
 debug: dev-ui debug-cpp
 
 release-cpp:
-	cmake -B build-release -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF $(SENTRY_CMAKE_FLAG)
+	cmake -B build-release -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF $(SENTRY_CMAKE_FLAG) $(FLAVOUR_CMAKE_FLAG)
 	cmake --build build-release --config Release -j4
 
 release: dev-ui release-cpp

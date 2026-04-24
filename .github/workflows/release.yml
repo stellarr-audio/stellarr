@@ -238,9 +238,23 @@ jobs:
             exit 1
           fi
 
+      # Exchange the stellarr-release-bot App's credentials for a short-lived
+      # installation token. Using github.token here instead would tag the PR
+      # as created by GITHUB_TOKEN, which by policy does NOT trigger further
+      # workflow runs — the required build-and-test status check would never
+      # fire and auto-merge would stall. An App token triggers workflows
+      # normally and also gives the bot its own "stellarr-release-bot[bot]"
+      # identity on commits/PRs.
+      - name: Generate bot App token
+        id: bot-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.STELLARR_BOT_APP_ID }}
+          private-key: ${{ secrets.STELLARR_BOT_PRIVATE_KEY }}
+
       - name: Open bot PR with updated appcast
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ steps.bot-token.outputs.token }}
         run: |
           # Commits created via plain `git commit` on the runner are
           # unsigned — branch protection ("commits must have verified

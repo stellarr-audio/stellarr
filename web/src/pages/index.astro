@@ -209,7 +209,7 @@ const nearStars: { x: number; y: number; size: number; tint: string; delay: numb
     <div class="glow g-orchid"></div>
     <div class="wrap">
       <div class="shot">
-        <img src="/stellarr-dark.png" alt="Stellarr screenshot" id="screenshot" />
+        <img src="/images/stellarr-dark.png" alt="Stellarr screenshot" id="screenshot" />
       </div>
     </div>
   </section>
@@ -312,8 +312,8 @@ const nearStars: { x: number; y: number; size: number; tint: string; delay: numb
     const screenshot = document.getElementById('screenshot');
     const mq = matchMedia('(prefers-color-scheme: dark)');
 
-    const DARK_IMG  = '/stellarr-dark.png';
-    const LIGHT_IMG = '/stellarr-light.png';
+    const DARK_IMG  = '/images/stellarr-dark.png';
+    const LIGHT_IMG = '/images/stellarr-light.png';
 
     function resolve(choice) {
       if (choice === 'system') return mq.matches ? 'dark' : 'light';

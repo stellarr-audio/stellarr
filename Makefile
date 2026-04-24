@@ -1,4 +1,4 @@
-.PHONY: setup dev dev-ui dev-cpp debug debug-cpp release release-cpp run run-debug run-release run-ui open test docs clean clear-cache screenshots
+.PHONY: setup dev dev-ui dev-cpp debug debug-cpp release release-cpp run run-debug run-release run-ui open test docs web clean clear-cache screenshots
 
 .DEFAULT_GOAL := dev
 
@@ -59,6 +59,9 @@ screenshots:
 
 docs:
 	cd web && npm install --silent && npm run dev
+
+# Alias for `make docs` — the Astro site covers both landing page and manual.
+web: docs
 
 clean:
 	rm -rf build build-release ui/dist ui/node_modules web/dist web/node_modules web/.astro

@@ -75,7 +75,10 @@ for i in $(seq 0 $((count - 1))); do
     continue
   fi
 
-  sleep 1  # Extra settle time for rendering
+  # Per-entry settle delay (ms). Lets meters / LUFS readings populate
+  # when a test tone is playing. Default 1000ms matches old behaviour.
+  settle_ms=$(python3 -c "import json; print(json.load(open('$CONFIG'))[$i].get('settleMs', 1000))")
+  sleep "$(python3 -c "print($settle_ms / 1000)")"
 
   WINDOW_ID=$(get_window_id)
 

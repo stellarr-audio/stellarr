@@ -1,22 +1,42 @@
 [
   {
-    "name": "main",
-    "output": "assets/screenshot.png",
+    "name": "main-dark",
+    "output": "assets/screenshot-dark.png",
     "page": "grid",
+    "theme": "dark",
     "preset": "~/Music/Stellarr/Presets/Demo.stellarr",
     "scene": 0,
+    "settleMs": 5000,
     "actions": [
-      { "selectBlock": "block-id-from-preset-file" }
+      { "selectBlock": "input-block-id-from-preset" },
+      { "toggleTestTone": "input-block-id-from-preset" },
+      { "selectBlock": "eq-block-id-from-preset" }
+    ]
+  },
+  {
+    "name": "main-light",
+    "output": "assets/screenshot-light.png",
+    "page": "grid",
+    "theme": "light",
+    "preset": "~/Music/Stellarr/Presets/Demo.stellarr",
+    "scene": 0,
+    "settleMs": 5000,
+    "actions": [
+      { "selectBlock": "input-block-id-from-preset" },
+      { "toggleTestTone": "input-block-id-from-preset" },
+      { "selectBlock": "eq-block-id-from-preset" }
     ]
   },
   {
     "name": "tuner",
     "output": "assets/screenshot-tuner.png",
-    "page": "tuner"
+    "page": "tuner",
+    "theme": "dark"
   },
   {
     "name": "settings",
     "output": "assets/screenshot-settings.png",
-    "page": "settings"
+    "page": "settings",
+    "theme": "dark"
   }
 ]

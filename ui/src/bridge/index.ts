@@ -340,6 +340,14 @@ export function initBridge(): void {
   juce.backend.addEventListener('screenshotSetup', (detail: unknown) => {
     const d = asRecord(detail);
 
+    // Apply theme before navigation so first paint is in the correct mode.
+    const theme = d.theme;
+    if (theme === 'light' || theme === 'dark' || theme === 'system') {
+      import('../store/theme').then(({ useThemeStore }) => {
+        useThemeStore.getState().setTheme(theme);
+      });
+    }
+
     // Navigate to page
     const page = String(d.page || 'grid');
     useStore.getState().setActiveTab(page);
@@ -364,6 +372,14 @@ export function initBridge(): void {
               const block = store.blocks.find((b) => b.col === col && b.row === row);
               if (block) store.selectBlock(block.id);
             }
+          } else if (action.setTestToneSample) {
+            const val = action.setTestToneSample as Record<string, unknown>;
+            const blockId = String(val.blockId ?? '');
+            const sample = String(val.sample ?? '');
+            if (blockId) requestSetTestToneSample(blockId, sample);
+          } else if (action.toggleTestTone) {
+            const blockId = String(action.toggleTestTone);
+            if (blockId) requestToggleTestTone(blockId);
           }
         }
       }

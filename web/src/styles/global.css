@@ -168,10 +168,16 @@ html[data-theme-resolved="dark"] .starfield { display: block; }
 }
 html[data-theme-resolved="light"] .daylight { display: block; }
 
-/* Aurora — slow-drifting pastel gradient pools */
+/* Aurora — slow-drifting pastel gradient pools.
+   The blur lives on the parent, not on the animated pseudo-elements.
+   Desktop Firefox (post-135) re-rasterises a 60px blur every animation
+   frame when filter and transform share an element, which caused a
+   full-page flash. Keeping blur on the parent means the pseudos can
+   animate cheap transforms inside an already-blurred compositor layer. */
 .daylight-aurora {
   position: absolute; inset: -20%;
   transform: translate3d(0, var(--parallax-far, 0px), 0);
+  filter: blur(60px);
   will-change: transform;
 }
 .daylight-aurora::before,
@@ -183,7 +189,6 @@ html[data-theme-resolved="light"] .daylight { display: block; }
     radial-gradient(ellipse 80% 40% at 30% 50%, rgba(251,191,36,0.45),  transparent 62%),
     radial-gradient(ellipse 60% 50% at 70% 60%, rgba(232,121,249,0.40), transparent 62%),
     radial-gradient(ellipse 50% 60% at 50% 30%, rgba(167,139,250,0.38), transparent 62%);
-  filter: blur(60px);
   animation: aurora-shift 32s ease-in-out infinite alternate;
 }
 .daylight-aurora::after {
@@ -195,6 +200,19 @@ html[data-theme-resolved="light"] .daylight { display: block; }
   0%   { transform: translate(0, 0) scale(1); }
   50%  { transform: translate(40px, -30px) scale(1.08); }
   100% { transform: translate(-30px, 20px) scale(1.02); }
+}
+
+/* Firefox-only workaround. Firefox 135+ repaints the blurred aurora
+   each animation frame when a filtered ancestor contains transform-
+   animated descendants, producing a visible full-page flash in light
+   mode. Disable the drift on Firefox only; every other browser keeps
+   it. The aurora still moves on scroll via the parent's parallax
+   transform, so it does not read as fully static. */
+@-moz-document url-prefix() {
+  .daylight-aurora::before,
+  .daylight-aurora::after {
+    animation: none;
+  }
 }
 
 /* Sparkles — pure CSS cross shapes, pseudo-element based (no SVG mask).
@@ -311,6 +329,11 @@ section.hero {
   min-height: 70vh;
   text-align: center;
   display: flex; flex-direction: column; justify-content: center;
+  /* Atmospheric glows extend past section bounds with negative insets
+     (`right: 5%`, `left: 10%`, oversized widths). Clip horizontally
+     only so nothing leaks into document width on narrow viewports —
+     vertical stays free for glows with negative top (nebula, orchid). */
+  overflow-x: clip;
 }
 section.hero .glow.g-nebula   { width: 900px; height: 900px; top: -200px; left: 50%; transform: translateX(-50%); opacity: calc(var(--glow-opacity) * 0.6); }
 section.hero .glow.g-orchid   { width: 580px; height: 580px; top: -120px; left: 50%; transform: translateX(-50%); opacity: calc(var(--glow-opacity) + 0.05); }
@@ -381,6 +404,7 @@ section.shots {
   padding: 0 0 60px;
   margin-top: clamp(-80px, -5vh, -40px);
   z-index: 2;
+  overflow-x: clip;
 }
 section.shots .glow.g-peach  { width: 360px; height: 360px; top: 40%; left: -8%; opacity: calc(var(--glow-opacity) * 0.4); }
 section.shots .glow.g-orchid { width: 400px; height: 400px; top: 40%; right: -10%; opacity: calc(var(--glow-opacity) * 0.4); }
@@ -445,7 +469,7 @@ section.shots .glow.g-orchid { width: 400px; height: 400px; top: 40%; right: -10
 }
 
 /* FEATURES — bento-style 2×2 grid */
-section.features { position: relative; padding: 40px 0 60px; }
+section.features { position: relative; padding: 40px 0 60px; overflow-x: clip; }
 section.features .glow.g-amber { width: 360px; height: 360px; top: 40%; left: -10%; opacity: calc(var(--glow-opacity) * 0.3); }
 section.features .glow.g-lavender { width: 380px; height: 380px; top: 40%; right: -10%; opacity: calc(var(--glow-opacity) * 0.3); }
 
@@ -519,7 +543,7 @@ html[data-theme-resolved="light"] .feature-card:hover { border-color: transparen
 }
 
 /* FAQ */
-section.faq { position: relative; padding: 40px 0 80px; }
+section.faq { position: relative; padding: 40px 0 80px; overflow-x: clip; }
 section.faq .glow.g-amber { width: 340px; height: 340px; top: 20%; left: 50%; transform: translateX(-50%); opacity: calc(var(--glow-opacity) * 0.28); }
 section.faq .head { text-align: center; margin-bottom: 56px; position: relative; z-index: 1; }
 section.faq h2 {

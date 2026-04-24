@@ -73,6 +73,19 @@
   display: flex;
 }
 
+/* Grid tab wraps the now-playing strip above a row containing the grid area
+   and the floating OptionsPanel. Strip sits in chrome; body scrolls. */
+.gridPanel {
+  flex-direction: column;
+}
+
+.gridBody {
+  flex: 1;
+  display: flex;
+  position: relative;
+  overflow: hidden;
+}
+
 .gridArea {
   flex: 1;
   overflow: auto;

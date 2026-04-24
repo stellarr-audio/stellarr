@@ -1,30 +1,62 @@
-.overlay {
-  width: 100%;
-  max-width: 1040px;
-  text-align: center;
-  padding: 0.5rem 0;
-  border-bottom: 1px solid var(--color-border);
+/* Now-playing strip: chrome band above the grid body. Preset on the left,
+   scene as a pill on the right. Lives outside the scrollable grid area so
+   the grid breathes. */
+/* Two invisible content columns meeting in the middle. Preset sits at the
+   inner edge of the left column (right-aligned), scene sits at the inner
+   edge of the right column (left-aligned). Gutter between = visual breath. */
+.strip {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: 2.5rem;
+  align-items: center;
+  padding: 0.7rem 1.25rem;
+  background: color-mix(in srgb, var(--color-primary) 4%, transparent);
+  border-bottom: 1px solid var(--color-divider);
   flex-shrink: 0;
 }
 
-.presetName {
-  font-size: 2.5rem;
+.preset {
+  justify-self: end;
+  font-size: 2.625rem;
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--color-primary);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-primary) 70%, white) 0%,
+    var(--color-primary) 55%,
+    color-mix(in srgb, var(--color-primary) 70%, black) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
-.separator {
-  font-size: 2.5rem;
-  margin: 0 0.6rem;
-  color: var(--color-muted);
-}
-
-.sceneName {
-  font-size: 2.5rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+.scenePill {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.45rem 1.1rem;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-secondary) 22%, transparent),
+    color-mix(in srgb, var(--color-secondary) 8%, transparent)
+  );
   color: var(--color-secondary);
+  border-radius: 999px;
+  font-size: 1.375rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-secondary) 30%, transparent);
+}
+
+.scenePill::before {
+  content: '';
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--color-secondary);
 }

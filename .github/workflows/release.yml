@@ -103,10 +103,21 @@ jobs:
         if: env.APPLE_CERTIFICATE != ''
         run: |
           APP_PATH="build-release/Stellarr_artefacts/Release/Standalone/${APP_NAME}.app"
-          codesign --deep --force --options runtime \
-            --sign "$APPLE_SIGNING_IDENTITY" \
-            "$APP_PATH"
-          codesign --verify --deep --strict "$APP_PATH"
+          SPARKLE="$APP_PATH/Contents/Frameworks/Sparkle.framework"
+          SIGN="codesign --force --options runtime --timestamp --sign $APPLE_SIGNING_IDENTITY"
+
+          # codesign --deep can't resolve nested frameworks that carry their
+          # own helper apps and XPC services. Sign the Sparkle leaves first,
+          # work up to the framework, then sign the outer app on its own.
+
+          $SIGN "$SPARKLE/Versions/B/XPCServices/Downloader.xpc"
+          $SIGN "$SPARKLE/Versions/B/XPCServices/Installer.xpc"
+          $SIGN "$SPARKLE/Versions/B/Updater.app"
+          $SIGN "$SPARKLE/Versions/B/Autoupdate"
+          $SIGN "$SPARKLE/Versions/B"
+          $SIGN "$APP_PATH"
+
+          codesign --verify --strict --verbose=2 "$APP_PATH"
 
       # ── Package as .dmg ──
 

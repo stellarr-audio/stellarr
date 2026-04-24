@@ -187,7 +187,16 @@ target_link_options(Stellarr_Standalone PRIVATE "-Wl,-rpath,@executable_path/../
 add_custom_command(TARGET Stellarr_Standalone POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E make_directory
             "$<TARGET_BUNDLE_DIR:Stellarr_Standalone>/Contents/Frameworks"
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
+    # Sparkle.framework uses the macOS framework bundle format, which relies
+    # on symlinks (Versions/Current -> B, top-level Headers -> Versions/
+    # Current/Headers, etc.). cmake -E copy_directory dereferences symlinks
+    # and leaves a malformed double-copy layout that makes codesign fail
+    # with "bundle format is ambiguous". Use ditto, which preserves symlinks,
+    # extended attributes, and resource forks — the Apple-standard way to
+    # copy framework bundles.
+    COMMAND ${CMAKE_COMMAND} -E rm -rf
+            "$<TARGET_BUNDLE_DIR:Stellarr_Standalone>/Contents/Frameworks/Sparkle.framework"
+    COMMAND ditto
             "${SPARKLE_FRAMEWORK_DIR}"
             "$<TARGET_BUNDLE_DIR:Stellarr_Standalone>/Contents/Frameworks/Sparkle.framework"
     COMMENT "Embedding Sparkle.framework into ${STELLARR_APP_NAME}.app"

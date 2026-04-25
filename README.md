@@ -87,7 +87,7 @@ Stellarr includes optional crash reporting powered by [Sentry](https://sentry.io
 
 When enabled, only anonymous crash data is sent (stack traces, app version, OS version). No plugin names, preset content, audio data, file paths, or personal information is ever collected. If you don't opt in, no data leaves your machine.
 
-Stellarr also checks for software updates on launch and once a day by fetching `stellarr.org/appcast.xml` — standard for any auto-updating macOS app. The check sends only what any HTTP request sends (IP, user-agent including the current app version). Sparkle's optional "system profile" feature that would otherwise report your hardware is explicitly disabled. Nothing is downloaded or installed without you clicking **Install update**.
+Stellarr also checks for software updates on launch and once a day by fetching `stellarr.org/appcast.xml` — standard for any auto-updating macOS app. The check sends only what any HTTP request sends (IP, user-agent including the current app version). Sparkle's optional "system profile" feature that would otherwise report your hardware is explicitly disabled. Nothing is downloaded or installed without you clicking **Download & Install**.
 
 The website itself (stellarr.org) uses [GoatCounter](https://www.goatcounter.com) for cookie-free visitor counting — no personal data, no fingerprinting, no consent banner needed.
 

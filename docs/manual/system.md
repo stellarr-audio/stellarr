@@ -19,14 +19,18 @@ Installing an update restarts Stellarr. That's fine at your desk, but potentiall
 
 When no update is available:
 
-- Status line reads "You're on the latest version (vX.Y.Z)" with a green dot.
-- **Check for updates** stays available so you can poll on demand.
+- Status line reads "You're on vX.Y.Z, the latest version" with a green marker.
+- **Check for Updates** stays available so you can poll on demand.
 
 When an update is available:
 
 - An amber banner shows the new version, release date, and download size.
 - **View release notes →** opens the GitHub release page in your default browser so you can read what's changing.
-- **Install update** downloads the release, verifies its signature, and installs it after a confirmation step. Stellarr quits and relaunches at the new version.
+- **Download & Install** commits to the full update flow. Stellarr downloads the release, verifies its signature, and stages the install on disk.
+
+Once the download has completed the button becomes **Restart Now**, and a line underneath reads *"Update will install when you quit or restart Stellarr."* The install then happens either when you click Restart Now, or the next time you quit Stellarr for any reason — whichever comes first.
+
+Clicking **Download & Install** is the point of no return: once the update is staged, it will install on the next termination. If you want to postpone, don't click the button yet.
 
 ### How updates are verified
 

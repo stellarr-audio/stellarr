@@ -25,7 +25,7 @@
   --color-green:      var(--success);
   --color-danger:       var(--danger);
   --color-danger-bright: var(--danger);
-  --color-warning:    var(--secondary);  /* TODO (Phase 2): SystemStats uses --color-secondary as "default" and --color-warning as "caution" — both now amber. Needs dedicated "info" / muted token or SystemStats refactor. */
+  --color-warning:    var(--secondary);
 
   --color-block-bg:     var(--block-bg);
   --color-block-border: var(--border);

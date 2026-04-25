@@ -41,9 +41,13 @@
 }
 
 .searchWrapper {
-  padding: 0.5rem 0;
+  padding: 0.5rem 0.75rem;
   border-bottom: 1px solid var(--color-divider);
   flex-shrink: 0;
+}
+
+.searchInput {
+  width: 100%;
 }
 
 .emptyMessage {

@@ -59,6 +59,7 @@ export function PluginSelect({ plugins, selectedId, onSelect }: Props) {
               }}
               onClick={(e) => e.stopPropagation()}
               onKeyDown={(e) => e.stopPropagation()}
+              className={styles.searchInput}
             />
           </div>
 

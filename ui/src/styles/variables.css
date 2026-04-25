@@ -16,8 +16,9 @@
   --color-border:     var(--border);
   --color-divider:    var(--divider);
 
-  --color-primary:    var(--accent);
-  --color-secondary:  var(--secondary);
+  --color-primary:         var(--accent);
+  --color-secondary:       var(--secondary);
+  --color-secondary-text:  var(--secondary-text);
   --color-text:       var(--text);
   --color-muted:      var(--text-muted);
 

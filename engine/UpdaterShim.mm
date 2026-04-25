@@ -7,7 +7,7 @@
 // The user-driver object Sparkle talks to. All protocol methods run on the
 // main thread. We funnel every transition into a shared C++ state struct and
 // invoke the C++ callback so the bridge can serialise onto the UI wire.
-@interface StellarrSparkleDriver : NSObject <SPUUserDriver, SPUUpdaterDelegate>
+@interface StellarrSparkleDriver : NSObject <SPUUserDriver>
 @property (nonatomic, copy) void (^onState)(stellarr::update::State);
 
 // Pending replies. Sparkle's protocol is dialog-shaped: when an update is
@@ -24,57 +24,9 @@
 // Expected bytes so ongoing downloads can compute a 0..1 fraction.
 @property (nonatomic, assign) uint64_t expectedContentLength;
 @property (nonatomic, assign) uint64_t receivedContentLength;
-
-// Gate for install-on-quit. Once Sparkle has a downloaded, verified update
-// staged, it arms SUInstallerLauncher.xpc to run the install on *any*
-// termination of the host (normal quit, crash, SIGKILL). This flag — set
-// only when the user explicitly clicks Install & Restart — tells our
-// SPUUpdaterDelegate callback whether to let that background install
-// proceed. Stellarr is a live-performance app; updates must never install
-// without explicit consent.
-@property (nonatomic, assign) BOOL userConfirmedInstall;
 @end
 
 @implementation StellarrSparkleDriver
-
-- (instancetype)init
-{
-    if (self = [super init]) {
-        // Cancel any pending install on graceful termination (Cmd+Q,
-        // Activity Monitor Force Quit / SIGTERM, system shutdown). SIGKILL
-        // bypasses this — see the SPUUpdaterDelegate hook below for the
-        // complementary out-of-process gate.
-        [[NSNotificationCenter defaultCenter]
-            addObserver:self
-               selector:@selector(appWillTerminate:)
-                   name:NSApplicationWillTerminateNotification
-                 object:nil];
-    }
-    return self;
-}
-
-- (void)dealloc
-{
-    [[NSNotificationCenter defaultCenter] removeObserver:self];
-}
-
-- (void)appWillTerminate:(NSNotification *)note
-{
-    (void) note;
-
-    if (self.userConfirmedInstall) return;
-
-    // User never confirmed Install & Restart. Actively cancel the staged
-    // install so Sparkle's installer launcher does not proceed after we
-    // exit. SPUUserUpdateChoiceSkip at this stage "cancels the current
-    // update that has begun installing" (per SPUUserDriver docs) without
-    // permanently skipping the version.
-    if (self.pendingReadyToInstallReply != nil) {
-        auto reply = self.pendingReadyToInstallReply;
-        self.pendingReadyToInstallReply = nil;
-        reply(SPUUserUpdateChoiceSkip);
-    }
-}
 
 - (void)emit
 {
@@ -89,7 +41,6 @@
     self.pendingReadyToInstallReply = nil;
     self.expectedContentLength = 0;
     self.receivedContentLength = 0;
-    self.userConfirmedInstall = NO;
 }
 
 // ── Permission request ────────────────────────────────────────────────
@@ -129,10 +80,10 @@
     else if (appcastItem.versionString.length > 0)
         s.latestVersion = appcastItem.versionString.UTF8String;
 
-    if (appcastItem.date != nil) {
+    if (NSDate* date = appcastItem.date) {
         NSISO8601DateFormatter* fmt = [[NSISO8601DateFormatter alloc] init];
         fmt.formatOptions = NSISO8601DateFormatWithInternetDateTime;
-        s.releasedAt = [fmt stringFromDate:appcastItem.date].UTF8String;
+        s.releasedAt = [fmt stringFromDate:date].UTF8String;
     }
 
     if (appcastItem.contentLength > 0)
@@ -283,32 +234,6 @@
     [NSApp activateIgnoringOtherApps:YES];
 }
 
-// ── SPUUpdaterDelegate ────────────────────────────────────────────────
-//
-// Block Sparkle's default "install on quit" behaviour. Once Sparkle has a
-// downloaded, verified update it arms SUInstallerLauncher.xpc to perform
-// the install on any host termination (even SIGKILL). Returning YES here
-// tells Sparkle we'll drive the install ourselves via
-// `immediateInstallHandler`; never calling that handler blocks the
-// background path entirely. Explicit "Install & Restart" uses a separate
-// Sparkle code path (SPUUserUpdateChoiceInstall on the
-// showReadyToInstallAndRelaunch reply) and is unaffected by this flag —
-// but we still invoke the handler when userConfirmedInstall is set,
-// so the install is never silently skipped if the explicit path happens
-// to route through this delegate in some future Sparkle version.
-- (BOOL)updater:(SPUUpdater *)updater
-  willInstallUpdateOnQuit:(SUAppcastItem *)item
-  immediateInstallationBlock:(void (^)(void))immediateInstallHandler
-{
-    (void) updater;
-    (void) item;
-
-    if (self.userConfirmedInstall && immediateInstallHandler != nil)
-        immediateInstallHandler();
-
-    return YES;
-}
-
 @end
 
 
@@ -338,7 +263,7 @@ Shim::Shim() : impl(new Impl)
                      initWithHostBundle:mainBundle
                       applicationBundle:mainBundle
                              userDriver:impl->driver
-                               delegate:impl->driver];
+                               delegate:nil];
 
     NSError* startErr = nil;
     if (![impl->updater startUpdater:&startErr]) {
@@ -383,13 +308,10 @@ void Shim::installUpdate()
         return;
     }
 
-    // Download has completed; the banner now says "Restart & install".
+    // Download has completed; the UI now shows "Restart now".
     if (impl->driver.pendingReadyToInstallReply != nil) {
         auto reply = impl->driver.pendingReadyToInstallReply;
         impl->driver.pendingReadyToInstallReply = nil;
-        // User explicitly consented; let the delegate's install-on-quit
-        // gate allow the install through if Sparkle routes it that way.
-        impl->driver.userConfirmedInstall = YES;
         reply(SPUUserUpdateChoiceInstall);
         return;
     }

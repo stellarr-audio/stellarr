@@ -16,4 +16,7 @@
   display: flex;
   justify-content: flex-end;
   gap: 8px;
+  /* Pin to top regardless of blurb height — growing blurbs must not shift
+     the button vertically, so users have a predictable click target. */
+  align-self: flex-start;
 }

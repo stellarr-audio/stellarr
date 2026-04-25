@@ -29,10 +29,12 @@ export function SoftwareUpdates() {
   const state = useStore((s) => s.softwareUpdate);
   const { status } = state;
 
-  // Install button is only meaningful while an update is in play. When
-  // status is idle/checking/no-update/error there's nothing to install,
-  // so hide the button entirely rather than disabling it.
-  const showInstallButton =
+  // "Active update" = Sparkle has found something and the user is
+  // somewhere in the check → download → ready flow. Used to decide
+  // whether the banner + install button are on screen at all. When the
+  // status is idle/checking/no-update/error, the banner stays hidden
+  // and the install button is removed (not just disabled).
+  const hasActiveUpdate =
     status === 'available' || status === 'downloading' || status === 'ready';
   const canInstall = status === 'available' || status === 'ready';
   const checkLabel = status === 'checking' ? 'Checking…' : 'Check for Updates';
@@ -47,7 +49,7 @@ export function SoftwareUpdates() {
 
   return (
     <>
-      {(status === 'available' || status === 'downloading' || status === 'ready') && (
+      {hasActiveUpdate && (
         <div className={styles.banner}>
           <PiShootingStar className={styles.bannerIcon} aria-hidden="true" />
           <div className={styles.bannerBody}>
@@ -91,7 +93,7 @@ export function SoftwareUpdates() {
             >
               {checkLabel}
             </Button>
-            {showInstallButton && (
+            {hasActiveUpdate && (
               <Button
                 onClick={requestInstallUpdate}
                 disabled={!canInstall}
@@ -112,7 +114,7 @@ export function SoftwareUpdates() {
 
       {status === 'no-update' && (
         <div className={styles.status}>
-          <span className={styles.statusDot} aria-hidden="true" />
+          <span className={styles.statusMarker} aria-hidden="true" />
           You're on v{__APP_VERSION__}, the latest version.
         </div>
       )}

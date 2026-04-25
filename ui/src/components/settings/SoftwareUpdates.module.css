@@ -48,7 +48,7 @@
 .blurb { font-size: var(--text-xs); color: var(--color-muted); line-height: 1.55; margin: 0; }
 
 .status { display: flex; align-items: center; gap: 10px; margin-top: 10px; font-size: var(--text-xs); color: var(--color-muted); }
-.statusDot { width: 6px; height: 6px; background: var(--color-green); }
+.statusMarker { width: 6px; height: 6px; background: var(--color-green); }
 .statusIcon { width: 14px; height: 14px; flex-shrink: 0; }
 .warn { color: var(--color-secondary-text); }
 .error { color: var(--color-danger); }

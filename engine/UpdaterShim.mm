@@ -225,7 +225,25 @@
 // ── Tear-down ─────────────────────────────────────────────────────────
 - (void)dismissUpdateInstallation
 {
-    [self reset];
+    // Sparkle calls this at the end of every session — including after a
+    // successful "no update" check. Wiping state here made the
+    // "You're on the latest version" line flash and vanish. Preserve
+    // states that the user is meant to keep seeing:
+    //   - NoUpdate / Error: informational results of the last check
+    //   - Ready: download complete, install is already staged on disk
+    //            and the user hasn't restarted yet. The Sparkle session
+    //            may end here in edge cases, but the banner + "Restart
+    //            Now" button must stay on screen.
+    using stellarr::update::Status;
+    auto terminal = self.currentState.status == Status::NoUpdate
+                 || self.currentState.status == Status::Error
+                 || self.currentState.status == Status::Ready;
+    if (terminal) {
+        self.expectedContentLength = 0;
+        self.receivedContentLength = 0;
+    } else {
+        [self reset];
+    }
     [self emit];
 }
 
@@ -308,7 +326,7 @@ void Shim::installUpdate()
         return;
     }
 
-    // Download has completed; the UI now shows "Restart now".
+    // Download has completed; the UI now shows "Restart Now".
     if (impl->driver.pendingReadyToInstallReply != nil) {
         auto reply = impl->driver.pendingReadyToInstallReply;
         impl->driver.pendingReadyToInstallReply = nil;
@@ -316,9 +334,9 @@ void Shim::installUpdate()
         return;
     }
 
-    // No pending prompt: kick a fresh check so the flow can start from the
-    // top if the user clicks Install speculatively.
-    [impl->updater checkForUpdates];
+    // No pending prompt. The UI only exposes the install button when a
+    // reply is outstanding (status ∈ {available, ready}), so reaching
+    // here means the bridge was called out-of-band. Safe no-op.
 }
 
 void Shim::openReleaseNotes(const std::string& url)

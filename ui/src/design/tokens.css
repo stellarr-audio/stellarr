@@ -100,6 +100,12 @@
 
   /* Rose (danger) */
   --rose-600: #e11d48;
+
+  /* Plugin format identification (theme-agnostic — formats don't shift with theme) */
+  --plugin-format-vst3:    #00b4ff;
+  --plugin-format-au:      #ff8800;
+  --plugin-format-vst:     #00ff9d;
+  --plugin-format-unknown: #5a5478;
 }
 
 /* === Light theme ========================================================== */
@@ -134,6 +140,10 @@
   /* Opaque block background — stops the canvas grid + edges bleeding through
      when blocks are selected / bypassed (both apply a translucent tint). */
   --block-bg:     var(--grey-0);           /* #ffffff */
+
+  /* Grid anchor (Input/Output block) colour — neutral zinc, intentionally
+     distinct from the user-selectable block palette. */
+  --grid-anchor-colour: #52525b;           /* zinc-600 */
 
   /* Dark-only container outline (empty in light) */
   --border-container: none;
@@ -170,6 +180,9 @@
 
   /* Opaque block background — see light-theme note. */
   --block-bg:     var(--grey-dark-200);    /* #1a2438 */
+
+  /* Grid anchor (Input/Output block) colour — see light-theme note. */
+  --grid-anchor-colour: #a1a1aa;           /* zinc-400 */
 
   --border-container: 1px solid var(--color-border);
 }

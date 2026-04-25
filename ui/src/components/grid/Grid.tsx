@@ -27,14 +27,13 @@ import { BlockMenu } from './BlockMenu';
 import { DroppableCell } from './DroppableCell';
 import { CELL_SIZE, gridWidth, gridHeight } from './layout';
 import { TYPE_ABBREVIATIONS } from '../common/constants';
-import { colors } from '../common/colors';
-import { PALETTE } from '../options/ColorPicker';
+import { colors, blockPaletteByName } from '../common/colors';
 import styles from './Grid.module.css';
 
 const typeColors: Record<string, string> = {
-  input: PALETTE.slateLight,
-  output: PALETTE.slateLight,
-  plugin: PALETTE.blue,
+  input: blockPaletteByName.slateLight,
+  output: blockPaletteByName.slateLight,
+  plugin: blockPaletteByName.blue,
 };
 
 // Lightweight preview shown in the DragOverlay portal during block drag

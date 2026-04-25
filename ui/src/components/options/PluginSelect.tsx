@@ -2,13 +2,8 @@ import { useState, useMemo, useRef } from 'react';
 import { Select } from 'radix-ui';
 import { ChevronDownIcon } from '@radix-ui/react-icons';
 import type { PluginInfo } from '../../store';
+import { pluginFormatColors } from '../common/colors';
 import styles from './PluginSelect.module.css';
-
-const formatColors: Record<string, string> = {
-  VST3: '#00b4ff',
-  AudioUnit: '#ff8800',
-  VST: '#00ff9d',
-};
 
 interface Props {
   plugins: PluginInfo[];
@@ -74,7 +69,9 @@ export function PluginSelect({ plugins, selectedId, onSelect }: Props) {
               filtered.map((p) => {
                 const formatLabel =
                   p.format === 'AudioUnit' ? 'AU' : p.format === 'VST3' ? 'VST3' : p.format;
-                const formatColor = formatColors[p.format] ?? '#5a5478';
+                const formatColor =
+                  pluginFormatColors[p.format as keyof typeof pluginFormatColors] ??
+                  pluginFormatColors.unknown;
 
                 return (
                   <Select.Item key={p.id} value={p.id} className={styles.item}>
@@ -86,7 +83,7 @@ export function PluginSelect({ plugins, selectedId, onSelect }: Props) {
                       className={styles.formatBadge}
                       style={{
                         color: formatColor,
-                        border: `1px solid ${formatColor}55`,
+                        border: `1px solid color-mix(in srgb, ${formatColor} 33%, transparent)`,
                       }}
                     >
                       {formatLabel}

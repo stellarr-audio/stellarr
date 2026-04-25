@@ -13,7 +13,7 @@ Think of it as a virtual pedalboard and amp rack that you design yourself, using
 
 ## Philosophy
 
-Stellarr was made by an AI and a human, together. It is free and open, forever. For the love of music and art.
+Stellarr was made by an AI and a human, together. It is free and open, forever. For the love of all human expression.
 
 We believe:
 

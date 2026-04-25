@@ -62,12 +62,10 @@ void Block::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer& mid
 
     if (needsBlend)
     {
-        // Save dry signal
-        if (dryBuffer.getNumChannels() != buffer.getNumChannels()
-            || dryBuffer.getNumSamples() != buffer.getNumSamples())
-        {
-            dryBuffer.setSize(buffer.getNumChannels(), buffer.getNumSamples(), false, false, true);
-        }
+        // Save dry signal. dryBuffer is pre-sized in prepareToPlay() for the
+        // host-declared block; no resize on the audio thread.
+        jassert(dryBuffer.getNumChannels() >= buffer.getNumChannels()
+             && dryBuffer.getNumSamples() >= buffer.getNumSamples());
 
         for (int ch = 0; ch < buffer.getNumChannels(); ++ch)
             dryBuffer.copyFrom(ch, 0, buffer, ch, 0, buffer.getNumSamples());
@@ -151,8 +149,9 @@ void Block::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer& mid
 
 void Block::prepareToPlay(double sampleRate, int samplesPerBlock)
 {
-    if (hasMix)
-        dryBuffer.setSize(getTotalNumInputChannels(), samplesPerBlock, false, false, true);
+    // Always size dryBuffer for the host-declared block: even hasMix=false
+    // blocks need a dry copy when bypassed with muteFxIn / muteFxOut.
+    dryBuffer.setSize(getTotalNumInputChannels(), samplesPerBlock, false, false, true);
 
     loudnessMeter.prepare(sampleRate, getTotalNumOutputChannels());
 

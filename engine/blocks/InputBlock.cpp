@@ -10,6 +10,7 @@ void InputBlock::prepareBlock(double sampleRate, int)
 
     tunerBuffer.resize(tunerBufferSize, 0.0f);
     yinBuffer.resize(tunerBufferSize / 2, 0.0f);
+    linearBuffer.resize(tunerBufferSize, 0.0f);
     tunerBufferWritePos = 0;
     tunerSamplesAccumulated = 0;
 }
@@ -53,9 +54,9 @@ void InputBlock::runYinDetection()
     const size_t bufSize = static_cast<size_t>(tunerBufferSize);
     const size_t halfSize = bufSize / 2;
 
-    // Linearize circular buffer (reuses member to avoid allocation)
-    if (linearBuffer.size() != bufSize)
-        linearBuffer.resize(bufSize);
+    // Linearize circular buffer. linearBuffer is pre-sized in prepareBlock();
+    // no resize on the audio thread.
+    jassert(linearBuffer.size() == bufSize);
 
     for (size_t i = 0; i < bufSize; ++i)
         linearBuffer[i] = tunerBuffer[(static_cast<size_t>(tunerBufferWritePos) + i) % bufSize];

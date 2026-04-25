@@ -32,8 +32,8 @@ Exercises the full pipeline end-to-end against the local harness (see [system](/
    ```
 3. Launch Stellarr Dev.
 4. Open Settings → Software Updates.
-5. Click **Check for updates**.
-6. Click **Install update**.
+5. Click **Check for Updates**.
+6. Click **Download & Install**.
 
 **Expected:**
 
@@ -41,7 +41,8 @@ Exercises the full pipeline end-to-end against the local harness (see [system](/
 - Amber banner appears: "Update available v0.99.1 · Released today".
 - Amber dot badge appears on the System tab icon.
 - "View release notes →" opens the local HTML placeholder in the default browser.
-- Install triggers a download; banner flips to "Downloading… X%" briefly.
+- **Download & Install** triggers a download; right-hand button label flips to "Downloading… X%" and disables itself. The left "Check for Updates" button also disables while a download is in flight.
+- Once the download completes the right button becomes **Restart Now**, and a line underneath reads "Update will install when you quit or restart Stellarr."
 - Sparkle validates the EdDSA signature against the baked public key (dev key) and accepts the archive.
 
 **Notes:** The harness currently zips the dev `.app` and serves the SAME version back as "v0.99.1". Sparkle will download and signature-verify correctly, but refuses to install-and-relaunch because the archive's `CFBundleShortVersionString` doesn't match the advertised version. That refusal is correct behaviour — it validates the version-guard without needing a second build.
@@ -56,9 +57,9 @@ Exercises the full pipeline end-to-end against the local harness (see [system](/
    defaults delete com.stellarr.stellarr.dev SUFeedURL
    ```
 3. Relaunch Stellarr Dev.
-4. Settings → Software Updates → Check for updates.
+4. Settings → Software Updates → Check for Updates.
 
-**Expected:** Banner stays hidden. Status line reads "You're on the latest version (v0.13.0)" with a green dot. Tab badge absent.
+**Expected:** Banner stays hidden. Status line reads "You're on v0.13.0, the latest version." with a green marker and persists after the Sparkle session ends. Tab badge absent.
 
 **Notes:** This relies on the staging appcast (`stellarr.org/appcast-staging.xml`) existing and containing no newer version. If the feed is unreachable, status flips to error instead — that is TC-UPD-003.
 
@@ -68,7 +69,7 @@ Exercises the full pipeline end-to-end against the local harness (see [system](/
 
 1. Disable internet (Wi-Fi off, or block `stellarr.org` with a hosts entry).
 2. Relaunch Stellarr Dev.
-3. Settings → Software Updates → Check for updates.
+3. Settings → Software Updates → Check for Updates.
 
 **Expected:** A rose-coloured error line appears under the blurb (e.g. "A network connection could not be established."). No banner, no badge.
 
@@ -97,9 +98,10 @@ Requires two genuinely different dev releases — typically cut before a real mi
    make dev-updater-serve DMG=<path-to-new.dmg> VERSION=X.Y.Z+1
    ```
 4. Install the OLD dev app (X.Y.Z) into `/Applications`.
-5. Launch it, Settings → Software Updates → Install update.
+5. Launch it, Settings → Software Updates → Download & Install.
+6. When the button flips to **Restart Now**, click it (or quit the app by any means — the staged install runs on next termination regardless).
 
-**Expected:** Download completes, Sparkle installs the new bundle, Stellarr Dev quits and relaunches showing version X.Y.Z+1 in the title bar. Tab badge clears. Status line reads "You're on the latest version (vX.Y.Z+1)".
+**Expected:** Sparkle installs the new bundle, Stellarr Dev quits and relaunches showing version X.Y.Z+1 in the title bar. Tab badge clears. Status line reads "You're on vX.Y.Z+1, the latest version."
 
 **Notes:** Run this before cutting any release that ships Sparkle changes.
 

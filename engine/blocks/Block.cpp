@@ -5,6 +5,12 @@ namespace stellarr
 
 void Block::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midi)
 {
+    // Drain pending loudness-meter reset before any metering work this block.
+    // setMeasureLoudness(false) on the message thread sets the flag; the audio
+    // thread owns the reset so no non-atomic state is mutated under us.
+    if (resetLoudnessRequested.exchange(false, std::memory_order_acq_rel))
+        loudnessMeter.reset();
+
     // -- Fast-path bypass modes (no processing, no mix/balance/level) ---------
 
     if (bypassed.load(std::memory_order_relaxed))

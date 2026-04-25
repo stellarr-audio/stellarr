@@ -191,7 +191,11 @@ public:
     void setMeasureLoudness(bool enabled)
     {
         measureLoudness.store(enabled, std::memory_order_relaxed);
-        if (!enabled) loudnessMeter.reset();
+        // Defer the meter reset to the audio thread to avoid mutating
+        // LoudnessMeter's non-atomic internal state while process() may be
+        // running on it. Audio thread drains the flag in processBlock().
+        if (!enabled)
+            resetLoudnessRequested.store(true, std::memory_order_release);
     }
 
     bool isMeasuringLoudness() const
@@ -229,6 +233,7 @@ private:
     std::atomic<int> bypassMode { static_cast<int>(BypassMode::thru) };
     juce::AudioBuffer<float> dryBuffer;
     std::atomic<bool> measureLoudness { false };
+    std::atomic<bool> resetLoudnessRequested { false };
     stellarr::dsp::LoudnessMeter loudnessMeter;
 };
 

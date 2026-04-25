@@ -3,6 +3,7 @@ import { Select } from 'radix-ui';
 import { ChevronDownIcon } from '@radix-ui/react-icons';
 import type { PluginInfo } from '../../store';
 import { pluginFormatColors } from '../common/colors';
+import { Input } from '../common/Input';
 import styles from './PluginSelect.module.css';
 
 interface Props {
@@ -47,7 +48,7 @@ export function PluginSelect({ plugins, selectedId, onSelect }: Props) {
       <Select.Portal>
         <Select.Content position="popper" sideOffset={4} className={styles.content}>
           <div className={styles.searchWrapper}>
-            <input
+            <Input
               ref={searchRef}
               type="text"
               placeholder="Search..."

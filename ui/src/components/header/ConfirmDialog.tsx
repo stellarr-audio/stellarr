@@ -1,4 +1,5 @@
 import { Dialog } from 'radix-ui';
+import { Button } from '../common/Button';
 import styles from './ConfirmDialog.module.css';
 
 interface Props {
@@ -26,12 +27,12 @@ export function ConfirmDialog({
           <Dialog.Title className={styles.title}>{title}</Dialog.Title>
           <p className={styles.message}>{message}</p>
           <div className={styles.buttonRow}>
-            <button onClick={() => onOpenChange(false)} className={styles.cancelButton}>
+            <Button variant="secondary" onClick={() => onOpenChange(false)}>
               Cancel
-            </button>
-            <button onClick={onConfirm} className={styles.confirmButton}>
+            </Button>
+            <Button variant="danger" onClick={onConfirm}>
               {confirmLabel}
-            </button>
+            </Button>
           </div>
         </Dialog.Content>
       </Dialog.Portal>

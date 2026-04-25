@@ -41,19 +41,13 @@
 }
 
 .searchWrapper {
-  padding: 0.25rem 0.5rem;
+  padding: 0.5rem 0.75rem;
   border-bottom: 1px solid var(--color-divider);
   flex-shrink: 0;
 }
 
 .searchInput {
-  background: var(--color-cell);
-  color: var(--color-text);
-  border: none;
   width: 100%;
-  padding: 0.25rem 0;
-  font-size: 1rem;
-  outline: none;
 }
 
 .emptyMessage {

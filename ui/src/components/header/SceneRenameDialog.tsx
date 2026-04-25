@@ -1,4 +1,6 @@
 import { Dialog } from 'radix-ui';
+import { Input } from '../common/Input';
+import { Button } from '../common/Button';
 import styles from './SceneRenameDialog.module.css';
 
 interface Props {
@@ -24,22 +26,19 @@ export function SceneRenameDialog({
         <Dialog.Overlay className={styles.overlay} />
         <Dialog.Content className={styles.content}>
           <Dialog.Title className={styles.title}>{title}</Dialog.Title>
-          <input
+          <Input
             autoFocus
             value={value}
             onChange={(e) => onChange(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === 'Enter') onSubmit();
             }}
-            className={styles.input}
           />
           <div className={styles.buttonRow}>
-            <button onClick={() => onOpenChange(false)} className={styles.cancelButton}>
+            <Button variant="secondary" onClick={() => onOpenChange(false)}>
               Cancel
-            </button>
-            <button onClick={onSubmit} className={styles.renameButton}>
-              Rename
-            </button>
+            </Button>
+            <Button onClick={onSubmit}>Rename</Button>
           </div>
         </Dialog.Content>
       </Dialog.Portal>

@@ -29,7 +29,7 @@
 
 Stellarr is a virtual pedalboard and amp rack that you design yourself. Arrange plugins on a visual grid, connect them with drag-and-drop wiring, and switch between configurations instantly during a live performance.
 
-It was made by an AI and a human, together. It is free and open, forever. For the love of music, art and human expression.
+It was made by an AI and a human, together. It is free and open, forever. For the love of all human expression.
 
 ## Features
 

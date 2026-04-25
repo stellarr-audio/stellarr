@@ -94,7 +94,7 @@ The footer of the app runs three live meters:
 - **IN** — Input loudness from your audio interface in **LUFS**. Helps you judge the signal before the first block.
 - **OUT** — Output loudness after the final block in **LUFS**. Click the OUT meter to choose Momentary or Short-term averaging.
 
-When a plugin block is selected, the footer also shows that block's **live LUFS** reading. See [Block Options](/docs/block-options/) for setting per-block loudness targets.
+For per-block LUFS readings and target loudness, see [Block Options](/docs/block-options/).
 
 ## Theme
 

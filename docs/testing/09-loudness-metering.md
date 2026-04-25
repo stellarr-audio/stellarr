@@ -13,11 +13,11 @@ Test whenever you touch the LUFS DSP (`dsp/KWeighting.h`, `dsp/LoudnessMeter.h`)
 
 ## Test Cases
 
-### TC-LM-001: Header meter tracks output loudness
+### TC-LM-001: Footer meter tracks output loudness
 
 **Steps:**
 1. Start Stellarr with no audio playing
-2. Observe the OUT meter in the header
+2. Observe the OUT meter in the footer
 3. Enable the test tone on the Input block
 
 **Expected:** OUT meter is at silence floor when idle; rises to a steady reading when the test tone plays. Reading is stable (not jumpy) because the short-term window averages over 3 s.
@@ -56,7 +56,7 @@ Test whenever you touch the LUFS DSP (`dsp/KWeighting.h`, `dsp/LoudnessMeter.h`)
 2. Enable the target toggle; enter a value (e.g. -18)
 3. Observe the history strip
 
-**Expected:** A solid horizontal line appears at -18 LUFS across the graph. The header OUT meter changes colour based on proximity to the target (under/over).
+**Expected:** A solid horizontal line appears at -18 LUFS across the graph. The footer OUT meter changes colour based on proximity to the target (under/over).
 
 ### TC-LM-006: Target loudness persists across preset save/load
 
@@ -78,7 +78,7 @@ Test whenever you touch the LUFS DSP (`dsp/KWeighting.h`, `dsp/LoudnessMeter.h`)
 ### TC-LM-008: Momentary vs short-term window
 
 **Steps:**
-1. Open the window selector popup (click the OUT meter in the header)
+1. Open the window selector popup (click the OUT meter in the footer)
 2. Play the test tone; switch between Momentary (400 ms) and Short-term (3 s)
 
 **Expected:** Momentary reacts faster to level changes; short-term is smoother. Starting and stopping the test tone should visibly differ in responsiveness between the two modes.
@@ -94,7 +94,7 @@ Test whenever you touch the LUFS DSP (`dsp/KWeighting.h`, `dsp/LoudnessMeter.h`)
 ### TC-LM-010: No CPU spike from metering
 
 **Steps:**
-1. Note the CPU usage in the header with metering idle
+1. Note the CPU usage in the footer with metering idle
 2. Select a block to activate its meter
 3. Observe CPU usage while the test tone plays
 

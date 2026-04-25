@@ -91,8 +91,8 @@ If no plugins appear, check that your plugin directories are correctly configure
 The footer of the app runs three live meters:
 
 - **CPU** — Audio processing load as a percentage. Green below ~40%, amber 40–70%, red above 70%.
-- **IN** — Input level from your audio interface in **dBFS**. Helps you set input gain before the first block.
-- **OUT** — Output level after the final block, in **dBFS**. Red when the signal clips above 0 dBFS.
+- **IN** — Input loudness from your audio interface in **LUFS**. Helps you judge the signal before the first block.
+- **OUT** — Output loudness after the final block in **LUFS**. Click the OUT meter to choose Momentary or Short-term averaging.
 
 When a plugin block is selected, the footer also shows that block's **live LUFS** reading. See [Block Options](/docs/block-options/) for setting per-block loudness targets.
 

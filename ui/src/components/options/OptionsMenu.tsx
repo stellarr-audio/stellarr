@@ -9,7 +9,7 @@ import {
   ChevronRightIcon,
   TrashIcon,
 } from '@radix-ui/react-icons';
-import { BLOCK_COLORS } from './ColorPicker';
+import { blockPalette } from '../common/colors';
 import { requestSetBlockColor, requestRemoveBlock } from '../../bridge';
 import type { GridBlock } from '../../store';
 import styles from './OptionsPanel.module.css';
@@ -20,7 +20,7 @@ interface Props {
 
 export function OptionsMenu({ block }: Props) {
   const [idCopied, setIdCopied] = useState(false);
-  const currentColor = block.blockColor || BLOCK_COLORS[0];
+  const currentColor = block.blockColor || blockPalette[0];
 
   const copyId = () => {
     navigator.clipboard.writeText(block.id);
@@ -73,7 +73,7 @@ export function OptionsMenu({ block }: Props) {
             </DropdownMenu.SubTrigger>
             <DropdownMenu.Portal>
               <DropdownMenu.SubContent sideOffset={4} className={styles.menuSubContent}>
-                {BLOCK_COLORS.map((c) => (
+                {blockPalette.map((c) => (
                   <DropdownMenu.Item
                     key={c}
                     asChild

@@ -54,6 +54,37 @@ public:
 
     juce::AudioProcessorGraph& getGraph() { return graph; }
 
+    /**
+     * RAII helper for user-initiated batches of graph mutations. On
+     * construction, suspends top-level processing so the audio thread is
+     * synchronised. On destruction, performs a single rebuildGraph() and
+     * resumes processing. Pass UpdateKind::none to all graph calls within
+     * the scope so the dtor's rebuild is the only rebuild for the batch.
+     *
+     * Slow work (plugin loading, etc.) should still happen BEFORE entering
+     * the scope to keep the suspension window minimal.
+     */
+    class GraphMutationScope
+    {
+    public:
+        explicit GraphMutationScope(StellarrProcessor& p) : processor(p)
+        {
+            processor.suspendProcessing(true);
+        }
+
+        ~GraphMutationScope()
+        {
+            processor.rebuildGraph();
+            processor.suspendProcessing(false);
+        }
+
+        GraphMutationScope(const GraphMutationScope&) = delete;
+        GraphMutationScope& operator=(const GraphMutationScope&) = delete;
+
+    private:
+        StellarrProcessor& processor;
+    };
+
     juce::AudioProcessorGraph::NodeID getAudioInputNodeId() const  { return audioInputNodeId; }
     juce::AudioProcessorGraph::NodeID getAudioOutputNodeId() const { return audioOutputNodeId; }
     juce::AudioProcessorGraph::NodeID getMidiInputNodeId() const   { return midiInputNodeId; }

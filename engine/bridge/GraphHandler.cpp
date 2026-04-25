@@ -24,64 +24,62 @@ void StellarrBridge::handleAddBlock(const juce::var& json)
 
     auto blockId = block->getBlockId().toString();
     auto blockName = block->getName();
-    auto nodeId = processor->addBlock(std::move(block));
 
-    if (nodeId.uid == 0) return;
-
-    blockNodeMap[blockId] = nodeId;
-    blockPositions[blockId] = {col, row};
-
-    if (type == "input")
-    {
-        processor->disconnectBlocks(processor->getAudioInputNodeId(), processor->getAudioOutputNodeId());
-        processor->connectBlocks(processor->getAudioInputNodeId(), nodeId);
-        // Connect MIDI system input to this input block
-        processor->getGraph().addConnection({
-            {processor->getMidiInputNodeId(), juce::AudioProcessorGraph::midiChannelIndex},
-            {nodeId, juce::AudioProcessorGraph::midiChannelIndex}
-        });
-    }
-    else if (type == "output")
-    {
-        processor->disconnectBlocks(processor->getAudioInputNodeId(), processor->getAudioOutputNodeId());
-        processor->connectBlocks(nodeId, processor->getAudioOutputNodeId());
-        // Connect this output block to MIDI system output
-        processor->getGraph().addConnection({
-            {nodeId, juce::AudioProcessorGraph::midiChannelIndex},
-            {processor->getMidiOutputNodeId(), juce::AudioProcessorGraph::midiChannelIndex}
-        });
-    }
-
-    // Splice: insert the new block into an existing connection
     auto spliceSourceId = obj->getProperty("spliceSourceId").toString();
     auto spliceDestId   = obj->getProperty("spliceDestId").toString();
 
-    if (spliceSourceId.isNotEmpty() && spliceDestId.isNotEmpty())
+    juce::AudioProcessorGraph::NodeID nodeId;
+    bool spliceApplied = false;
+
     {
-        auto srcIt = blockNodeMap.find(spliceSourceId);
-        auto dstIt = blockNodeMap.find(spliceDestId);
+        StellarrProcessor::GraphMutationScope scope(*processor);
+        using UK = StellarrProcessor::UpdateKind;
 
-        if (srcIt != blockNodeMap.end() && dstIt != blockNodeMap.end())
+        nodeId = processor->addBlock(std::move(block), UK::none);
+        if (nodeId.uid == 0) return;
+
+        blockNodeMap[blockId] = nodeId;
+        blockPositions[blockId] = {col, row};
+
+        if (type == "input" || type == "output")
         {
-            processor->disconnectBlocks(srcIt->second, dstIt->second);
-            processor->connectBlocks(srcIt->second, nodeId);
-            processor->connectBlocks(nodeId, dstIt->second);
-
-            auto* connDetail1 = new juce::DynamicObject();
-            connDetail1->setProperty("sourceId", spliceSourceId);
-            connDetail1->setProperty("destId", blockId);
-            emitToJs("connectionAdded", connDetail1);
-
-            auto* connDetail2 = new juce::DynamicObject();
-            connDetail2->setProperty("sourceId", blockId);
-            connDetail2->setProperty("destId", spliceDestId);
-            emitToJs("connectionAdded", connDetail2);
-
-            auto* connRemoved = new juce::DynamicObject();
-            connRemoved->setProperty("sourceId", spliceSourceId);
-            connRemoved->setProperty("destId", spliceDestId);
-            emitToJs("connectionRemoved", connRemoved);
+            processor->disconnectBlocks(processor->getAudioInputNodeId(),
+                                         processor->getAudioOutputNodeId(), UK::none);
+            connectIOBlock(type, nodeId, UK::none);
         }
+
+        // Splice: insert the new block into an existing connection
+        if (spliceSourceId.isNotEmpty() && spliceDestId.isNotEmpty())
+        {
+            auto srcIt = blockNodeMap.find(spliceSourceId);
+            auto dstIt = blockNodeMap.find(spliceDestId);
+
+            if (srcIt != blockNodeMap.end() && dstIt != blockNodeMap.end())
+            {
+                processor->disconnectBlocks(srcIt->second, dstIt->second, UK::none);
+                processor->connectBlocks(srcIt->second, nodeId, 2, UK::none);
+                processor->connectBlocks(nodeId, dstIt->second, 2, UK::none);
+                spliceApplied = true;
+            }
+        }
+    }
+
+    if (spliceApplied)
+    {
+        auto* connDetail1 = new juce::DynamicObject();
+        connDetail1->setProperty("sourceId", spliceSourceId);
+        connDetail1->setProperty("destId", blockId);
+        emitToJs("connectionAdded", connDetail1);
+
+        auto* connDetail2 = new juce::DynamicObject();
+        connDetail2->setProperty("sourceId", blockId);
+        connDetail2->setProperty("destId", spliceDestId);
+        emitToJs("connectionAdded", connDetail2);
+
+        auto* connRemoved = new juce::DynamicObject();
+        connRemoved->setProperty("sourceId", spliceSourceId);
+        connRemoved->setProperty("destId", spliceDestId);
+        emitToJs("connectionRemoved", connRemoved);
     }
 
     auto* detail = new juce::DynamicObject();
@@ -105,7 +103,11 @@ void StellarrBridge::handleRemoveBlock(const juce::var& json)
     auto it = blockNodeMap.find(blockId);
     if (it == blockNodeMap.end()) return;
 
-    processor->removeBlock(it->second);
+    {
+        StellarrProcessor::GraphMutationScope scope(*processor);
+        processor->removeBlock(it->second, StellarrProcessor::UpdateKind::none);
+    }
+
     blockNodeMap.erase(it);
     blockPositions.erase(blockId);
 
@@ -146,8 +148,14 @@ void StellarrBridge::handleAddConnection(const juce::var& json)
     auto dstIt = blockNodeMap.find(destId);
     if (srcIt == blockNodeMap.end() || dstIt == blockNodeMap.end()) return;
 
-    if (!processor->connectBlocks(srcIt->second, dstIt->second))
-        return;
+    bool ok = false;
+    {
+        StellarrProcessor::GraphMutationScope scope(*processor);
+        ok = processor->connectBlocks(srcIt->second, dstIt->second, 2,
+                                       StellarrProcessor::UpdateKind::none);
+    }
+
+    if (!ok) return;
 
     auto* detail = new juce::DynamicObject();
     detail->setProperty("sourceId", sourceId);
@@ -169,7 +177,11 @@ void StellarrBridge::handleRemoveConnection(const juce::var& json)
     auto dstIt = blockNodeMap.find(destId);
     if (srcIt == blockNodeMap.end() || dstIt == blockNodeMap.end()) return;
 
-    processor->disconnectBlocks(srcIt->second, dstIt->second);
+    {
+        StellarrProcessor::GraphMutationScope scope(*processor);
+        processor->disconnectBlocks(srcIt->second, dstIt->second,
+                                     StellarrProcessor::UpdateKind::none);
+    }
 
     auto* detail = new juce::DynamicObject();
     detail->setProperty("sourceId", sourceId);

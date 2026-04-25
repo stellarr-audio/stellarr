@@ -345,6 +345,8 @@ function SceneDropdown({
   const [renameOpen, setRenameOpen] = useState(false);
   const [renamingIndex, setRenamingIndex] = useState(0);
   const [renameValue, setRenameValue] = useState('');
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deletingIndex, setDeletingIndex] = useState(0);
 
   const startRename = (i: number) => {
     setRenamingIndex(i);
@@ -359,6 +361,19 @@ function SceneDropdown({
     setRenameOpen(false);
   };
 
+  const startDelete = (i: number) => {
+    setDeletingIndex(i);
+    setDeleteOpen(true);
+  };
+
+  const confirmDelete = () => {
+    requestDeleteScene(deletingIndex);
+    setDeleteOpen(false);
+  };
+
+  const deleteName =
+    deletingIndex >= 0 && deletingIndex < scenes.length ? scenes[deletingIndex].name : '';
+
   return (
     <>
       <SceneRenameDialog
@@ -367,6 +382,13 @@ function SceneDropdown({
         value={renameValue}
         onChange={setRenameValue}
         onSubmit={submitRename}
+      />
+      <ConfirmDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        title="Delete Scene"
+        message={`Are you sure you want to delete "${deleteName}"? This cannot be undone.`}
+        onConfirm={confirmDelete}
       />
       <DropdownMenu.Root>
         <DropdownMenu.Trigger className={styles.dropdownTrigger}>
@@ -409,7 +431,10 @@ function SceneDropdown({
                       </MenuItem>
                       {scenes.length > 1 && (
                         <MenuItem
-                          onSelect={() => requestDeleteScene(i)}
+                          onSelect={(e) => {
+                            e.preventDefault();
+                            startDelete(i);
+                          }}
                           className={styles.menuItemDanger}
                         >
                           Delete

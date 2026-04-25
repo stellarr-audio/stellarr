@@ -29,36 +29,8 @@
   margin: 0;
 }
 
-.input {
-  background: var(--color-bg);
-  border: 1px solid var(--color-border);
-  color: var(--color-text);
-  font-size: 1rem;
-  padding: 0.5rem;
-  outline: none;
-}
-
 .buttonRow {
   display: flex;
   gap: 0.5rem;
   justify-content: flex-end;
-}
-
-.cancelButton {
-  background: transparent;
-  border: 1px solid var(--color-border);
-  color: var(--color-muted);
-  padding: 0.35rem 0.75rem;
-  font-size: 0.85rem;
-  cursor: pointer;
-}
-
-.renameButton {
-  background: var(--color-primary);
-  border: none;
-  color: #ffffff;
-  padding: 0.35rem 0.75rem;
-  font-size: 0.85rem;
-  font-weight: 600;
-  cursor: pointer;
 }

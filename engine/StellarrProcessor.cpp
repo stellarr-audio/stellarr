@@ -49,6 +49,9 @@ void StellarrProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::Mid
 {
     juce::ScopedNoDenormals noDenormals;
 
+    // Make sure the graph is running before we hand it the buffer
+    graph.suspendProcessing(false);
+
     // Intercept Stellarr-mapped MIDI before graph processing
     midiMapper.processMidi(midi);
 
@@ -61,10 +64,15 @@ void StellarrProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::Mid
     cpuUsagePercent.store(elapsedSecs / bufferDuration * 100.0, std::memory_order_relaxed);
 
     // Peak output level across all channels (absolute sample value)
+    std::vector<float> perChannelPeaks(static_cast<size_t>(buffer.getNumChannels()), 0.0f);
     float peak = 0.0f;
     if (buffer.getNumSamples() > 0)
         for (int ch = 0; ch < buffer.getNumChannels(); ++ch)
-            peak = juce::jmax(peak, buffer.getMagnitude(ch, 0, buffer.getNumSamples()));
+        {
+            perChannelPeaks[static_cast<size_t>(ch)] =
+                buffer.getMagnitude(ch, 0, buffer.getNumSamples());
+            peak = juce::jmax(peak, perChannelPeaks[static_cast<size_t>(ch)]);
+        }
     outputPeakLevel.store(peak, std::memory_order_relaxed);
 }
 

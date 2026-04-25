@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useStore } from '../../store';
 import { colors } from '../common/colors';
 import { StrobeBand } from './StrobeBand';
@@ -11,10 +12,9 @@ export function Tuner() {
   const confidence = useStore((s) => s.tunerConfidence);
   const tunerMode = useStore((s) => s.tunerMode);
 
-  const hasSignal = confidence > 0.3 && note !== null;
+  useEffect(() => {}, []);
 
-  const centsColor =
-    Math.abs(cents) < 5 ? colors.green : Math.abs(cents) < 15 ? colors.secondary : colors.primary;
+  const hasSignal = confidence > 0.03 && note !== null;
 
   return (
     <div className={styles.container}>
@@ -22,7 +22,18 @@ export function Tuner() {
       <div className={styles.noteRow}>
         <span
           className={`${styles.note} ${!hasSignal ? styles.noteInactive : ''}`}
-          style={hasSignal ? { color: centsColor } : undefined}
+          style={
+            hasSignal
+              ? {
+                  color:
+                    Math.abs(cents) < 5
+                      ? colors.green
+                      : Math.abs(cents) < 15
+                        ? colors.secondary
+                        : colors.primary,
+                }
+              : undefined
+          }
         >
           {hasSignal ? note : '--'}
         </span>
@@ -37,7 +48,7 @@ export function Tuner() {
       <span
         className={`${styles.frequency} ${hasSignal ? styles.frequencyActive : styles.frequencyInactive}`}
       >
-        {hasSignal ? `${frequency.toFixed(1)} Hz` : '-- Hz'}
+        {hasSignal ? `${Math.floor(frequency)} Hz` : '-- Hz'}
       </span>
 
       {/* Tuner visualisation */}
@@ -52,8 +63,19 @@ export function Tuner() {
                 className={styles.needle}
                 style={{
                   left: `${50 + cents}%`,
-                  background: centsColor,
-                  boxShadow: `0 0 12px ${centsColor}88`,
+                  background:
+                    Math.abs(cents) < 5
+                      ? colors.green
+                      : Math.abs(cents) < 15
+                        ? colors.secondary
+                        : colors.primary,
+                  boxShadow: `0 0 12px ${
+                    Math.abs(cents) < 5
+                      ? colors.green
+                      : Math.abs(cents) < 15
+                        ? colors.secondary
+                        : colors.primary
+                  }88`,
                 }}
               />
             )}

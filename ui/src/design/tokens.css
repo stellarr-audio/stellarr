@@ -93,6 +93,7 @@
   /* Amber (secondary) */
   --amber-400: #fbbf24;
   --amber-500: #f59e0b;
+  --amber-700: #b45309;
 
   /* Emerald (success) */
   --emerald-500: #10b981;
@@ -104,9 +105,10 @@
 /* === Light theme ========================================================== */
 :root,
 [data-theme="light"] {
-  --accent:       var(--orchid-600);       /* #c026d3 */
-  --accent-text:  var(--orchid-700);       /* #a21caf */
-  --secondary:    var(--amber-500);        /* #f59e0b */
+  --accent:         var(--orchid-600);     /* #c026d3 */
+  --accent-text:    var(--orchid-700);     /* #a21caf */
+  --secondary:      var(--amber-500);      /* #f59e0b */
+  --secondary-text: var(--amber-700);      /* #b45309 — darker amber that reads well on white */
   --success:      var(--emerald-500);      /* #10b981 */
   --danger:       var(--rose-600);         /* #e11d48 */
 
@@ -139,9 +141,10 @@
 
 /* === Dark theme =========================================================== */
 [data-theme="dark"] {
-  --accent:       var(--orchid-500);       /* #d946ef — brighter, carries glow */
-  --accent-text:  var(--orchid-300);       /* #f0abfc */
-  --secondary:    var(--amber-400);        /* #fbbf24 */
+  --accent:         var(--orchid-500);     /* #d946ef — brighter, carries glow */
+  --accent-text:    var(--orchid-300);     /* #f0abfc */
+  --secondary:      var(--amber-400);      /* #fbbf24 */
+  --secondary-text: var(--amber-400);      /* same as --secondary on dark — already reads well */
   --success:      var(--emerald-500);      /* same */
   --danger:       var(--rose-600);         /* same */
 

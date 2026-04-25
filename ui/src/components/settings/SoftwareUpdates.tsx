@@ -1,4 +1,4 @@
-import { PiShootingStar } from 'react-icons/pi';
+import { PiShootingStar, PiWarning, PiWarningCircle } from 'react-icons/pi';
 import { useStore } from '../../store';
 import {
   requestCheckForUpdates,
@@ -29,12 +29,21 @@ export function SoftwareUpdates() {
   const state = useStore((s) => s.softwareUpdate);
   const { status } = state;
 
+  // Install button is only meaningful while an update is in play. When
+  // status is idle/checking/no-update/error there's nothing to install,
+  // so hide the button entirely rather than disabling it.
+  const showInstallButton =
+    status === 'available' || status === 'downloading' || status === 'ready';
   const canInstall = status === 'available' || status === 'ready';
-  const checkLabel = status === 'checking' ? 'Checking…' : 'Check for updates';
+  const checkLabel = status === 'checking' ? 'Checking…' : 'Check for Updates';
+  // Labels chosen to be honest about what clicking does:
+  //   available   → click commits to download + install on next termination
+  //   ready       → install is already armed; "Restart now" only controls
+  //                 *when* it installs (now vs. whenever you next quit)
   const installLabel =
     status === 'downloading' ? `Downloading… ${Math.round(state.downloadProgress * 100)}%` :
-    status === 'ready' ? 'Restart & install' :
-    'Install update';
+    status === 'ready' ? 'Restart Now' :
+    'Download & Install';
 
   return (
     <>
@@ -82,25 +91,35 @@ export function SoftwareUpdates() {
             >
               {checkLabel}
             </Button>
-            <Button
-              onClick={requestInstallUpdate}
-              disabled={!canInstall}
-            >
-              {installLabel}
-            </Button>
+            {showInstallButton && (
+              <Button
+                onClick={requestInstallUpdate}
+                disabled={!canInstall}
+              >
+                {installLabel}
+              </Button>
+            )}
           </>
         }
       />
 
+      {status === 'ready' && (
+        <div className={`${styles.status} ${styles.warn}`}>
+          <PiWarning className={styles.statusIcon} aria-hidden="true" />
+          Update will install when you quit or restart Stellarr.
+        </div>
+      )}
+
       {status === 'no-update' && (
         <div className={styles.status}>
           <span className={styles.statusDot} aria-hidden="true" />
-          You're on the latest version (v{__APP_VERSION__}).
+          You're on v{__APP_VERSION__}, the latest version.
         </div>
       )}
 
       {status === 'error' && (
         <div className={`${styles.status} ${styles.error}`}>
+          <PiWarningCircle className={styles.statusIcon} aria-hidden="true" />
           {state.error || 'Update check failed.'}
         </div>
       )}

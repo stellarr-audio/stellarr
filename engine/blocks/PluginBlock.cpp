@@ -4,7 +4,8 @@ namespace stellarr
 {
 
 void PluginBlock::setPlugin(std::unique_ptr<juce::AudioPluginInstance> newPlugin,
-                            const juce::String& identifier)
+                            const juce::String& identifier,
+                            int readyDelayMs)
 {
     pluginReady.store(false, std::memory_order_release);
     stopTimer();
@@ -32,9 +33,23 @@ void PluginBlock::setPlugin(std::unique_ptr<juce::AudioPluginInstance> newPlugin
     if (newPlugin != nullptr)
         newPlugin->releaseResources();
 
-    // Mark ready immediately — prepareToPlay is complete, the plugin can process.
-    if (plugin != nullptr)
+    if (plugin == nullptr)
+        return;
+
+    if (readyDelayMs > 0)
+    {
+        // Defer readiness: the audio thread treats this block as pass-through
+        // until the timer fires. Gives plugins with background initialisation
+        // (NAM, IR loaders, ML amp sims) time to finish before processBlock is
+        // called for the first time.
+        startTimer(readyDelayMs);
+    }
+    else
+    {
+        // Mark ready immediately — caller has either prepared the plugin under
+        // a graph-level suspension or knows the plugin has no async init.
         pluginReady.store(true, std::memory_order_release);
+    }
 }
 
 void PluginBlock::openPluginEditor()

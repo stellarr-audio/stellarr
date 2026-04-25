@@ -55,8 +55,23 @@ public:
         }
     }
 
+    /**
+     * Swap a new plugin instance into this block.
+     *
+     * If readyDelayMs > 0, the block stays in "not ready" state for that
+     * many milliseconds after the swap, so the audio thread treats the
+     * block as pass-through while the plugin finishes any background
+     * initialisation (NAM, IR loaders, ML amp sims). With readyDelayMs = 0
+     * (the default), the block is marked ready immediately, matching the
+     * behaviour required by preset and paste paths that prepare under a
+     * graph-level suspension.
+     */
     void setPlugin(std::unique_ptr<juce::AudioPluginInstance> newPlugin,
-                   const juce::String& identifier);
+                   const juce::String& identifier,
+                   int readyDelayMs = 0);
+
+    /// Suggested delay for the live plugin-picker swap path.
+    static constexpr int pluginPickReadyDelayMs = 3000;
 
     juce::String getPluginIdentifier() const { return pluginIdentifier; }
 
@@ -116,24 +131,13 @@ public:
     void restorePluginState();
 
 private:
-    // Timer callback: resume audio processing after plugin initialisation
+    // Timer callback: mark the plugin ready after its deferred-readiness
+    // window elapses. Started by setPlugin() when readyDelayMs > 0.
     void timerCallback() override
     {
         stopTimer();
-        suspendProcessing(false);
+        pluginReady.store(true, std::memory_order_release);
     }
-
-    // Suspend audio processing and schedule a deferred resume.
-    // Used only by the cold path (applyState during preset restore) where
-    // plugin state changes may trigger background initialisation.
-    void suspendAndScheduleResume()
-    {
-        stopTimer();
-        suspendProcessing(true);
-        startTimer(resumeDelayMs);
-    }
-
-    static constexpr int resumeDelayMs = 3000;
 
     std::atomic<bool> pluginReady { false };
     mutable juce::SpinLock pluginLock;

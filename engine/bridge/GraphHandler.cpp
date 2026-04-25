@@ -210,7 +210,13 @@ void StellarrBridge::handleSetBlockPlugin(const juce::var& json)
     if (instance == nullptr) return;
 
     auto pluginName = instance->getName();
-    pluginBlock->setPlugin(std::move(instance), pluginId);
+
+    // Live plugin-picker path: defer the block's "ready" flag for a few seconds
+    // so plugins with async background initialisation (NAM, IR loaders, ML amp
+    // sims) are not invoked until they have finished loading. While deferred,
+    // the block is pass-through, so the rest of the chain keeps audio.
+    pluginBlock->setPlugin(std::move(instance), pluginId,
+                           stellarr::PluginBlock::pluginPickReadyDelayMs);
 
     auto* detail = new juce::DynamicObject();
     detail->setProperty("blockId", blockId);

@@ -62,15 +62,20 @@ void Block::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer& mid
 
     if (needsBlend)
     {
-        // Save dry signal
-        if (dryBuffer.getNumChannels() != buffer.getNumChannels()
-            || dryBuffer.getNumSamples() != buffer.getNumSamples())
-        {
-            dryBuffer.setSize(buffer.getNumChannels(), buffer.getNumSamples(), false, false, true);
-        }
+        // dryBuffer is pre-sized in prepareToPlay() for the host-declared
+        // block. JUCE treats samplesPerBlock as an expected maximum, not a
+        // hard guarantee, so bound copies and blend loops to whatever fits
+        // in dryBuffer rather than relying on a debug-only assert. In normal
+        // operation these match buffer.get*; on a host contract violation the
+        // tail samples pass through wet-only instead of triggering an
+        // out-of-bounds copy.
+        const int blendChannels = juce::jmin(buffer.getNumChannels(), dryBuffer.getNumChannels());
+        const int blendSamples  = juce::jmin(buffer.getNumSamples(),  dryBuffer.getNumSamples());
+        jassert(blendChannels == buffer.getNumChannels() && blendSamples == buffer.getNumSamples());
 
-        for (int ch = 0; ch < buffer.getNumChannels(); ++ch)
-            dryBuffer.copyFrom(ch, 0, buffer, ch, 0, buffer.getNumSamples());
+        // Save dry signal
+        for (int ch = 0; ch < blendChannels; ++ch)
+            dryBuffer.copyFrom(ch, 0, buffer, ch, 0, blendSamples);
 
         if (feedSilence)
             buffer.clear();
@@ -80,8 +85,8 @@ void Block::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer& mid
         if (muteWet)
         {
             // Discard wet, restore dry
-            for (int ch = 0; ch < buffer.getNumChannels(); ++ch)
-                buffer.copyFrom(ch, 0, dryBuffer, ch, 0, buffer.getNumSamples());
+            for (int ch = 0; ch < blendChannels; ++ch)
+                buffer.copyFrom(ch, 0, dryBuffer, ch, 0, blendSamples);
         }
         else if (isBp)
         {
@@ -89,12 +94,12 @@ void Block::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer& mid
             float wet = hasMix ? mixVal : 1.0f;
             float dry = 1.0f - wet;
 
-            for (int ch = 0; ch < buffer.getNumChannels(); ++ch)
+            for (int ch = 0; ch < blendChannels; ++ch)
             {
                 auto* wetBuf = buffer.getWritePointer(ch);
                 auto* dryBuf = dryBuffer.getReadPointer(ch);
 
-                for (int i = 0; i < buffer.getNumSamples(); ++i)
+                for (int i = 0; i < blendSamples; ++i)
                     wetBuf[i] = dryBuf[i] * dry + wetBuf[i] * wet;
             }
         }
@@ -103,12 +108,12 @@ void Block::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer& mid
             // Normal non-bypassed wet/dry blend
             float dryGain = 1.0f - mixVal;
 
-            for (int ch = 0; ch < buffer.getNumChannels(); ++ch)
+            for (int ch = 0; ch < blendChannels; ++ch)
             {
                 auto* wet = buffer.getWritePointer(ch);
                 auto* dry = dryBuffer.getReadPointer(ch);
 
-                for (int i = 0; i < buffer.getNumSamples(); ++i)
+                for (int i = 0; i < blendSamples; ++i)
                     wet[i] = dry[i] * dryGain + wet[i] * mixVal;
             }
         }
@@ -151,8 +156,9 @@ void Block::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer& mid
 
 void Block::prepareToPlay(double sampleRate, int samplesPerBlock)
 {
-    if (hasMix)
-        dryBuffer.setSize(getTotalNumInputChannels(), samplesPerBlock, false, false, true);
+    // Always size dryBuffer for the host-declared block: even hasMix=false
+    // blocks need a dry copy when bypassed with muteFxIn / muteFxOut.
+    dryBuffer.setSize(getTotalNumInputChannels(), samplesPerBlock, false, false, true);
 
     loudnessMeter.prepare(sampleRate, getTotalNumOutputChannels());
 

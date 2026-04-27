@@ -76,11 +76,17 @@ void MidiMapper::processMidi(juce::MidiBuffer& midi)
             evt.cc = msg.getControllerNumber();
             evt.learnTarget = learnTarget;
             copyBlockId(evt.blockId, learnBlockId);
-            pushOutbound(evt);
 
-            // Latch off so subsequent CCs in the same block do not fire repeats.
-            learning.store(false, std::memory_order_release);
-            consumed = true;
+            // Only latch off and consume the CC if the message thread will
+            // actually receive the learnComplete event. If the outbound fifo
+            // is full (message thread temporarily stalled), keep learning
+            // active so the next CC retries instead of silently dropping
+            // the learn operation.
+            if (pushOutbound(evt))
+            {
+                learning.store(false, std::memory_order_release);
+                consumed = true;
+            }
         }
 
         // Activity event for the optional onMidiActivity callback. Gated on a

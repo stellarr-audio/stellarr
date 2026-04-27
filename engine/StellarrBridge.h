@@ -31,6 +31,7 @@ public:
     void restoreSession(const juce::var& session);
     void sendSystemStats(double cpuPercent, float outputPeakLinear);
     void sendBlockMetrics();
+    void drainMidiEvents();
     void sendTunerData();
     void sendMidiMonitorData();
     bool isTunerActive() const { return tunerActive; }

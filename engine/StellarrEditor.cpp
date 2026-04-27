@@ -140,6 +140,10 @@ void StellarrEditor::timerCallback()
 
     // MIDI monitor at ~20Hz
     bridge.sendMidiMonitorData();
+
+    // Drain mapped-MIDI events from the audio thread and dispatch the
+    // configured callbacks on the message thread (~20Hz).
+    bridge.drainMidiEvents();
 }
 
 void StellarrEditor::toggleDevTools()

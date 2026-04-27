@@ -799,6 +799,12 @@ void StellarrBridge::sendMidiMonitorData()
     emitToJs("midiMonitorData", detail);
 }
 
+void StellarrBridge::drainMidiEvents()
+{
+    if (processor == nullptr) return;
+    processor->getMidiMapper().drainOutboundEvents();
+}
+
 // -- Plugin management --------------------------------------------------------
 
 void StellarrBridge::handleScanPlugins()

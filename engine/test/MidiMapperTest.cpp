@@ -23,6 +23,7 @@ static bool testMappedCcRemoved()
     buf.addEvent(juce::MidiMessage::controllerEvent(1, 11, 50), 10);  // unmapped
 
     mapper.processMidi(buf);
+    mapper.drainOutboundEvents();
 
     if (!callbackFired)
     {
@@ -66,6 +67,7 @@ static bool testProgramChangePassthrough()
     buf.addEvent(juce::MidiMessage::programChange(1, 5), 0);
 
     mapper.processMidi(buf);
+    mapper.drainOutboundEvents();
 
     int count = 0;
     for (const auto metadata : buf)
@@ -103,6 +105,7 @@ static bool testBlockBypassCallback()
     juce::MidiBuffer buf;
     buf.addEvent(juce::MidiMessage::controllerEvent(1, 20, 0), 0);
     mapper.processMidi(buf);
+    mapper.drainOutboundEvents();
     if (lastState != false)
     {
         fprintf(stderr, "  value 0 should be off\n");
@@ -113,6 +116,7 @@ static bool testBlockBypassCallback()
     buf.clear();
     buf.addEvent(juce::MidiMessage::controllerEvent(1, 20, 100), 0);
     mapper.processMidi(buf);
+    mapper.drainOutboundEvents();
     if (lastState != true)
     {
         fprintf(stderr, "  value 100 should be on\n");
@@ -142,11 +146,13 @@ static bool testBlockMixScaling()
     juce::MidiBuffer buf;
     buf.addEvent(juce::MidiMessage::controllerEvent(1, 7, 0), 0);
     mapper.processMidi(buf);
+    mapper.drainOutboundEvents();
     if (std::abs(lastValue) > 0.01f) { printf("FAIL (0)\n"); return false; }
 
     buf.clear();
     buf.addEvent(juce::MidiMessage::controllerEvent(1, 7, 127), 0);
     mapper.processMidi(buf);
+    mapper.drainOutboundEvents();
     if (std::abs(lastValue - 1.0f) > 0.01f) { printf("FAIL (127)\n"); return false; }
 
     printf("PASS\n");
@@ -171,16 +177,19 @@ static bool testBlockBalanceScaling()
     juce::MidiBuffer buf;
     buf.addEvent(juce::MidiMessage::controllerEvent(1, 10, 0), 0);
     mapper.processMidi(buf);
+    mapper.drainOutboundEvents();
     if (std::abs(lastValue - (-1.0f)) > 0.05f) { printf("FAIL (0→-1)\n"); return false; }
 
     buf.clear();
     buf.addEvent(juce::MidiMessage::controllerEvent(1, 10, 64), 0);
     mapper.processMidi(buf);
+    mapper.drainOutboundEvents();
     if (std::abs(lastValue) > 0.05f) { printf("FAIL (64→0)\n"); return false; }
 
     buf.clear();
     buf.addEvent(juce::MidiMessage::controllerEvent(1, 10, 127), 0);
     mapper.processMidi(buf);
+    mapper.drainOutboundEvents();
     if (std::abs(lastValue - 1.0f) > 0.05f) { printf("FAIL (127→1)\n"); return false; }
 
     printf("PASS\n");
@@ -205,11 +214,13 @@ static bool testBlockLevelScaling()
     juce::MidiBuffer buf;
     buf.addEvent(juce::MidiMessage::controllerEvent(1, 17, 0), 0);
     mapper.processMidi(buf);
+    mapper.drainOutboundEvents();
     if (std::abs(lastValue - (-60.0f)) > 0.5f) { printf("FAIL (0→-60)\n"); return false; }
 
     buf.clear();
     buf.addEvent(juce::MidiMessage::controllerEvent(1, 17, 127), 0);
     mapper.processMidi(buf);
+    mapper.drainOutboundEvents();
     if (std::abs(lastValue - 12.0f) > 0.5f) { printf("FAIL (127→12)\n"); return false; }
 
     printf("PASS\n");
@@ -233,6 +244,7 @@ static bool testSceneSwitchCallback()
     juce::MidiBuffer buf;
     buf.addEvent(juce::MidiMessage::controllerEvent(1, 8, 3), 0);
     mapper.processMidi(buf);
+    mapper.drainOutboundEvents();
 
     if (lastIndex != 3) { printf("FAIL\n"); return false; }
 
@@ -257,6 +269,7 @@ static bool testPresetChangeFromPC()
     juce::MidiBuffer buf;
     buf.addEvent(juce::MidiMessage::programChange(1, 7), 0);
     mapper.processMidi(buf);
+    mapper.drainOutboundEvents();
 
     if (lastPC != 7) { printf("FAIL\n"); return false; }
 
@@ -300,11 +313,15 @@ static bool testCcBoundaryValues()
         juce::MidiBuffer buf;
         buf.addEvent(juce::MidiMessage::controllerEvent(1, 1, 0), 0);
         mapper.processMidi(buf);
+        mapper.drainOutboundEvents();
+    mapper.drainOutboundEvents();
         if (val < -0.001f || val > 0.001f) { fprintf(stderr, "  mix(0) = %f\n", static_cast<double>(val)); printf("FAIL\n"); return false; }
 
         buf.clear();
         buf.addEvent(juce::MidiMessage::controllerEvent(1, 1, 127), 0);
         mapper.processMidi(buf);
+        mapper.drainOutboundEvents();
+    mapper.drainOutboundEvents();
         if (val < 0.999f || val > 1.001f) { fprintf(stderr, "  mix(127) = %f\n", static_cast<double>(val)); printf("FAIL\n"); return false; }
     }
 
@@ -320,11 +337,15 @@ static bool testCcBoundaryValues()
         juce::MidiBuffer buf;
         buf.addEvent(juce::MidiMessage::controllerEvent(1, 2, 0), 0);
         mapper.processMidi(buf);
+        mapper.drainOutboundEvents();
+    mapper.drainOutboundEvents();
         if (val > -0.95f) { fprintf(stderr, "  bal(0) = %f\n", static_cast<double>(val)); printf("FAIL\n"); return false; }
 
         buf.clear();
         buf.addEvent(juce::MidiMessage::controllerEvent(1, 2, 127), 0);
         mapper.processMidi(buf);
+        mapper.drainOutboundEvents();
+    mapper.drainOutboundEvents();
         if (val < 0.95f) { fprintf(stderr, "  bal(127) = %f\n", static_cast<double>(val)); printf("FAIL\n"); return false; }
     }
 
@@ -340,11 +361,15 @@ static bool testCcBoundaryValues()
         juce::MidiBuffer buf;
         buf.addEvent(juce::MidiMessage::controllerEvent(1, 3, 0), 0);
         mapper.processMidi(buf);
+        mapper.drainOutboundEvents();
+    mapper.drainOutboundEvents();
         if (std::abs(val - (-60.0f)) > 0.5f) { fprintf(stderr, "  lvl(0) = %f\n", static_cast<double>(val)); printf("FAIL\n"); return false; }
 
         buf.clear();
         buf.addEvent(juce::MidiMessage::controllerEvent(1, 3, 127), 0);
         mapper.processMidi(buf);
+        mapper.drainOutboundEvents();
+    mapper.drainOutboundEvents();
         if (std::abs(val - 12.0f) > 0.5f) { fprintf(stderr, "  lvl(127) = %f\n", static_cast<double>(val)); printf("FAIL\n"); return false; }
     }
 
@@ -360,11 +385,15 @@ static bool testCcBoundaryValues()
         juce::MidiBuffer buf;
         buf.addEvent(juce::MidiMessage::controllerEvent(1, 4, 0), 0);
         mapper.processMidi(buf);
+        mapper.drainOutboundEvents();
+    mapper.drainOutboundEvents();
         if (val) { printf("FAIL (bypass 0 should be off)\n"); return false; }
 
         buf.clear();
         buf.addEvent(juce::MidiMessage::controllerEvent(1, 4, 127), 0);
         mapper.processMidi(buf);
+        mapper.drainOutboundEvents();
+    mapper.drainOutboundEvents();
         if (!val) { printf("FAIL (bypass 127 should be on)\n"); return false; }
     }
 
@@ -387,6 +416,7 @@ static bool testMidiLearn()
     juce::MidiBuffer buf;
     buf.addEvent(juce::MidiMessage::controllerEvent(4, 22, 64), 0); // channel 4 (1-indexed)
     mapper.processMidi(buf);
+    mapper.drainOutboundEvents();
 
     if (mapper.isLearning()) { fprintf(stderr, "  still learning\n"); printf("FAIL\n"); return false; }
     if (mapper.getNumMappings() != 1) { fprintf(stderr, "  no mapping created\n"); printf("FAIL\n"); return false; }
@@ -417,6 +447,7 @@ static bool testCancelLearn()
     juce::MidiBuffer buf;
     buf.addEvent(juce::MidiMessage::controllerEvent(1, 50, 64), 0);
     mapper.processMidi(buf);
+    mapper.drainOutboundEvents();
 
     if (mapper.getNumMappings() != 0) { printf("FAIL (mapping created)\n"); return false; }
 
@@ -446,6 +477,7 @@ static bool testChannelFiltering()
     buf.addEvent(juce::MidiMessage::controllerEvent(6, 11, 64), 10); // channel 5 (0-indexed) — match
 
     mapper.processMidi(buf);
+    mapper.drainOutboundEvents();
 
     if (callCount != 1)
     {
@@ -491,6 +523,7 @@ static bool testAnyChannel()
     buf.addEvent(juce::MidiMessage::controllerEvent(9, 7, 64), 10);
     buf.addEvent(juce::MidiMessage::controllerEvent(16, 7, 64), 20);
     mapper.processMidi(buf);
+    mapper.drainOutboundEvents();
 
     if (callCount != 3) { fprintf(stderr, "  expected 3, got %d\n", callCount); printf("FAIL\n"); return false; }
 
@@ -626,7 +659,8 @@ static bool testNoCallbackNoCrash()
 
     juce::MidiBuffer buf;
     buf.addEvent(juce::MidiMessage::controllerEvent(1, 7, 64), 0);
-    mapper.processMidi(buf); // should not crash
+    mapper.processMidi(buf);
+    mapper.drainOutboundEvents(); // should not crash
 
     printf("PASS\n");
     return true;
@@ -639,6 +673,7 @@ static bool testEmptyBufferNoCrash()
     MidiMapper mapper;
     juce::MidiBuffer buf;
     mapper.processMidi(buf);
+    mapper.drainOutboundEvents();
 
     printf("PASS\n");
     return true;
@@ -655,6 +690,7 @@ static bool testActivityCallbackOnUnmapped()
     juce::MidiBuffer buf;
     buf.addEvent(juce::MidiMessage::controllerEvent(3, 100, 42), 0);
     mapper.processMidi(buf);
+    mapper.drainOutboundEvents();
 
     if (actCh != 2 || actCc != 100 || actVal != 42)
     {
@@ -692,11 +728,13 @@ static bool testTunerToggleCallback()
     juce::MidiBuffer buf;
     buf.addEvent(juce::MidiMessage::controllerEvent(1, 64, 63), 0);
     mapper.processMidi(buf);
+    mapper.drainOutboundEvents();
     if (lastState != false) { printf("FAIL (63 should be off)\n"); return false; }
 
     buf.clear();
     buf.addEvent(juce::MidiMessage::controllerEvent(1, 64, 64), 0);
     mapper.processMidi(buf);
+    mapper.drainOutboundEvents();
     if (lastState != true) { printf("FAIL (64 should be on)\n"); return false; }
 
     printf("PASS\n");
@@ -828,6 +866,7 @@ static bool testMonitorCapturesEvents()
     buf.addEvent(juce::MidiMessage::noteOn(2, 60, (juce::uint8)90), 10);
     buf.addEvent(juce::MidiMessage::programChange(3, 5), 20);
     mapper.processMidi(buf);
+    mapper.drainOutboundEvents();
 
     auto events = mapper.drainMonitorEvents();
 
@@ -861,6 +900,7 @@ static bool testMonitorDisabledNoCapture()
     juce::MidiBuffer buf;
     buf.addEvent(juce::MidiMessage::controllerEvent(1, 7, 64), 0);
     mapper.processMidi(buf);
+    mapper.drainOutboundEvents();
 
     auto events = mapper.drainMonitorEvents();
 
@@ -888,6 +928,7 @@ static bool testInjectMidi()
     // Process an empty buffer — injected event should appear
     juce::MidiBuffer buf;
     mapper.processMidi(buf);
+    mapper.drainOutboundEvents();
 
     // The injected CC should have been added to the buffer and captured by monitor
     auto events = mapper.drainMonitorEvents();
@@ -927,6 +968,7 @@ static bool testMonitorDrainClears()
     juce::MidiBuffer buf;
     buf.addEvent(juce::MidiMessage::controllerEvent(1, 1, 1), 0);
     mapper.processMidi(buf);
+    mapper.drainOutboundEvents();
 
     auto first = mapper.drainMonitorEvents();
     if (first.empty()) { printf("FAIL (no first events)\n"); return false; }

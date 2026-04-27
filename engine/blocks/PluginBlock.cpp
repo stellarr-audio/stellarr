@@ -167,6 +167,24 @@ bool PluginBlock::recallStateStellarrOnly(int index)
     if (index < 0 || index >= static_cast<int>(states.size()))
         return false;
 
+    // Persist live Stellarr-level fields into the outgoing State slot before
+    // swapping. Mirrors recallState()'s capture-before-apply behaviour minus
+    // the slow plugin->getStateInformation() / setStateInformation() pair —
+    // pluginStateBase64 stays untouched because the caller has already
+    // determined the plugin's current binary matches what each State holds.
+    // Without this, live tweaks to mix / balance / level / bypass / bypassMode
+    // made between non-rewire scene switches would be silently overwritten on
+    // the next switch.
+    if (activeStateIndex >= 0 && activeStateIndex < static_cast<int>(states.size()))
+    {
+        auto& outgoing = states[static_cast<size_t>(activeStateIndex)];
+        outgoing.mix = getMix();
+        outgoing.balance = getBalance();
+        outgoing.levelDb = getLevelDb();
+        outgoing.bypassed = isBypassed();
+        outgoing.bypassMode = getBypassMode();
+    }
+
     activeStateIndex = index;
 
     const auto& s = states[static_cast<size_t>(index)];
@@ -176,10 +194,6 @@ bool PluginBlock::recallStateStellarrOnly(int index)
     setBypassed(s.bypassed);
     setBypassMode(s.bypassMode);
 
-    // Intentionally no captureCurrentState() before, no plugin->setStateInformation()
-    // here. Caller has determined the plugin's current binary state already
-    // matches what this State would push, so the slow getStateInformation /
-    // setStateInformation pair is skipped. The audio thread sees no gap.
     return true;
 }
 

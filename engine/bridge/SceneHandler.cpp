@@ -39,6 +39,32 @@ void StellarrBridge::handleAddScene()
     emitScenes();
 }
 
+// Returns true when switching from `outgoing` to `incoming` requires the slow
+// "rewire" path (capture + setStateInformation), false when the swap is
+// purely a Stellarr-level change (mix/balance/level/bypass) that can be
+// applied without touching plugin binary state.
+//
+// The check is structural: any per-block active State index difference
+// implies the plugin needs different binary parameters loaded; if every
+// block points at the same State index, the plugins already hold the right
+// binaries and only Stellarr-level fields need updating.
+static bool sceneRewireRequired(const StellarrBridge::Scene& outgoing,
+                                const StellarrBridge::Scene& incoming)
+{
+    for (const auto& [blockId, idx] : incoming.blockStateMap)
+    {
+        auto it = outgoing.blockStateMap.find(blockId);
+        const int outIdx = (it != outgoing.blockStateMap.end()) ? it->second : -1;
+        if (outIdx != idx) return true;
+    }
+    for (const auto& [blockId, idx] : outgoing.blockStateMap)
+    {
+        if (incoming.blockStateMap.find(blockId) == incoming.blockStateMap.end())
+            return true;
+    }
+    return false;
+}
+
 void StellarrBridge::handleRecallScene(const juce::var& json)
 {
     if (processor == nullptr) return;
@@ -48,16 +74,31 @@ void StellarrBridge::handleRecallScene(const juce::var& json)
     auto index = static_cast<int>(obj->getProperty("index"));
     if (index < 0 || index >= static_cast<int>(scenes.size())) return;
 
-    // Save current live states and update outgoing scene
-    for (auto& [blockId, nodeId] : blockNodeMap)
-    {
-        if (auto* node = processor->getGraph().getNodeForId(nodeId))
-            if (auto* pb = dynamic_cast<stellarr::PluginBlock*>(node->getProcessor()))
-                pb->saveCurrentState();
-    }
+    // Decide whether this swap requires plugin binary rewiring or only
+    // Stellarr-level field updates. With no active scene, treat as rewire so
+    // the destination scene's binaries get applied at least once.
+    const bool willRewire = (activeSceneIndex < 0
+                          || activeSceneIndex >= static_cast<int>(scenes.size()))
+        ? true
+        : sceneRewireRequired(scenes[static_cast<size_t>(activeSceneIndex)],
+                              scenes[static_cast<size_t>(index)]);
 
-    if (activeSceneIndex >= 0 && activeSceneIndex < static_cast<int>(scenes.size()))
-        captureIntoScene(scenes[static_cast<size_t>(activeSceneIndex)], blockNodeMap, processor->getGraph());
+    if (willRewire)
+    {
+        emitToJs("sceneRewireStart", new juce::DynamicObject());
+
+        // Save current live states and update outgoing scene so unsaved tweaks
+        // are preserved into the State slot they came from.
+        for (auto& [blockId, nodeId] : blockNodeMap)
+        {
+            if (auto* node = processor->getGraph().getNodeForId(nodeId))
+                if (auto* pb = dynamic_cast<stellarr::PluginBlock*>(node->getProcessor()))
+                    pb->saveCurrentState();
+        }
+
+        if (activeSceneIndex >= 0 && activeSceneIndex < static_cast<int>(scenes.size()))
+            captureIntoScene(scenes[static_cast<size_t>(activeSceneIndex)], blockNodeMap, processor->getGraph());
+    }
 
     activeSceneIndex = index;
     auto& scene = scenes[static_cast<size_t>(index)];
@@ -70,7 +111,10 @@ void StellarrBridge::handleRecallScene(const juce::var& json)
         int clampedIdx = std::min(stateIdx, pb->getNumStates() - 1);
         if (clampedIdx >= 0)
         {
-            pb->recallState(clampedIdx);
+            if (willRewire)
+                pb->recallState(clampedIdx);          // capture + setStateInformation
+            else
+                pb->recallStateStellarrOnly(clampedIdx); // index + Stellarr-level only
 
             auto bypassIt = scene.blockBypassMap.find(blockId);
             if (bypassIt != scene.blockBypassMap.end())
@@ -80,6 +124,9 @@ void StellarrBridge::handleRecallScene(const juce::var& json)
             emitBlockParams(blockId, pb);
         }
     }
+
+    if (willRewire)
+        emitToJs("sceneRewireEnd", new juce::DynamicObject());
 
     emitScenes();
 }

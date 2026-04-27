@@ -76,6 +76,25 @@ export interface Scene {
   blockStateMap: Record<string, number>;
 }
 
+/**
+ * Predicts whether switching from `outgoing` to `incoming` will trigger the
+ * engine's "rewire" path (capture + setStateInformation, brief audio dip)
+ * or stay on the instant Stellarr-only path. Mirrors the engine's
+ * `sceneRewireRequired` check: any block with a different active State
+ * index between the two scenes implies a binary swap.
+ */
+export function sceneRewireRequired(outgoing: Scene, incoming: Scene): boolean {
+  for (const blockId in incoming.blockStateMap) {
+    const incomingIdx = incoming.blockStateMap[blockId];
+    const outgoingIdx = outgoing.blockStateMap[blockId];
+    if (outgoingIdx === undefined || outgoingIdx !== incomingIdx) return true;
+  }
+  for (const blockId in outgoing.blockStateMap) {
+    if (!(blockId in incoming.blockStateMap)) return true;
+  }
+  return false;
+}
+
 interface StellarrState {
   loading: boolean;
   loadingStatus: string;
@@ -99,6 +118,7 @@ interface StellarrState {
   justSaved: boolean;
   scenes: Scene[];
   activeSceneIndex: number;
+  sceneRewiring: boolean;
   midiMappings: MidiMapping[];
   midiLearning: boolean;
   midiMonitorEvents: MidiMonitorEvent[];
@@ -165,6 +185,7 @@ interface StellarrState {
   setTestToneSample: (sample: string) => void;
   setJustSaved: (value: boolean) => void;
   setScenes: (scenes: Scene[], activeSceneIndex: number) => void;
+  setSceneRewiring: (rewiring: boolean) => void;
   setMidiMappings: (mappings: MidiMapping[], learning: boolean) => void;
   appendMidiMonitorEvents: (events: MidiMonitorEvent[]) => void;
   clearMidiMonitor: () => void;
@@ -244,6 +265,7 @@ export const useStore = create<StellarrState>((set) => ({
   justSaved: false,
   scenes: [],
   activeSceneIndex: -1,
+  sceneRewiring: false,
   midiMappings: [],
   midiLearning: false,
   midiMonitorEvents: [],
@@ -358,6 +380,7 @@ export const useStore = create<StellarrState>((set) => ({
   setJustSaved: (value) => set({ justSaved: value }),
 
   setScenes: (scenes, activeSceneIndex) => set({ scenes, activeSceneIndex }),
+  setSceneRewiring: (rewiring) => set({ sceneRewiring: rewiring }),
 
   setMidiMappings: (mappings, learning) => set({ midiMappings: mappings, midiLearning: learning }),
 

@@ -188,6 +188,37 @@
   color: var(--color-secondary);
 }
 
+/*
+ * Rewire dot — appears next to a scene name in the dropdown when switching
+ * to that scene from the currently active one would reload plugin params
+ * (brief audio dip). Computed at render time from each scene's per-block
+ * State indices; no user toggle.
+ */
+.rewireDot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-secondary);
+  margin-left: 6px;
+  flex-shrink: 0;
+}
+
+/*
+ * Rewire cue — visible under the closed scene trigger while the engine is
+ * mid-recall on a rewire path. Most rewires complete in <100 ms so this is
+ * a flicker; it provides honest feedback for slower plugin reloads.
+ */
+.rewireCue {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 2px;
+  background: var(--color-primary);
+  pointer-events: none;
+}
+
 /* MIDI tag next to scene name */
 .midiTag {
   background: color-mix(in srgb, var(--color-primary) 9.4%, transparent);

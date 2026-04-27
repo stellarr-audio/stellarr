@@ -44,6 +44,8 @@ void StellarrBridge::handleBlockStateEvent(const juce::var& json, const juce::St
     auto* pluginBlock = findPluginBlock(blockId);
     if (pluginBlock == nullptr) return;
 
+    bool activeIndexChanged = false;
+
     if (action == "save")
     {
         pluginBlock->saveCurrentState();
@@ -51,21 +53,41 @@ void StellarrBridge::handleBlockStateEvent(const juce::var& json, const juce::St
     else if (action == "add")
     {
         pluginBlock->addState();
+        activeIndexChanged = true;
     }
     else if (action == "recall")
     {
         auto index = static_cast<int>(obj->getProperty("index"));
         if (pluginBlock->recallState(index))
+        {
             emitBlockParams(blockId, pluginBlock);
+            activeIndexChanged = true;
+        }
     }
     else if (action == "delete")
     {
         auto index = static_cast<int>(obj->getProperty("index"));
         if (pluginBlock->deleteState(index))
+        {
             emitBlockParams(blockId, pluginBlock);
+            activeIndexChanged = true;
+        }
     }
 
     emitBlockStates(blockId, pluginBlock);
+
+    // The active scene's blockStateMap drives the rewire-dot prediction in the
+    // UI. When a manual block state change shifts the active State index, sync
+    // it into the active scene and re-emit so the dropdown's dots reflect
+    // current rewire behaviour.
+    if (activeIndexChanged
+        && activeSceneIndex >= 0
+        && activeSceneIndex < static_cast<int>(scenes.size()))
+    {
+        scenes[static_cast<size_t>(activeSceneIndex)].blockStateMap[blockId]
+            = pluginBlock->getActiveStateIndex();
+        emitScenes();
+    }
 }
 
 // -- Emit helpers -------------------------------------------------------------

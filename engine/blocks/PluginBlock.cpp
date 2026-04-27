@@ -162,6 +162,27 @@ bool PluginBlock::recallState(int index)
     return true;
 }
 
+bool PluginBlock::recallStateStellarrOnly(int index)
+{
+    if (index < 0 || index >= static_cast<int>(states.size()))
+        return false;
+
+    activeStateIndex = index;
+
+    const auto& s = states[static_cast<size_t>(index)];
+    setMix(s.mix);
+    setBalance(s.balance);
+    setLevelDb(s.levelDb);
+    setBypassed(s.bypassed);
+    setBypassMode(s.bypassMode);
+
+    // Intentionally no captureCurrentState() before, no plugin->setStateInformation()
+    // here. Caller has determined the plugin's current binary state already
+    // matches what this State would push, so the slow getStateInformation /
+    // setStateInformation pair is skipped. The audio thread sees no gap.
+    return true;
+}
+
 bool PluginBlock::deleteState(int index)
 {
     if (states.size() <= 1 || index < 0 || index >= static_cast<int>(states.size()))

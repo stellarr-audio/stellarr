@@ -96,11 +96,18 @@ public:
     std::atomic<int> monitorWritePos { 0 };
     std::atomic<int> monitorReadPos { 0 };
     std::atomic<bool> monitorEnabled { false };
+    std::atomic<bool> activityEventsEnabled { false };
 
     void pushMonitorEvent(const juce::MidiMessage& msg);
 
     void setMonitorEnabled(bool enabled) { monitorEnabled.store(enabled, std::memory_order_relaxed); }
     bool isMonitorEnabled() const { return monitorEnabled.load(std::memory_order_relaxed); }
+
+    // Activity events feed the optional onMidiActivity callback. Disabled by
+    // default so the audio thread does not spend fifo headroom on events
+    // nothing consumes; callers wiring the callback should call this with true.
+    void setActivityEventsEnabled(bool enabled) { activityEventsEnabled.store(enabled, std::memory_order_relaxed); }
+    bool areActivityEventsEnabled() const { return activityEventsEnabled.load(std::memory_order_relaxed); }
 
     // Drain MIDI monitor events for UI display (called from message-thread timer)
     std::vector<MonitorEvent> drainMonitorEvents();

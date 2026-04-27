@@ -63,9 +63,12 @@ void MidiMapper::processMidi(juce::MidiBuffer& midi)
             pushMonitorEvent(msg);
 
         // MIDI Learn — first CC during learning enqueues a LearnComplete event
-        // for the message thread to apply. The audio thread does not mutate the
-        // mappings vector itself.
-        if (learning.load(std::memory_order_acquire) && msg.isController())
+        // for the message thread to apply. The audio thread does not mutate
+        // the mappings vector itself. learnTarget / learnBlockId are written
+        // by startLearn() under mappingsLock, so we may only read them when
+        // we hold the lock here.
+        if (haveMappings && learning.load(std::memory_order_acquire)
+                         && msg.isController())
         {
             OutboundEvent evt;
             evt.kind = OutboundEvent::Kind::learnComplete;
@@ -80,8 +83,10 @@ void MidiMapper::processMidi(juce::MidiBuffer& midi)
             consumed = true;
         }
 
-        // Activity event for UI MIDI monitor.
-        if (msg.isController())
+        // Activity event for the optional onMidiActivity callback. Gated on a
+        // runtime flag so production (where the callback is unset) does not
+        // burn fifo headroom on events nothing consumes.
+        if (msg.isController() && activityEventsEnabled.load(std::memory_order_relaxed))
         {
             OutboundEvent evt;
             evt.kind = OutboundEvent::Kind::midiActivity;
@@ -293,8 +298,10 @@ void MidiMapper::clearAll()
 
 void MidiMapper::startLearn(Target target, const juce::String& blockId)
 {
-    // Write learnTarget / learnBlockId before flipping the atomic so the audio
-    // thread sees a consistent set when it observes learning == true.
+    // Serialise with the audio-thread try-lock in processMidi(): the audio
+    // thread only inspects learnTarget / learnBlockId while holding
+    // mappingsLock, so writes to those fields are also taken under the lock.
+    juce::SpinLock::ScopedLockType scopedLock(mappingsLock);
     learnTarget = target;
     learnBlockId = blockId;
     learning.store(true, std::memory_order_release);
@@ -302,6 +309,7 @@ void MidiMapper::startLearn(Target target, const juce::String& blockId)
 
 void MidiMapper::cancelLearn()
 {
+    juce::SpinLock::ScopedLockType scopedLock(mappingsLock);
     learning.store(false, std::memory_order_release);
 }
 

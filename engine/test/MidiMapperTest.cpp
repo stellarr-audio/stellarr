@@ -684,6 +684,7 @@ static bool testActivityCallbackOnUnmapped()
     printf("Test: activity callback fires on unmapped CC... ");
 
     MidiMapper mapper;
+    mapper.setActivityEventsEnabled(true);
     int actCh = -1, actCc = -1, actVal = -1;
     mapper.onMidiActivity = [&](int ch, int cc, int val) { actCh = ch; actCc = cc; actVal = val; };
 

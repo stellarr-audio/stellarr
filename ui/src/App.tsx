@@ -44,6 +44,7 @@ function App() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
+
   if (loading) return <LoadingScreen />;
 
   const handleTabChange = (tab: string) => {
@@ -113,7 +114,16 @@ function App() {
           <GridOverlay />
           <div
             onClick={(e) => {
+              // Bail when the click did not originate inside this div's DOM
+              // subtree. React events bubble through the component tree, so
+              // clicks inside Radix-portalled content (dialogs, dropdowns,
+              // popovers) reach this handler even though the target lives in
+              // <body>. Without this check the deselect would unmount the
+              // options panel mid-interaction. Stays inside React's event
+              // system so descendant `e.stopPropagation()` calls (e.g. on
+              // grid connections) still suppress the deselect.
               const t = e.target as HTMLElement;
+              if (!e.currentTarget.contains(t)) return;
               if (t.closest('[data-grid-block]') || t.closest('[data-options-panel]')) return;
               selectBlock(null);
             }}

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { useStore } from '../../store';
+import { useStore, type GridBlock } from '../../store';
 import { colors } from '../common/colors';
 import {
   CELL_SIZE,
@@ -14,6 +14,22 @@ import styles from './ConnectionLayer.module.css';
 
 interface Props {
   onConnectionClick?: (e: React.MouseEvent, sourceId: string, destId: string) => void;
+}
+
+// Bypass modes whose dry-signal handling matches engine semantics in
+// engine/blocks/Block.cpp:
+//   - mute / muteIn / muteOut: always silence the dry path -> dead end
+//   - muteFxOut: dry is fully restored regardless of mix -> always live
+//   - muteFxIn: dry blends in at gain (1 - mix); fully wet (mix >= 1) or no
+//     mix support produces silence, otherwise stays live
+const ALWAYS_BREAKING_MODES = new Set(['mute', 'muteIn', 'muteOut']);
+
+function breaksSignal(b: Pick<GridBlock, 'bypassed' | 'bypassMode' | 'mix'>): boolean {
+  if (!b.bypassed) return false;
+  const mode = b.bypassMode ?? 'thru';
+  if (mode === 'thru' || mode === 'muteFxOut') return false;
+  if (mode === 'muteFxIn') return (b.mix ?? 1) >= 1;
+  return ALWAYS_BREAKING_MODES.has(mode);
 }
 
 function orthogonalPath(x1: number, y1: number, x2: number, y2: number): string {
@@ -73,8 +89,7 @@ export function ConnectionLayer({ onConnectionClick }: Props) {
 
     const isMuted = (id: string) => {
       const b = bMap.get(id);
-      const mode = b?.bypassMode ?? 'thru';
-      return Boolean(b?.bypassed && mode !== 'thru');
+      return b ? breaksSignal(b) : false;
     };
 
     // BFS/DFS from the seeds along the given adjacency, EXCLUDING muted nodes
@@ -123,12 +138,12 @@ export function ConnectionLayer({ onConnectionClick }: Props) {
       upstream.set(c.destId, [...(upstream.get(c.destId) ?? []), c.sourceId]);
     }
 
-    // A block with bypass mode "mute" silences both input and output,
-    // effectively cutting the signal chain — treat as a dead end in route tracing.
+    // Bypass modes that fully cut the dry path (`mute`/`muteIn`/`muteOut`)
+    // are treated as dead ends; `muteFxIn`/`muteFxOut` keep the dry signal
+    // flowing and stay walkable.
     const isMuted = (id: string) => {
       const b = bMap.get(id);
-      const mode = b?.bypassMode ?? 'thru';
-      return Boolean(b?.bypassed && mode !== 'thru');
+      return b ? breaksSignal(b) : false;
     };
 
     // Memoised DFS: walk a direction collecting blocks that reach a target type.
@@ -274,6 +289,10 @@ export function ConnectionLayer({ onConnectionClick }: Props) {
         const strokeDasharray = isComplete ? undefined : '6 4';
         const isHovered = hoveredConn === i;
 
+        // Hover signals the destructive disconnect action — swap to danger
+        // colour so it reads as "click to remove" rather than just thicker.
+        const visibleStroke = isHovered ? colors.danger : stroke;
+
         const d = orthogonalPath(x1, y1, x2, y2);
 
         return (
@@ -295,7 +314,7 @@ export function ConnectionLayer({ onConnectionClick }: Props) {
             {/* Visible connection line */}
             <path
               d={d}
-              stroke={stroke}
+              stroke={visibleStroke}
               strokeDasharray={strokeDasharray}
               strokeWidth={isHovered ? 3 : 2}
               fill="none"

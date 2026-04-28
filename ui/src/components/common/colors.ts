@@ -35,6 +35,10 @@ export const colors = {
 
   // Grid anchor (Input/Output blocks) — theme-aware via tokens.css.
   gridAnchor: 'var(--grid-anchor-colour)',
+
+  // MIDI assigned — sky/azure, distinct from accent (orchid) and hover (amber).
+  midi: 'var(--midi)',
+  midiText: 'var(--midi-text)',
 } as const;
 
 export type ColorToken = keyof typeof colors;

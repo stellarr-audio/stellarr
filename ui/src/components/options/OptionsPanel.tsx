@@ -271,7 +271,7 @@ function BypassControls({ block }: { block: import('../../store').GridBlock }) {
 
   return (
     <>
-      <MidiBadge mapping={existing} onClick={() => setDialogOpen(true)} title={tooltipLabel} />
+      <MidiBadge mapping={existing} onClick={() => setDialogOpen(true)} title={tooltipLabel} size="xs" />
       <ToggleSwitch
         enabled={!block.bypassed}
         sharp

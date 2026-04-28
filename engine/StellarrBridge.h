@@ -186,5 +186,5 @@ private:
 
     // Grid size — persisted with the session. Defaults match the UI.
     int gridCols = 12;
-    int gridRows = 6;
+    int gridRows = 5;
 };

@@ -1,5 +1,5 @@
-export const CELL_SIZE = 72;
-export const GAP = 16;
+export const CELL_SIZE = 88;
+export const GAP = 24;
 export const STEP = CELL_SIZE + GAP;
 
 export function cellLeft(col: number): number {

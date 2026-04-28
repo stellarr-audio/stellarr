@@ -311,7 +311,7 @@ export function Grid() {
               >
                 {(isHovered || isMenuOpen) && (
                   <span className={styles.cellPlus}>
-                    <IoAddSharp size={16} />
+                    <IoAddSharp size={20} />
                   </span>
                 )}
               </DroppableCell>

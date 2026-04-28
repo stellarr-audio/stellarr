@@ -270,7 +270,7 @@ export const useStore = create<StellarrState>((set) => ({
   tunerMode: 'needle',
   blocks: [],
   connections: [],
-  grid: { columns: 12, rows: 6 },
+  grid: { columns: 12, rows: 5 },
   scanDirectories: [],
   availablePlugins: [],
   scanning: false,

@@ -403,7 +403,7 @@ void StellarrBridge::handleNewSession()
     // Reset grid size to the UI default when starting a new session so the
     // new preset doesn't inherit the previous session's custom dimensions.
     gridCols = 12;
-    gridRows = 6;
+    gridRows = 5;
 
     sendGraphState();
     emitGridState();

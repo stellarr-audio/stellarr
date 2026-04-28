@@ -96,7 +96,7 @@ export function GridResizer({ children }: Props) {
     requestSetGridSize(grid.columns, nextRows);
   };
 
-  const pillSize = 20;
+  const pillSize = 24;
   const addGap = 8;
   const gutterSize = pillSize + addGap;
 
@@ -171,7 +171,7 @@ export function GridResizer({ children }: Props) {
                   : `Delete column ${c + 1}`
             }
           >
-            {locked ? <IoLockClosedOutline size={13} /> : <IoCloseSharp size={13} />}
+            {locked ? <IoLockClosedOutline size={16} /> : <IoCloseSharp size={16} />}
           </div>
         );
       })}
@@ -193,7 +193,7 @@ export function GridResizer({ children }: Props) {
         onClick={addCol}
         title={canAddCol ? 'Add column' : `Maximum is ${MAX_COLS} columns`}
       >
-        <IoAddSharp size={13} />
+        <IoAddSharp size={16} />
       </div>
 
       {/* Row chips — one per row, centred on its cell */}
@@ -227,7 +227,7 @@ export function GridResizer({ children }: Props) {
                   : `Delete row ${r + 1}`
             }
           >
-            {locked ? <IoLockClosedOutline size={13} /> : <IoCloseSharp size={13} />}
+            {locked ? <IoLockClosedOutline size={16} /> : <IoCloseSharp size={16} />}
           </div>
         );
       })}
@@ -249,7 +249,7 @@ export function GridResizer({ children }: Props) {
         onClick={addRow}
         title={canAddRow ? 'Add row' : `Maximum is ${MAX_ROWS} rows`}
       >
-        <IoAddSharp size={13} />
+        <IoAddSharp size={16} />
       </div>
 
       {/* Grid surface */}

@@ -1,4 +1,4 @@
-export const CELL_SIZE = 72;
+export const CELL_SIZE = 88;
 export const GAP = 24;
 export const STEP = CELL_SIZE + GAP;
 

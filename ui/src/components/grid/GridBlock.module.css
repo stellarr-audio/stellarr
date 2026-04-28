@@ -9,7 +9,7 @@
   user-select: none;
   cursor: grab;
   z-index: var(--z-grid);
-  padding: 4px 2px;
+  padding: 6px 4px;
   background: var(--color-block-bg);
   outline: none;
   transition: background 0.15s ease;
@@ -28,7 +28,7 @@
 }
 
 .blockType {
-  font-size: 1.15rem;
+  font-size: 1.4rem;
   font-weight: 700;
   letter-spacing: 0.12em;
 }
@@ -37,13 +37,13 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 16px;
+  min-height: 20px;
   width: 100%;
   overflow: hidden;
 }
 
 .pluginName {
-  font-size: 0.6rem;
+  font-size: 0.72rem;
   font-weight: 700;
   color: var(--color-muted);
   letter-spacing: 0.06em;
@@ -63,9 +63,9 @@
    regardless of the glyph's own viewBox padding. */
 .iconSlot {
   position: absolute;
-  top: 3px;
-  width: 14px;
-  height: 14px;
+  top: 4px;
+  width: 18px;
+  height: 18px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -79,7 +79,7 @@
 }
 
 .copyButton {
-  left: 3px;
+  left: 4px;
   color: var(--color-muted);
   cursor: pointer;
   display: none;
@@ -90,7 +90,7 @@
 }
 
 .removeButton {
-  right: 3px;
+  right: 4px;
   color: var(--color-danger);
   cursor: pointer;
   display: none;

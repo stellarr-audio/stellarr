@@ -131,7 +131,7 @@ export function GridBlockComponent({ block, onEdgeContextMenu }: Props) {
       {/* Top region — status icons (format tag dropped in favour of bigger icons) */}
       <div className={styles.topRegion}>
         {block.pluginMissing && (
-          <ExclamationTriangleIcon width={18} height={18} color={colors.warning} />
+          <ExclamationTriangleIcon width={22} height={22} color={colors.warning} />
         )}
       </div>
 
@@ -139,7 +139,7 @@ export function GridBlockComponent({ block, onEdgeContextMenu }: Props) {
           copy / remove buttons (all three sit at the same y). */}
       {block.type === 'input' && block.testTone && (
         <span className={`${styles.iconSlot} ${styles.testToneBadge}`}>
-          <SpeakerLoudIcon width={12} height={12} color={colors.green} />
+          <SpeakerLoudIcon width={14} height={14} color={colors.green} />
         </span>
       )}
 
@@ -191,7 +191,7 @@ export function GridBlockComponent({ block, onEdgeContextMenu }: Props) {
           requestCopyBlock(block.id);
         }}
       >
-        <CopyIcon width={12} height={12} />
+        <CopyIcon width={14} height={14} />
       </div>
 
       {/* Remove button — visible on block hover via CSS */}
@@ -203,7 +203,7 @@ export function GridBlockComponent({ block, onEdgeContextMenu }: Props) {
           requestRemoveBlock(block.id);
         }}
       >
-        <IoCloseSharp size={14} />
+        <IoCloseSharp size={16} />
       </div>
     </div>
   );

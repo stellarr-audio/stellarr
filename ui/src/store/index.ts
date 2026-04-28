@@ -118,7 +118,6 @@ interface StellarrState {
   justSaved: boolean;
   scenes: Scene[];
   activeSceneIndex: number;
-  sceneRewiring: boolean;
   midiMappings: MidiMapping[];
   midiLearning: boolean;
   midiMonitorEvents: MidiMonitorEvent[];
@@ -185,7 +184,6 @@ interface StellarrState {
   setTestToneSample: (sample: string) => void;
   setJustSaved: (value: boolean) => void;
   setScenes: (scenes: Scene[], activeSceneIndex: number) => void;
-  setSceneRewiring: (rewiring: boolean) => void;
   setMidiMappings: (mappings: MidiMapping[], learning: boolean) => void;
   appendMidiMonitorEvents: (events: MidiMonitorEvent[]) => void;
   clearMidiMonitor: () => void;
@@ -265,7 +263,6 @@ export const useStore = create<StellarrState>((set) => ({
   justSaved: false,
   scenes: [],
   activeSceneIndex: -1,
-  sceneRewiring: false,
   midiMappings: [],
   midiLearning: false,
   midiMonitorEvents: [],
@@ -380,7 +377,6 @@ export const useStore = create<StellarrState>((set) => ({
   setJustSaved: (value) => set({ justSaved: value }),
 
   setScenes: (scenes, activeSceneIndex) => set({ scenes, activeSceneIndex }),
-  setSceneRewiring: (rewiring) => set({ sceneRewiring: rewiring }),
 
   setMidiMappings: (mappings, learning) => set({ midiMappings: mappings, midiLearning: learning }),
 

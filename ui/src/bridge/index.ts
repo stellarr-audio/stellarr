@@ -648,14 +648,6 @@ export function initBridge(): void {
     useStore.getState().setScenes(scenes, Number(d.activeSceneIndex));
   });
 
-  juce.backend.addEventListener('sceneRewireStart', () => {
-    useStore.getState().setSceneRewiring(true);
-  });
-
-  juce.backend.addEventListener('sceneRewireEnd', () => {
-    useStore.getState().setSceneRewiring(false);
-  });
-
   juce.backend.addEventListener('midiMappingsChanged', (detail: unknown) => {
     const d = asRecord(detail);
     const mappings = (Array.isArray(d.mappings) ? d.mappings : []).map((m: unknown) => {

@@ -204,21 +204,6 @@
   flex-shrink: 0;
 }
 
-/*
- * Rewire cue — visible under the closed scene trigger while the engine is
- * mid-recall on a rewire path. Most rewires complete in <100 ms so this is
- * a flicker; it provides honest feedback for slower plugin reloads.
- */
-.rewireCue {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: -1px;
-  height: 2px;
-  background: var(--color-primary);
-  pointer-events: none;
-}
-
 /* MIDI tag next to scene name */
 .midiTag {
   background: color-mix(in srgb, var(--color-primary) 9.4%, transparent);

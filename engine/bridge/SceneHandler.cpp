@@ -85,8 +85,6 @@ void StellarrBridge::handleRecallScene(const juce::var& json)
 
     if (willRewire)
     {
-        emitToJs("sceneRewireStart", new juce::DynamicObject());
-
         // Slow capture: serialise plugin binary state into each block's active
         // State slot so unsaved tweaks survive the upcoming setStateInformation
         // pushes. Only worth doing on the rewire path — captureCurrentState()
@@ -133,9 +131,6 @@ void StellarrBridge::handleRecallScene(const juce::var& json)
             emitBlockParams(blockId, pb);
         }
     }
-
-    if (willRewire)
-        emitToJs("sceneRewireEnd", new juce::DynamicObject());
 
     emitScenes();
 }

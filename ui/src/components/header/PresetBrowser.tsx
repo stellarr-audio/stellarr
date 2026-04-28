@@ -81,7 +81,6 @@ export function PresetBrowser() {
   const justSaved = useStore((s) => s.justSaved);
   const scenes = useStore((s) => s.scenes);
   const activeSceneIndex = useStore((s) => s.activeSceneIndex);
-  const sceneRewiring = useStore((s) => s.sceneRewiring);
 
   const currentName =
     currentPresetIndex >= 0 && currentPresetIndex < presetFiles.length
@@ -144,7 +143,6 @@ export function PresetBrowser() {
           scenes={scenes}
           activeSceneIndex={activeSceneIndex}
           sceneMidi={sceneMidi}
-          sceneRewiring={sceneRewiring}
         />
         <IconButton
           inGroup
@@ -338,13 +336,11 @@ function SceneDropdown({
   scenes,
   activeSceneIndex,
   sceneMidi,
-  sceneRewiring,
 }: {
   currentName: string;
   scenes: import('../../store').Scene[];
   activeSceneIndex: number;
   sceneMidi: import('../../store').MidiMapping | null;
-  sceneRewiring: boolean;
 }) {
   const activeScene =
     activeSceneIndex >= 0 && activeSceneIndex < scenes.length
@@ -399,13 +395,12 @@ function SceneDropdown({
         onConfirm={confirmDelete}
       />
       <DropdownMenu.Root>
-        <DropdownMenu.Trigger className={styles.dropdownTrigger} style={{ position: 'relative' }}>
+        <DropdownMenu.Trigger className={styles.dropdownTrigger}>
           <DropdownTriggerContent
             label="Scene"
             value={currentName}
             hasValue={activeSceneIndex >= 0}
           />
-          {sceneRewiring && <span className={styles.rewireCue} />}
         </DropdownMenu.Trigger>
         <DropdownMenu.Portal>
           <DropdownMenu.Content sideOffset={4} className={styles.dropdownContent}>

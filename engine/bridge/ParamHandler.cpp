@@ -52,8 +52,8 @@ void StellarrBridge::handleBlockStateEvent(const juce::var& json, const juce::St
     }
     else if (action == "add")
     {
-        pluginBlock->addState();
-        activeIndexChanged = true;
+        if (pluginBlock->addState())
+            activeIndexChanged = true;
     }
     else if (action == "recall")
     {

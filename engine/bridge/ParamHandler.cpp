@@ -71,6 +71,24 @@ void StellarrBridge::handleBlockStateEvent(const juce::var& json, const juce::St
         {
             emitBlockParams(blockId, pluginBlock);
             activeIndexChanged = true;
+
+            // Deleting state at `index` shifts all higher indices down by one.
+            // PluginBlock::deleteState() shifts its own activeStateIndex; mirror
+            // the same on every scene's stored map so inactive scenes do not
+            // keep stale references to removed/shifted state slots. Without
+            // this, the rewire predictor sees raw mismatches that resolve to
+            // the same effective state after clamping.
+            const int newCount = pluginBlock->getNumStates();
+            for (auto& s : scenes)
+            {
+                auto sIt = s.blockStateMap.find(blockId);
+                if (sIt == s.blockStateMap.end()) continue;
+
+                if (sIt->second == index)
+                    sIt->second = std::min(sIt->second, newCount - 1);
+                else if (sIt->second > index)
+                    --sIt->second;
+            }
         }
     }
 

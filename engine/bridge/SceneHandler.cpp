@@ -44,18 +44,39 @@ void StellarrBridge::handleAddScene()
 // purely a Stellarr-level change (mix/balance/level/bypass) that can be
 // applied without touching plugin binary state.
 //
-// The check is structural: any per-block active State index difference
+// The check is structural: any per-block effective State index difference
 // implies the plugin needs different binary parameters loaded; if every
-// block points at the same State index, the plugins already hold the right
-// binaries and only Stellarr-level fields need updating.
+// block resolves to the same effective State index, the plugins already
+// hold the right binaries and only Stellarr-level fields need updating.
+//
+// Effective index = the raw stateMap value clamped to the block's current
+// state count, matching the clamp `handleRecallScene` applies before recall.
+// Without clamping here, scenes with stale out-of-range indices left over
+// from a previous deletion would incorrectly trip the rewire path even
+// though they recall to the same State as their sibling scenes.
 static bool sceneRewireRequired(const StellarrBridge::Scene& outgoing,
-                                const StellarrBridge::Scene& incoming)
+                                const StellarrBridge::Scene& incoming,
+                                const std::map<juce::String, juce::AudioProcessorGraph::NodeID>& blockNodeMap,
+                                juce::AudioProcessorGraph& graph)
 {
+    auto effective = [&blockNodeMap, &graph](const juce::String& blockId, int rawIdx) -> int
+    {
+        auto it = blockNodeMap.find(blockId);
+        if (it == blockNodeMap.end()) return -1;
+        auto* node = graph.getNodeForId(it->second);
+        if (node == nullptr) return -1;
+        auto* pb = dynamic_cast<stellarr::PluginBlock*>(node->getProcessor());
+        if (pb == nullptr) return -1;
+        const int n = pb->getNumStates();
+        if (n <= 0) return -1;
+        return std::min(rawIdx, n - 1);
+    };
+
     for (const auto& [blockId, idx] : incoming.blockStateMap)
     {
         auto it = outgoing.blockStateMap.find(blockId);
-        const int outIdx = (it != outgoing.blockStateMap.end()) ? it->second : -1;
-        if (outIdx != idx) return true;
+        const int outRaw = (it != outgoing.blockStateMap.end()) ? it->second : -1;
+        if (effective(blockId, outRaw) != effective(blockId, idx)) return true;
     }
     for (const auto& [blockId, idx] : outgoing.blockStateMap)
     {
@@ -81,7 +102,9 @@ void StellarrBridge::handleRecallScene(const juce::var& json)
                           || activeSceneIndex >= static_cast<int>(scenes.size()))
         ? true
         : sceneRewireRequired(scenes[static_cast<size_t>(activeSceneIndex)],
-                              scenes[static_cast<size_t>(index)]);
+                              scenes[static_cast<size_t>(index)],
+                              blockNodeMap,
+                              processor->getGraph());
 
     if (willRewire)
     {

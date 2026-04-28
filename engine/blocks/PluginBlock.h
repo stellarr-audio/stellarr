@@ -124,6 +124,18 @@ public:
     bool recallState(int index);
     bool deleteState(int index);
 
+    /**
+     * Recall a State by index without touching the plugin's internal binary
+     * state. Updates activeStateIndex and applies the State's Stellarr-level
+     * fields (mix, balance, level, bypass, bypass mode) only.
+     *
+     * Used by scene recall when the outgoing and incoming scenes point at
+     * the same active State index for this block — the plugin already has
+     * the correct internals loaded and there is nothing to swap, so no
+     * setStateInformation call is needed and the audio thread sees no gap.
+     */
+    bool recallStateStellarrOnly(int index);
+
     // -- Serialization --------------------------------------------------------
 
     juce::var toJson() const override;

@@ -44,28 +44,68 @@ void StellarrBridge::handleBlockStateEvent(const juce::var& json, const juce::St
     auto* pluginBlock = findPluginBlock(blockId);
     if (pluginBlock == nullptr) return;
 
+    bool activeIndexChanged = false;
+
     if (action == "save")
     {
         pluginBlock->saveCurrentState();
     }
     else if (action == "add")
     {
-        pluginBlock->addState();
+        if (pluginBlock->addState())
+            activeIndexChanged = true;
     }
     else if (action == "recall")
     {
         auto index = static_cast<int>(obj->getProperty("index"));
         if (pluginBlock->recallState(index))
+        {
             emitBlockParams(blockId, pluginBlock);
+            activeIndexChanged = true;
+        }
     }
     else if (action == "delete")
     {
         auto index = static_cast<int>(obj->getProperty("index"));
         if (pluginBlock->deleteState(index))
+        {
             emitBlockParams(blockId, pluginBlock);
+            activeIndexChanged = true;
+
+            // Deleting state at `index` shifts all higher indices down by one.
+            // PluginBlock::deleteState() shifts its own activeStateIndex; mirror
+            // the same on every scene's stored map so inactive scenes do not
+            // keep stale references to removed/shifted state slots. Without
+            // this, the rewire predictor sees raw mismatches that resolve to
+            // the same effective state after clamping.
+            const int newCount = pluginBlock->getNumStates();
+            for (auto& s : scenes)
+            {
+                auto sIt = s.blockStateMap.find(blockId);
+                if (sIt == s.blockStateMap.end()) continue;
+
+                if (sIt->second == index)
+                    sIt->second = std::min(sIt->second, newCount - 1);
+                else if (sIt->second > index)
+                    --sIt->second;
+            }
+        }
     }
 
     emitBlockStates(blockId, pluginBlock);
+
+    // The active scene's blockStateMap drives the rewire-dot prediction in the
+    // UI. When a manual block state change shifts the active State index, sync
+    // it into the active scene and re-emit so the dropdown's dots reflect
+    // current rewire behaviour.
+    if (activeIndexChanged
+        && activeSceneIndex >= 0
+        && activeSceneIndex < static_cast<int>(scenes.size()))
+    {
+        scenes[static_cast<size_t>(activeSceneIndex)].blockStateMap[blockId]
+            = pluginBlock->getActiveStateIndex();
+        emitScenes();
+    }
 }
 
 // -- Emit helpers -------------------------------------------------------------

@@ -8,7 +8,7 @@ import {
   DotsHorizontalIcon,
   Link1Icon,
 } from '@radix-ui/react-icons';
-import { useStore } from '../../store';
+import { useStore, sceneRewireRequired } from '../../store';
 import { IconButton } from '../common/IconButton';
 import {
   requestNewSession,
@@ -81,6 +81,7 @@ export function PresetBrowser() {
   const justSaved = useStore((s) => s.justSaved);
   const scenes = useStore((s) => s.scenes);
   const activeSceneIndex = useStore((s) => s.activeSceneIndex);
+  const blocks = useStore((s) => s.blocks);
 
   const currentName =
     currentPresetIndex >= 0 && currentPresetIndex < presetFiles.length
@@ -143,6 +144,7 @@ export function PresetBrowser() {
           scenes={scenes}
           activeSceneIndex={activeSceneIndex}
           sceneMidi={sceneMidi}
+          blocks={blocks}
         />
         <IconButton
           inGroup
@@ -336,12 +338,18 @@ function SceneDropdown({
   scenes,
   activeSceneIndex,
   sceneMidi,
+  blocks,
 }: {
   currentName: string;
-  scenes: { name: string }[];
+  scenes: import('../../store').Scene[];
   activeSceneIndex: number;
   sceneMidi: import('../../store').MidiMapping | null;
+  blocks: import('../../store').GridBlock[];
 }) {
+  const activeScene =
+    activeSceneIndex >= 0 && activeSceneIndex < scenes.length
+      ? scenes[activeSceneIndex]
+      : null;
   const [renameOpen, setRenameOpen] = useState(false);
   const [renamingIndex, setRenamingIndex] = useState(0);
   const [renameValue, setRenameValue] = useState('');
@@ -400,7 +408,13 @@ function SceneDropdown({
         </DropdownMenu.Trigger>
         <DropdownMenu.Portal>
           <DropdownMenu.Content sideOffset={4} className={styles.dropdownContent}>
-            {scenes.map((scene, i) => (
+            {scenes.map((scene, i) => {
+              const willRewire =
+                i !== activeSceneIndex
+                && activeScene !== null
+                && sceneRewireRequired(activeScene, scene, blocks);
+
+              return (
               <div key={i} className={styles.sceneRow}>
                 <MenuItem
                   onSelect={() => requestRecallScene(i)}
@@ -409,6 +423,12 @@ function SceneDropdown({
                   }
                 >
                   {scene.name}
+                  {willRewire && (
+                    <span
+                      className={styles.rewireDot}
+                      title="Switching to this scene reloads plugin parameters (brief audio dip)"
+                    />
+                  )}
                   {sceneMidi && (
                     <span className={styles.midiTag}>
                       {formatMidiLabel(sceneMidi)} val:{i}
@@ -444,7 +464,8 @@ function SceneDropdown({
                   </DropdownMenu.Portal>
                 </DropdownMenu.Sub>
               </div>
-            ))}
+              );
+            })}
 
             {scenes.length > 0 && <DropdownMenu.Separator className={styles.separator} />}
 

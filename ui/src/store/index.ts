@@ -76,6 +76,47 @@ export interface Scene {
   blockStateMap: Record<string, number>;
 }
 
+/**
+ * Predicts whether switching from `outgoing` to `incoming` will trigger the
+ * engine's "rewire" path (capture + setStateInformation, brief audio dip)
+ * or stay on the instant Stellarr-only path. Mirrors the engine's
+ * `sceneRewireRequired` check, including the same effective-index clamp:
+ * any block with a different effective State index between the two scenes
+ * implies a binary swap. Effective index = the raw stateMap value clamped
+ * to the block's current state count, matching what the engine does before
+ * recall. Without clamping here, scenes carrying stale out-of-range
+ * indices from an older preset would incorrectly show a rewire dot even
+ * though the engine takes the fast path.
+ */
+export function sceneRewireRequired(
+  outgoing: Scene,
+  incoming: Scene,
+  blocks: GridBlock[],
+): boolean {
+  const numStatesByBlockId = new Map<string, number>();
+  for (const b of blocks) {
+    if (b.numStates !== undefined && b.numStates > 0) {
+      numStatesByBlockId.set(b.id, b.numStates);
+    }
+  }
+
+  const effective = (blockId: string, rawIdx: number): number => {
+    const n = numStatesByBlockId.get(blockId) ?? 0;
+    if (n <= 0) return -1;
+    return Math.min(rawIdx, n - 1);
+  };
+
+  for (const blockId in incoming.blockStateMap) {
+    const incomingIdx = incoming.blockStateMap[blockId];
+    const outgoingRaw = outgoing.blockStateMap[blockId] ?? -1;
+    if (effective(blockId, outgoingRaw) !== effective(blockId, incomingIdx)) return true;
+  }
+  for (const blockId in outgoing.blockStateMap) {
+    if (!(blockId in incoming.blockStateMap)) return true;
+  }
+  return false;
+}
+
 interface StellarrState {
   loading: boolean;
   loadingStatus: string;

@@ -162,6 +162,41 @@ bool PluginBlock::recallState(int index)
     return true;
 }
 
+bool PluginBlock::recallStateStellarrOnly(int index)
+{
+    if (index < 0 || index >= static_cast<int>(states.size()))
+        return false;
+
+    // Persist live Stellarr-level fields into the outgoing State slot before
+    // swapping. Mirrors recallState()'s capture-before-apply behaviour minus
+    // the slow plugin->getStateInformation() / setStateInformation() pair —
+    // pluginStateBase64 stays untouched because the caller has already
+    // determined the plugin's current binary matches what each State holds.
+    // Without this, live tweaks to mix / balance / level / bypass / bypassMode
+    // made between non-rewire scene switches would be silently overwritten on
+    // the next switch.
+    if (activeStateIndex >= 0 && activeStateIndex < static_cast<int>(states.size()))
+    {
+        auto& outgoing = states[static_cast<size_t>(activeStateIndex)];
+        outgoing.mix = getMix();
+        outgoing.balance = getBalance();
+        outgoing.levelDb = getLevelDb();
+        outgoing.bypassed = isBypassed();
+        outgoing.bypassMode = getBypassMode();
+    }
+
+    activeStateIndex = index;
+
+    const auto& s = states[static_cast<size_t>(index)];
+    setMix(s.mix);
+    setBalance(s.balance);
+    setLevelDb(s.levelDb);
+    setBypassed(s.bypassed);
+    setBypassMode(s.bypassMode);
+
+    return true;
+}
+
 bool PluginBlock::deleteState(int index)
 {
     if (states.size() <= 1 || index < 0 || index >= static_cast<int>(states.size()))

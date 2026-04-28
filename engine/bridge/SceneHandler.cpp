@@ -87,18 +87,27 @@ void StellarrBridge::handleRecallScene(const juce::var& json)
     {
         emitToJs("sceneRewireStart", new juce::DynamicObject());
 
-        // Save current live states and update outgoing scene so unsaved tweaks
-        // are preserved into the State slot they came from.
+        // Slow capture: serialise plugin binary state into each block's active
+        // State slot so unsaved tweaks survive the upcoming setStateInformation
+        // pushes. Only worth doing on the rewire path — captureCurrentState()
+        // calls plugin->getStateInformation() per block, which is exactly what
+        // the fast path is built to avoid.
         for (auto& [blockId, nodeId] : blockNodeMap)
         {
             if (auto* node = processor->getGraph().getNodeForId(nodeId))
                 if (auto* pb = dynamic_cast<stellarr::PluginBlock*>(node->getProcessor()))
                     pb->saveCurrentState();
         }
-
-        if (activeSceneIndex >= 0 && activeSceneIndex < static_cast<int>(scenes.size()))
-            captureIntoScene(scenes[static_cast<size_t>(activeSceneIndex)], blockNodeMap, processor->getGraph());
     }
+
+    // Cheap capture: refresh the outgoing scene's blockStateMap and
+    // blockBypassMap to reflect any tweaks made while it was active. Runs on
+    // both paths — only the slow plugin binary capture above is gated on
+    // willRewire. Without this, fast-path A → B → A loses bypass tweaks made
+    // while A was active because A's stored blockBypassMap is reapplied
+    // verbatim on return.
+    if (activeSceneIndex >= 0 && activeSceneIndex < static_cast<int>(scenes.size()))
+        captureIntoScene(scenes[static_cast<size_t>(activeSceneIndex)], blockNodeMap, processor->getGraph());
 
     activeSceneIndex = index;
     auto& scene = scenes[static_cast<size_t>(index)];

@@ -7,14 +7,15 @@ interface Props {
   onClick: () => void;
   title?: string;
   className?: string;
-  /** Larger variant — 32h instead of the default 24h. Rarely needed; default
-   *  matches IconButton size="sm" so all panel controls share one scale. */
-  size?: 'default' | 'lg';
+  /** `xs` (20h) aligns with a sharp ToggleSwitch sitting on the same row.
+   *  `lg` (32h) is the rare full-input-height variant. Default (24h) matches
+   *  IconButton size="sm" so most panel controls share one scale. */
+  size?: 'xs' | 'default' | 'lg';
 }
 
 /**
  * Compact MIDI-assignment badge. Dashed outline + muted when unassigned,
- * solid orchid when assigned. Shared across the options panel so every
+ * solid azure when assigned. Shared across the options panel so every
  * MIDI-assignable control reads the same way at a glance.
  */
 export function MidiBadge({ mapping, onClick, title, className, size = 'default' }: Props) {
@@ -22,6 +23,7 @@ export function MidiBadge({ mapping, onClick, title, className, size = 'default'
   const tooltip = title ?? (mapping ? `MIDI: CC ${mapping.cc}` : 'Assign MIDI CC');
   const cls = [
     styles.badge,
+    size === 'xs' && styles.xs,
     size === 'lg' && styles.lg,
     mapping ? styles.assigned : styles.unassigned,
     className,

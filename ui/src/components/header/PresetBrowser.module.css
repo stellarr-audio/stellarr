@@ -185,7 +185,15 @@
 }
 
 .sceneMidiBtnAssigned {
-  color: var(--color-secondary);
+  color: var(--midi-text);
+}
+
+/* Override IconButton's amber hover so assigned MIDI link buttons stay
+   azure on hover, consistent with the rest of the MIDI-assigned semantic. */
+.sceneMidiBtnAssigned:hover {
+  color: var(--midi-text);
+  border-color: var(--midi-text);
+  background: color-mix(in srgb, var(--midi) 10%, transparent);
 }
 
 /*
@@ -206,10 +214,10 @@
 
 /* MIDI tag next to scene name */
 .midiTag {
-  background: color-mix(in srgb, var(--color-primary) 9.4%, transparent);
-  border: 1px solid var(--color-secondary);
+  background: color-mix(in srgb, var(--midi) 12%, transparent);
+  border: 1px solid var(--midi-text);
   border-radius: var(--radius);
-  color: var(--color-secondary);
+  color: var(--midi-text);
   font-size: 0.6rem;
   font-weight: 600;
   letter-spacing: 0.04em;

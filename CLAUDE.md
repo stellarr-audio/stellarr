@@ -199,6 +199,7 @@ macOS Apple Silicon, CMake 3.24+, Xcode CLI tools, Node.js 18+, npm. See `docs/C
 | `--color-secondary` (`--secondary`) | Preset/scene indicator, hover hint, warning | `#f59e0b` Amber-500 | `#fbbf24` Amber-400 |
 | `--color-green` (`--success`) | Confirmation (always + ✓ icon) | `#10b981` Emerald-500 | same |
 | `--color-danger` (`--danger`) | Error, destructive, clip (always + ⚠ icon) | `#e11d48` Rose-600 | same |
+| `--midi` / `--midi-text` | MIDI-assigned indicators (preset/scene tag, badge, link button) — distinct from accent and hover | `#0ea5e9` Azure-500 / `#0369a1` Azure-700 | `#38bdf8` Azure-400 / same |
 | `--color-border` | Interactive control borders (inputs, buttons, selects) | `#e5e7eb` | `rgba(255,255,255,0.25)` |
 | `--color-divider` | Chrome separators (header/footer/panel edges) | `#e5e7eb` | `rgba(255,255,255,0.1)` |
 | `--color-bg` | Page background | grey-50 | radial gradient navy |

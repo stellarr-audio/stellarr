@@ -101,6 +101,12 @@
   /* Rose (danger) */
   --rose-600: #e11d48;
 
+  /* Azure (MIDI signal — distinct from accent/secondary so MIDI-assigned
+     indicators do not overload the orchid/amber roles) */
+  --azure-400: #38bdf8;
+  --azure-500: #0ea5e9;
+  --azure-700: #0369a1;
+
   /* Plugin format identification (theme-agnostic — formats don't shift with theme) */
   --plugin-format-vst3:    #00b4ff;
   --plugin-format-au:      #ff8800;
@@ -117,6 +123,8 @@
   --secondary-text: var(--amber-700);      /* #b45309 — darker amber that reads well on white */
   --success:      var(--emerald-500);      /* #10b981 */
   --danger:       var(--rose-600);         /* #e11d48 */
+  --midi:         var(--azure-500);        /* #0ea5e9 — surface tint base for MIDI-assigned indicators */
+  --midi-text:    var(--azure-700);        /* #0369a1 — text + border, ~5.9:1 contrast on white */
 
   --bg:           var(--grey-100);         /* #f1f3f5 — grid "playground" grey */
   --surface:      var(--grey-0);           /* #ffffff */
@@ -157,6 +165,8 @@
   --secondary-text: var(--amber-400);      /* same as --secondary on dark — already reads well */
   --success:      var(--emerald-500);      /* same */
   --danger:       var(--rose-600);         /* same */
+  --midi:         var(--azure-400);        /* #38bdf8 — brighter on dark */
+  --midi-text:    var(--azure-400);        /* same as --midi on dark */
 
   /* Dark --bg is a radial gradient per the Phase 0 spec. Apply via
      `background: var(--bg)` on the top-level container (not background-color). */

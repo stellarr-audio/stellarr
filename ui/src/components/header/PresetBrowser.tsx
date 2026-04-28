@@ -81,6 +81,7 @@ export function PresetBrowser() {
   const justSaved = useStore((s) => s.justSaved);
   const scenes = useStore((s) => s.scenes);
   const activeSceneIndex = useStore((s) => s.activeSceneIndex);
+  const blocks = useStore((s) => s.blocks);
 
   const currentName =
     currentPresetIndex >= 0 && currentPresetIndex < presetFiles.length
@@ -143,6 +144,7 @@ export function PresetBrowser() {
           scenes={scenes}
           activeSceneIndex={activeSceneIndex}
           sceneMidi={sceneMidi}
+          blocks={blocks}
         />
         <IconButton
           inGroup
@@ -336,11 +338,13 @@ function SceneDropdown({
   scenes,
   activeSceneIndex,
   sceneMidi,
+  blocks,
 }: {
   currentName: string;
   scenes: import('../../store').Scene[];
   activeSceneIndex: number;
   sceneMidi: import('../../store').MidiMapping | null;
+  blocks: import('../../store').GridBlock[];
 }) {
   const activeScene =
     activeSceneIndex >= 0 && activeSceneIndex < scenes.length
@@ -408,7 +412,7 @@ function SceneDropdown({
               const willRewire =
                 i !== activeSceneIndex
                 && activeScene !== null
-                && sceneRewireRequired(activeScene, scene);
+                && sceneRewireRequired(activeScene, scene, blocks);
 
               return (
               <div key={i} className={styles.sceneRow}>

@@ -85,10 +85,15 @@ Follow [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/):
 > 2. **Never open a PR without explicit user confirmation.** Even after verification and committing, do not run `gh pr create` (or push a branch with the intent of opening a PR) until the user explicitly says so. Commits on a branch are fine; opening a PR is a separate decision the user makes.
 
 1. Stage only the files relevant to the task.
-2. Commit with a Conventional Commits message only after the user verifies the change works.
-3. Wait for the user to explicitly request a PR before pushing / opening one.
-4. Once a PR is open, wait for CI to pass before requesting merge.
-5. After merge, delete the remote branch and switch back to `main` locally.
+2. **Local code review before commit.** Run `codex review --uncommitted` for non-trivial changes and address findings inline.
+   - **What it catches:** contrast / design-system / specificity issues, drift between docs and code, missed edge cases — before the cloud Codex bot sees them, saving review round-trips.
+   - **Run for:** engine logic, UI behaviour or styling, multi-file refactors, and docs that describe code behaviour, command names, file paths, or configuration (e.g. user manual pages, testing checklists).
+   - **Skip for:** typo / grammar / wording-only edits, dependency bumps, version chores, trivial style tweaks.
+   - **Model:** Codex picks its current default. Pin explicitly with `-c model=<name>` only when there's a reason.
+3. Commit with a Conventional Commits message only after the user verifies the change works.
+4. Wait for the user to explicitly request a PR before pushing / opening one.
+5. Once a PR is open, wait for CI to pass before requesting merge.
+6. After merge, delete the remote branch and switch back to `main` locally.
 
 ### Branch naming
 

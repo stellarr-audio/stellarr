@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useStore } from './store';
 import { useSyncTheme } from './hooks/useSyncTheme';
 import { useSyncUpdateBadge } from './hooks/useSyncUpdateBadge';
@@ -44,27 +44,6 @@ function App() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // Click-to-deselect on the grid body. Native DOM listener attached via a
-  // callback ref so events from Radix-portalled content (dialogs, dropdowns,
-  // popovers) do not reach this handler — native events follow the DOM tree,
-  // while React events bubble through the component tree and would otherwise
-  // leak through the portal back here, unmounting the panel mid-interaction.
-  // The callback-ref form fires when the gridBody DOM node mounts (after the
-  // initial loading screen), so the listener is correctly attached even
-  // though `loading` gates the JSX that owns the ref.
-  const gridBodyRefCallback = useCallback(
-    (el: HTMLDivElement | null) => {
-      if (!el) return;
-      const onClick = (e: MouseEvent) => {
-        const t = e.target as HTMLElement;
-        if (t.closest('[data-grid-block]') || t.closest('[data-options-panel]')) return;
-        selectBlock(null);
-      };
-      el.addEventListener('click', onClick);
-      return () => el.removeEventListener('click', onClick);
-    },
-    [selectBlock],
-  );
 
   if (loading) return <LoadingScreen />;
 
@@ -133,7 +112,23 @@ function App() {
           className={`${panelClass('grid')} ${styles.gridPanel}`}
         >
           <GridOverlay />
-          <div ref={gridBodyRefCallback} className={styles.gridBody}>
+          <div
+            onClick={(e) => {
+              // Bail when the click did not originate inside this div's DOM
+              // subtree. React events bubble through the component tree, so
+              // clicks inside Radix-portalled content (dialogs, dropdowns,
+              // popovers) reach this handler even though the target lives in
+              // <body>. Without this check the deselect would unmount the
+              // options panel mid-interaction. Stays inside React's event
+              // system so descendant `e.stopPropagation()` calls (e.g. on
+              // grid connections) still suppress the deselect.
+              const t = e.target as HTMLElement;
+              if (!e.currentTarget.contains(t)) return;
+              if (t.closest('[data-grid-block]') || t.closest('[data-options-panel]')) return;
+              selectBlock(null);
+            }}
+            className={styles.gridBody}
+          >
             <div className={styles.gridArea}>
               <GridResizer>
                 <Grid />

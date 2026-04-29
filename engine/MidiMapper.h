@@ -27,7 +27,7 @@ public:
         int ccNumber = -1;      // CC number, or -1 for Program Change
         Target target;
         juce::String blockId;   // for block-specific targets
-        int targetIndex = -1;   // for scene/preset index (when using specific CC values)
+        int targetIndex = -1;   // scene/preset/state index; -1 when unused
     };
 
     MidiMapper();

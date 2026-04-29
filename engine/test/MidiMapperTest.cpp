@@ -1012,6 +1012,98 @@ static bool testBlockStateTargetRoundTrip()
     return true;
 }
 
+static bool testBlockStateThresholdDispatch()
+{
+    printf("Test: blockState fires onBlockState only when CC >= 64... ");
+
+    MidiMapper mapper;
+    MidiMapper::Mapping m;
+    m.channel = -1;
+    m.ccNumber = 30;
+    m.target = MidiMapper::Target::blockState;
+    m.blockId = "amp-block";
+    m.targetIndex = 2;
+    mapper.addMapping(m);
+
+    int callbackCount = 0;
+    juce::String capturedBlockId;
+    int capturedIndex = -999;
+    mapper.onBlockState = [&](const juce::String& blockId, int idx) {
+        ++callbackCount;
+        capturedBlockId = blockId;
+        capturedIndex = idx;
+    };
+
+    juce::MidiBuffer buf;
+    buf.addEvent(juce::MidiMessage::controllerEvent(1, 30, 30), 0);   // < 64 -> ignore
+    buf.addEvent(juce::MidiMessage::controllerEvent(1, 30, 64), 10);  // >= 64 -> fire
+    buf.addEvent(juce::MidiMessage::controllerEvent(1, 30, 127), 20); // >= 64 -> fire again
+
+    mapper.processMidi(buf);
+    mapper.drainOutboundEvents();
+
+    if (callbackCount != 2)
+    {
+        fprintf(stderr, "  expected 2 callbacks, got %d\n", callbackCount);
+        printf("FAIL\n");
+        return false;
+    }
+    if (capturedBlockId != "amp-block")
+    {
+        fprintf(stderr, "  expected blockId \"amp-block\", got %s\n", capturedBlockId.toRawUTF8());
+        printf("FAIL\n");
+        return false;
+    }
+    if (capturedIndex != 2)
+    {
+        fprintf(stderr, "  expected stateIndex 2, got %d\n", capturedIndex);
+        printf("FAIL\n");
+        return false;
+    }
+
+    printf("PASS\n");
+    return true;
+}
+
+static bool testBlockStateJsonRoundTrip()
+{
+    printf("Test: blockState mapping serialises with targetIndex... ");
+
+    MidiMapper mapper;
+    MidiMapper::Mapping m;
+    m.channel = 0;
+    m.ccNumber = 40;
+    m.target = MidiMapper::Target::blockState;
+    m.blockId = "block-xyz";
+    m.targetIndex = 3;
+    mapper.addMapping(m);
+
+    auto json = mapper.presetMappingsToJson();
+
+    MidiMapper roundTrip;
+    roundTrip.loadPresetMappings(json);
+
+    if (roundTrip.getNumMappings() != 1)
+    {
+        fprintf(stderr, "  expected 1 mapping after round-trip, got %d\n", roundTrip.getNumMappings());
+        printf("FAIL\n");
+        return false;
+    }
+
+    const auto& restored = roundTrip.getMapping(0);
+    if (restored.target != MidiMapper::Target::blockState
+        || restored.blockId != "block-xyz"
+        || restored.targetIndex != 3)
+    {
+        fprintf(stderr, "  mapping fields not preserved (target/blockId/targetIndex)\n");
+        printf("FAIL\n");
+        return false;
+    }
+
+    printf("PASS\n");
+    return true;
+}
+
 int main()
 {
     int failures = 0;
@@ -1063,6 +1155,10 @@ int main()
 
     // Target round-trip
     if (!testBlockStateTargetRoundTrip()) ++failures;
+
+    // blockState dispatch + JSON round-trip
+    if (!testBlockStateThresholdDispatch()) ++failures;
+    if (!testBlockStateJsonRoundTrip())     ++failures;
 
     printf("\n%d test(s) failed\n", failures);
     return failures;

@@ -100,6 +100,18 @@ void StellarrBridge::setupMidiMapper()
         {
             emitBlockParams(blockId, pluginBlock);
             emitBlockStates(blockId, pluginBlock);
+
+            // Mirror handleBlockStateEvent("recall"): sync the active scene's
+            // blockStateMap so the rewire-dot prediction in the scene dropdown
+            // reflects the new state. Without this, MIDI-driven state changes
+            // diverge silently from the visible scene indicator.
+            if (activeSceneIndex >= 0
+                && activeSceneIndex < static_cast<int>(scenes.size()))
+            {
+                scenes[static_cast<size_t>(activeSceneIndex)].blockStateMap[blockId]
+                    = pluginBlock->getActiveStateIndex();
+                emitScenes();
+            }
         }
     };
 

@@ -116,6 +116,10 @@ void StellarrBridge::handleEvent(const juce::String& eventName, const juce::var&
         m.ccNumber = static_cast<int>(obj->getProperty("cc"));
         m.target = MidiMapper::targetFromString(obj->getProperty("target").toString());
         m.blockId = obj->getProperty("blockId").toString();
+
+        auto tiVar = obj->getProperty("targetIndex");
+        m.targetIndex = tiVar.isVoid() ? -1 : static_cast<int>(tiVar);
+
         processor->getMidiMapper().addMapping(m);
         emitMidiMappings();
     }
@@ -143,7 +147,11 @@ void StellarrBridge::handleEvent(const juce::String& eventName, const juce::var&
 
         auto target = MidiMapper::targetFromString(obj->getProperty("target").toString());
         auto blockId = obj->getProperty("blockId").toString();
-        processor->getMidiMapper().startLearn(target, blockId);
+
+        auto tiVar = obj->getProperty("targetIndex");
+        const int targetIndex = tiVar.isVoid() ? -1 : static_cast<int>(tiVar);
+
+        processor->getMidiMapper().startLearn(target, blockId, targetIndex);
         emitMidiMappings();
     }
     else if (eventName == "cancelMidiLearn" && processor != nullptr)

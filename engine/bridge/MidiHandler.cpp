@@ -92,6 +92,17 @@ void StellarrBridge::setupMidiMapper()
         }
     };
 
+    mapper.onBlockState = [this](const juce::String& blockId, int stateIndex) {
+        auto* pluginBlock = findPluginBlock(blockId);
+        if (pluginBlock == nullptr) return;
+
+        if (pluginBlock->recallState(stateIndex))
+        {
+            emitBlockParams(blockId, pluginBlock);
+            emitBlockStates(blockId, pluginBlock);
+        }
+    };
+
     mapper.onLearnComplete = [this](int channel, int cc) {
         auto* detail = new juce::DynamicObject();
         detail->setProperty("channel", channel);
@@ -118,6 +129,8 @@ void StellarrBridge::emitMidiMappings()
         obj->setProperty("target", MidiMapper::targetToString(m.target));
         if (m.blockId.isNotEmpty())
             obj->setProperty("blockId", m.blockId);
+        if (m.targetIndex >= 0)
+            obj->setProperty("targetIndex", m.targetIndex);
         arr.add(juce::var(obj));
     }
 

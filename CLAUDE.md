@@ -13,6 +13,7 @@ Open-source guitar signal processing standalone app. JUCE (C++) audio engine wit
 - Respect existing testing patterns and coverage levels
 - Highlight any potential breaking changes or dependencies
 - Focus on the immediate task rather than broad refactoring
+- **Default execution mode for plans is subagent-driven** (`superpowers:subagent-driven-development`): once a spec + plan are approved, dispatch a fresh subagent per task with review between tasks. Don't ask which mode to use unless the user opts out for a specific task
 
 ## Communication Standards
 

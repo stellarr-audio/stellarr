@@ -18,6 +18,7 @@ public:
         blockBalance,
         blockLevel,
         tunerToggle,
+        blockState,
     };
 
     struct Mapping
@@ -45,8 +46,19 @@ public:
     const Mapping& getMapping(int index) const { return mappings[static_cast<size_t>(index)]; }
     const std::vector<Mapping>& getMappings() const { return mappings; }
 
+    // Remove all mappings whose blockId matches. Used when a block is removed
+    // from the graph or when a preset is replaced. Audio-thread safe via the
+    // mappings spinlock.
+    void removeMappingsForBlock(const juce::String& blockId);
+
+    // Remove mappings for a specific (blockId, stateIndex) pair, and shift
+    // targetIndex down by one for any blockState mapping where targetIndex is
+    // strictly greater than the deleted index. Mirrors PluginBlock::deleteState
+    // semantics. Audio-thread safe via the mappings spinlock.
+    void removeMappingsForBlockState(const juce::String& blockId, int deletedIndex);
+
     // MIDI Learn
-    void startLearn(Target target, const juce::String& blockId = {});
+    void startLearn(Target target, const juce::String& blockId = {}, int targetIndex = -1);
     void cancelLearn();
     bool isLearning() const { return learning.load(std::memory_order_acquire); }
 
@@ -71,6 +83,7 @@ public:
     std::function<void(const juce::String& blockId, float value)> onBlockBalance;
     std::function<void(const juce::String& blockId, float levelDb)> onBlockLevel;
     std::function<void(bool enabled)> onTunerToggle;
+    std::function<void(const juce::String& blockId, int stateIndex)> onBlockState;
     std::function<void(int channel, int cc, int value)> onMidiActivity;
     std::function<void(int channel, int cc)> onLearnComplete;
 
@@ -137,6 +150,7 @@ private:
             blockBalance,
             blockLevel,
             tunerToggle,
+            blockState,
         };
 
         Kind kind = Kind::midiActivity;
@@ -145,6 +159,7 @@ private:
         int value = 0;
         float floatValue = 0.0f;
         Target learnTarget = Target::blockMix;
+        int8_t targetIndex = -1;          // for blockState; -1 when unused
         std::array<char, 40> blockId {}; // null-terminated; UUID = 36 chars
     };
 
@@ -188,4 +203,5 @@ private:
     std::atomic<bool> learning { false };
     Target learnTarget = Target::blockMix;
     juce::String learnBlockId;
+    int learnTargetIndex = -1;
 };

@@ -981,6 +981,37 @@ static bool testMonitorDrainClears()
     return true;
 }
 
+static bool testBlockStateTargetRoundTrip()
+{
+    printf("Test: blockState target string round-trips and isGlobal=false... ");
+
+    using Target = MidiMapper::Target;
+    const auto str = MidiMapper::targetToString(Target::blockState);
+    if (str != "blockState")
+    {
+        fprintf(stderr, "  expected \"blockState\", got %s\n", str.toRawUTF8());
+        printf("FAIL\n");
+        return false;
+    }
+
+    if (MidiMapper::targetFromString("blockState") != Target::blockState)
+    {
+        fprintf(stderr, "  targetFromString(\"blockState\") did not return Target::blockState\n");
+        printf("FAIL\n");
+        return false;
+    }
+
+    if (MidiMapper::isGlobalTarget(Target::blockState))
+    {
+        fprintf(stderr, "  blockState should be preset-level (isGlobalTarget=false)\n");
+        printf("FAIL\n");
+        return false;
+    }
+
+    printf("PASS\n");
+    return true;
+}
+
 int main()
 {
     int failures = 0;
@@ -1029,6 +1060,9 @@ int main()
     if (!testNoCallbackNoCrash())       ++failures;
     if (!testEmptyBufferNoCrash())      ++failures;
     if (!testActivityCallbackOnUnmapped()) ++failures;
+
+    // Target round-trip
+    if (!testBlockStateTargetRoundTrip()) ++failures;
 
     printf("\n%d test(s) failed\n", failures);
     return failures;

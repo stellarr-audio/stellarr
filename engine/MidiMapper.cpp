@@ -1,4 +1,5 @@
 #include "MidiMapper.h"
+#include <algorithm>
 
 MidiMapper::MidiMapper()
 {
@@ -300,9 +301,40 @@ void MidiMapper::clearAll()
     mappings.clear();
 }
 
+void MidiMapper::removeMappingsForBlock(const juce::String& blockId)
+{
+    if (blockId.isEmpty()) return;
+    juce::SpinLock::ScopedLockType scopedLock(mappingsLock);
+    mappings.erase(std::remove_if(mappings.begin(), mappings.end(),
+        [&](const Mapping& m) { return m.blockId == blockId; }), mappings.end());
+}
+
+void MidiMapper::removeMappingsForBlockState(const juce::String& blockId, int deletedIndex)
+{
+    if (blockId.isEmpty()) return;
+    juce::SpinLock::ScopedLockType scopedLock(mappingsLock);
+
+    mappings.erase(std::remove_if(mappings.begin(), mappings.end(),
+        [&](const Mapping& m) {
+            return m.target == Target::blockState
+                && m.blockId == blockId
+                && m.targetIndex == deletedIndex;
+        }), mappings.end());
+
+    for (auto& m : mappings)
+    {
+        if (m.target == Target::blockState
+            && m.blockId == blockId
+            && m.targetIndex > deletedIndex)
+        {
+            --m.targetIndex;
+        }
+    }
+}
+
 // -- MIDI Learn ---------------------------------------------------------------
 
-void MidiMapper::startLearn(Target target, const juce::String& blockId)
+void MidiMapper::startLearn(Target target, const juce::String& blockId, int targetIndex)
 {
     // Serialise with the audio-thread try-lock in processMidi(): the audio
     // thread only inspects learnTarget / learnBlockId while holding
@@ -310,6 +342,7 @@ void MidiMapper::startLearn(Target target, const juce::String& blockId)
     juce::SpinLock::ScopedLockType scopedLock(mappingsLock);
     learnTarget = target;
     learnBlockId = blockId;
+    learnTargetIndex = targetIndex;
     learning.store(true, std::memory_order_release);
 }
 
@@ -332,6 +365,7 @@ juce::String MidiMapper::targetToString(Target t)
         case Target::blockBalance: return "blockBalance";
         case Target::blockLevel:   return "blockLevel";
         case Target::tunerToggle:  return "tunerToggle";
+        case Target::blockState:   return "blockState";
     }
     return "unknown";
 }
@@ -345,6 +379,7 @@ MidiMapper::Target MidiMapper::targetFromString(const juce::String& s)
     if (s == "blockBalance") return Target::blockBalance;
     if (s == "blockLevel")   return Target::blockLevel;
     if (s == "tunerToggle")  return Target::tunerToggle;
+    if (s == "blockState")   return Target::blockState;
     return Target::blockMix;
 }
 

@@ -372,14 +372,20 @@ juce::String MidiMapper::targetToString(Target t)
 
 MidiMapper::Target MidiMapper::targetFromString(const juce::String& s)
 {
-    if (s == "presetChange") return Target::presetChange;
-    if (s == "sceneSwitch")  return Target::sceneSwitch;
-    if (s == "blockBypass")  return Target::blockBypass;
-    if (s == "blockMix")     return Target::blockMix;
-    if (s == "blockBalance") return Target::blockBalance;
-    if (s == "blockLevel")   return Target::blockLevel;
-    if (s == "tunerToggle")  return Target::tunerToggle;
-    if (s == "blockState")   return Target::blockState;
+    static const std::array<std::pair<const char*, Target>, 8> map {{
+        { "presetChange", Target::presetChange },
+        { "sceneSwitch",  Target::sceneSwitch  },
+        { "blockBypass",  Target::blockBypass  },
+        { "blockMix",     Target::blockMix     },
+        { "blockBalance", Target::blockBalance },
+        { "blockLevel",   Target::blockLevel   },
+        { "tunerToggle",  Target::tunerToggle  },
+        { "blockState",   Target::blockState   },
+    }};
+
+    for (const auto& [name, target] : map)
+        if (s == name) return target;
+
     return Target::blockMix;
 }
 

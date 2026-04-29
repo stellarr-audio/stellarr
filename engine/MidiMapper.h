@@ -159,7 +159,7 @@ private:
         int value = 0;
         float floatValue = 0.0f;
         Target learnTarget = Target::blockMix;
-        int8_t targetIndex = -1;          // for blockState; -1 when unused
+        int8_t targetIndex = -1;          // stateIndex for blockState events and learn-complete payloads; -1 when unused
         std::array<char, 40> blockId {}; // null-terminated; UUID = 36 chars
     };
 

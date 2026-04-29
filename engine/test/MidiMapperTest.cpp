@@ -1036,6 +1036,7 @@ static bool testBlockStateThresholdDispatch()
 
     juce::MidiBuffer buf;
     buf.addEvent(juce::MidiMessage::controllerEvent(1, 30, 30), 0);   // < 64 -> ignore
+    buf.addEvent(juce::MidiMessage::controllerEvent(1, 30, 63), 5);   // boundary < 64 -> ignore
     buf.addEvent(juce::MidiMessage::controllerEvent(1, 30, 64), 10);  // >= 64 -> fire
     buf.addEvent(juce::MidiMessage::controllerEvent(1, 30, 127), 20); // >= 64 -> fire again
 
@@ -1059,6 +1060,19 @@ static bool testBlockStateThresholdDispatch()
         fprintf(stderr, "  expected stateIndex 2, got %d\n", capturedIndex);
         printf("FAIL\n");
         return false;
+    }
+
+    // The mapped CC must have been consumed at every value (including the
+    // sub-threshold 30), regardless of whether onBlockState fired.
+    for (const auto metadata : buf)
+    {
+        auto msg = metadata.getMessage();
+        if (msg.isController() && msg.getControllerNumber() == 30)
+        {
+            fprintf(stderr, "  CC 30 should have been consumed at every value\n");
+            printf("FAIL\n");
+            return false;
+        }
     }
 
     printf("PASS\n");

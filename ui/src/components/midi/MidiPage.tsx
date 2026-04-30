@@ -19,6 +19,7 @@ const targetLabels: Record<string, string> = {
   blockMix: 'Block Mix',
   blockBalance: 'Block Balance',
   blockLevel: 'Block Level',
+  blockState: 'Block State',
   tunerToggle: 'Tuner Toggle (Global)',
 };
 
@@ -106,6 +107,9 @@ export function MidiPage() {
                   <span className={styles.target}>
                     {targetLabels[m.target] || m.target}
                     {m.blockId ? ` (${blockName(m.blockId)})` : ''}
+                    {m.target === 'blockState' && typeof m.targetIndex === 'number'
+                      ? ` — State ${m.targetIndex + 1}`
+                      : ''}
                   </span>
                   <span className={styles.removeCell}>
                     <IconButton
@@ -135,6 +139,7 @@ export function MidiPage() {
           title={`Edit — ${targetLabels[editMapping.target] || editMapping.target}`}
           target={editMapping.target}
           blockId={editMapping.blockId}
+          targetIndex={editMapping.targetIndex}
           existingIndex={editIndex ?? undefined}
           programChange={editMapping.cc === PROGRAM_CHANGE_CC}
         />

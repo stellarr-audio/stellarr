@@ -1118,6 +1118,58 @@ static bool testBlockStateJsonRoundTrip()
     return true;
 }
 
+static bool testBlockStateMappingShiftOnDelete()
+{
+    printf("Test: removeMappingsForBlockState drops match and shifts higher indices... ");
+
+    MidiMapper mapper;
+
+    auto mk = [](int cc, const char* blockId, int idx) {
+        MidiMapper::Mapping m;
+        m.channel = -1;
+        m.ccNumber = cc;
+        m.target = MidiMapper::Target::blockState;
+        m.blockId = blockId;
+        m.targetIndex = idx;
+        return m;
+    };
+
+    mapper.addMapping(mk(60, "block-A", 0));
+    mapper.addMapping(mk(61, "block-A", 2));   // should drop on delete index=2
+    mapper.addMapping(mk(62, "block-A", 3));   // should shift to 2
+    mapper.addMapping(mk(63, "block-B", 2));   // unrelated block — untouched
+
+    mapper.removeMappingsForBlockState("block-A", 2);
+
+    if (mapper.getNumMappings() != 3)
+    {
+        fprintf(stderr, "  expected 3 mappings remaining, got %d\n", mapper.getNumMappings());
+        printf("FAIL\n");
+        return false;
+    }
+
+    // block-A index 0 untouched
+    bool found0 = false, foundShifted = false, foundB = false;
+    for (int i = 0; i < mapper.getNumMappings(); ++i)
+    {
+        const auto& m = mapper.getMapping(i);
+        if (m.blockId == "block-A" && m.ccNumber == 60 && m.targetIndex == 0) found0 = true;
+        if (m.blockId == "block-A" && m.ccNumber == 62 && m.targetIndex == 2) foundShifted = true;
+        if (m.blockId == "block-B" && m.ccNumber == 63 && m.targetIndex == 2) foundB = true;
+    }
+
+    if (!found0 || !foundShifted || !foundB)
+    {
+        fprintf(stderr, "  expected mappings missing after delete (found0=%d shifted=%d B=%d)\n",
+                found0, foundShifted, foundB);
+        printf("FAIL\n");
+        return false;
+    }
+
+    printf("PASS\n");
+    return true;
+}
+
 int main()
 {
     int failures = 0;
@@ -1173,6 +1225,9 @@ int main()
     // blockState dispatch + JSON round-trip
     if (!testBlockStateThresholdDispatch()) ++failures;
     if (!testBlockStateJsonRoundTrip())     ++failures;
+
+    // blockState mapping shift on delete
+    if (!testBlockStateMappingShiftOnDelete()) ++failures;
 
     printf("\n%d test(s) failed\n", failures);
     return failures;

@@ -1118,6 +1118,47 @@ static bool testBlockStateJsonRoundTrip()
     return true;
 }
 
+static bool testRemoveMappingsForBlock()
+{
+    printf("Test: removeMappingsForBlock removes all mappings for that blockId... ");
+
+    MidiMapper mapper;
+
+    auto mk = [](int cc, MidiMapper::Target t, const char* blockId, int idx = -1) {
+        MidiMapper::Mapping m;
+        m.channel = -1;
+        m.ccNumber = cc;
+        m.target = t;
+        m.blockId = blockId;
+        m.targetIndex = idx;
+        return m;
+    };
+
+    mapper.addMapping(mk(10, MidiMapper::Target::blockMix,     "block-A"));
+    mapper.addMapping(mk(11, MidiMapper::Target::blockBypass,  "block-A"));
+    mapper.addMapping(mk(12, MidiMapper::Target::blockState,   "block-A", 1));
+    mapper.addMapping(mk(13, MidiMapper::Target::blockMix,     "block-B"));
+
+    mapper.removeMappingsForBlock("block-A");
+
+    if (mapper.getNumMappings() != 1)
+    {
+        fprintf(stderr, "  expected 1 mapping remaining, got %d\n", mapper.getNumMappings());
+        printf("FAIL\n");
+        return false;
+    }
+    if (mapper.getMapping(0).blockId != "block-B")
+    {
+        fprintf(stderr, "  expected remaining blockId \"block-B\", got %s\n",
+                mapper.getMapping(0).blockId.toRawUTF8());
+        printf("FAIL\n");
+        return false;
+    }
+
+    printf("PASS\n");
+    return true;
+}
+
 static bool testBlockStateMappingShiftOnDelete()
 {
     printf("Test: removeMappingsForBlockState drops match and shifts higher indices... ");
@@ -1228,6 +1269,9 @@ int main()
 
     // blockState mapping shift on delete
     if (!testBlockStateMappingShiftOnDelete()) ++failures;
+
+    // removeMappingsForBlock removes all targets for a block
+    if (!testRemoveMappingsForBlock()) ++failures;
 
     printf("\n%d test(s) failed\n", failures);
     return failures;

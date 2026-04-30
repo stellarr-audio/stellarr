@@ -103,6 +103,9 @@ void StellarrBridge::handleRemoveBlock(const juce::var& json)
     auto it = blockNodeMap.find(blockId);
     if (it == blockNodeMap.end()) return;
 
+    processor->getMidiMapper().removeMappingsForBlock(it->first);
+    emitMidiMappings();
+
     {
         StellarrProcessor::GraphMutationScope scope(*processor);
         processor->removeBlock(it->second, StellarrProcessor::UpdateKind::none);

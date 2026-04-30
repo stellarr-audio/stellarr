@@ -46,6 +46,7 @@ export function StateSquare({
         <button
           onClick={onAssignMidi}
           title={`MIDI: ${midiLabel}${midiMapping && midiMapping.channel >= 0 ? `, Ch ${midiMapping.channel + 1}` : ''} — click to edit`}
+          aria-label={`Edit MIDI assignment for state ${index + 1} (${midiLabel})`}
           className={`${styles.midiSegment} ${styles.midiSegmentAssigned}`}
         >
           {midiLabel}

@@ -82,3 +82,54 @@ Test whenever you touch MIDI mapping, MidiMapper, the MIDI page, or MIDI-trigger
 2. Send that CC from your controller
 
 **Expected:** The mapping row briefly highlights to show activity.
+
+### TC-MI-009: Assign MIDI to a block state via Learn
+
+**Prerequisites:** A loaded preset with a plugin block that has at least 2 states (use the **+** button in the States section to add states if needed).
+
+**Steps:**
+1. Open the Options panel for a plugin block with multiple states.
+2. Click the small link icon on the State 2 square.
+3. In the dialog, click **Learn**, then send a CC from your controller (e.g. CC 64 with value 127).
+4. Save.
+
+**Expected:** The State 2 square's middle segment now shows `CC 64` in azure. The MIDI page lists a row reading `Block State (BlockName) -- State 2`.
+
+### TC-MI-010: Per-state CC threshold
+
+**Prerequisites:** TC-MI-009 completed (State 2 assigned to a CC, e.g. CC 64).
+
+**Steps:**
+1. Send the assigned CC at value 0 (release) -- state should not change.
+2. Send the assigned CC at value 30 -- state should not change.
+3. Send the assigned CC at value 63 -- state should not change.
+4. Send the assigned CC at value 64 -- State 2 activates.
+5. Send the assigned CC at value 127 -- State 2 stays active (no-op since already there).
+
+**Expected:** Only values >= 64 trigger the state change. Lower values are silently ignored. The State 2 square gets the active amber outline once triggered.
+
+### TC-MI-011: Scene precedence over per-state MIDI
+
+**Prerequisites:** Block has State 1 and State 2; State 2 is mapped to a CC; one scene captured with State 1 active.
+
+**Steps:**
+1. Recall the scene -- State 1 active.
+2. Send the State 2 CC -- State 2 active.
+3. Recall the scene again -- State 1 active.
+4. Send the State 2 CC again -- State 2 active.
+5. Recall the scene one more time -- State 1 active.
+
+**Expected:** Each scene recall re-asserts its captured state index. The per-state CC override does not stick across scene changes.
+
+### TC-MI-012: Mapping cleanup on state and block delete
+
+**Prerequisites:** Block with at least 3 states; State 2 mapped to CC A, State 3 mapped to CC B.
+
+**Steps:**
+1. Delete State 2 (click the X on its square).
+2. Send CC B -- the state that was previously State 3 (now State 2) activates.
+3. Open the **MIDI** page -- the surviving row reads `Block State (BlockName) -- State 2` (not State 3).
+4. Delete the entire block from the grid.
+5. Open the **MIDI** page -- no rows for that block remain.
+
+**Expected:** Deleting a state drops its mapping and shifts higher-indexed mappings down by one. Deleting the block prunes every mapping that targeted it (state, bypass, mix, balance, level).

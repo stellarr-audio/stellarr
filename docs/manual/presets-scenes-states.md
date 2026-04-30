@@ -79,12 +79,13 @@ A state is a per-block snapshot of a plugin block's complete configuration:
 
 ### Managing States
 
-States are shown as numbered squares in the **States** section of the Options panel:
+States are shown as numbered squares in the **States** section of the Options panel. Each square has three segments: number, MIDI assignment, and a delete cross.
 
-- **Click a square** to recall that state.
+- **Click the number** to recall that state.
+- **Click the MIDI segment** (the small link icon) to assign a MIDI CC to this state. When assigned, the segment shows the CC number in azure -- click again to edit. See [MIDI](/docs/midi/#per-state-midi-mapping) for full details.
 - **Click +** to add a new state (captures current settings).
-- **Click X** on a square to delete it (must keep at least one).
-- The **active state** has a white border.
+- **Click X** on a square to delete it (must keep at least one). Any MIDI mapping for the deleted state is dropped, and mappings for higher-indexed states shift down by one.
+- The **active state** has an amber outline.
 - A state with **unsaved changes** shows a yellow background.
 
 ### Dirty States

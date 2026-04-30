@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import { useStore } from '../../../store';
+import type { GridBlock } from '../../../store';
 import { StatesSection } from '../StatesSection';
 
 vi.mock('../../../bridge', () => ({
@@ -13,24 +14,51 @@ vi.mock('../../../bridge', () => ({
   requestCancelMidiLearn: vi.fn(),
 }));
 
-describe('StatesSection', () => {
-  beforeEach(() => {
+const block: GridBlock = {
+  id: 'block-A',
+  type: 'plugin',
+  name: 'PLG',
+  col: 0,
+  row: 0,
+  nodeId: 100,
+  displayName: 'PLG',
+  level: 0,
+  bypassed: false,
+  mix: 1,
+  balance: 0,
+  numStates: 3,
+  activeStateIndex: 0,
+  dirtyStates: [],
+};
+
+function resetStore() {
+  act(() => {
     useStore.setState({
-      midiMappings: [
-        { channel: 0, cc: 64, target: 'blockState', blockId: 'block-A', targetIndex: 1 },
-      ],
-      midiLearning: false,
+      blocks: [],
+      selectedBlockId: null,
+      floatingPanelPos: null,
+      midiMappings: [],
+      availablePlugins: [],
+      lufsByBlockId: {},
+      targetLufsByBlockId: {},
+      loudnessHistory: [],
+      testToneSamples: [],
     });
   });
+}
 
-  const block = {
-    id: 'block-A',
-    type: 'plugin' as const,
-    numStates: 3,
-    activeStateIndex: 0,
-    dirtyStates: [],
-    // Other GridBlock fields are not exercised here.
-  } as never;
+describe('StatesSection', () => {
+  beforeEach(() => {
+    resetStore();
+    act(() => {
+      useStore.setState({
+        midiMappings: [
+          { channel: 0, cc: 64, target: 'blockState', blockId: 'block-A', targetIndex: 1 },
+        ],
+        midiLearning: false,
+      });
+    });
+  });
 
   it('shows CC 64 on the state-2 square (targetIndex 1)', () => {
     render(<StatesSection block={block} />);

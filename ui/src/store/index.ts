@@ -62,6 +62,7 @@ export interface MidiMapping {
   cc: number;
   target: string;
   blockId?: string;
+  targetIndex?: number;
 }
 
 export interface MidiMonitorEvent {

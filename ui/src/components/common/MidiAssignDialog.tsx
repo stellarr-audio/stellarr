@@ -17,6 +17,7 @@ interface Props {
   title: string;
   target: string;
   blockId?: string;
+  targetIndex?: number;
   existingIndex?: number;
   programChange?: boolean;
 }
@@ -27,6 +28,7 @@ export function MidiAssignDialog({
   title,
   target,
   blockId,
+  targetIndex,
   existingIndex,
   programChange,
 }: Props) {
@@ -53,14 +55,26 @@ export function MidiAssignDialog({
     if (programChange) {
       if (existingIndex !== undefined && existingIndex >= 0)
         requestRemoveMidiMapping(existingIndex);
-      requestAddMidiMapping(parseInt(channel, 10), PROGRAM_CHANGE_CC, target, blockId);
+      requestAddMidiMapping({
+        channel: parseInt(channel, 10),
+        cc: PROGRAM_CHANGE_CC,
+        target,
+        blockId,
+        targetIndex,
+      });
       onOpenChange(false);
       return;
     }
     const cc = parseInt(ccValue, 10);
     if (isNaN(cc) || cc < 0 || cc > 127) return;
     if (existingIndex !== undefined && existingIndex >= 0) requestRemoveMidiMapping(existingIndex);
-    requestAddMidiMapping(parseInt(channel, 10), cc, target, blockId);
+    requestAddMidiMapping({
+      channel: parseInt(channel, 10),
+      cc,
+      target,
+      blockId,
+      targetIndex,
+    });
     onOpenChange(false);
   };
 
@@ -85,7 +99,7 @@ export function MidiAssignDialog({
                   <button
                     onClick={() => {
                       if (learning) requestCancelMidiLearn();
-                      else requestStartMidiLearn(target, blockId);
+                      else requestStartMidiLearn({ target, blockId, targetIndex });
                     }}
                     title={
                       learning

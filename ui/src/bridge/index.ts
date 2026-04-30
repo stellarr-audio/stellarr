@@ -233,13 +233,25 @@ export function requestDeleteScene(index: number): void {
 
 // -- MIDI mapping commands ----------------------------------------------------
 
-export function requestAddMidiMapping(
-  channel: number,
-  cc: number,
-  target: string,
-  blockId?: string,
-): void {
-  sendEvent('addMidiMapping', JSON.stringify({ channel, cc, target, blockId: blockId ?? '' }));
+export interface AddMidiMappingArgs {
+  channel: number;
+  cc: number;
+  target: string;
+  blockId?: string;
+  targetIndex?: number;
+}
+
+export function requestAddMidiMapping(args: AddMidiMappingArgs): void {
+  const payload: Record<string, unknown> = {
+    channel: args.channel,
+    cc: args.cc,
+    target: args.target,
+    blockId: args.blockId ?? '',
+  };
+  if (args.targetIndex !== undefined && args.targetIndex >= 0) {
+    payload.targetIndex = args.targetIndex;
+  }
+  sendEvent('addMidiMapping', JSON.stringify(payload));
 }
 
 export function requestRemoveMidiMapping(index: number): void {
@@ -254,8 +266,21 @@ export function requestGetMidiMappings(): void {
   sendEvent('getMidiMappings', '');
 }
 
-export function requestStartMidiLearn(target: string, blockId?: string): void {
-  sendEvent('startMidiLearn', JSON.stringify({ target, blockId: blockId ?? '' }));
+export interface StartMidiLearnArgs {
+  target: string;
+  blockId?: string;
+  targetIndex?: number;
+}
+
+export function requestStartMidiLearn(args: StartMidiLearnArgs): void {
+  const payload: Record<string, unknown> = {
+    target: args.target,
+    blockId: args.blockId ?? '',
+  };
+  if (args.targetIndex !== undefined && args.targetIndex >= 0) {
+    payload.targetIndex = args.targetIndex;
+  }
+  sendEvent('startMidiLearn', JSON.stringify(payload));
 }
 
 export function requestCancelMidiLearn(): void {
@@ -653,10 +678,11 @@ export function initBridge(): void {
     const mappings = (Array.isArray(d.mappings) ? d.mappings : []).map((m: unknown) => {
       const r = asRecord(m);
       return {
-        channel: Number(r.channel),
-        cc: Number(r.cc),
-        target: String(r.target),
+        channel: typeof r.channel === 'number' ? r.channel : Number(r.channel),
+        cc: typeof r.cc === 'number' ? r.cc : Number(r.cc),
+        target: typeof r.target === 'string' ? r.target : String(r.target),
         blockId: r.blockId ? String(r.blockId) : undefined,
+        targetIndex: typeof r.targetIndex === 'number' ? r.targetIndex : undefined,
       } satisfies MidiMapping;
     });
     useStore.getState().setMidiMappings(mappings, Boolean(d.learning));

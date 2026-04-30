@@ -364,6 +364,13 @@ void StellarrBridge::connectIOBlock(const juce::String& type,
                                     juce::AudioProcessorGraph::NodeID nodeId,
                                     juce::AudioProcessorGraph::UpdateKind update)
 {
+    // Non-IO types (plugin/vst) share this entry point via paste / restore
+    // paths but don't wire to the IO graph nodes — bail before touching the
+    // default bypass so a plugin-only restore or paste doesn't silently
+    // sever audio on a graph that still relies on the ctor's
+    // audioInput → audioOutput passthrough.
+    if (type != "input" && type != "output") return;
+
     // Tear down the default audioInput → audioOutput bypass before wiring an
     // IO block. StellarrProcessor's ctor adds that direct connection so a fresh
     // app boot still passes audio; once a real input/output block is added,

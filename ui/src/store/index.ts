@@ -208,6 +208,7 @@ interface StellarrState {
   setJustSaved: (value: boolean) => void;
   setScenes: (scenes: Scene[], activeSceneIndex: number) => void;
   setMidiMappings: (mappings: MidiMapping[], learning: boolean) => void;
+  getStateMidiMapping: (blockId: string, stateIndex: number) => MidiMapping | undefined;
   appendMidiMonitorEvents: (events: MidiMonitorEvent[]) => void;
   clearMidiMonitor: () => void;
   setMidiMonitorEnabled: (enabled: boolean) => void;
@@ -256,7 +257,7 @@ interface StellarrState {
   setSoftwareUpdate: (s: UpdateStatePayload) => void;
 }
 
-export const useStore = create<StellarrState>((set) => ({
+export const useStore = create<StellarrState>((set, get) => ({
   loading: true,
   loadingStatus: 'Initialising...',
   loadingProgress: 0,
@@ -402,6 +403,16 @@ export const useStore = create<StellarrState>((set) => ({
   setScenes: (scenes, activeSceneIndex) => set({ scenes, activeSceneIndex }),
 
   setMidiMappings: (mappings, learning) => set({ midiMappings: mappings, midiLearning: learning }),
+
+  getStateMidiMapping: (blockId, stateIndex) => {
+    const mappings = get().midiMappings;
+    return mappings.find(
+      (m) =>
+        m.target === 'blockState'
+        && m.blockId === blockId
+        && m.targetIndex === stateIndex,
+    );
+  },
 
   appendMidiMonitorEvents: (events) =>
     set((s) => ({

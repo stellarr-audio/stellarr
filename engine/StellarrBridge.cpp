@@ -364,6 +364,16 @@ void StellarrBridge::connectIOBlock(const juce::String& type,
                                     juce::AudioProcessorGraph::NodeID nodeId,
                                     juce::AudioProcessorGraph::UpdateKind update)
 {
+    // Tear down the default audioInput → audioOutput bypass before wiring an
+    // IO block. StellarrProcessor's ctor adds that direct connection so a fresh
+    // app boot still passes audio; once a real input/output block is added,
+    // it must go — otherwise the dry signal leaks past the block chain (and
+    // outside any Block::level / Block::bypass logic). disconnectBlocks is a
+    // no-op if the connection is already gone, so it's safe to call from
+    // every IO-wiring path.
+    processor->disconnectBlocks(processor->getAudioInputNodeId(),
+                                processor->getAudioOutputNodeId(), update);
+
     if (type == "input")
     {
         processor->connectBlocks(processor->getAudioInputNodeId(), nodeId, 2, update);

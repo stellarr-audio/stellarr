@@ -19,6 +19,11 @@
         allow-dyld-environment-variables:
             Some vendor loaders rely on DYLD_* env vars to locate support
             frameworks.
+        device.audio-input:
+            Required for microphone / audio-interface input under the
+            hardened runtime. Without this, signed + notarised builds
+            silently receive no audio from the input device even when
+            NSMicrophoneUsageDescription is set and TCC has been granted.
     -->
     <key>com.apple.security.cs.disable-library-validation</key>
     <true/>
@@ -27,6 +32,8 @@
     <key>com.apple.security.cs.allow-unsigned-executable-memory</key>
     <true/>
     <key>com.apple.security.cs.allow-dyld-environment-variables</key>
+    <true/>
+    <key>com.apple.security.device.audio-input</key>
     <true/>
 </dict>
 </plist>

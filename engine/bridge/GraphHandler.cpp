@@ -43,8 +43,8 @@ void StellarrBridge::handleAddBlock(const juce::var& json)
 
         if (type == "input" || type == "output")
         {
-            processor->disconnectBlocks(processor->getAudioInputNodeId(),
-                                         processor->getAudioOutputNodeId(), UK::none);
+            // connectIOBlock disconnects the default audioInput → audioOutput
+            // bypass before wiring; no separate disconnect needed here.
             connectIOBlock(type, nodeId, UK::none);
         }
 

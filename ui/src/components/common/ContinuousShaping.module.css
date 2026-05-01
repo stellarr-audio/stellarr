@@ -1,9 +1,18 @@
 .grid {
   display: grid;
-  grid-template-columns: 48px 1fr 12px 1fr;
+  grid-template-columns: 48px auto 12px auto;
   gap: 6px;
   align-items: center;
   margin-bottom: 6px;
+  justify-content: start;
+}
+
+.compactInput {
+  width: 88px;
+}
+
+.compactInputGroup {
+  width: 110px;
 }
 .label {
   font-size: var(--text-xs);

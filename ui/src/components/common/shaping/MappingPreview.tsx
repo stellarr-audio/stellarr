@@ -68,10 +68,10 @@ export function MappingPreview({
       <span className={styles.tick} style={{ left: `${aRightPct}%` }}>{ccMax}</span>
       <span className={styles.tick} style={{ left: '100%' }}>127</span>
 
-      <span className={styles.axisLabel} style={{ left: -2, top: 0 }}>
+      <span className={styles.axisLabel} style={{ top: 0 }}>
         {paramRange.max.toString()}
       </span>
-      <span className={styles.axisLabel} style={{ left: -2, bottom: 6 }}>
+      <span className={styles.axisLabel} style={{ bottom: 6 }}>
         {paramRange.min.toString()}
       </span>
     </div>

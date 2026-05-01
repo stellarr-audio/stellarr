@@ -1,5 +1,6 @@
 #include "MidiMapper.h"
 #include <algorithm>
+#include <cmath>
 
 MidiMapper::MidiMapper()
 {
@@ -40,6 +41,43 @@ bool MidiMapper::pushOutbound(const OutboundEvent& evt)
 
     outboundFifo.finishedWrite(1);
     return true;
+}
+
+float MidiMapper::normalisedCc(int value, int ccMin, int ccMax, Curve curve)
+{
+    if (ccMax <= ccMin) return 0.0f;
+
+    const int clamped = juce::jlimit(ccMin, ccMax, value);
+    const float t = static_cast<float>(clamped - ccMin) / static_cast<float>(ccMax - ccMin);
+
+    switch (curve)
+    {
+        case Curve::Linear:
+            return t;
+        case Curve::Log:
+            // Logarithmic — concentrates resolution at low end.
+            return std::log10(1.0f + 9.0f * t);
+        case Curve::Exp:
+            // Exponential — concentrates resolution at high end.
+            return (std::pow(10.0f, t) - 1.0f) / 9.0f;
+        case Curve::Sigmoid:
+        {
+            // S-curve — smooth transition with steeper middle.
+            const float k = 5.0f;
+            const float top = std::tanh((t - 0.5f) * k);
+            const float bot = std::tanh(0.5f * k);
+            return 0.5f + 0.5f * top / bot;
+        }
+    }
+    return t;
+}
+
+float MidiMapper::scaleToParam(float t, float paramMin, float paramMax,
+                                float defaultMin, float defaultMax)
+{
+    const float mn = std::isnan(paramMin) ? defaultMin : paramMin;
+    const float mx = std::isnan(paramMax) ? defaultMax : paramMax;
+    return mn + t * (mx - mn);
 }
 
 void MidiMapper::processMidi(juce::MidiBuffer& midi)
@@ -139,22 +177,31 @@ void MidiMapper::processMidi(juce::MidiBuffer& midi)
                         break;
 
                     case Target::blockMix:
+                    {
                         evt.kind = OutboundEvent::Kind::blockMix;
-                        evt.floatValue = ccToMix(value);
+                        const float t = normalisedCc(value, m.ccMin, m.ccMax, m.curve);
+                        evt.floatValue = scaleToParam(t, m.paramMin, m.paramMax, 0.0f, 1.0f);
                         pushOutbound(evt);
                         break;
+                    }
 
                     case Target::blockBalance:
+                    {
                         evt.kind = OutboundEvent::Kind::blockBalance;
-                        evt.floatValue = ccToBalance(value);
+                        const float t = normalisedCc(value, m.ccMin, m.ccMax, m.curve);
+                        evt.floatValue = scaleToParam(t, m.paramMin, m.paramMax, -1.0f, 1.0f);
                         pushOutbound(evt);
                         break;
+                    }
 
                     case Target::blockLevel:
+                    {
                         evt.kind = OutboundEvent::Kind::blockLevel;
-                        evt.floatValue = ccToLevelDb(value);
+                        const float t = normalisedCc(value, m.ccMin, m.ccMax, m.curve);
+                        evt.floatValue = scaleToParam(t, m.paramMin, m.paramMax, -60.0f, 12.0f);
                         pushOutbound(evt);
                         break;
+                    }
 
                     case Target::tunerToggle:
                         evt.kind = OutboundEvent::Kind::tunerToggle;
@@ -245,6 +292,17 @@ int MidiMapper::drainOutboundEvents()
                 m.target = evt.learnTarget;
                 m.blockId = blockId;
                 m.targetIndex = static_cast<int>(evt.targetIndex);
+
+                // Carry the dialog's shaping state through to the new mapping.
+                {
+                    juce::SpinLock::ScopedLockType scopedLock(mappingsLock);
+                    m.ccMin    = learnCcMin;
+                    m.ccMax    = learnCcMax;
+                    m.paramMin = learnParamMin;
+                    m.paramMax = learnParamMax;
+                    m.curve    = learnCurve;
+                }
+
                 addMapping(m);
 
                 if (onLearnComplete)
@@ -354,15 +412,17 @@ void MidiMapper::removeMappingsForBlockState(const juce::String& blockId, int de
 
 // -- MIDI Learn ---------------------------------------------------------------
 
-void MidiMapper::startLearn(Target target, const juce::String& blockId, int targetIndex)
+void MidiMapper::startLearn(const LearnArgs& args)
 {
-    // Serialise with the audio-thread try-lock in processMidi(): the audio
-    // thread only inspects learnTarget / learnBlockId while holding
-    // mappingsLock, so writes to those fields are also taken under the lock.
     juce::SpinLock::ScopedLockType scopedLock(mappingsLock);
-    learnTarget = target;
-    learnBlockId = blockId;
-    learnTargetIndex = targetIndex;
+    learnTarget = args.target;
+    learnBlockId = args.blockId;
+    learnTargetIndex = args.targetIndex;
+    learnCcMin = args.ccMin;
+    learnCcMax = args.ccMax;
+    learnParamMin = args.paramMin;
+    learnParamMax = args.paramMax;
+    learnCurve = args.curve;
     learning.store(true, std::memory_order_release);
 }
 
@@ -409,6 +469,33 @@ MidiMapper::Target MidiMapper::targetFromString(const juce::String& s)
     return Target::blockMix;
 }
 
+juce::String MidiMapper::curveToString(Curve c)
+{
+    switch (c)
+    {
+        case Curve::Linear:  return "linear";
+        case Curve::Log:     return "log";
+        case Curve::Exp:     return "exp";
+        case Curve::Sigmoid: return "sigmoid";
+    }
+    return "linear";
+}
+
+MidiMapper::Curve MidiMapper::curveFromString(const juce::String& s)
+{
+    static const std::array<std::pair<const char*, Curve>, 4> map {{
+        { "linear",  Curve::Linear  },
+        { "log",     Curve::Log     },
+        { "exp",     Curve::Exp     },
+        { "sigmoid", Curve::Sigmoid },
+    }};
+
+    for (const auto& [name, curve] : map)
+        if (s == name) return curve;
+
+    return Curve::Linear;
+}
+
 juce::var MidiMapper::toJson() const
 {
     juce::Array<juce::var> arr;
@@ -422,6 +509,16 @@ juce::var MidiMapper::toJson() const
             obj->setProperty("blockId", m.blockId);
         if (m.targetIndex >= 0)
             obj->setProperty("targetIndex", m.targetIndex);
+        if (m.ccMin != 0)
+            obj->setProperty("ccMin", m.ccMin);
+        if (m.ccMax != 127)
+            obj->setProperty("ccMax", m.ccMax);
+        if (! std::isnan(m.paramMin))
+            obj->setProperty("paramMin", static_cast<double>(m.paramMin));
+        if (! std::isnan(m.paramMax))
+            obj->setProperty("paramMax", static_cast<double>(m.paramMax));
+        if (m.curve != Curve::Linear)
+            obj->setProperty("curve", curveToString(m.curve));
         arr.add(juce::var(obj));
     }
     return arr;
@@ -445,6 +542,26 @@ void MidiMapper::fromJson(const juce::var& json)
                 m.blockId = obj->getProperty("blockId").toString();
                 auto tiVar = obj->getProperty("targetIndex");
                 m.targetIndex = tiVar.isVoid() ? -1 : static_cast<int>(tiVar);
+
+                auto ccMinVar = obj->getProperty("ccMin");
+                m.ccMin = ccMinVar.isVoid() ? 0 : static_cast<int>(ccMinVar);
+
+                auto ccMaxVar = obj->getProperty("ccMax");
+                m.ccMax = ccMaxVar.isVoid() ? 127 : static_cast<int>(ccMaxVar);
+
+                auto paramMinVar = obj->getProperty("paramMin");
+                m.paramMin = paramMinVar.isVoid()
+                    ? std::numeric_limits<float>::quiet_NaN()
+                    : static_cast<float>(static_cast<double>(paramMinVar));
+
+                auto paramMaxVar = obj->getProperty("paramMax");
+                m.paramMax = paramMaxVar.isVoid()
+                    ? std::numeric_limits<float>::quiet_NaN()
+                    : static_cast<float>(static_cast<double>(paramMaxVar));
+
+                auto curveVar = obj->getProperty("curve");
+                m.curve = curveVar.isVoid() ? Curve::Linear : curveFromString(curveVar.toString());
+
                 mappings.push_back(m);
             }
         }
@@ -467,6 +584,16 @@ static juce::var filterMappingsToJson(const std::vector<MidiMapper::Mapping>& ma
             obj->setProperty("blockId", m.blockId);
         if (m.targetIndex >= 0)
             obj->setProperty("targetIndex", m.targetIndex);
+        if (m.ccMin != 0)
+            obj->setProperty("ccMin", m.ccMin);
+        if (m.ccMax != 127)
+            obj->setProperty("ccMax", m.ccMax);
+        if (! std::isnan(m.paramMin))
+            obj->setProperty("paramMin", static_cast<double>(m.paramMin));
+        if (! std::isnan(m.paramMax))
+            obj->setProperty("paramMax", static_cast<double>(m.paramMax));
+        if (m.curve != MidiMapper::Curve::Linear)
+            obj->setProperty("curve", MidiMapper::curveToString(m.curve));
         arr.add(juce::var(obj));
     }
     return arr;
@@ -488,6 +615,26 @@ static std::vector<MidiMapper::Mapping> parseMappingsArray(const juce::var& json
                 m.blockId = obj->getProperty("blockId").toString();
                 auto tiVar = obj->getProperty("targetIndex");
                 m.targetIndex = tiVar.isVoid() ? -1 : static_cast<int>(tiVar);
+
+                auto ccMinVar = obj->getProperty("ccMin");
+                m.ccMin = ccMinVar.isVoid() ? 0 : static_cast<int>(ccMinVar);
+
+                auto ccMaxVar = obj->getProperty("ccMax");
+                m.ccMax = ccMaxVar.isVoid() ? 127 : static_cast<int>(ccMaxVar);
+
+                auto paramMinVar = obj->getProperty("paramMin");
+                m.paramMin = paramMinVar.isVoid()
+                    ? std::numeric_limits<float>::quiet_NaN()
+                    : static_cast<float>(static_cast<double>(paramMinVar));
+
+                auto paramMaxVar = obj->getProperty("paramMax");
+                m.paramMax = paramMaxVar.isVoid()
+                    ? std::numeric_limits<float>::quiet_NaN()
+                    : static_cast<float>(static_cast<double>(paramMaxVar));
+
+                auto curveVar = obj->getProperty("curve");
+                m.curve = curveVar.isVoid() ? MidiMapper::Curve::Linear : MidiMapper::curveFromString(curveVar.toString());
+
                 result.push_back(m);
             }
         }

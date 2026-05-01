@@ -287,7 +287,10 @@ static bool testStartLearnSetsMode()
 
     if (mapper.isLearning()) { printf("FAIL (already learning)\n"); return false; }
 
-    mapper.startLearn(MidiMapper::Target::blockBalance, "block-test");
+    MidiMapper::LearnArgs la;
+    la.target = MidiMapper::Target::blockBalance;
+    la.blockId = "block-test";
+    mapper.startLearn(la);
 
     if (!mapper.isLearning()) { printf("FAIL (not learning)\n"); return false; }
 
@@ -406,7 +409,12 @@ static bool testMidiLearn()
     printf("Test: MIDI Learn creates mapping from first CC... ");
 
     MidiMapper mapper;
-    mapper.startLearn(MidiMapper::Target::blockMix, "block-learn");
+    {
+        MidiMapper::LearnArgs la;
+        la.target = MidiMapper::Target::blockMix;
+        la.blockId = "block-learn";
+        mapper.startLearn(la);
+    }
 
     if (!mapper.isLearning()) { printf("FAIL (not learning)\n"); return false; }
 
@@ -439,7 +447,12 @@ static bool testCancelLearn()
     printf("Test: cancelLearn stops without creating mapping... ");
 
     MidiMapper mapper;
-    mapper.startLearn(MidiMapper::Target::blockLevel, "x");
+    {
+        MidiMapper::LearnArgs la;
+        la.target = MidiMapper::Target::blockLevel;
+        la.blockId = "x";
+        mapper.startLearn(la);
+    }
     mapper.cancelLearn();
 
     if (mapper.isLearning()) { printf("FAIL (still learning)\n"); return false; }
@@ -1211,6 +1224,284 @@ static bool testBlockStateMappingShiftOnDelete()
     return true;
 }
 
+// -- CC Shaping Helpers -------------------------------------------------------
+
+static bool testNormalisedCcLinearClamp()
+{
+    printf("Test: normalisedCc clamps outside ccMin..ccMax... ");
+
+    using C = MidiMapper::Curve;
+
+    if (MidiMapper::normalisedCcForTesting(0, 20, 100, C::Linear) != 0.0f)
+    {
+        fprintf(stderr, "  expected 0 below ccMin, got %f\n",
+                MidiMapper::normalisedCcForTesting(0, 20, 100, C::Linear));
+        printf("FAIL\n");
+        return false;
+    }
+    if (MidiMapper::normalisedCcForTesting(127, 20, 100, C::Linear) != 1.0f)
+    {
+        fprintf(stderr, "  expected 1 above ccMax\n");
+        printf("FAIL\n");
+        return false;
+    }
+    const float mid = MidiMapper::normalisedCcForTesting(60, 20, 100, C::Linear);
+    if (std::abs(mid - 0.5f) > 0.001f)
+    {
+        fprintf(stderr, "  expected ~0.5 at midpoint, got %f\n", mid);
+        printf("FAIL\n");
+        return false;
+    }
+
+    printf("PASS\n");
+    return true;
+}
+
+static bool testNormalisedCcEqualMinMax()
+{
+    printf("Test: normalisedCc handles ccMin == ccMax safely... ");
+
+    if (MidiMapper::normalisedCcForTesting(50, 50, 50, MidiMapper::Curve::Linear) != 0.0f)
+    {
+        fprintf(stderr, "  expected 0 when ccMin == ccMax\n");
+        printf("FAIL\n");
+        return false;
+    }
+
+    printf("PASS\n");
+    return true;
+}
+
+static bool testScaleToParamSentinelDefaults()
+{
+    printf("Test: scaleToParam falls back to defaults when paramMin/Max are NaN... ");
+
+    const float nan = std::numeric_limits<float>::quiet_NaN();
+
+    if (MidiMapper::scaleToParamForTesting(0.0f, nan, nan, 0.0f, 1.0f) != 0.0f) { fprintf(stderr, "  expected 0 at t=0\n"); printf("FAIL\n"); return false; }
+    if (MidiMapper::scaleToParamForTesting(1.0f, nan, nan, 0.0f, 1.0f) != 1.0f) { fprintf(stderr, "  expected 1 at t=1\n"); printf("FAIL\n"); return false; }
+    if (std::abs(MidiMapper::scaleToParamForTesting(0.5f, nan, nan, 0.0f, 1.0f) - 0.5f) > 0.001f) { fprintf(stderr, "  expected 0.5 at t=0.5\n"); printf("FAIL\n"); return false; }
+
+    printf("PASS\n");
+    return true;
+}
+
+static bool testScaleToParamCustomEndpoints()
+{
+    printf("Test: scaleToParam respects custom paramMin/paramMax... ");
+
+    if (MidiMapper::scaleToParamForTesting(0.0f, 0.3f, 0.8f, 0.0f, 1.0f) != 0.3f) { printf("FAIL\n"); return false; }
+    if (MidiMapper::scaleToParamForTesting(1.0f, 0.3f, 0.8f, 0.0f, 1.0f) != 0.8f) { printf("FAIL\n"); return false; }
+    if (std::abs(MidiMapper::scaleToParamForTesting(0.5f, 0.3f, 0.8f, 0.0f, 1.0f) - 0.55f) > 0.001f) { printf("FAIL\n"); return false; }
+
+    printf("PASS\n");
+    return true;
+}
+
+static bool testScaleToParamInverted()
+{
+    printf("Test: scaleToParam handles inverted (paramMin > paramMax)... ");
+
+    if (MidiMapper::scaleToParamForTesting(0.0f, 0.8f, 0.3f, 0.0f, 1.0f) != 0.8f) { printf("FAIL\n"); return false; }
+    if (MidiMapper::scaleToParamForTesting(1.0f, 0.8f, 0.3f, 0.0f, 1.0f) != 0.3f) { printf("FAIL\n"); return false; }
+
+    printf("PASS\n");
+    return true;
+}
+
+static bool testCurveLog()
+{
+    printf("Test: log curve concentrates at low values... ");
+
+    using C = MidiMapper::Curve;
+    if (std::abs(MidiMapper::normalisedCcForTesting(0, 0, 127, C::Log) - 0.0f) > 0.001f) { printf("FAIL\n"); return false; }
+    if (std::abs(MidiMapper::normalisedCcForTesting(127, 0, 127, C::Log) - 1.0f) > 0.001f) { printf("FAIL\n"); return false; }
+
+    const float midLog = MidiMapper::normalisedCcForTesting(64, 0, 127, C::Log);
+    if (midLog <= 0.55f)
+    {
+        fprintf(stderr, "  expected log at mid > 0.55, got %f\n", midLog);
+        printf("FAIL\n");
+        return false;
+    }
+
+    printf("PASS\n");
+    return true;
+}
+
+static bool testCurveExp()
+{
+    printf("Test: exp curve concentrates at high values... ");
+
+    using C = MidiMapper::Curve;
+    if (std::abs(MidiMapper::normalisedCcForTesting(0, 0, 127, C::Exp) - 0.0f) > 0.001f) { printf("FAIL\n"); return false; }
+    if (std::abs(MidiMapper::normalisedCcForTesting(127, 0, 127, C::Exp) - 1.0f) > 0.001f) { printf("FAIL\n"); return false; }
+
+    const float midExp = MidiMapper::normalisedCcForTesting(64, 0, 127, C::Exp);
+    if (midExp >= 0.45f)
+    {
+        fprintf(stderr, "  expected exp at mid < 0.45, got %f\n", midExp);
+        printf("FAIL\n");
+        return false;
+    }
+
+    printf("PASS\n");
+    return true;
+}
+
+static bool testCurveSigmoid()
+{
+    printf("Test: sigmoid curve passes through (0.5, 0.5)... ");
+
+    using C = MidiMapper::Curve;
+    if (std::abs(MidiMapper::normalisedCcForTesting(0, 0, 127, C::Sigmoid) - 0.0f) > 0.01f) { printf("FAIL\n"); return false; }
+    if (std::abs(MidiMapper::normalisedCcForTesting(127, 0, 127, C::Sigmoid) - 1.0f) > 0.01f) { printf("FAIL\n"); return false; }
+
+    const float midSig = MidiMapper::normalisedCcForTesting(63, 0, 127, C::Sigmoid);
+    if (std::abs(midSig - 0.5f) > 0.05f)
+    {
+        fprintf(stderr, "  expected sigmoid at mid ~0.5, got %f\n", midSig);
+        printf("FAIL\n");
+        return false;
+    }
+
+    printf("PASS\n");
+    return true;
+}
+
+// -- processMidi Regression Tests ---------------------------------------------
+
+static bool testProcessMidiBlockMixDefaults()
+{
+    printf("Test: blockMix with default shaping matches legacy ccToMix... ");
+
+    MidiMapper mapper;
+    MidiMapper::Mapping m;
+    m.channel = -1;
+    m.ccNumber = 7;
+    m.target = MidiMapper::Target::blockMix;
+    m.blockId = "block-A";
+    mapper.addMapping(m);
+
+    float captured = -999.0f;
+    mapper.onBlockMix = [&](const juce::String&, float v) { captured = v; };
+
+    juce::MidiBuffer buf;
+    buf.addEvent(juce::MidiMessage::controllerEvent(1, 7, 64), 0);
+    mapper.processMidi(buf);
+    mapper.drainOutboundEvents();
+
+    // CC 64 with default range -> ~0.504
+    if (std::abs(captured - 0.504f) > 0.005f)
+    {
+        fprintf(stderr, "  expected ~0.504, got %f\n", captured);
+        printf("FAIL\n");
+        return false;
+    }
+
+    printf("PASS\n");
+    return true;
+}
+
+static bool testProcessMidiBlockMixCustomRange()
+{
+    printf("Test: blockMix with ccMin=20 ccMax=100 paramMin=0.3 paramMax=0.8... ");
+
+    MidiMapper mapper;
+    MidiMapper::Mapping m;
+    m.channel = -1;
+    m.ccNumber = 7;
+    m.target = MidiMapper::Target::blockMix;
+    m.blockId = "block-A";
+    m.ccMin = 20;
+    m.ccMax = 100;
+    m.paramMin = 0.3f;
+    m.paramMax = 0.8f;
+    mapper.addMapping(m);
+
+    float captured = -999.0f;
+    mapper.onBlockMix = [&](const juce::String&, float v) { captured = v; };
+
+    juce::MidiBuffer buf;
+    buf.addEvent(juce::MidiMessage::controllerEvent(1, 7, 60), 0);
+    mapper.processMidi(buf);
+    mapper.drainOutboundEvents();
+
+    // t = 0.5 -> param = 0.3 + 0.5 * 0.5 = 0.55
+    if (std::abs(captured - 0.55f) > 0.005f)
+    {
+        fprintf(stderr, "  expected 0.55, got %f\n", captured);
+        printf("FAIL\n");
+        return false;
+    }
+
+    printf("PASS\n");
+    return true;
+}
+
+// -- JSON Shaping Round-trip --------------------------------------------------
+
+static bool testJsonRoundTripShapingFields()
+{
+    printf("Test: shaping fields round-trip through preset JSON... ");
+
+    MidiMapper mapper;
+    MidiMapper::Mapping m;
+    m.channel = 0;
+    m.ccNumber = 7;
+    m.target = MidiMapper::Target::blockMix;
+    m.blockId = "block-A";
+    m.ccMin = 20;
+    m.ccMax = 100;
+    m.paramMin = 0.3f;
+    m.paramMax = 0.8f;
+    m.curve = MidiMapper::Curve::Log;
+    mapper.addMapping(m);
+
+    auto json = mapper.presetMappingsToJson();
+
+    MidiMapper roundTrip;
+    roundTrip.loadPresetMappings(json);
+
+    if (roundTrip.getNumMappings() != 1) { printf("FAIL: count\n"); return false; }
+    const auto& r = roundTrip.getMapping(0);
+    if (r.ccMin != 20 || r.ccMax != 100) { printf("FAIL: cc range\n"); return false; }
+    if (std::abs(r.paramMin - 0.3f) > 1e-6f || std::abs(r.paramMax - 0.8f) > 1e-6f) { printf("FAIL: param range\n"); return false; }
+    if (r.curve != MidiMapper::Curve::Log) { printf("FAIL: curve\n"); return false; }
+
+    printf("PASS\n");
+    return true;
+}
+
+static bool testJsonOmitsDefaultShapingFields()
+{
+    printf("Test: default-shaped mapping serialises without shaping keys... ");
+
+    MidiMapper mapper;
+    MidiMapper::Mapping m;
+    m.channel = 0;
+    m.ccNumber = 7;
+    m.target = MidiMapper::Target::blockMix;
+    m.blockId = "block-A";
+    mapper.addMapping(m);
+
+    auto json = mapper.presetMappingsToJson();
+    auto* arr = json.getArray();
+    if (arr == nullptr || arr->size() != 1) { printf("FAIL: array\n"); return false; }
+
+    auto* obj = (*arr)[0].getDynamicObject();
+    if (obj == nullptr) { printf("FAIL: obj\n"); return false; }
+
+    if (!obj->getProperty("ccMin").isVoid())     { printf("FAIL: ccMin emitted\n"); return false; }
+    if (!obj->getProperty("ccMax").isVoid())     { printf("FAIL: ccMax emitted\n"); return false; }
+    if (!obj->getProperty("paramMin").isVoid())  { printf("FAIL: paramMin emitted\n"); return false; }
+    if (!obj->getProperty("paramMax").isVoid())  { printf("FAIL: paramMax emitted\n"); return false; }
+    if (!obj->getProperty("curve").isVoid())     { printf("FAIL: curve emitted\n"); return false; }
+
+    printf("PASS\n");
+    return true;
+}
+
 int main()
 {
     int failures = 0;
@@ -1272,6 +1563,24 @@ int main()
 
     // removeMappingsForBlock removes all targets for a block
     if (!testRemoveMappingsForBlock()) ++failures;
+
+    // CC shaping helpers
+    if (!testNormalisedCcLinearClamp())      ++failures;
+    if (!testNormalisedCcEqualMinMax())      ++failures;
+    if (!testScaleToParamSentinelDefaults()) ++failures;
+    if (!testScaleToParamCustomEndpoints())  ++failures;
+    if (!testScaleToParamInverted())         ++failures;
+    if (!testCurveLog())                     ++failures;
+    if (!testCurveExp())                     ++failures;
+    if (!testCurveSigmoid())                 ++failures;
+
+    // processMidi regression
+    if (!testProcessMidiBlockMixDefaults())  ++failures;
+    if (!testProcessMidiBlockMixCustomRange()) ++failures;
+
+    // JSON shaping round-trip
+    if (!testJsonRoundTripShapingFields())   ++failures;
+    if (!testJsonOmitsDefaultShapingFields()) ++failures;
 
     printf("\n%d test(s) failed\n", failures);
     return failures;

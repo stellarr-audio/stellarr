@@ -1,0 +1,15 @@
+.preview {
+  height: var(--input-height);
+  width: 60px;
+  border: 1px solid var(--color-border);
+  background: color-mix(in srgb, var(--color-text) 4%, transparent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.path {
+  stroke: var(--color-secondary);
+  stroke-width: 1.5;
+  fill: none;
+}

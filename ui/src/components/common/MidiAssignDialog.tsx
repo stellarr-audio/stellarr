@@ -9,7 +9,6 @@ import {
   requestRemoveMidiMapping,
 } from '../../bridge';
 import { PROGRAM_CHANGE_CC } from './constants';
-import { ShapingDisclosure } from './ShapingDisclosure';
 import { ContinuousShaping, type ShapingState } from './ContinuousShaping';
 import { TARGET_META } from './shaping/targetMeta';
 import styles from './MidiAssignDialog.module.css';
@@ -206,13 +205,14 @@ export function MidiAssignDialog({
           )}
 
           {targetMeta.kind === 'continuous' && (
-            <ShapingDisclosure>
+            <div className={styles.shapingSection}>
+              <div className={styles.shapingTitle}>Shaping</div>
               <ContinuousShaping
                 meta={targetMeta}
                 state={shaping}
                 onChange={setShaping}
               />
-            </ShapingDisclosure>
+            </div>
           )}
 
           {/* Buttons: Clear (left) | Cancel + Save (right) */}

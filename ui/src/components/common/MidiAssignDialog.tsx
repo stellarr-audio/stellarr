@@ -9,6 +9,9 @@ import {
   requestRemoveMidiMapping,
 } from '../../bridge';
 import { PROGRAM_CHANGE_CC } from './constants';
+import { ShapingDisclosure } from './ShapingDisclosure';
+import { ContinuousShaping, type ShapingState } from './ContinuousShaping';
+import { TARGET_META } from './shaping/targetMeta';
 import styles from './MidiAssignDialog.module.css';
 
 interface Props {
@@ -38,8 +41,17 @@ export function MidiAssignDialog({
   const existing =
     existingIndex !== undefined && existingIndex >= 0 ? mappings[existingIndex] : null;
 
+  const targetMeta = TARGET_META[target] ?? { kind: 'none' as const };
+
   const [ccValue, setCcValue] = useState('');
   const [channel, setChannel] = useState('-1');
+  const [shaping, setShaping] = useState<ShapingState>(() => ({
+    ccMin: existing?.ccMin ?? 0,
+    ccMax: existing?.ccMax ?? 127,
+    paramMin: existing?.paramMin,
+    paramMax: existing?.paramMax,
+    curve: existing?.curve ?? 'linear',
+  }));
 
   useEffect(() => {
     if (open && existing) {
@@ -51,7 +63,29 @@ export function MidiAssignDialog({
     }
   }, [open, existing]);
 
+  useEffect(() => {
+    if (open) {
+      setShaping({
+        ccMin: existing?.ccMin ?? 0,
+        ccMax: existing?.ccMax ?? 127,
+        paramMin: existing?.paramMin,
+        paramMax: existing?.paramMax,
+        curve: existing?.curve ?? 'linear',
+      });
+    }
+  }, [open, existing]);
+
   const submit = () => {
+    const shapingFields = targetMeta.kind === 'continuous'
+      ? {
+          ccMin: shaping.ccMin,
+          ccMax: shaping.ccMax,
+          paramMin: shaping.paramMin,
+          paramMax: shaping.paramMax,
+          curve: shaping.curve,
+        }
+      : {};
+
     if (programChange) {
       if (existingIndex !== undefined && existingIndex >= 0)
         requestRemoveMidiMapping(existingIndex);
@@ -61,6 +95,7 @@ export function MidiAssignDialog({
         target,
         blockId,
         targetIndex,
+        ...shapingFields,
       });
       onOpenChange(false);
       return;
@@ -74,6 +109,7 @@ export function MidiAssignDialog({
       target,
       blockId,
       targetIndex,
+      ...shapingFields,
     });
     onOpenChange(false);
   };
@@ -99,7 +135,18 @@ export function MidiAssignDialog({
                   <button
                     onClick={() => {
                       if (learning) requestCancelMidiLearn();
-                      else requestStartMidiLearn({ target, blockId, targetIndex });
+                      else {
+                        const shapingFields = targetMeta.kind === 'continuous'
+                          ? {
+                              ccMin: shaping.ccMin,
+                              ccMax: shaping.ccMax,
+                              paramMin: shaping.paramMin,
+                              paramMax: shaping.paramMax,
+                              curve: shaping.curve,
+                            }
+                          : {};
+                        requestStartMidiLearn({ target, blockId, targetIndex, ...shapingFields });
+                      }
                     }}
                     title={
                       learning
@@ -156,6 +203,16 @@ export function MidiAssignDialog({
             <p className={styles.pcNote}>
               Program Change value maps directly to preset index in the active folder.
             </p>
+          )}
+
+          {targetMeta.kind === 'continuous' && (
+            <ShapingDisclosure>
+              <ContinuousShaping
+                meta={targetMeta}
+                state={shaping}
+                onChange={setShaping}
+              />
+            </ShapingDisclosure>
           )}
 
           {/* Buttons: Clear (left) | Cancel + Save (right) */}

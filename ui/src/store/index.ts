@@ -57,12 +57,20 @@ export interface PluginInfo {
   format: string;
 }
 
+export type MidiCurve = 'linear' | 'log' | 'exp' | 'sigmoid';
+
 export interface MidiMapping {
   channel: number;
   cc: number;
   target: string;
   blockId?: string;
   targetIndex?: number;
+  // Continuous-target shaping
+  ccMin?: number;
+  ccMax?: number;
+  paramMin?: number;
+  paramMax?: number;
+  curve?: MidiCurve;
 }
 
 export interface MidiMonitorEvent {

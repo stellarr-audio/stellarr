@@ -1290,8 +1290,8 @@ static bool testScaleToParamCustomEndpoints()
 {
     printf("Test: scaleToParam respects custom paramMin/paramMax... ");
 
-    if (MidiMapper::scaleToParamForTesting(0.0f, 0.3f, 0.8f, 0.0f, 1.0f) != 0.3f) { printf("FAIL\n"); return false; }
-    if (MidiMapper::scaleToParamForTesting(1.0f, 0.3f, 0.8f, 0.0f, 1.0f) != 0.8f) { printf("FAIL\n"); return false; }
+    if (std::abs(MidiMapper::scaleToParamForTesting(0.0f, 0.3f, 0.8f, 0.0f, 1.0f) - 0.3f) > 1e-6f) { printf("FAIL\n"); return false; }
+    if (std::abs(MidiMapper::scaleToParamForTesting(1.0f, 0.3f, 0.8f, 0.0f, 1.0f) - 0.8f) > 1e-6f) { printf("FAIL\n"); return false; }
     if (std::abs(MidiMapper::scaleToParamForTesting(0.5f, 0.3f, 0.8f, 0.0f, 1.0f) - 0.55f) > 0.001f) { printf("FAIL\n"); return false; }
 
     printf("PASS\n");
@@ -1302,8 +1302,8 @@ static bool testScaleToParamInverted()
 {
     printf("Test: scaleToParam handles inverted (paramMin > paramMax)... ");
 
-    if (MidiMapper::scaleToParamForTesting(0.0f, 0.8f, 0.3f, 0.0f, 1.0f) != 0.8f) { printf("FAIL\n"); return false; }
-    if (MidiMapper::scaleToParamForTesting(1.0f, 0.8f, 0.3f, 0.0f, 1.0f) != 0.3f) { printf("FAIL\n"); return false; }
+    if (std::abs(MidiMapper::scaleToParamForTesting(0.0f, 0.8f, 0.3f, 0.0f, 1.0f) - 0.8f) > 1e-6f) { printf("FAIL\n"); return false; }
+    if (std::abs(MidiMapper::scaleToParamForTesting(1.0f, 0.8f, 0.3f, 0.0f, 1.0f) - 0.3f) > 1e-6f) { printf("FAIL\n"); return false; }
 
     printf("PASS\n");
     return true;

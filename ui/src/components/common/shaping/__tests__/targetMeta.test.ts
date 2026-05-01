@@ -38,4 +38,33 @@ describe('TARGET_META', () => {
     expect(meta.paramFormat!(-12.5)).toContain('-12.5');
     expect(meta.paramParse!('-12.5 dB')).toBeCloseTo(-12.5, 2);
   });
+
+  it('blockMix declares input bounds 0..100 step 0.5 with suffix %', () => {
+    const meta = TARGET_META.blockMix;
+    expect(meta.paramInputMin).toBe(0);
+    expect(meta.paramInputMax).toBe(100);
+    expect(meta.paramInputStep).toBe(0.5);
+    expect(meta.paramSuffix).toBe('%');
+  });
+
+  it('blockMix paramToDisplay/paramFromDisplay round-trip', () => {
+    const meta = TARGET_META.blockMix;
+    expect(meta.paramToDisplay!(0.55)).toBeCloseTo(55, 6);
+    expect(meta.paramFromDisplay!(55)).toBeCloseTo(0.55, 6);
+  });
+
+  it('blockBalance has no suffix and 1:1 step', () => {
+    const meta = TARGET_META.blockBalance;
+    expect(meta.paramInputMin).toBe(-100);
+    expect(meta.paramInputMax).toBe(100);
+    expect(meta.paramInputStep).toBe(1);
+    expect(meta.paramSuffix).toBeUndefined();
+  });
+
+  it('blockLevel suffix dB; display is identity (no scale)', () => {
+    const meta = TARGET_META.blockLevel;
+    expect(meta.paramSuffix).toBe('dB');
+    expect(meta.paramToDisplay!(-12.5)).toBe(-12.5);
+    expect(meta.paramFromDisplay!(-12.5)).toBe(-12.5);
+  });
 });

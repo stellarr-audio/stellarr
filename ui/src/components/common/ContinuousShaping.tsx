@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Input } from './Input';
-import { InputGroup, InputGroupLabel } from './InputGroup';
 import { MappingPreview } from './shaping/MappingPreview';
 import { CurvePreview } from './shaping/CurvePreview';
+import { Input } from './Input';
+import { InputGroup, InputGroupLabel } from './InputGroup';
 import type { TargetMeta } from './shaping/targetMeta';
 import type { MidiCurve } from '../../store';
 import styles from './ContinuousShaping.module.css';
@@ -23,24 +23,66 @@ interface Props {
 
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
 
+interface ParamInputProps {
+  meta: TargetMeta;
+  value: number;            // canonical
+  onCommit: (canonical: number) => void;
+}
+
+function ParamInput({ meta, value, onCommit }: ParamInputProps) {
+  const display = meta.paramToDisplay!(value);
+  const [str, setStr] = useState<string>(String(display));
+
+  useEffect(() => { setStr(String(meta.paramToDisplay!(value))); }, [value, meta]);
+
+  const commit = () => {
+    const n = parseFloat(str);
+    if (Number.isFinite(n)) {
+      const clamped = clamp(n, meta.paramInputMin!, meta.paramInputMax!);
+      onCommit(meta.paramFromDisplay!(clamped));
+    } else {
+      // revert to current canonical value
+      setStr(String(meta.paramToDisplay!(value)));
+    }
+  };
+
+  const inputEl = (
+    <Input
+      inGroup={!!meta.paramSuffix}
+      type="number"
+      min={meta.paramInputMin}
+      max={meta.paramInputMax}
+      step={meta.paramInputStep}
+      value={str}
+      onChange={(e) => setStr(e.target.value)}
+      onBlur={commit}
+    />
+  );
+
+  if (meta.paramSuffix) {
+    return (
+      <InputGroup>
+        {inputEl}
+        <InputGroupLabel>{meta.paramSuffix}</InputGroupLabel>
+      </InputGroup>
+    );
+  }
+  return inputEl;
+}
+
 export function ContinuousShaping({ meta, state, onChange }: Props) {
-  if (meta.kind !== 'continuous' || !meta.paramRange || !meta.paramFormat || !meta.paramParse) {
+  if (
+    meta.kind !== 'continuous'
+    || !meta.paramRange
+    || meta.paramInputMin == null
+    || meta.paramInputMax == null
+    || meta.paramInputStep == null
+    || !meta.paramToDisplay
+    || !meta.paramFromDisplay
+  ) {
     return null;
   }
   const range = meta.paramRange;
-  const fmt = meta.paramFormat;
-  const parse = meta.paramParse;
-
-  // Local string state for the param inputs (so users can type freely)
-  const [paramMinStr, setParamMinStr] = useState(
-    fmt(state.paramMin ?? range.min),
-  );
-  const [paramMaxStr, setParamMaxStr] = useState(
-    fmt(state.paramMax ?? range.max),
-  );
-
-  useEffect(() => { setParamMinStr(fmt(state.paramMin ?? range.min)); }, [state.paramMin, fmt, range.min]);
-  useEffect(() => { setParamMaxStr(fmt(state.paramMax ?? range.max)); }, [state.paramMax, fmt, range.max]);
 
   const commitCcMin = (v: number) => {
     const ccMin = clamp(Math.round(v), 0, 126);
@@ -51,16 +93,6 @@ export function ContinuousShaping({ meta, state, onChange }: Props) {
     const ccMax = clamp(Math.round(v), 1, 127);
     const ccMin = ccMax <= state.ccMin ? Math.max(0, ccMax - 1) : state.ccMin;
     onChange({ ...state, ccMin, ccMax });
-  };
-  const commitParamMin = (s: string) => {
-    const n = parse(s);
-    if (n != null) onChange({ ...state, paramMin: n });
-    else setParamMinStr(fmt(state.paramMin ?? range.min));
-  };
-  const commitParamMax = (s: string) => {
-    const n = parse(s);
-    if (n != null) onChange({ ...state, paramMax: n });
-    else setParamMaxStr(fmt(state.paramMax ?? range.max));
   };
 
   const previewParamMin = state.paramMin ?? range.min;
@@ -80,16 +112,16 @@ export function ContinuousShaping({ meta, state, onChange }: Props) {
           type="number"
           min={0}
           max={126}
+          step={1}
           value={state.ccMin}
           onChange={(e) => onChange({ ...state, ccMin: parseInt(e.target.value, 10) || 0 })}
           onBlur={(e) => commitCcMin(parseInt(e.target.value, 10) || 0)}
         />
         <span className={styles.arrow}>→</span>
-        <Input
-          type="text"
-          value={paramMinStr}
-          onChange={(e) => setParamMinStr(e.target.value)}
-          onBlur={(e) => commitParamMin(e.target.value)}
+        <ParamInput
+          meta={meta}
+          value={state.paramMin ?? range.min}
+          onCommit={(canonical) => onChange({ ...state, paramMin: canonical })}
         />
       </div>
       <div className={styles.grid}>
@@ -98,16 +130,16 @@ export function ContinuousShaping({ meta, state, onChange }: Props) {
           type="number"
           min={1}
           max={127}
+          step={1}
           value={state.ccMax}
           onChange={(e) => onChange({ ...state, ccMax: parseInt(e.target.value, 10) || 127 })}
           onBlur={(e) => commitCcMax(parseInt(e.target.value, 10) || 127)}
         />
         <span className={styles.arrow}>→</span>
-        <Input
-          type="text"
-          value={paramMaxStr}
-          onChange={(e) => setParamMaxStr(e.target.value)}
-          onBlur={(e) => commitParamMax(e.target.value)}
+        <ParamInput
+          meta={meta}
+          value={state.paramMax ?? range.max}
+          onCommit={(canonical) => onChange({ ...state, paramMax: canonical })}
         />
       </div>
 

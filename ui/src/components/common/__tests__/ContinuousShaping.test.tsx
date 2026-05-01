@@ -12,7 +12,7 @@ describe('ContinuousShaping', () => {
     curve: 'linear' as const,
   };
 
-  it('renders Min/Max rows for blockMix with formatted param values', () => {
+  it('renders Min/Max rows for blockMix with number inputs', () => {
     const onChange = vi.fn();
     render(
       <ContinuousShaping
@@ -21,10 +21,14 @@ describe('ContinuousShaping', () => {
         onChange={onChange}
       />,
     );
+    // CC inputs (default range)
     expect(screen.getByDisplayValue('0')).toBeInTheDocument();
     expect(screen.getByDisplayValue('127')).toBeInTheDocument();
-    expect(screen.getByDisplayValue('30%')).toBeInTheDocument();
-    expect(screen.getByDisplayValue('80%')).toBeInTheDocument();
+    // Param inputs as bare numbers (Mix is 0..100 display range)
+    expect(screen.getByDisplayValue('30')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('80')).toBeInTheDocument();
+    // Suffix label rendered
+    expect(screen.getAllByText('%').length).toBeGreaterThan(0);
   });
 
   it('emits onChange when ccMin is edited', () => {

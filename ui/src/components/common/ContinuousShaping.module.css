@@ -1,0 +1,74 @@
+.grid {
+  display: grid;
+  grid-template-columns: 36px 1fr 12px 1fr;
+  gap: 6px;
+  align-items: center;
+  margin-bottom: 6px;
+}
+.label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--color-muted);
+  text-transform: uppercase;
+  letter-spacing: var(--letter-spacing-label);
+}
+.colLabel {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--color-muted);
+  text-transform: uppercase;
+  letter-spacing: var(--letter-spacing-label);
+}
+.arrow {
+  color: var(--text-subtle, var(--color-muted));
+  text-align: center;
+  font-size: 11px;
+}
+.input {
+  height: var(--input-height);
+  width: 100%;
+  background: transparent;
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+  font-size: var(--text-xs);
+  padding: 0 var(--input-padding-x);
+  font-family: inherit;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  outline: none;
+}
+.helpText {
+  font-size: 10.5px;
+  color: var(--color-muted);
+  margin: 8px 2px 4px;
+  line-height: 1.4;
+}
+.curveRow {
+  display: grid;
+  grid-template-columns: 1fr 60px;
+  gap: 8px;
+  align-items: end;
+  margin-top: 10px;
+}
+.fg {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.fieldLabel {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: var(--letter-spacing-label);
+  color: var(--color-muted);
+  text-transform: uppercase;
+}
+.select {
+  height: var(--input-height);
+  background: transparent;
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+  font-size: var(--text-xs);
+  padding: 0 0.5rem;
+  font-family: inherit;
+  outline: none;
+}

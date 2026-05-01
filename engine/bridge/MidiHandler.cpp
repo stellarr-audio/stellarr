@@ -96,6 +96,12 @@ void StellarrBridge::setupMidiMapper()
         auto* pluginBlock = findPluginBlock(blockId);
         if (pluginBlock == nullptr) return;
 
+        // Skip when the requested state is already active. Controllers that
+        // re-send 127 or stream values above the threshold would otherwise
+        // re-apply the plugin's stored state and re-emit on every message —
+        // a CPU spike and potential audio hiccup during live use.
+        if (stateIndex == pluginBlock->getActiveStateIndex()) return;
+
         if (pluginBlock->recallState(stateIndex))
         {
             emitBlockParams(blockId, pluginBlock);

@@ -1,10 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render } from '@testing-library/react';
 import { MappingPreview } from '../MappingPreview';
 
 describe('MappingPreview', () => {
-  it('renders CC tick labels at 0, ccMin, ccMax, 127', () => {
-    render(
+  it('renders CC tick labels at 0, ccMin, ccMax, 127 inside SVG', () => {
+    const { container } = render(
       <MappingPreview
         ccMin={20}
         ccMax={100}
@@ -14,10 +14,10 @@ describe('MappingPreview', () => {
         curve="linear"
       />,
     );
-    expect(screen.getByText('CC 0')).toBeInTheDocument();
-    expect(screen.getByText('20')).toBeInTheDocument();
-    expect(screen.getByText('100')).toBeInTheDocument();
-    expect(screen.getByText('127')).toBeInTheDocument();
+    const svg = container.querySelector('svg');
+    expect(svg).not.toBeNull();
+    const texts = Array.from(svg!.querySelectorAll('text')).map((t) => t.textContent);
+    expect(texts).toEqual(expect.arrayContaining(['0', '20', '100', '127']));
   });
 
   it('renders an SVG path for the curve segment', () => {
@@ -31,6 +31,6 @@ describe('MappingPreview', () => {
         curve="linear"
       />,
     );
-    expect(container.querySelector('svg')).not.toBeNull();
+    expect(container.querySelectorAll('svg path').length).toBeGreaterThan(0);
   });
 });

@@ -92,6 +92,35 @@ void StellarrBridge::setupMidiMapper()
         }
     };
 
+    mapper.onBlockState = [this](const juce::String& blockId, int stateIndex) {
+        auto* pluginBlock = findPluginBlock(blockId);
+        if (pluginBlock == nullptr) return;
+
+        // Skip when the requested state is already active. Controllers that
+        // re-send 127 or stream values above the threshold would otherwise
+        // re-apply the plugin's stored state and re-emit on every message —
+        // a CPU spike and potential audio hiccup during live use.
+        if (stateIndex == pluginBlock->getActiveStateIndex()) return;
+
+        if (pluginBlock->recallState(stateIndex))
+        {
+            emitBlockParams(blockId, pluginBlock);
+            emitBlockStates(blockId, pluginBlock);
+
+            // Mirror handleBlockStateEvent("recall"): sync the active scene's
+            // blockStateMap so the rewire-dot prediction in the scene dropdown
+            // reflects the new state. Without this, MIDI-driven state changes
+            // diverge silently from the visible scene indicator.
+            if (activeSceneIndex >= 0
+                && activeSceneIndex < static_cast<int>(scenes.size()))
+            {
+                scenes[static_cast<size_t>(activeSceneIndex)].blockStateMap[blockId]
+                    = pluginBlock->getActiveStateIndex();
+                emitScenes();
+            }
+        }
+    };
+
     mapper.onLearnComplete = [this](int channel, int cc) {
         auto* detail = new juce::DynamicObject();
         detail->setProperty("channel", channel);
@@ -118,6 +147,8 @@ void StellarrBridge::emitMidiMappings()
         obj->setProperty("target", MidiMapper::targetToString(m.target));
         if (m.blockId.isNotEmpty())
             obj->setProperty("blockId", m.blockId);
+        if (m.targetIndex >= 0)
+            obj->setProperty("targetIndex", m.targetIndex);
         arr.add(juce::var(obj));
     }
 

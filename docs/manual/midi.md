@@ -55,9 +55,26 @@ When a mapping is active, the Link icon fills with the brand accent to indicate 
 | Block Mix | Wet/dry blend | CC 0--127 maps to 0--100% |
 | Block Balance | Stereo balance | CC 0--127 maps to L100--R100 |
 | Block Level | Output gain | CC 0--127 maps to -60 to +12 dB |
+| Block State | Recall a state on a single block | CC >= 64 fires; CC < 64 ignored |
 | Scene Switch | Recall a scene | CC value = scene index |
 | Preset Change | Switch presets | Program Change value = preset index |
 | Tuner Toggle | Enable/disable tuner | CC >= 64 = on, < 64 = off |
+
+### Per-State MIDI Mapping
+
+Each plugin block state can be triggered by its own CC. This is the canonical way to map a footswitch to an amp-channel switch, IR slot select, or any param snapshot you want recalled live.
+
+To assign:
+
+1. Open the **Options** panel for a plugin block.
+2. In the **States** row, click the small link icon between the state number and the delete cross.
+3. Use **Learn** to capture an incoming CC, or enter the channel and CC manually.
+
+The state activates whenever the assigned CC arrives with a value of 64 or higher. Values below 64 are ignored, so a standard footswitch (sending 127 on press, 0 on release) latches the state cleanly.
+
+**How this interacts with scenes**
+
+Scenes still capture every block's active state index. When you recall a scene, every block snaps to the state that scene saved. After that, sending a per-state CC overrides one block until the next scene recall. The override does not stick across scene changes.
 
 ## MIDI Page
 

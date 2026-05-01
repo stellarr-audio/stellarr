@@ -89,6 +89,12 @@ void StellarrBridge::handleBlockStateEvent(const juce::var& json, const juce::St
                 else if (sIt->second > index)
                     --sIt->second;
             }
+
+            // Mirror the index shift on MIDI mappings: drop any blockState mapping
+            // for this (blockId, deleted index) and decrement targetIndex on
+            // blockState mappings whose targetIndex was greater.
+            processor->getMidiMapper().removeMappingsForBlockState(blockId, index);
+            emitMidiMappings();
         }
     }
 

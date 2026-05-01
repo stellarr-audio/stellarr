@@ -67,3 +67,37 @@
 .deleteButton:hover {
   color: var(--color-danger);
 }
+
+.midiSegment {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-left: 1px solid var(--color-border);
+  color: var(--color-muted);
+  padding: 0 0.5rem;
+  font-size: var(--text-xs);
+  font-weight: var(--text-xs-weight);
+  letter-spacing: var(--letter-spacing-default);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.midiSegment:hover {
+  color: var(--midi-text);
+  background: color-mix(in srgb, var(--midi) 8%, transparent);
+}
+
+.midiIconButton {
+  padding: 0 0.35rem;
+}
+
+.midiSegmentAssigned {
+  color: var(--midi-text);
+  background: color-mix(in srgb, var(--midi) 10%, transparent);
+}
+
+.midiSegmentAssigned:hover {
+  background: color-mix(in srgb, var(--midi) 16%, transparent);
+}

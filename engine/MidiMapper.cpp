@@ -1,4 +1,5 @@
 #include "MidiMapper.h"
+#include <algorithm>
 
 MidiMapper::MidiMapper()
 {
@@ -75,6 +76,7 @@ void MidiMapper::processMidi(juce::MidiBuffer& midi)
             evt.channel = msg.getChannel() - 1;
             evt.cc = msg.getControllerNumber();
             evt.learnTarget = learnTarget;
+            evt.targetIndex = static_cast<int8_t>(learnTargetIndex);
             copyBlockId(evt.blockId, learnBlockId);
 
             // Only latch off and consume the CC if the message thread will
@@ -160,6 +162,19 @@ void MidiMapper::processMidi(juce::MidiBuffer& midi)
                         pushOutbound(evt);
                         break;
 
+                    case Target::blockState:
+                        if (value >= 64)
+                        {
+                            evt.kind = OutboundEvent::Kind::blockState;
+                            evt.targetIndex = static_cast<int8_t>(m.targetIndex);
+                            pushOutbound(evt);
+                        }
+                        else
+                        {
+                            // CC < 64 ignored. Still consumed so the message does not pass through.
+                        }
+                        break;
+
                     case Target::presetChange:
                         // Handled via Program Change below; CC is not the
                         // preset-change trigger.
@@ -229,6 +244,7 @@ int MidiMapper::drainOutboundEvents()
                 m.ccNumber = evt.cc;
                 m.target = evt.learnTarget;
                 m.blockId = blockId;
+                m.targetIndex = static_cast<int>(evt.targetIndex);
                 addMapping(m);
 
                 if (onLearnComplete)
@@ -270,6 +286,11 @@ int MidiMapper::drainOutboundEvents()
                 if (onTunerToggle)
                     onTunerToggle(evt.value != 0);
                 break;
+
+            case OutboundEvent::Kind::blockState:
+                if (onBlockState)
+                    onBlockState(blockId, static_cast<int>(evt.targetIndex));
+                break;
         }
 
         outboundFifo.finishedRead(1);
@@ -300,9 +321,40 @@ void MidiMapper::clearAll()
     mappings.clear();
 }
 
+void MidiMapper::removeMappingsForBlock(const juce::String& blockId)
+{
+    if (blockId.isEmpty()) return;
+    juce::SpinLock::ScopedLockType scopedLock(mappingsLock);
+    mappings.erase(std::remove_if(mappings.begin(), mappings.end(),
+        [&](const Mapping& m) { return m.blockId == blockId; }), mappings.end());
+}
+
+void MidiMapper::removeMappingsForBlockState(const juce::String& blockId, int deletedIndex)
+{
+    if (blockId.isEmpty()) return;
+    juce::SpinLock::ScopedLockType scopedLock(mappingsLock);
+
+    mappings.erase(std::remove_if(mappings.begin(), mappings.end(),
+        [&](const Mapping& m) {
+            return m.target == Target::blockState
+                && m.blockId == blockId
+                && m.targetIndex == deletedIndex;
+        }), mappings.end());
+
+    for (auto& m : mappings)
+    {
+        if (m.target == Target::blockState
+            && m.blockId == blockId
+            && m.targetIndex > deletedIndex)
+        {
+            --m.targetIndex;
+        }
+    }
+}
+
 // -- MIDI Learn ---------------------------------------------------------------
 
-void MidiMapper::startLearn(Target target, const juce::String& blockId)
+void MidiMapper::startLearn(Target target, const juce::String& blockId, int targetIndex)
 {
     // Serialise with the audio-thread try-lock in processMidi(): the audio
     // thread only inspects learnTarget / learnBlockId while holding
@@ -310,6 +362,7 @@ void MidiMapper::startLearn(Target target, const juce::String& blockId)
     juce::SpinLock::ScopedLockType scopedLock(mappingsLock);
     learnTarget = target;
     learnBlockId = blockId;
+    learnTargetIndex = targetIndex;
     learning.store(true, std::memory_order_release);
 }
 
@@ -332,19 +385,27 @@ juce::String MidiMapper::targetToString(Target t)
         case Target::blockBalance: return "blockBalance";
         case Target::blockLevel:   return "blockLevel";
         case Target::tunerToggle:  return "tunerToggle";
+        case Target::blockState:   return "blockState";
     }
     return "unknown";
 }
 
 MidiMapper::Target MidiMapper::targetFromString(const juce::String& s)
 {
-    if (s == "presetChange") return Target::presetChange;
-    if (s == "sceneSwitch")  return Target::sceneSwitch;
-    if (s == "blockBypass")  return Target::blockBypass;
-    if (s == "blockMix")     return Target::blockMix;
-    if (s == "blockBalance") return Target::blockBalance;
-    if (s == "blockLevel")   return Target::blockLevel;
-    if (s == "tunerToggle")  return Target::tunerToggle;
+    static const std::array<std::pair<const char*, Target>, 8> map {{
+        { "presetChange", Target::presetChange },
+        { "sceneSwitch",  Target::sceneSwitch  },
+        { "blockBypass",  Target::blockBypass  },
+        { "blockMix",     Target::blockMix     },
+        { "blockBalance", Target::blockBalance },
+        { "blockLevel",   Target::blockLevel   },
+        { "tunerToggle",  Target::tunerToggle  },
+        { "blockState",   Target::blockState   },
+    }};
+
+    for (const auto& [name, target] : map)
+        if (s == name) return target;
+
     return Target::blockMix;
 }
 
@@ -359,6 +420,8 @@ juce::var MidiMapper::toJson() const
         obj->setProperty("target", targetToString(m.target));
         if (m.blockId.isNotEmpty())
             obj->setProperty("blockId", m.blockId);
+        if (m.targetIndex >= 0)
+            obj->setProperty("targetIndex", m.targetIndex);
         arr.add(juce::var(obj));
     }
     return arr;
@@ -380,6 +443,8 @@ void MidiMapper::fromJson(const juce::var& json)
                 m.ccNumber = static_cast<int>(obj->getProperty("cc"));
                 m.target = targetFromString(obj->getProperty("target").toString());
                 m.blockId = obj->getProperty("blockId").toString();
+                auto tiVar = obj->getProperty("targetIndex");
+                m.targetIndex = tiVar.isVoid() ? -1 : static_cast<int>(tiVar);
                 mappings.push_back(m);
             }
         }
@@ -400,6 +465,8 @@ static juce::var filterMappingsToJson(const std::vector<MidiMapper::Mapping>& ma
         obj->setProperty("target", MidiMapper::targetToString(m.target));
         if (m.blockId.isNotEmpty())
             obj->setProperty("blockId", m.blockId);
+        if (m.targetIndex >= 0)
+            obj->setProperty("targetIndex", m.targetIndex);
         arr.add(juce::var(obj));
     }
     return arr;
@@ -419,6 +486,8 @@ static std::vector<MidiMapper::Mapping> parseMappingsArray(const juce::var& json
                 m.ccNumber = static_cast<int>(obj->getProperty("cc"));
                 m.target = MidiMapper::targetFromString(obj->getProperty("target").toString());
                 m.blockId = obj->getProperty("blockId").toString();
+                auto tiVar = obj->getProperty("targetIndex");
+                m.targetIndex = tiVar.isVoid() ? -1 : static_cast<int>(tiVar);
                 result.push_back(m);
             }
         }

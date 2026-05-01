@@ -33,7 +33,7 @@ When asked to review code (or variations like "pls review", "review and commit",
 - Consistency with existing codebase patterns and conventions
 - Error handling at system boundaries (user input, external APIs, plugin loading)
 - Best practices for the relevant language (C++ and TypeScript)
-- Build verification (`make build-ui` or `npx tsc --noEmit` for UI, `make debug` for engine)
+- Build verification (`make dev-ui` or `npx tsc --noEmit` for UI, `make debug` for engine)
 - Run all tests before committing (`make test`)
 
 ## Documentation
@@ -129,7 +129,7 @@ Follow [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/):
 - `make run` / `make run-debug` / `make run-release` — build and launch
 - `make run-ui` — UI-only rebuild + relaunch existing engine binary (fast iteration for CSS/React)
 - `make test` — build with tests and run them
-- Always run `make build-ui` or `npx tsc --noEmit` to catch TypeScript errors, not just `make`
+- Always run `make dev-ui` or `npx tsc --noEmit` to catch TypeScript errors, not just `make`
 
 ### Prerequisites
 

@@ -105,6 +105,10 @@ void StellarrBridge::clearGraph()
                 pluginBlock->closePluginEditor();
     }
 
+    // Note: MIDI mappings are NOT pruned per-block here. loadPresetMappings()
+    // further down replaces all preset-level mappings atomically; pruning
+    // here would just churn the mapping list before the replacement.
+
     // Remove all blocks without rebuilding after each one.
     auto ids = blockNodeMap;
     for (auto& [blockId, nodeId] : ids)

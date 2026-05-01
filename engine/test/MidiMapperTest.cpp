@@ -981,6 +981,236 @@ static bool testMonitorDrainClears()
     return true;
 }
 
+static bool testBlockStateTargetRoundTrip()
+{
+    printf("Test: blockState target string round-trips and isGlobal=false... ");
+
+    using Target = MidiMapper::Target;
+    const auto str = MidiMapper::targetToString(Target::blockState);
+    if (str != "blockState")
+    {
+        fprintf(stderr, "  expected \"blockState\", got %s\n", str.toRawUTF8());
+        printf("FAIL\n");
+        return false;
+    }
+
+    if (MidiMapper::targetFromString("blockState") != Target::blockState)
+    {
+        fprintf(stderr, "  targetFromString(\"blockState\") did not return Target::blockState\n");
+        printf("FAIL\n");
+        return false;
+    }
+
+    if (MidiMapper::isGlobalTarget(Target::blockState))
+    {
+        fprintf(stderr, "  blockState should be preset-level (isGlobalTarget=false)\n");
+        printf("FAIL\n");
+        return false;
+    }
+
+    printf("PASS\n");
+    return true;
+}
+
+static bool testBlockStateThresholdDispatch()
+{
+    printf("Test: blockState fires onBlockState only when CC >= 64... ");
+
+    MidiMapper mapper;
+    MidiMapper::Mapping m;
+    m.channel = -1;
+    m.ccNumber = 30;
+    m.target = MidiMapper::Target::blockState;
+    m.blockId = "amp-block";
+    m.targetIndex = 2;
+    mapper.addMapping(m);
+
+    int callbackCount = 0;
+    juce::String capturedBlockId;
+    int capturedIndex = -999;
+    mapper.onBlockState = [&](const juce::String& blockId, int idx) {
+        ++callbackCount;
+        capturedBlockId = blockId;
+        capturedIndex = idx;
+    };
+
+    juce::MidiBuffer buf;
+    buf.addEvent(juce::MidiMessage::controllerEvent(1, 30, 30), 0);   // < 64 -> ignore
+    buf.addEvent(juce::MidiMessage::controllerEvent(1, 30, 63), 5);   // boundary < 64 -> ignore
+    buf.addEvent(juce::MidiMessage::controllerEvent(1, 30, 64), 10);  // >= 64 -> fire
+    buf.addEvent(juce::MidiMessage::controllerEvent(1, 30, 127), 20); // >= 64 -> fire again
+
+    mapper.processMidi(buf);
+    mapper.drainOutboundEvents();
+
+    if (callbackCount != 2)
+    {
+        fprintf(stderr, "  expected 2 callbacks, got %d\n", callbackCount);
+        printf("FAIL\n");
+        return false;
+    }
+    if (capturedBlockId != "amp-block")
+    {
+        fprintf(stderr, "  expected blockId \"amp-block\", got %s\n", capturedBlockId.toRawUTF8());
+        printf("FAIL\n");
+        return false;
+    }
+    if (capturedIndex != 2)
+    {
+        fprintf(stderr, "  expected stateIndex 2, got %d\n", capturedIndex);
+        printf("FAIL\n");
+        return false;
+    }
+
+    // The mapped CC must have been consumed at every value (including the
+    // sub-threshold 30), regardless of whether onBlockState fired.
+    for (const auto metadata : buf)
+    {
+        auto msg = metadata.getMessage();
+        if (msg.isController() && msg.getControllerNumber() == 30)
+        {
+            fprintf(stderr, "  CC 30 should have been consumed at every value\n");
+            printf("FAIL\n");
+            return false;
+        }
+    }
+
+    printf("PASS\n");
+    return true;
+}
+
+static bool testBlockStateJsonRoundTrip()
+{
+    printf("Test: blockState mapping serialises with targetIndex... ");
+
+    MidiMapper mapper;
+    MidiMapper::Mapping m;
+    m.channel = 0;
+    m.ccNumber = 40;
+    m.target = MidiMapper::Target::blockState;
+    m.blockId = "block-xyz";
+    m.targetIndex = 3;
+    mapper.addMapping(m);
+
+    auto json = mapper.presetMappingsToJson();
+
+    MidiMapper roundTrip;
+    roundTrip.loadPresetMappings(json);
+
+    if (roundTrip.getNumMappings() != 1)
+    {
+        fprintf(stderr, "  expected 1 mapping after round-trip, got %d\n", roundTrip.getNumMappings());
+        printf("FAIL\n");
+        return false;
+    }
+
+    const auto& restored = roundTrip.getMapping(0);
+    if (restored.target != MidiMapper::Target::blockState
+        || restored.blockId != "block-xyz"
+        || restored.targetIndex != 3)
+    {
+        fprintf(stderr, "  mapping fields not preserved (target/blockId/targetIndex)\n");
+        printf("FAIL\n");
+        return false;
+    }
+
+    printf("PASS\n");
+    return true;
+}
+
+static bool testRemoveMappingsForBlock()
+{
+    printf("Test: removeMappingsForBlock removes all mappings for that blockId... ");
+
+    MidiMapper mapper;
+
+    auto mk = [](int cc, MidiMapper::Target t, const char* blockId, int idx = -1) {
+        MidiMapper::Mapping m;
+        m.channel = -1;
+        m.ccNumber = cc;
+        m.target = t;
+        m.blockId = blockId;
+        m.targetIndex = idx;
+        return m;
+    };
+
+    mapper.addMapping(mk(10, MidiMapper::Target::blockMix,     "block-A"));
+    mapper.addMapping(mk(11, MidiMapper::Target::blockBypass,  "block-A"));
+    mapper.addMapping(mk(12, MidiMapper::Target::blockState,   "block-A", 1));
+    mapper.addMapping(mk(13, MidiMapper::Target::blockMix,     "block-B"));
+
+    mapper.removeMappingsForBlock("block-A");
+
+    if (mapper.getNumMappings() != 1)
+    {
+        fprintf(stderr, "  expected 1 mapping remaining, got %d\n", mapper.getNumMappings());
+        printf("FAIL\n");
+        return false;
+    }
+    if (mapper.getMapping(0).blockId != "block-B")
+    {
+        fprintf(stderr, "  expected remaining blockId \"block-B\", got %s\n",
+                mapper.getMapping(0).blockId.toRawUTF8());
+        printf("FAIL\n");
+        return false;
+    }
+
+    printf("PASS\n");
+    return true;
+}
+
+static bool testBlockStateMappingShiftOnDelete()
+{
+    printf("Test: removeMappingsForBlockState drops match and shifts higher indices... ");
+
+    MidiMapper mapper;
+
+    auto mk = [](int cc, const char* blockId, int idx) {
+        MidiMapper::Mapping m;
+        m.channel = -1;
+        m.ccNumber = cc;
+        m.target = MidiMapper::Target::blockState;
+        m.blockId = blockId;
+        m.targetIndex = idx;
+        return m;
+    };
+
+    mapper.addMapping(mk(60, "block-A", 0));
+    mapper.addMapping(mk(61, "block-A", 2));   // should drop on delete index=2
+    mapper.addMapping(mk(62, "block-A", 3));   // should shift to 2
+    mapper.addMapping(mk(63, "block-B", 2));   // unrelated block — untouched
+
+    mapper.removeMappingsForBlockState("block-A", 2);
+
+    if (mapper.getNumMappings() != 3)
+    {
+        fprintf(stderr, "  expected 3 mappings remaining, got %d\n", mapper.getNumMappings());
+        printf("FAIL\n");
+        return false;
+    }
+
+    // block-A index 0 untouched
+    bool found0 = false, foundShifted = false, foundB = false;
+    for (int i = 0; i < mapper.getNumMappings(); ++i)
+    {
+        const auto& m = mapper.getMapping(i);
+        if (m.blockId == "block-A" && m.ccNumber == 60 && m.targetIndex == 0) found0 = true;
+        if (m.blockId == "block-A" && m.ccNumber == 62 && m.targetIndex == 2) foundShifted = true;
+        if (m.blockId == "block-B" && m.ccNumber == 63 && m.targetIndex == 2) foundB = true;
+    }
+
+    if (!found0 || !foundShifted || !foundB)
+    {
+        fprintf(stderr, "  expected mappings missing after delete (found0=%d shifted=%d B=%d)\n",
+                found0, foundShifted, foundB);
+        printf("FAIL\n");
+        return false;
+    }
+
+    printf("PASS\n");
+    return true;
+}
+
 int main()
 {
     int failures = 0;
@@ -1029,6 +1259,19 @@ int main()
     if (!testNoCallbackNoCrash())       ++failures;
     if (!testEmptyBufferNoCrash())      ++failures;
     if (!testActivityCallbackOnUnmapped()) ++failures;
+
+    // Target round-trip
+    if (!testBlockStateTargetRoundTrip()) ++failures;
+
+    // blockState dispatch + JSON round-trip
+    if (!testBlockStateThresholdDispatch()) ++failures;
+    if (!testBlockStateJsonRoundTrip())     ++failures;
+
+    // blockState mapping shift on delete
+    if (!testBlockStateMappingShiftOnDelete()) ++failures;
+
+    // removeMappingsForBlock removes all targets for a block
+    if (!testRemoveMappingsForBlock()) ++failures;
 
     printf("\n%d test(s) failed\n", failures);
     return failures;

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { MappingPreview } from './shaping/MappingPreview';
 import { CurvePreview } from './shaping/CurvePreview';
 import { Input } from './Input';
@@ -30,19 +30,40 @@ interface ParamInputProps {
 }
 
 function ParamInput({ meta, value, onCommit }: ParamInputProps) {
-  const display = meta.paramToDisplay!(value);
-  const [str, setStr] = useState<string>(String(display));
+  // Local text state so the user can type intermediate forms ("-", "0.", "")
+  // without immediate normalisation. Live-commit on every keystroke that
+  // parses to a finite number — that's what drives the live graph update.
+  const [str, setStr] = useState<string>(String(meta.paramToDisplay!(value)));
 
-  useEffect(() => { setStr(String(meta.paramToDisplay!(value))); }, [value, meta]);
+  useEffect(() => {
+    const expected = meta.paramToDisplay!(value);
+    const parsed = parseFloat(str);
+    // Only resync from `value` when local text doesn't match — preserves
+    // mid-edit text like "-" or "0." while still picking up external changes
+    // (e.g. up/down arrow steppers from the input itself).
+    if (!Number.isFinite(parsed) || Math.abs(parsed - expected) > 1e-6) {
+      setStr(String(expected));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value]);
 
-  const commit = () => {
-    const n = parseFloat(str);
+  const handleChange = (raw: string) => {
+    setStr(raw);
+    const n = parseFloat(raw);
     if (Number.isFinite(n)) {
       const clamped = clamp(n, meta.paramInputMin!, meta.paramInputMax!);
       onCommit(meta.paramFromDisplay!(clamped));
-    } else {
-      // revert to current canonical value
-      setStr(String(meta.paramToDisplay!(value)));
+    }
+  };
+
+  const handleBlur = () => {
+    const expected = meta.paramToDisplay!(value);
+    const n = parseFloat(str);
+    // Revert when input is non-numeric OR when the typed value disagrees with
+    // the committed canonical value (e.g. "200" was clamped to 100 but the
+    // commit was a no-op because state was already at 100).
+    if (!Number.isFinite(n) || Math.abs(n - expected) > 1e-6) {
+      setStr(String(expected));
     }
   };
 
@@ -54,14 +75,15 @@ function ParamInput({ meta, value, onCommit }: ParamInputProps) {
       max={meta.paramInputMax}
       step={meta.paramInputStep}
       value={str}
-      onChange={(e) => setStr(e.target.value)}
-      onBlur={commit}
+      onChange={(e) => handleChange(e.target.value)}
+      onBlur={handleBlur}
+      className={meta.paramSuffix ? undefined : styles.compactInput}
     />
   );
 
   if (meta.paramSuffix) {
     return (
-      <InputGroup>
+      <InputGroup className={styles.compactInputGroup}>
         {inputEl}
         <InputGroupLabel>{meta.paramSuffix}</InputGroupLabel>
       </InputGroup>
@@ -85,13 +107,16 @@ export function ContinuousShaping({ meta, state, onChange }: Props) {
   const range = meta.paramRange;
 
   const commitCcMin = (v: number) => {
-    const ccMin = clamp(Math.round(v), 0, 126);
-    const ccMax = ccMin >= state.ccMax ? Math.min(127, ccMin + 1) : state.ccMax;
+    // Cap at 126 so there's always room for ccMax > ccMin. The input itself
+    // accepts 0..127; we just guarantee a non-empty CC range in committed state.
+    const ccMin = Math.min(126, clamp(Math.round(v), 0, 127));
+    const ccMax = state.ccMax > ccMin ? state.ccMax : Math.min(127, ccMin + 1);
     onChange({ ...state, ccMin, ccMax });
   };
   const commitCcMax = (v: number) => {
-    const ccMax = clamp(Math.round(v), 1, 127);
-    const ccMin = ccMax <= state.ccMin ? Math.max(0, ccMax - 1) : state.ccMin;
+    // Floor at 1 so there's always room for ccMin < ccMax.
+    const ccMax = Math.max(1, clamp(Math.round(v), 0, 127));
+    const ccMin = state.ccMin < ccMax ? state.ccMin : Math.max(0, ccMax - 1);
     onChange({ ...state, ccMin, ccMax });
   };
 
@@ -111,11 +136,14 @@ export function ContinuousShaping({ meta, state, onChange }: Props) {
         <Input
           type="number"
           min={0}
-          max={126}
+          max={127}
           step={1}
           value={state.ccMin}
-          onChange={(e) => onChange({ ...state, ccMin: parseInt(e.target.value, 10) || 0 })}
-          onBlur={(e) => commitCcMin(parseInt(e.target.value, 10) || 0)}
+          onChange={(e) => {
+            const n = parseInt(e.target.value, 10);
+            commitCcMin(Number.isNaN(n) ? 0 : n);
+          }}
+          className={styles.compactInput}
         />
         <span className={styles.arrow}>→</span>
         <ParamInput
@@ -128,12 +156,15 @@ export function ContinuousShaping({ meta, state, onChange }: Props) {
         <span className={styles.label}>Max</span>
         <Input
           type="number"
-          min={1}
+          min={0}
           max={127}
           step={1}
           value={state.ccMax}
-          onChange={(e) => onChange({ ...state, ccMax: parseInt(e.target.value, 10) || 127 })}
-          onBlur={(e) => commitCcMax(parseInt(e.target.value, 10) || 127)}
+          onChange={(e) => {
+            const n = parseInt(e.target.value, 10);
+            commitCcMax(Number.isNaN(n) ? 127 : n);
+          }}
+          className={styles.compactInput}
         />
         <span className={styles.arrow}>→</span>
         <ParamInput

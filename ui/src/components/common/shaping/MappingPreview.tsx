@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react';
 import { line as d3Line } from 'd3-shape';
 import type { MidiCurve } from '../../../store';
 import styles from './MappingPreview.module.css';
@@ -11,15 +12,15 @@ interface Props {
   curve: MidiCurve;
 }
 
-// SVG layout (viewBox units == px when not scaled)
-const VB_W = 320;
+// Fixed SVG vertical layout. Width is measured at render time so the viewBox
+// always matches the container, letting preserveAspectRatio="meet" scale 1:1
+// (no text or anchor distortion).
+const DEFAULT_VB_W = 320;
 const VB_H = 80;
 const PAD_LEFT = 26;    // y-axis label gutter
 const PAD_RIGHT = 12;
 const PAD_TOP = 6;
 const PAD_BOTTOM = 16;  // x-axis tick label gutter
-const PLOT_W = VB_W - PAD_LEFT - PAD_RIGHT;
-const PLOT_H = VB_H - PAD_TOP - PAD_BOTTOM;
 
 function curveT(t: number, curve: MidiCurve): number {
   switch (curve) {
@@ -38,6 +39,22 @@ function curveT(t: number, curve: MidiCurve): number {
 export function MappingPreview({
   ccMin, ccMax, paramMin, paramMax, paramRange, curve,
 }: Props) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [vbW, setVbW] = useState<number>(DEFAULT_VB_W);
+
+  useEffect(() => {
+    if (!containerRef.current || typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver((entries) => {
+      const w = entries[0]?.contentRect.width;
+      if (w && w > 0) setVbW(Math.round(w));
+    });
+    ro.observe(containerRef.current);
+    return () => ro.disconnect();
+  }, []);
+
+  const PLOT_W = vbW - PAD_LEFT - PAD_RIGHT;
+  const PLOT_H = VB_H - PAD_TOP - PAD_BOTTOM;
+
   // Map a CC value to plot-X
   const xOf = (cc: number) => PAD_LEFT + (cc / 127) * PLOT_W;
   // Map a param value to plot-Y (inverted: top of plot = paramRange.max)
@@ -70,9 +87,9 @@ export function MappingPreview({
   ]) ?? '';
 
   return (
-    <div className={styles.preview}>
+    <div ref={containerRef} className={styles.preview}>
       <svg
-        viewBox={`0 0 ${VB_W} ${VB_H}`}
+        viewBox={`0 0 ${vbW} ${VB_H}`}
         preserveAspectRatio="xMidYMid meet"
         className={styles.svg}
       >

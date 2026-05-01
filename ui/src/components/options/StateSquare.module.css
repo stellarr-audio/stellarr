@@ -76,10 +76,10 @@
   border: none;
   border-left: 1px solid var(--color-border);
   color: var(--color-muted);
-  padding: 0 0.4rem;
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
+  padding: 0 0.5rem;
+  font-size: var(--text-xs);
+  font-weight: var(--text-xs-weight);
+  letter-spacing: var(--letter-spacing-default);
   cursor: pointer;
   transition: background 0.15s ease, color 0.15s ease;
 }

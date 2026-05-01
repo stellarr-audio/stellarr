@@ -1,19 +1,19 @@
 .grid {
   display: grid;
-  grid-template-columns: 36px 1fr 12px 1fr;
+  grid-template-columns: 48px 1fr 12px 1fr;
   gap: 6px;
   align-items: center;
   margin-bottom: 6px;
 }
 .label {
-  font-size: 10px;
+  font-size: var(--text-xs);
   font-weight: 600;
   color: var(--color-muted);
   text-transform: uppercase;
   letter-spacing: var(--letter-spacing-label);
 }
 .colLabel {
-  font-size: 10px;
+  font-size: var(--text-xs);
   font-weight: 600;
   color: var(--color-muted);
   text-transform: uppercase;
@@ -23,19 +23,6 @@
   color: var(--text-subtle, var(--color-muted));
   text-align: center;
   font-size: 11px;
-}
-.input {
-  height: var(--input-height);
-  width: 100%;
-  background: transparent;
-  border: 1px solid var(--color-border);
-  color: var(--color-text);
-  font-size: var(--text-xs);
-  padding: 0 var(--input-padding-x);
-  font-family: inherit;
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-  outline: none;
 }
 .helpText {
   font-size: 10.5px;
@@ -56,7 +43,7 @@
   gap: 4px;
 }
 .fieldLabel {
-  font-size: 10px;
+  font-size: var(--text-xs);
   font-weight: 600;
   letter-spacing: var(--letter-spacing-label);
   color: var(--color-muted);

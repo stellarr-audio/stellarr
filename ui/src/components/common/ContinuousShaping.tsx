@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Input } from './Input';
 import { MappingPreview } from './shaping/MappingPreview';
 import { CurvePreview } from './shaping/CurvePreview';
 import type { TargetMeta } from './shaping/targetMeta';
@@ -74,8 +75,7 @@ export function ContinuousShaping({ meta, state, onChange }: Props) {
       </div>
       <div className={styles.grid}>
         <span className={styles.label}>Min</span>
-        <input
-          className={styles.input}
+        <Input
           type="number"
           min={0}
           max={126}
@@ -84,8 +84,7 @@ export function ContinuousShaping({ meta, state, onChange }: Props) {
           onBlur={(e) => commitCcMin(parseInt(e.target.value, 10) || 0)}
         />
         <span className={styles.arrow}>→</span>
-        <input
-          className={styles.input}
+        <Input
           type="text"
           value={paramMinStr}
           onChange={(e) => setParamMinStr(e.target.value)}
@@ -94,8 +93,7 @@ export function ContinuousShaping({ meta, state, onChange }: Props) {
       </div>
       <div className={styles.grid}>
         <span className={styles.label}>Max</span>
-        <input
-          className={styles.input}
+        <Input
           type="number"
           min={1}
           max={127}
@@ -104,8 +102,7 @@ export function ContinuousShaping({ meta, state, onChange }: Props) {
           onBlur={(e) => commitCcMax(parseInt(e.target.value, 10) || 127)}
         />
         <span className={styles.arrow}>→</span>
-        <input
-          className={styles.input}
+        <Input
           type="text"
           value={paramMaxStr}
           onChange={(e) => setParamMaxStr(e.target.value)}

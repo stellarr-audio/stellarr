@@ -13,3 +13,10 @@
   stroke-width: 1.5;
   fill: none;
 }
+
+.inGroup {
+  border: none;
+  background: transparent;
+  height: 100%;
+  width: 60px;
+}

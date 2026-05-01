@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Input } from './Input';
+import { InputGroup, InputGroupLabel } from './InputGroup';
 import { MappingPreview } from './shaping/MappingPreview';
 import { CurvePreview } from './shaping/CurvePreview';
 import type { TargetMeta } from './shaping/targetMeta';
@@ -123,26 +124,21 @@ export function ContinuousShaping({ meta, state, onChange }: Props) {
         CC values inside the range map to the parameter range. Outside = clamped. Set Min &gt; Max in either column to invert.
       </p>
 
-      <div className={styles.curveRow}>
-        <div className={styles.fg}>
-          <span className={styles.fieldLabel}>Curve</span>
-          <select
-            className={styles.select}
-            aria-label="Curve"
-            value={state.curve}
-            onChange={(e) => onChange({ ...state, curve: e.target.value as MidiCurve })}
-          >
-            <option value="linear">Linear</option>
-            <option value="log">Log</option>
-            <option value="exp">Exp</option>
-            <option value="sigmoid">S-curve</option>
-          </select>
-        </div>
-        <div className={styles.fg}>
-          <span className={styles.fieldLabel}>&nbsp;</span>
-          <CurvePreview curve={state.curve} />
-        </div>
-      </div>
+      <InputGroup>
+        <InputGroupLabel>Curve</InputGroupLabel>
+        <select
+          className={styles.selectInGroup}
+          aria-label="Curve"
+          value={state.curve}
+          onChange={(e) => onChange({ ...state, curve: e.target.value as MidiCurve })}
+        >
+          <option value="linear">Linear</option>
+          <option value="log">Log</option>
+          <option value="exp">Exp</option>
+          <option value="sigmoid">S-curve</option>
+        </select>
+        <CurvePreview curve={state.curve} inGroup />
+      </InputGroup>
     </>
   );
 }

@@ -10,6 +10,7 @@ import {
 } from '../../bridge';
 import { PROGRAM_CHANGE_CC } from './constants';
 import { ContinuousShaping, type ShapingState } from './ContinuousShaping';
+import { BinaryShaping } from './BinaryShaping';
 import { Select } from './Select';
 import { TARGET_META } from './shaping/targetMeta';
 import styles from './MidiAssignDialog.module.css';
@@ -60,6 +61,11 @@ export function MidiAssignDialog({
     paramMax: existing?.paramMax,
     curve: existing?.curve ?? 'linear',
   }));
+  const [threshold, setThreshold] = useState<number>(existing?.threshold ?? 64);
+
+  useEffect(() => {
+    if (open) setThreshold(existing?.threshold ?? 64);
+  }, [open, existing]);
 
   useEffect(() => {
     if (open && existing) {
@@ -92,6 +98,8 @@ export function MidiAssignDialog({
           paramMax: shaping.paramMax,
           curve: shaping.curve,
         }
+      : targetMeta.kind === 'binary'
+      ? { threshold }
       : {};
 
     if (programChange) {
@@ -158,6 +166,8 @@ export function MidiAssignDialog({
                                   paramMax: shaping.paramMax,
                                   curve: shaping.curve,
                                 }
+                              : targetMeta.kind === 'binary'
+                              ? { threshold }
                               : {};
                             requestStartMidiLearn({ target, blockId, targetIndex, ...shapingFields });
                           }
@@ -213,6 +223,20 @@ export function MidiAssignDialog({
                     meta={targetMeta}
                     state={shaping}
                     onChange={setShaping}
+                  />
+                </div>
+              </>
+            )}
+
+            {targetMeta.kind === 'binary' && (
+              <>
+                <div className={styles.divider} />
+                <div className={styles.section}>
+                  <div className={styles.sectionTitle}>Shaping</div>
+                  <BinaryShaping
+                    meta={targetMeta}
+                    threshold={threshold}
+                    onChange={setThreshold}
                   />
                 </div>
               </>

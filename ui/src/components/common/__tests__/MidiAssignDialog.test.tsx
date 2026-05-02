@@ -46,4 +46,34 @@ describe('MidiAssignDialog', () => {
     );
     expect(screen.queryAllByText('Mix %').length).toBe(0);
   });
+
+  it('renders Shaping section with BinaryShaping for blockBypass', () => {
+    render(
+      <MidiAssignDialog
+        open
+        onOpenChange={() => {}}
+        title="Assign MIDI"
+        target="blockBypass"
+        blockId="b1"
+      />,
+    );
+    expect(screen.getByText('Shaping')).toBeInTheDocument();
+    expect(screen.getByText('OFF')).toBeInTheDocument();
+    expect(screen.getByText('ON')).toBeInTheDocument();
+  });
+
+  it('renders Shaping section with BinaryShaping for blockState (IGNORED/RECALL)', () => {
+    render(
+      <MidiAssignDialog
+        open
+        onOpenChange={() => {}}
+        title="Assign MIDI"
+        target="blockState"
+        blockId="b1"
+        targetIndex={1}
+      />,
+    );
+    expect(screen.getByText('IGNORED')).toBeInTheDocument();
+    expect(screen.getByText('RECALL')).toBeInTheDocument();
+  });
 });

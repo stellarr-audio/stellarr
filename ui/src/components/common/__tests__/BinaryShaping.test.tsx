@@ -50,6 +50,9 @@ describe('BinaryShaping', () => {
     );
     const input = screen.getByRole('spinbutton');
     fireEvent.change(input, { target: { value: '100' } });
+    // Live-commit contract: onChange fires on every keystroke that parses
+    // to a finite number, not deferred to blur.
+    expect(onChange).toHaveBeenCalledWith(100);
     fireEvent.blur(input);
     expect(onChange).toHaveBeenCalledWith(100);
   });

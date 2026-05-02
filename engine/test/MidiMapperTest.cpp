@@ -1502,6 +1502,118 @@ static bool testJsonOmitsDefaultShapingFields()
     return true;
 }
 
+static bool testBlockBypassWithCustomThreshold()
+{
+    printf("Test: blockBypass uses per-mapping threshold... ");
+
+    MidiMapper mapper;
+    MidiMapper::Mapping m;
+    m.channel = -1;
+    m.ccNumber = 7;
+    m.target = MidiMapper::Target::blockBypass;
+    m.blockId = "block-A";
+    m.threshold = 80;
+    mapper.addMapping(m);
+
+    int onCount = 0, offCount = 0;
+    mapper.onBlockBypass = [&](const juce::String&, bool state) {
+        if (state) ++onCount; else ++offCount;
+    };
+
+    juce::MidiBuffer buf;
+    buf.addEvent(juce::MidiMessage::controllerEvent(1, 7, 79), 0);   // < threshold -> off
+    buf.addEvent(juce::MidiMessage::controllerEvent(1, 7, 80), 5);   // >= threshold -> on
+    buf.addEvent(juce::MidiMessage::controllerEvent(1, 7, 0), 10);   // off
+    mapper.processMidi(buf);
+    mapper.drainOutboundEvents();
+
+    if (onCount != 1 || offCount != 2)
+    {
+        fprintf(stderr, "  expected on=1 off=2, got on=%d off=%d\n", onCount, offCount);
+        printf("FAIL\n");
+        return false;
+    }
+
+    printf("PASS\n");
+    return true;
+}
+
+static bool testBlockStateWithCustomThreshold()
+{
+    printf("Test: blockState fires on per-mapping threshold... ");
+
+    MidiMapper mapper;
+    MidiMapper::Mapping m;
+    m.channel = -1;
+    m.ccNumber = 30;
+    m.target = MidiMapper::Target::blockState;
+    m.blockId = "block-A";
+    m.targetIndex = 1;
+    m.threshold = 100;
+    mapper.addMapping(m);
+
+    int callbackCount = 0;
+    mapper.onBlockState = [&](const juce::String&, int) { ++callbackCount; };
+
+    juce::MidiBuffer buf;
+    buf.addEvent(juce::MidiMessage::controllerEvent(1, 30, 99), 0);   // ignore
+    buf.addEvent(juce::MidiMessage::controllerEvent(1, 30, 100), 5);  // fire
+    buf.addEvent(juce::MidiMessage::controllerEvent(1, 30, 64), 10);  // ignore (below custom threshold)
+    mapper.processMidi(buf);
+    mapper.drainOutboundEvents();
+
+    if (callbackCount != 1)
+    {
+        fprintf(stderr, "  expected 1 fire, got %d\n", callbackCount);
+        printf("FAIL\n");
+        return false;
+    }
+
+    printf("PASS\n");
+    return true;
+}
+
+static bool testThresholdJsonRoundTripAndOmit()
+{
+    printf("Test: threshold round-trips when non-default, omitted when default... ");
+
+    // Custom threshold round-trip
+    {
+        MidiMapper mapper;
+        MidiMapper::Mapping m;
+        m.channel = 0;
+        m.ccNumber = 7;
+        m.target = MidiMapper::Target::blockBypass;
+        m.blockId = "block-A";
+        m.threshold = 80;
+        mapper.addMapping(m);
+
+        auto json = mapper.presetMappingsToJson();
+        MidiMapper rt;
+        rt.loadPresetMappings(json);
+        if (rt.getMapping(0).threshold != 80) { printf("FAIL: round-trip\n"); return false; }
+    }
+    // Default threshold omitted
+    {
+        MidiMapper mapper;
+        MidiMapper::Mapping m;
+        m.channel = 0;
+        m.ccNumber = 7;
+        m.target = MidiMapper::Target::blockBypass;
+        m.blockId = "block-A";
+        // threshold default
+        mapper.addMapping(m);
+
+        auto json = mapper.presetMappingsToJson();
+        auto* arr = json.getArray();
+        auto* obj = (*arr)[0].getDynamicObject();
+        if (! obj->getProperty("threshold").isVoid()) { printf("FAIL: default emitted\n"); return false; }
+    }
+
+    printf("PASS\n");
+    return true;
+}
+
 int main()
 {
     int failures = 0;
@@ -1581,6 +1693,11 @@ int main()
     // JSON shaping round-trip
     if (!testJsonRoundTripShapingFields())   ++failures;
     if (!testJsonOmitsDefaultShapingFields()) ++failures;
+
+    // Per-mapping threshold (binary targets)
+    if (!testBlockBypassWithCustomThreshold()) ++failures;
+    if (!testBlockStateWithCustomThreshold())  ++failures;
+    if (!testThresholdJsonRoundTripAndOmit())  ++failures;
 
     printf("\n%d test(s) failed\n", failures);
     return failures;

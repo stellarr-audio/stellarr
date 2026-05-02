@@ -160,6 +160,8 @@ void StellarrBridge::emitMidiMappings()
             obj->setProperty("paramMax", static_cast<double>(m.paramMax));
         if (m.curve != MidiMapper::Curve::Linear)
             obj->setProperty("curve", MidiMapper::curveToString(m.curve));
+        if (m.threshold != 64)
+            obj->setProperty("threshold", m.threshold);
         arr.add(juce::var(obj));
     }
 

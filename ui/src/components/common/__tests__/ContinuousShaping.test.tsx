@@ -46,17 +46,18 @@ describe('ContinuousShaping', () => {
     expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ ccMin: 20 }));
   });
 
-  it('renders the curve dropdown with all four options', () => {
+  it('renders the curve trigger with the current value', () => {
     render(
       <ContinuousShaping
         meta={TARGET_META.blockMix}
-        state={baseState}
+        state={{ ...baseState, curve: 'log' }}
         onChange={vi.fn()}
       />,
     );
-    const select = screen.getByRole('combobox', { name: /curve/i });
-    expect(select).toBeInTheDocument();
-    const options = Array.from(select.querySelectorAll('option')).map((o) => o.textContent);
-    expect(options).toEqual(expect.arrayContaining(['Linear', 'Log', 'Exp', 'S-curve']));
+    // Radix Select renders a button trigger labelled "Curve". The selected
+    // value text shows inside it.
+    const trigger = screen.getByRole('combobox', { name: /curve/i });
+    expect(trigger).toBeInTheDocument();
+    expect(trigger.textContent ?? '').toMatch(/log/i);
   });
 });

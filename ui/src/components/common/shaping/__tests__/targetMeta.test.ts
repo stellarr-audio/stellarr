@@ -6,7 +6,7 @@ describe('TARGET_META', () => {
     const meta = TARGET_META.blockMix;
     expect(meta.kind).toBe('continuous');
     expect(meta.paramRange).toEqual({ min: 0, max: 1 });
-    expect(meta.paramLabel).toBe('Mix value');
+    expect(meta.paramLabel).toBe('Mix');
   });
 
   it('declares blockBalance as continuous with paramRange [-1, 1]', () => {

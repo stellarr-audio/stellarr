@@ -1,11 +1,18 @@
 import { useEffect, useState } from 'react';
 import { MappingPreview } from './shaping/MappingPreview';
-import { CurvePreview } from './shaping/CurvePreview';
 import { Input } from './Input';
 import { InputGroup, InputGroupLabel } from './InputGroup';
+import { Select } from './Select';
 import type { TargetMeta } from './shaping/targetMeta';
 import type { MidiCurve } from '../../store';
 import styles from './ContinuousShaping.module.css';
+
+const CURVE_OPTIONS = [
+  { value: 'linear',  label: 'Linear' },
+  { value: 'log',     label: 'Log' },
+  { value: 'exp',     label: 'Exp' },
+  { value: 'sigmoid', label: 'S-curve' },
+];
 
 export interface ShapingState {
   ccMin: number;
@@ -67,9 +74,11 @@ function ParamInput({ meta, value, onCommit }: ParamInputProps) {
     }
   };
 
-  const inputEl = (
+  // Always inGroup — parent always wraps this in an InputGroup with a "Min" /
+  // "Max" prefix label (and a unit suffix label when meta.paramSuffix is set).
+  return (
     <Input
-      inGroup={!!meta.paramSuffix}
+      inGroup
       type="number"
       min={meta.paramInputMin}
       max={meta.paramInputMax}
@@ -77,19 +86,8 @@ function ParamInput({ meta, value, onCommit }: ParamInputProps) {
       value={str}
       onChange={(e) => handleChange(e.target.value)}
       onBlur={handleBlur}
-      className={meta.paramSuffix ? undefined : styles.compactInput}
     />
   );
-
-  if (meta.paramSuffix) {
-    return (
-      <InputGroup className={styles.compactInputGroup}>
-        {inputEl}
-        <InputGroupLabel>{meta.paramSuffix}</InputGroupLabel>
-      </InputGroup>
-    );
-  }
-  return inputEl;
 }
 
 export function ContinuousShaping({ meta, state, onChange }: Props) {
@@ -123,55 +121,80 @@ export function ContinuousShaping({ meta, state, onChange }: Props) {
   const previewParamMin = state.paramMin ?? range.min;
   const previewParamMax = state.paramMax ?? range.max;
 
+  // Hover-readout formatter — preserves the input's display precision (e.g.
+  // 50.5% for Mix at 0.5% step) instead of `meta.paramFormat`'s row-display
+  // rounding.
+  const step = meta.paramInputStep!;
+  const decimals = step >= 1 ? 0 : step >= 0.1 ? 1 : 2;
+  const formatHover = (canonical: number) =>
+    `${meta.paramToDisplay!(canonical).toFixed(decimals)}${meta.paramSuffix ?? ''}`;
+
+  const paramNoun = meta.paramLabel ?? 'value';
+  const paramHeader = meta.paramSuffix ? `${paramNoun} ${meta.paramSuffix}` : paramNoun;
+
+  const ccGroup = (
+    label: string,
+    value: number,
+    onCommit: (n: number) => void,
+    fallback: number,
+  ) => (
+    <InputGroup>
+      <InputGroupLabel className={styles.minMaxPrefix}>{label}</InputGroupLabel>
+      <Input
+        inGroup
+        type="number"
+        min={0}
+        max={127}
+        step={1}
+        value={value}
+        onChange={(e) => {
+          const n = parseInt(e.target.value, 10);
+          onCommit(Number.isNaN(n) ? fallback : n);
+        }}
+      />
+    </InputGroup>
+  );
+
+  const paramGroup = (label: string, canonicalValue: number, onCommit: (canonical: number) => void) => (
+    <InputGroup>
+      <InputGroupLabel className={styles.minMaxPrefix}>{label}</InputGroupLabel>
+      <ParamInput meta={meta} value={canonicalValue} onCommit={onCommit} />
+      {meta.paramSuffix && <InputGroupLabel>{meta.paramSuffix}</InputGroupLabel>}
+    </InputGroup>
+  );
+
   return (
     <>
-      <div className={styles.grid}>
-        <span className={styles.label}></span>
-        <span className={styles.colLabel}>CC value</span>
-        <span></span>
-        <span className={styles.colLabel}>{meta.paramLabel}</span>
-      </div>
-      <div className={styles.grid}>
-        <span className={styles.label}>Min</span>
-        <Input
-          type="number"
-          min={0}
-          max={127}
-          step={1}
-          value={state.ccMin}
-          onChange={(e) => {
-            const n = parseInt(e.target.value, 10);
-            commitCcMin(Number.isNaN(n) ? 0 : n);
-          }}
-          className={styles.compactInput}
-        />
-        <span className={styles.arrow}>→</span>
-        <ParamInput
-          meta={meta}
-          value={state.paramMin ?? range.min}
-          onCommit={(canonical) => onChange({ ...state, paramMin: canonical })}
+      <div className={styles.fg}>
+        <span className={styles.label}>Curve</span>
+        <Select
+          value={state.curve}
+          onValueChange={(v) => onChange({ ...state, curve: v as MidiCurve })}
+          options={CURVE_OPTIONS}
+          ariaLabel="Curve"
+          inDialog
         />
       </div>
-      <div className={styles.grid}>
-        <span className={styles.label}>Max</span>
-        <Input
-          type="number"
-          min={0}
-          max={127}
-          step={1}
-          value={state.ccMax}
-          onChange={(e) => {
-            const n = parseInt(e.target.value, 10);
-            commitCcMax(Number.isNaN(n) ? 127 : n);
-          }}
-          className={styles.compactInput}
-        />
-        <span className={styles.arrow}>→</span>
-        <ParamInput
-          meta={meta}
-          value={state.paramMax ?? range.max}
-          onCommit={(canonical) => onChange({ ...state, paramMax: canonical })}
-        />
+
+      <div className={styles.row}>
+        <div className={styles.col}>
+          <span className={styles.label}>CC value</span>
+          {ccGroup('Min', state.ccMin, commitCcMin, 0)}
+          {ccGroup('Max', state.ccMax, commitCcMax, 127)}
+        </div>
+        <div className={styles.col}>
+          <span className={styles.label}>{paramHeader}</span>
+          {paramGroup(
+            'Min',
+            state.paramMin ?? range.min,
+            (canonical) => onChange({ ...state, paramMin: canonical }),
+          )}
+          {paramGroup(
+            'Max',
+            state.paramMax ?? range.max,
+            (canonical) => onChange({ ...state, paramMax: canonical }),
+          )}
+        </div>
       </div>
 
       <MappingPreview
@@ -181,27 +204,14 @@ export function ContinuousShaping({ meta, state, onChange }: Props) {
         paramMax={previewParamMax}
         paramRange={range}
         curve={state.curve}
+        xAxisLabel="CC value"
+        yAxisLabel={paramNoun}
+        formatParam={formatHover}
       />
 
       <p className={styles.helpText}>
-        CC values inside the range map to the parameter range. Outside = clamped. Set Min &gt; Max in either column to invert.
+        CC values inside the range map to the parameter range. Outside = clamped. Set Min &gt; Max in the parameter column to invert.
       </p>
-
-      <InputGroup>
-        <InputGroupLabel>Curve</InputGroupLabel>
-        <select
-          className={styles.selectInGroup}
-          aria-label="Curve"
-          value={state.curve}
-          onChange={(e) => onChange({ ...state, curve: e.target.value as MidiCurve })}
-        >
-          <option value="linear">Linear</option>
-          <option value="log">Log</option>
-          <option value="exp">Exp</option>
-          <option value="sigmoid">S-curve</option>
-        </select>
-        <CurvePreview curve={state.curve} inGroup />
-      </InputGroup>
     </>
   );
 }

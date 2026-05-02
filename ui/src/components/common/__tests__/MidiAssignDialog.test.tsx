@@ -32,7 +32,7 @@ describe('MidiAssignDialog', () => {
     // Section header always visible.
     expect(screen.getByText(/shaping/i)).toBeInTheDocument();
     // Continuous content directly visible — no click-to-expand.
-    expect(screen.getByText('Mix value')).toBeInTheDocument();
+    expect(screen.getAllByText('Mix %').length).toBeGreaterThan(0);
   });
 
   it('hides the shaping section for kind=none targets', () => {
@@ -44,6 +44,6 @@ describe('MidiAssignDialog', () => {
         target="presetChange"
       />,
     );
-    expect(screen.queryByText('Mix value')).not.toBeInTheDocument();
+    expect(screen.queryAllByText('Mix %').length).toBe(0);
   });
 });

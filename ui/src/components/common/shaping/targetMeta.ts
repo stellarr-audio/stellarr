@@ -40,7 +40,7 @@ export const TARGET_META: Record<string, TargetMeta> = {
     paramSuffix: '%',
     paramToDisplay: (v) => v * 100,
     paramFromDisplay: (d) => Math.max(0, Math.min(1, d / 100)),
-    paramLabel: 'Mix value',
+    paramLabel: 'Mix',
     paramFormat: (v) => `${Math.round(v * 100)}%`,
     paramParse: (s) => {
       const n = parseNumber(s);
@@ -72,7 +72,7 @@ export const TARGET_META: Record<string, TargetMeta> = {
     paramSuffix: 'dB',
     paramToDisplay: (v) => v,
     paramFromDisplay: (d) => Math.max(-60, Math.min(12, d)),
-    paramLabel: 'Level (dB)',
+    paramLabel: 'Level',
     paramFormat: (v) => `${v.toFixed(1)} dB`,
     paramParse: (s) => {
       const n = parseNumber(s);

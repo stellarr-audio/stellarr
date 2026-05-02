@@ -1,6 +1,4 @@
 import { useEffect, useState } from 'react';
-import { Input } from './Input';
-import { InputGroup, InputGroupLabel } from './InputGroup';
 import type { TargetMeta } from './shaping/targetMeta';
 import styles from './BinaryShaping.module.css';
 
@@ -10,8 +8,6 @@ interface Props {
   onChange: (next: number) => void;
 }
 
-// CC values span 0..127 = 128 discrete buckets.
-const CC_BUCKETS = 128;
 const CC_MIN_THRESHOLD = 1;
 const CC_MAX_THRESHOLD = 127;
 
@@ -25,79 +21,62 @@ export function BinaryShaping({ meta, threshold, onChange }: Props) {
 }
 
 function BinaryShapingInner({ meta, threshold, onChange }: Props) {
-  const [str, setStr] = useState<string>(String(threshold));
+  // Local mirror lets the slider stay smooth even when the parent re-renders
+  // asynchronously; we still drive parent state on every change.
+  const [value, setValue] = useState<number>(threshold);
 
   useEffect(() => {
-    const parsed = parseInt(str, 10);
-    if (!Number.isFinite(parsed) || parsed !== threshold) {
-      setStr(String(threshold));
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    setValue(threshold);
   }, [threshold]);
 
-  const commit = (raw: string) => {
+  const handleChange = (raw: string) => {
     const n = parseInt(raw, 10);
-    if (Number.isFinite(n)) {
-      onChange(clamp(n, CC_MIN_THRESHOLD, CC_MAX_THRESHOLD));
-    }
+    if (!Number.isFinite(n)) return;
+    const clamped = clamp(n, CC_MIN_THRESHOLD, CC_MAX_THRESHOLD);
+    setValue(clamped);
+    onChange(clamped);
   };
 
-  const handleBlur = () => {
-    const n = parseInt(str, 10);
-    if (
-      !Number.isFinite(n) ||
-      n < CC_MIN_THRESHOLD ||
-      n > CC_MAX_THRESHOLD ||
-      n !== threshold
-    ) {
-      setStr(String(threshold));
-    }
-  };
-
-  // Visual split: threshold sits at the boundary. CC < threshold = OFF, CC ≥ threshold = ON.
-  // Width of the OFF region = threshold / CC_BUCKETS.
-  const splitPct = (threshold / CC_BUCKETS) * 100;
-  // Clamp the marker label's anchor so "CC 1" / "CC 127" stay within the bar
-  // edges. The marker line itself stays at the exact boundary.
-  const labelLeftPct = Math.max(8, Math.min(92, splitPct));
+  const labels = meta.binaryLabels!;
+  const pct =
+    ((value - CC_MIN_THRESHOLD) / (CC_MAX_THRESHOLD - CC_MIN_THRESHOLD)) * 100;
+  // 64 sits at (64-1)/(127-1) = 63/126 = 50% exactly.
+  const midPct = ((64 - CC_MIN_THRESHOLD) / (CC_MAX_THRESHOLD - CC_MIN_THRESHOLD)) * 100;
 
   return (
     <div className={styles.wrap}>
-      <div className={styles.row}>
-        <InputGroup>
-          <InputGroupLabel className={styles.prefix}>Threshold</InputGroupLabel>
-          <Input
-            inGroup
-            type="number"
-            min={CC_MIN_THRESHOLD}
-            max={CC_MAX_THRESHOLD}
-            step={1}
-            value={str}
-            onChange={(e) => {
-              setStr(e.target.value);
-              commit(e.target.value);
-            }}
-            onBlur={handleBlur}
-          />
-        </InputGroup>
-      </div>
-
-      <div className={styles.barWrap}>
-        <div className={styles.bar}>
-          <div className={styles.off} style={{ width: `${splitPct}%` }}>
-            {meta.binaryLabels!.off}
-          </div>
-          <div className={styles.on} style={{ width: `${100 - splitPct}%` }}>
-            {meta.binaryLabels!.on}
-          </div>
-          <div className={styles.marker} style={{ left: `${splitPct}%` }} />
-        </div>
-        <div className={styles.markerLabel} style={{ left: `${labelLeftPct}%` }}>
-          CC {threshold}
+      <div className={styles.sliderShell}>
+        <div className={styles.trackOnFill} style={{ left: `${pct}%`, right: '0' }} />
+        <input
+          type="range"
+          min={CC_MIN_THRESHOLD}
+          max={CC_MAX_THRESHOLD}
+          step={1}
+          value={value}
+          onChange={(e) => handleChange(e.target.value)}
+          className={styles.slider}
+          aria-label="Threshold"
+        />
+        <div className={styles.handleLabel} style={{ left: `${pct}%` }}>
+          CC {value}
         </div>
       </div>
 
-      <p className={styles.helpText}>{meta.binaryHelpTemplate!(threshold)}</p>
+      <div className={styles.tickRow}>
+        <div className={styles.tick} style={{ left: '0%' }} />
+        <div className={styles.tick} style={{ left: `${midPct}%` }} />
+        <div className={styles.tick} style={{ left: '100%' }} />
+        <span className={styles.tickLabel} style={{ left: '0%' }}>0</span>
+        <span className={styles.tickLabel} style={{ left: `${midPct}%` }}>64</span>
+        <span className={styles.tickLabel} style={{ left: '100%' }}>127</span>
+      </div>
+
+      <div className={styles.stateLabels}>
+        <span className={styles.off}>{labels.off} · &lt; {value}</span>
+        <span className={styles.on}>{labels.on} · ≥ {value}</span>
+      </div>
+
+      <p className={styles.helpText}>{meta.binaryHelpTemplate!(value)}</p>
     </div>
   );
 }

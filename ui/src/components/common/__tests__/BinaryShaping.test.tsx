@@ -4,7 +4,7 @@ import { BinaryShaping } from '../BinaryShaping';
 import { TARGET_META } from '../shaping/targetMeta';
 
 describe('BinaryShaping', () => {
-  it('renders OFF/ON labels for blockBypass', () => {
+  it('renders OFF and ON state labels for blockBypass', () => {
     render(
       <BinaryShaping
         meta={TARGET_META.blockBypass}
@@ -12,11 +12,12 @@ describe('BinaryShaping', () => {
         onChange={vi.fn()}
       />,
     );
-    expect(screen.getByText('OFF')).toBeInTheDocument();
-    expect(screen.getByText('ON')).toBeInTheDocument();
+    // State labels follow "OFF · < N" / "ON · ≥ N" format.
+    expect(screen.getByText(/OFF\s+·\s+<\s+64/)).toBeInTheDocument();
+    expect(screen.getByText(/ON\s+·\s+≥\s+64/)).toBeInTheDocument();
   });
 
-  it('renders IGNORED/RECALL labels for blockState', () => {
+  it('renders IGNORED and RECALL state labels for blockState', () => {
     render(
       <BinaryShaping
         meta={TARGET_META.blockState}
@@ -24,8 +25,8 @@ describe('BinaryShaping', () => {
         onChange={vi.fn()}
       />,
     );
-    expect(screen.getByText('IGNORED')).toBeInTheDocument();
-    expect(screen.getByText('RECALL')).toBeInTheDocument();
+    expect(screen.getByText(/IGNORED\s+·\s+<\s+64/)).toBeInTheDocument();
+    expect(screen.getByText(/RECALL\s+·\s+≥\s+64/)).toBeInTheDocument();
   });
 
   it('shows help text including the threshold', () => {
@@ -39,7 +40,7 @@ describe('BinaryShaping', () => {
     expect(screen.getByText(/CC ≥ 80/)).toBeInTheDocument();
   });
 
-  it('emits onChange when threshold input changes and blurs', () => {
+  it('emits onChange when slider value changes', () => {
     const onChange = vi.fn();
     render(
       <BinaryShaping
@@ -48,12 +49,8 @@ describe('BinaryShaping', () => {
         onChange={onChange}
       />,
     );
-    const input = screen.getByRole('spinbutton');
-    fireEvent.change(input, { target: { value: '100' } });
-    // Live-commit contract: onChange fires on every keystroke that parses
-    // to a finite number, not deferred to blur.
-    expect(onChange).toHaveBeenCalledWith(100);
-    fireEvent.blur(input);
+    const slider = screen.getByRole('slider');
+    fireEvent.change(slider, { target: { value: '100' } });
     expect(onChange).toHaveBeenCalledWith(100);
   });
 });

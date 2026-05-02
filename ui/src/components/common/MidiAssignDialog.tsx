@@ -232,7 +232,7 @@ export function MidiAssignDialog({
               <>
                 <div className={styles.divider} />
                 <div className={styles.section}>
-                  <div className={styles.sectionTitle}>Shaping</div>
+                  <div className={styles.sectionTitle}>Trigger</div>
                   <BinaryShaping
                     meta={targetMeta}
                     threshold={threshold}

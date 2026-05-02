@@ -47,7 +47,7 @@ describe('MidiAssignDialog', () => {
     expect(screen.queryAllByText('Mix %').length).toBe(0);
   });
 
-  it('renders Shaping section with BinaryShaping for blockBypass', () => {
+  it('renders Trigger section with BinaryShaping for blockBypass', () => {
     render(
       <MidiAssignDialog
         open
@@ -57,12 +57,13 @@ describe('MidiAssignDialog', () => {
         blockId="b1"
       />,
     );
-    expect(screen.getByText('Shaping')).toBeInTheDocument();
-    expect(screen.getByText('OFF')).toBeInTheDocument();
-    expect(screen.getByText('ON')).toBeInTheDocument();
+    expect(screen.getByText('Trigger')).toBeInTheDocument();
+    // State labels follow "OFF · < N" / "ON · ≥ N" format.
+    expect(screen.getByText(/OFF\s+·\s+</)).toBeInTheDocument();
+    expect(screen.getByText(/ON\s+·\s+≥/)).toBeInTheDocument();
   });
 
-  it('renders Shaping section with BinaryShaping for blockState (IGNORED/RECALL)', () => {
+  it('renders Trigger section with BinaryShaping for blockState (IGNORED/RECALL)', () => {
     render(
       <MidiAssignDialog
         open
@@ -73,7 +74,8 @@ describe('MidiAssignDialog', () => {
         targetIndex={1}
       />,
     );
-    expect(screen.getByText('IGNORED')).toBeInTheDocument();
-    expect(screen.getByText('RECALL')).toBeInTheDocument();
+    expect(screen.getByText('Trigger')).toBeInTheDocument();
+    expect(screen.getByText(/IGNORED\s+·\s+</)).toBeInTheDocument();
+    expect(screen.getByText(/RECALL\s+·\s+≥/)).toBeInTheDocument();
   });
 });

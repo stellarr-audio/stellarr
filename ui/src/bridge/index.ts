@@ -245,6 +245,7 @@ export interface AddMidiMappingArgs {
   paramMin?: number;
   paramMax?: number;
   curve?: MidiCurve;
+  threshold?: number;
 }
 
 export function requestAddMidiMapping(args: AddMidiMappingArgs): void {
@@ -272,6 +273,9 @@ export function requestAddMidiMapping(args: AddMidiMappingArgs): void {
   if (args.curve !== undefined && args.curve !== 'linear') {
     payload.curve = args.curve;
   }
+  if (args.threshold !== undefined && args.threshold !== 64) {
+    payload.threshold = args.threshold;
+  }
   sendEvent('addMidiMapping', JSON.stringify(payload));
 }
 
@@ -296,6 +300,7 @@ export interface StartMidiLearnArgs {
   paramMin?: number;
   paramMax?: number;
   curve?: MidiCurve;
+  threshold?: number;
 }
 
 export function requestStartMidiLearn(args: StartMidiLearnArgs): void {
@@ -320,6 +325,9 @@ export function requestStartMidiLearn(args: StartMidiLearnArgs): void {
   }
   if (args.curve !== undefined && args.curve !== 'linear') {
     payload.curve = args.curve;
+  }
+  if (args.threshold !== undefined && args.threshold !== 64) {
+    payload.threshold = args.threshold;
   }
   sendEvent('startMidiLearn', JSON.stringify(payload));
 }
@@ -731,6 +739,7 @@ export function initBridge(): void {
         curve: (r.curve === 'linear' || r.curve === 'log' || r.curve === 'exp' || r.curve === 'sigmoid')
           ? (r.curve as MidiCurve)
           : undefined,
+        threshold: typeof r.threshold === 'number' ? r.threshold : undefined,
       } satisfies MidiMapping;
     });
     useStore.getState().setMidiMappings(mappings, Boolean(d.learning));

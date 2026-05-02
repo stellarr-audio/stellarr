@@ -81,5 +81,19 @@ export const TARGET_META: Record<string, TargetMeta> = {
   },
   sceneSwitch:  { kind: 'none' },
   presetChange: { kind: 'none' },
-  // Binary entries (blockBypass, tunerToggle, blockState) land in Phase B.
+  blockBypass: {
+    kind: 'binary',
+    binaryLabels: { off: 'OFF', on: 'ON' },
+    binaryHelpTemplate: (t) => `Block turns ON when CC ≥ ${t}, OFF when CC < ${t}.`,
+  },
+  tunerToggle: {
+    kind: 'binary',
+    binaryLabels: { off: 'OFF', on: 'ON' },
+    binaryHelpTemplate: (t) => `Tuner turns ON when CC ≥ ${t}, OFF when CC < ${t}.`,
+  },
+  blockState: {
+    kind: 'binary',
+    binaryLabels: { off: 'IGNORED', on: 'RECALL' },
+    binaryHelpTemplate: (t) => `State recalled when CC ≥ ${t}. Lower values ignored.`,
+  },
 };

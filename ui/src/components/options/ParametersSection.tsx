@@ -1,9 +1,8 @@
 import { useState } from 'react';
-import { Select } from 'radix-ui';
-import { ChevronDownIcon } from '@radix-ui/react-icons';
 import { Slider } from '../common/Slider';
 import { MidiAssignDialog } from '../common/MidiAssignDialog';
 import { MidiBadge } from '../common/MidiBadge';
+import { Select } from '../common/Select';
 import { useStore } from '../../store';
 import {
   requestSetBlockMix,
@@ -117,31 +116,15 @@ export function ParametersSection({ block }: Props) {
           <div className={styles.paramRow}>
             <span className={styles.bypassModeLabel}>Bypass Mode</span>
           </div>
-          <Select.Root
+          <Select
             value={block.bypassMode ?? 'thru'}
             onValueChange={(v) => {
               useStore.getState().setBlockBypassMode(block.id, v);
               requestSetBlockBypassMode(block.id, v);
             }}
-          >
-            <Select.Trigger className={styles.selectTrigger}>
-              <Select.Value />
-              <Select.Icon>
-                <ChevronDownIcon />
-              </Select.Icon>
-            </Select.Trigger>
-            <Select.Portal>
-              <Select.Content position="popper" sideOffset={4} className={styles.selectContent}>
-                <Select.Viewport>
-                  {bypassModes.map((m) => (
-                    <Select.Item key={m.value} value={m.value} className={styles.selectItem}>
-                      <Select.ItemText>{m.label}</Select.ItemText>
-                    </Select.Item>
-                  ))}
-                </Select.Viewport>
-              </Select.Content>
-            </Select.Portal>
-          </Select.Root>
+            options={bypassModes}
+            ariaLabel="Bypass mode"
+          />
         </div>
       </div>
     </>

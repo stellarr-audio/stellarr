@@ -233,6 +233,34 @@ macOS Apple Silicon, CMake 3.24+, Xcode CLI tools, Node.js 18+, npm. See `docs/C
 - **Slider fill:** amber (`--color-secondary`). Thumb: neutral (`--color-text`) with surface ring.
 - **Radix-controlled triggers** (Select/DropdownMenu) expose `--trigger-border` and `--trigger-radius` CSS variables — set on a parent to fuse a trigger into an `InputGroup` without modifying its markup.
 
+### Floating panel titlebar (canonical pattern)
+
+Used for the Options panel and any modal dialog (e.g. `MidiAssignDialog`). Every floating surface that has a title gets the same titlebar shape so the app reads as one design system.
+
+```css
+.titlebar {
+  display: flex;
+  align-items: center;
+  padding: 0.4rem 0.6rem;
+  background: var(--panel-titlebar);
+  border-bottom: 1px solid var(--color-divider);
+  gap: 0.35rem;
+}
+.titlebarText {
+  font-size: var(--text-base);
+  font-weight: var(--text-base-strong-weight);
+  color: var(--color-text);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin: 0;
+}
+```
+
+- Titlebar sits at the top of the panel/dialog container; the body lives below it (with its own padding `0.75rem`).
+- Container itself has no `padding` — the titlebar handles its own; the body handles its own.
+- For modal dialogs, set `overflow: hidden` on the container so the titlebar's bottom border lines up with the side borders.
+- Reference impls: `ui/src/components/options/OptionsPanel.module.css` (`.titlebar`, `.blockName`) and `ui/src/components/common/MidiAssignDialog.module.css` (`.titlebar`, `.titlebarText`).
+
 ### Icons
 
 - Library: [`react-icons`](https://react-icons.github.io/react-icons/)

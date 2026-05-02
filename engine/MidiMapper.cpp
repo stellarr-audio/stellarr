@@ -115,6 +115,14 @@ void MidiMapper::processMidi(juce::MidiBuffer& midi)
             evt.cc = msg.getControllerNumber();
             evt.learnTarget = learnTarget;
             evt.targetIndex = static_cast<int8_t>(learnTargetIndex);
+            // Snapshot shaping into the event itself so a re-learn before the
+            // message thread drains this event doesn't bind the new shaping
+            // to the previous queued completion.
+            evt.learnCcMin    = learnCcMin;
+            evt.learnCcMax    = learnCcMax;
+            evt.learnParamMin = learnParamMin;
+            evt.learnParamMax = learnParamMax;
+            evt.learnCurve    = learnCurve;
             copyBlockId(evt.blockId, learnBlockId);
 
             // Only latch off and consume the CC if the message thread will
@@ -292,16 +300,13 @@ int MidiMapper::drainOutboundEvents()
                 m.target = evt.learnTarget;
                 m.blockId = blockId;
                 m.targetIndex = static_cast<int>(evt.targetIndex);
-
-                // Carry the dialog's shaping state through to the new mapping.
-                {
-                    juce::SpinLock::ScopedLockType scopedLock(mappingsLock);
-                    m.ccMin    = learnCcMin;
-                    m.ccMax    = learnCcMax;
-                    m.paramMin = learnParamMin;
-                    m.paramMax = learnParamMax;
-                    m.curve    = learnCurve;
-                }
+                // Carry the dialog's shaping state from the snapshot baked
+                // into the event when the audio thread queued it.
+                m.ccMin    = evt.learnCcMin;
+                m.ccMax    = evt.learnCcMax;
+                m.paramMin = evt.learnParamMin;
+                m.paramMax = evt.learnParamMax;
+                m.curve    = evt.learnCurve;
 
                 addMapping(m);
 

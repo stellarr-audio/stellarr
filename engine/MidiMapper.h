@@ -200,6 +200,14 @@ private:
         float floatValue = 0.0f;
         Target learnTarget = Target::blockMix;
         int8_t targetIndex = -1;          // stateIndex for blockState events and learn-complete payloads; -1 when unused
+        // Shaping snapshot for learn-complete events. Populated when the audio
+        // thread enqueues the event so the message thread doesn't read mutable
+        // learn state that may have shifted between events.
+        int   learnCcMin    = 0;
+        int   learnCcMax    = 127;
+        float learnParamMin = std::numeric_limits<float>::quiet_NaN();
+        float learnParamMax = std::numeric_limits<float>::quiet_NaN();
+        Curve learnCurve    = Curve::Linear;
         std::array<char, 40> blockId {}; // null-terminated; UUID = 36 chars
     };
 

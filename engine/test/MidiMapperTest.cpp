@@ -106,9 +106,9 @@ static bool testBlockBypassCallback()
     buf.addEvent(juce::MidiMessage::controllerEvent(1, 20, 0), 0);
     mapper.processMidi(buf);
     mapper.drainOutboundEvents();
-    if (lastState != false)
+    if (lastState != true)
     {
-        fprintf(stderr, "  value 0 should be off\n");
+        fprintf(stderr, "  value 0 should be bypassed=true (block off)\n");
         printf("FAIL\n");
         return false;
     }
@@ -117,9 +117,9 @@ static bool testBlockBypassCallback()
     buf.addEvent(juce::MidiMessage::controllerEvent(1, 20, 100), 0);
     mapper.processMidi(buf);
     mapper.drainOutboundEvents();
-    if (lastState != true)
+    if (lastState != false)
     {
-        fprintf(stderr, "  value 100 should be on\n");
+        fprintf(stderr, "  value 100 should be bypassed=false (block engaged)\n");
         printf("FAIL\n");
         return false;
     }
@@ -376,13 +376,13 @@ static bool testCcBoundaryValues()
         if (std::abs(val - 12.0f) > 0.5f) { fprintf(stderr, "  lvl(127) = %f\n", static_cast<double>(val)); printf("FAIL\n"); return false; }
     }
 
-    // blockBypass: 0→false, 127→true
+    // blockBypass: CC 0 → bypassed=true (block off); CC 127 → bypassed=false (block engaged)
     {
         MidiMapper mapper;
         MidiMapper::Mapping m;
         m.channel = -1; m.ccNumber = 4; m.target = MidiMapper::Target::blockBypass; m.blockId = "b";
         mapper.addMapping(m);
-        bool val = true;
+        bool val = false;
         mapper.onBlockBypass = [&](const juce::String&, bool v) { val = v; };
 
         juce::MidiBuffer buf;
@@ -390,14 +390,14 @@ static bool testCcBoundaryValues()
         mapper.processMidi(buf);
         mapper.drainOutboundEvents();
     mapper.drainOutboundEvents();
-        if (val) { printf("FAIL (bypass 0 should be off)\n"); return false; }
+        if (!val) { printf("FAIL (bypass 0 should be bypassed=true)\n"); return false; }
 
         buf.clear();
         buf.addEvent(juce::MidiMessage::controllerEvent(1, 4, 127), 0);
         mapper.processMidi(buf);
         mapper.drainOutboundEvents();
     mapper.drainOutboundEvents();
-        if (!val) { printf("FAIL (bypass 127 should be on)\n"); return false; }
+        if (val) { printf("FAIL (bypass 127 should be bypassed=false)\n"); return false; }
     }
 
     printf("PASS\n");
@@ -1515,21 +1515,22 @@ static bool testBlockBypassWithCustomThreshold()
     m.threshold = 80;
     mapper.addMapping(m);
 
-    int onCount = 0, offCount = 0;
+    // Callback bool is the "bypassed" state: true = block off, false = block engaged.
+    int bypassedCount = 0, engagedCount = 0;
     mapper.onBlockBypass = [&](const juce::String&, bool state) {
-        if (state) ++onCount; else ++offCount;
+        if (state) ++bypassedCount; else ++engagedCount;
     };
 
     juce::MidiBuffer buf;
-    buf.addEvent(juce::MidiMessage::controllerEvent(1, 7, 79), 0);   // < threshold -> off
-    buf.addEvent(juce::MidiMessage::controllerEvent(1, 7, 80), 5);   // >= threshold -> on
-    buf.addEvent(juce::MidiMessage::controllerEvent(1, 7, 0), 10);   // off
+    buf.addEvent(juce::MidiMessage::controllerEvent(1, 7, 79), 0);   // < threshold -> bypassed=true
+    buf.addEvent(juce::MidiMessage::controllerEvent(1, 7, 80), 5);   // >= threshold -> bypassed=false (engaged)
+    buf.addEvent(juce::MidiMessage::controllerEvent(1, 7, 0), 10);   // < threshold -> bypassed=true
     mapper.processMidi(buf);
     mapper.drainOutboundEvents();
 
-    if (onCount != 1 || offCount != 2)
+    if (bypassedCount != 2 || engagedCount != 1)
     {
-        fprintf(stderr, "  expected on=1 off=2, got on=%d off=%d\n", onCount, offCount);
+        fprintf(stderr, "  expected bypassed=2 engaged=1, got bypassed=%d engaged=%d\n", bypassedCount, engagedCount);
         printf("FAIL\n");
         return false;
     }

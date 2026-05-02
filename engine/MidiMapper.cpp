@@ -181,7 +181,9 @@ void MidiMapper::processMidi(juce::MidiBuffer& midi)
 
                     case Target::blockBypass:
                         evt.kind = OutboundEvent::Kind::blockBypass;
-                        evt.value = (value >= m.threshold) ? 1 : 0;
+                        // CC >= threshold engages the block (clears bypass). evt.value carries
+                        // the "bypassed" bool; engaged means bypassed=false.
+                        evt.value = (value >= m.threshold) ? 0 : 1;
                         pushOutbound(evt);
                         break;
 

@@ -14,6 +14,13 @@ export function InputGroup({ children, size = 'default', className }: InputGroup
   return <div className={cls}>{children}</div>;
 }
 
-export function InputGroupLabel({ children }: { children: React.ReactNode }) {
-  return <span className={styles.label}>{children}</span>;
+export function InputGroupLabel({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  const cls = [styles.label, className].filter(Boolean).join(' ');
+  return <span className={cls}>{children}</span>;
 }

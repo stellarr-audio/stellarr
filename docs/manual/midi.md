@@ -76,6 +76,34 @@ The state activates whenever the assigned CC arrives with a value of 64 or highe
 
 Scenes still capture every block's active state index. When you recall a scene, every block snaps to the state that scene saved. After that, sending a per-state CC overrides one block until the next scene recall. The override does not stick across scene changes.
 
+## CC Range and Curves
+
+For continuous targets (Block Mix, Block Balance, Block Level), each MIDI mapping can be shaped via a per-mapping CC range, parameter range, and response curve. Open the assign dialog and look at the **Shaping** section.
+
+### Anchors
+
+Two anchor inputs define the affine map between the CC and the parameter:
+
+- **Min CC** -- the CC value at the bottom anchor.
+- **Min Mix / Balance / Level** -- the parameter value at that CC.
+- **Max CC** -- the CC value at the top anchor.
+- **Max Mix / Balance / Level** -- the parameter value at that CC.
+
+CC values inside the range map smoothly to the parameter range. Outside the range, the parameter clamps to the nearest endpoint.
+
+To **invert** the response (e.g. CC 0 maps to 100% Mix, CC 127 maps to 0%), set the Min row's parameter value higher than the Max row's. The CC column always runs low to high; inversion lives in the parameter column.
+
+### Curves
+
+The **Curve** dropdown picks the shape of the response between the two anchors:
+
+- **Linear** (default) -- straight line from Min to Max.
+- **Log** -- concentrated at low values; small CC changes near Min produce large parameter changes.
+- **Exp** -- concentrated at high values; the inverse of Log.
+- **S-curve** -- smooth transition with steep middle and flatter ends.
+
+The mapping preview below the inputs draws the full curve between the anchors. Hover the preview to read the precise CC value and the parameter it maps to.
+
 ## MIDI Page
 
 The **MIDI** tab shows all active mappings in a table:

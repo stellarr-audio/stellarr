@@ -120,6 +120,27 @@ void StellarrBridge::handleEvent(const juce::String& eventName, const juce::var&
         auto tiVar = obj->getProperty("targetIndex");
         m.targetIndex = tiVar.isVoid() ? -1 : static_cast<int>(tiVar);
 
+        auto ccMinVar = obj->getProperty("ccMin");
+        m.ccMin = ccMinVar.isVoid() ? 0 : static_cast<int>(ccMinVar);
+
+        auto ccMaxVar = obj->getProperty("ccMax");
+        m.ccMax = ccMaxVar.isVoid() ? 127 : static_cast<int>(ccMaxVar);
+
+        auto paramMinVar = obj->getProperty("paramMin");
+        m.paramMin = paramMinVar.isVoid()
+            ? std::numeric_limits<float>::quiet_NaN()
+            : static_cast<float>(static_cast<double>(paramMinVar));
+
+        auto paramMaxVar = obj->getProperty("paramMax");
+        m.paramMax = paramMaxVar.isVoid()
+            ? std::numeric_limits<float>::quiet_NaN()
+            : static_cast<float>(static_cast<double>(paramMaxVar));
+
+        auto curveVar = obj->getProperty("curve");
+        m.curve = curveVar.isVoid()
+            ? MidiMapper::Curve::Linear
+            : MidiMapper::curveFromString(curveVar.toString());
+
         processor->getMidiMapper().addMapping(m);
         emitMidiMappings();
     }
@@ -145,13 +166,35 @@ void StellarrBridge::handleEvent(const juce::String& eventName, const juce::var&
         auto* obj = json.getDynamicObject();
         if (obj == nullptr) return;
 
-        auto target = MidiMapper::targetFromString(obj->getProperty("target").toString());
-        auto blockId = obj->getProperty("blockId").toString();
+        MidiMapper::LearnArgs args;
+        args.target = MidiMapper::targetFromString(obj->getProperty("target").toString());
+        args.blockId = obj->getProperty("blockId").toString();
 
         auto tiVar = obj->getProperty("targetIndex");
-        const int targetIndex = tiVar.isVoid() ? -1 : static_cast<int>(tiVar);
+        args.targetIndex = tiVar.isVoid() ? -1 : static_cast<int>(tiVar);
 
-        processor->getMidiMapper().startLearn(target, blockId, targetIndex);
+        auto ccMinVar = obj->getProperty("ccMin");
+        args.ccMin = ccMinVar.isVoid() ? 0 : static_cast<int>(ccMinVar);
+
+        auto ccMaxVar = obj->getProperty("ccMax");
+        args.ccMax = ccMaxVar.isVoid() ? 127 : static_cast<int>(ccMaxVar);
+
+        auto paramMinVar = obj->getProperty("paramMin");
+        args.paramMin = paramMinVar.isVoid()
+            ? std::numeric_limits<float>::quiet_NaN()
+            : static_cast<float>(static_cast<double>(paramMinVar));
+
+        auto paramMaxVar = obj->getProperty("paramMax");
+        args.paramMax = paramMaxVar.isVoid()
+            ? std::numeric_limits<float>::quiet_NaN()
+            : static_cast<float>(static_cast<double>(paramMaxVar));
+
+        auto curveVar = obj->getProperty("curve");
+        args.curve = curveVar.isVoid()
+            ? MidiMapper::Curve::Linear
+            : MidiMapper::curveFromString(curveVar.toString());
+
+        processor->getMidiMapper().startLearn(args);
         emitMidiMappings();
     }
     else if (eventName == "cancelMidiLearn" && processor != nullptr)

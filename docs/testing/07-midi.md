@@ -133,3 +133,31 @@ Test whenever you touch MIDI mapping, MidiMapper, the MIDI page, or MIDI-trigger
 5. Open the **MIDI** page -- no rows for that block remain.
 
 **Expected:** Deleting a state drops its mapping and shifts higher-indexed mappings down by one. Deleting the block prunes every mapping that targeted it (state, bypass, mix, balance, level).
+
+### TC-MI-013: CC range mapping for Block Mix
+
+**Steps:**
+1. Open the MIDI assign dialog for Block Mix on a plugin block.
+2. In the Shaping section, set Min CC to 20, Min Mix to 30%, Max CC to 100, Max Mix to 80%. Save.
+3. Send the assigned CC at values 0, 20, 60, 100, 127.
+
+**Expected:** Mix values are 30%, 30%, 55%, 80%, 80% respectively.
+
+### TC-MI-014: Inverted mapping
+
+**Steps:**
+1. Edit the mapping from TC-MI-013. Set Min Mix to 80% and Max Mix to 30%.
+2. Save.
+3. Send the assigned CC at values 20, 60, 100.
+
+**Expected:** Mix values are 80%, 55%, 30%.
+
+### TC-MI-015: Curve change alters response
+
+**Steps:**
+1. Reset shaping to defaults (Min CC 0 -> 0%, Max CC 127 -> 100%).
+2. Set Curve to Log. Sweep an expression pedal. Watch the Mix display.
+3. Set Curve to Exp. Sweep again.
+4. Set Curve to S-curve. Sweep again.
+
+**Expected:** Log -- changes feel more responsive at low CC values. Exp -- changes feel more responsive at high CC values. S-curve -- plateau at the ends, steep transition in the middle.

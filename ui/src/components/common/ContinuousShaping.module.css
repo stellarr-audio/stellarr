@@ -1,0 +1,38 @@
+.row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.fg {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.label {
+  font-size: var(--text-base);
+  color: var(--color-text);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.helpText {
+  font-size: 11px;
+  color: var(--color-muted);
+  margin: 0.25rem 0;
+  line-height: 1.4;
+}
+
+/* Equal-width Min/Max prefix labels for visual harmony. */
+.minMaxPrefix {
+  width: 3rem;
+  justify-content: center;
+}

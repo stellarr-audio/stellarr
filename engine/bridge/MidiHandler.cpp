@@ -4,6 +4,7 @@
 #include "../blocks/PluginBlock.h"
 #include "../blocks/InputBlock.h"
 #include "../blocks/OutputBlock.h"
+#include <cmath>
 
 void StellarrBridge::setupMidiMapper()
 {
@@ -149,6 +150,16 @@ void StellarrBridge::emitMidiMappings()
             obj->setProperty("blockId", m.blockId);
         if (m.targetIndex >= 0)
             obj->setProperty("targetIndex", m.targetIndex);
+        if (m.ccMin != 0)
+            obj->setProperty("ccMin", m.ccMin);
+        if (m.ccMax != 127)
+            obj->setProperty("ccMax", m.ccMax);
+        if (! std::isnan(m.paramMin))
+            obj->setProperty("paramMin", static_cast<double>(m.paramMin));
+        if (! std::isnan(m.paramMax))
+            obj->setProperty("paramMax", static_cast<double>(m.paramMax));
+        if (m.curve != MidiMapper::Curve::Linear)
+            obj->setProperty("curve", MidiMapper::curveToString(m.curve));
         arr.add(juce::var(obj));
     }
 

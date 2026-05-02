@@ -5,6 +5,7 @@
 #include <array>
 #include <atomic>
 #include <functional>
+#include <limits>
 
 class MidiMapper
 {
@@ -21,6 +22,8 @@ public:
         blockState,
     };
 
+    enum class Curve : uint8_t { Linear, Log, Exp, Sigmoid };
+
     struct Mapping
     {
         int channel = -1;       // 0-15 or -1 for any
@@ -28,6 +31,29 @@ public:
         Target target;
         juce::String blockId;   // for block-specific targets
         int targetIndex = -1;   // scene/preset/state index; -1 when unused
+
+        // Continuous-target shaping: maps CC range [ccMin, ccMax] to parameter
+        // range [paramMin, paramMax] via the chosen curve. NaN paramMin/paramMax
+        // is the "use target default" sentinel (engine substitutes target-specific
+        // defaults at scaling time).
+        int   ccMin    = 0;
+        int   ccMax    = 127;
+        float paramMin = std::numeric_limits<float>::quiet_NaN();
+        float paramMax = std::numeric_limits<float>::quiet_NaN();
+        Curve curve    = Curve::Linear;
+    };
+
+    struct LearnArgs
+    {
+        Target target;
+        juce::String blockId;
+        int targetIndex = -1;
+
+        int   ccMin    = 0;
+        int   ccMax    = 127;
+        float paramMin = std::numeric_limits<float>::quiet_NaN();
+        float paramMax = std::numeric_limits<float>::quiet_NaN();
+        Curve curve    = Curve::Linear;
     };
 
     MidiMapper();
@@ -58,7 +84,7 @@ public:
     void removeMappingsForBlockState(const juce::String& blockId, int deletedIndex);
 
     // MIDI Learn
-    void startLearn(Target target, const juce::String& blockId = {}, int targetIndex = -1);
+    void startLearn(const LearnArgs& args);
     void cancelLearn();
     bool isLearning() const { return learning.load(std::memory_order_acquire); }
 
@@ -94,6 +120,20 @@ public:
 
     static juce::String targetToString(Target t);
     static Target targetFromString(const juce::String& s);
+    static juce::String curveToString(Curve c);
+    static Curve        curveFromString(const juce::String& s);
+
+    // Test-only accessors — wrap the private static scaling helpers so
+    // engine/test/ can exercise them directly.
+    static float normalisedCcForTesting(int value, int ccMin, int ccMax, Curve curve)
+    {
+        return normalisedCc(value, ccMin, ccMax, curve);
+    }
+    static float scaleToParamForTesting(float t, float paramMin, float paramMax,
+                                        float defaultMin, float defaultMax)
+    {
+        return scaleToParam(t, paramMin, paramMax, defaultMin, defaultMax);
+    }
 
     // Monitor: ring buffer of recent MIDI events for UI display
     struct MonitorEvent
@@ -160,6 +200,14 @@ private:
         float floatValue = 0.0f;
         Target learnTarget = Target::blockMix;
         int8_t targetIndex = -1;          // stateIndex for blockState events and learn-complete payloads; -1 when unused
+        // Shaping snapshot for learn-complete events. Populated when the audio
+        // thread enqueues the event so the message thread doesn't read mutable
+        // learn state that may have shifted between events.
+        int   learnCcMin    = 0;
+        int   learnCcMax    = 127;
+        float learnParamMin = std::numeric_limits<float>::quiet_NaN();
+        float learnParamMax = std::numeric_limits<float>::quiet_NaN();
+        Curve learnCurve    = Curve::Linear;
         std::array<char, 40> blockId {}; // null-terminated; UUID = 36 chars
     };
 
@@ -186,10 +234,9 @@ private:
     // to avoid heap allocation in the audio callback.
     juce::MidiBuffer scratchBuffer;
 
-    // Scale CC 0-127 to parameter ranges
-    static float ccToMix(int value)     { return static_cast<float>(value) / 127.0f; }
-    static float ccToBalance(int value) { return (static_cast<float>(value) / 63.5f) - 1.0f; }
-    static float ccToLevelDb(int value) { return -60.0f + (static_cast<float>(value) / 127.0f) * 72.0f; }
+    static float normalisedCc(int value, int ccMin, int ccMax, Curve curve);
+    static float scaleToParam(float t, float paramMin, float paramMax,
+                              float defaultMin, float defaultMax);
 
     static void copyBlockId(std::array<char, 40>& dst, const juce::String& src);
 
@@ -204,4 +251,9 @@ private:
     Target learnTarget = Target::blockMix;
     juce::String learnBlockId;
     int learnTargetIndex = -1;
+    int   learnCcMin    = 0;
+    int   learnCcMax    = 127;
+    float learnParamMin = std::numeric_limits<float>::quiet_NaN();
+    float learnParamMax = std::numeric_limits<float>::quiet_NaN();
+    Curve learnCurve    = Curve::Linear;
 };

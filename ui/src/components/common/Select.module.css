@@ -1,0 +1,50 @@
+.trigger {
+  width: 100%;
+  height: var(--input-height);
+  text-align: left;
+  background: var(--color-cell);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 0 var(--input-padding-x);
+  font-size: var(--text-base);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.trigger:hover {
+  border-color: var(--color-secondary);
+  background: color-mix(in srgb, var(--color-secondary) 8%, transparent);
+}
+
+.content {
+  background: var(--color-dropdown-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  width: var(--radix-select-trigger-width);
+  max-height: 240px;
+  z-index: var(--z-popover);
+  overflow-y: auto;
+}
+
+/* When the Select lives inside a modal Dialog, the dropdown content needs a
+   z-index above the dialog itself (which sits at --z-dialog). */
+.inDialog {
+  z-index: calc(var(--z-dialog) + 2);
+}
+
+.item {
+  padding: 0.35rem 0.5rem;
+  font-size: var(--text-base);
+  color: var(--color-text);
+  cursor: pointer;
+  outline: none;
+}
+
+.item:hover {
+  background: var(--color-border);
+}

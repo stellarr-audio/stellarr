@@ -7,6 +7,7 @@ import type {
   PluginInfo,
   Scene,
   MidiMapping,
+  MidiCurve,
   MidiMonitorEvent,
 } from '../store';
 
@@ -239,6 +240,11 @@ export interface AddMidiMappingArgs {
   target: string;
   blockId?: string;
   targetIndex?: number;
+  ccMin?: number;
+  ccMax?: number;
+  paramMin?: number;
+  paramMax?: number;
+  curve?: MidiCurve;
 }
 
 export function requestAddMidiMapping(args: AddMidiMappingArgs): void {
@@ -250,6 +256,21 @@ export function requestAddMidiMapping(args: AddMidiMappingArgs): void {
   };
   if (args.targetIndex !== undefined && args.targetIndex >= 0) {
     payload.targetIndex = args.targetIndex;
+  }
+  if (args.ccMin !== undefined && args.ccMin !== 0) {
+    payload.ccMin = args.ccMin;
+  }
+  if (args.ccMax !== undefined && args.ccMax !== 127) {
+    payload.ccMax = args.ccMax;
+  }
+  if (args.paramMin !== undefined && Number.isFinite(args.paramMin)) {
+    payload.paramMin = args.paramMin;
+  }
+  if (args.paramMax !== undefined && Number.isFinite(args.paramMax)) {
+    payload.paramMax = args.paramMax;
+  }
+  if (args.curve !== undefined && args.curve !== 'linear') {
+    payload.curve = args.curve;
   }
   sendEvent('addMidiMapping', JSON.stringify(payload));
 }
@@ -270,6 +291,11 @@ export interface StartMidiLearnArgs {
   target: string;
   blockId?: string;
   targetIndex?: number;
+  ccMin?: number;
+  ccMax?: number;
+  paramMin?: number;
+  paramMax?: number;
+  curve?: MidiCurve;
 }
 
 export function requestStartMidiLearn(args: StartMidiLearnArgs): void {
@@ -279,6 +305,21 @@ export function requestStartMidiLearn(args: StartMidiLearnArgs): void {
   };
   if (args.targetIndex !== undefined && args.targetIndex >= 0) {
     payload.targetIndex = args.targetIndex;
+  }
+  if (args.ccMin !== undefined && args.ccMin !== 0) {
+    payload.ccMin = args.ccMin;
+  }
+  if (args.ccMax !== undefined && args.ccMax !== 127) {
+    payload.ccMax = args.ccMax;
+  }
+  if (args.paramMin !== undefined && Number.isFinite(args.paramMin)) {
+    payload.paramMin = args.paramMin;
+  }
+  if (args.paramMax !== undefined && Number.isFinite(args.paramMax)) {
+    payload.paramMax = args.paramMax;
+  }
+  if (args.curve !== undefined && args.curve !== 'linear') {
+    payload.curve = args.curve;
   }
   sendEvent('startMidiLearn', JSON.stringify(payload));
 }
@@ -683,6 +724,13 @@ export function initBridge(): void {
         target: typeof r.target === 'string' ? r.target : String(r.target),
         blockId: r.blockId ? String(r.blockId) : undefined,
         targetIndex: typeof r.targetIndex === 'number' ? r.targetIndex : undefined,
+        ccMin: typeof r.ccMin === 'number' ? r.ccMin : undefined,
+        ccMax: typeof r.ccMax === 'number' ? r.ccMax : undefined,
+        paramMin: typeof r.paramMin === 'number' ? r.paramMin : undefined,
+        paramMax: typeof r.paramMax === 'number' ? r.paramMax : undefined,
+        curve: (r.curve === 'linear' || r.curve === 'log' || r.curve === 'exp' || r.curve === 'sigmoid')
+          ? (r.curve as MidiCurve)
+          : undefined,
       } satisfies MidiMapping;
     });
     useStore.getState().setMidiMappings(mappings, Boolean(d.learning));

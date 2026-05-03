@@ -39,16 +39,13 @@ function BinaryShapingInner({ meta, threshold, onChange }: Props) {
 
   const pct =
     ((value - CC_MIN_THRESHOLD) / (CC_MAX_THRESHOLD - CC_MIN_THRESHOLD)) * 100;
-  // Clamp the floating "CC N" label so it doesn't bleed past the track edges
-  // at extremes (translateX(-50%) would push it past the parent at 0%/100%).
-  const labelPct = clamp(pct, 8, 92);
 
   return (
     <div className={styles.wrap}>
       <div className={styles.labelRow}>
         <span className={styles.fieldLabel}>Threshold</span>
         <span className={styles.helpRule}>
-          {meta.binaryLabels!.on} ≥ {value}
+          {meta.binaryLabels!.on} ≥ <span className={styles.helpRuleAccent}>{value}</span>
         </span>
       </div>
       <div className={styles.sliderShell}>
@@ -63,9 +60,6 @@ function BinaryShapingInner({ meta, threshold, onChange }: Props) {
           className={styles.slider}
           aria-label="Threshold"
         />
-        <div className={styles.handleLabel} style={{ left: `${labelPct}%` }}>
-          CC {value}
-        </div>
       </div>
     </div>
   );

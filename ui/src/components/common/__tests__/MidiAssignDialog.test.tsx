@@ -59,7 +59,9 @@ describe('MidiAssignDialog', () => {
     );
     expect(screen.getByText('Trigger')).toBeInTheDocument();
     // BinaryShaping renders the rule line driven by binaryLabels.on.
-    expect(screen.getByText(/ON ≥/)).toBeInTheDocument();
+    expect(
+      screen.getByText((_, el) => el?.textContent?.startsWith('ON ≥') ?? false),
+    ).toBeInTheDocument();
   });
 
   it('renders Trigger section with BinaryShaping for blockState (recall semantics)', () => {
@@ -74,6 +76,8 @@ describe('MidiAssignDialog', () => {
       />,
     );
     expect(screen.getByText('Trigger')).toBeInTheDocument();
-    expect(screen.getByText(/RECALL ≥/)).toBeInTheDocument();
+    expect(
+      screen.getByText((_, el) => el?.textContent?.startsWith('RECALL ≥') ?? false),
+    ).toBeInTheDocument();
   });
 });

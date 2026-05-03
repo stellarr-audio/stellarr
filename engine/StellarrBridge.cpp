@@ -8,7 +8,6 @@
 #include <cmath>
 #include <limits>
 #include <optional>
-#include <set>
 
 StellarrBridge::StellarrBridge() = default;
 StellarrBridge::~StellarrBridge() = default;
@@ -46,432 +45,457 @@ void StellarrBridge::setWebView(juce::WebBrowserComponent* browser)
 
 // -- Event dispatch -----------------------------------------------------------
 
+const StellarrBridge::EventTable& StellarrBridge::eventTable()
+{
+    static const EventTable t = []
+    {
+        EventTable m;
+        // Lifecycle ----------------------------------------------------
+        m["bridgeReady"]              = { [](StellarrBridge& b, const juce::var&)   { b.handleBridgeReady(); }, false };
+        m["uiReady"]                  = { [](StellarrBridge& b, const juce::var&)   { if (b.onUiReady) b.onUiReady(); b.handleScreenshotSetup(); }, false };
+        m["screenshotReady"]          = { [](StellarrBridge& b, const juce::var&)   { b.handleScreenshotReady(); }, false };
+        // Software updates (Sparkle) ----------------------------------
+        m["update/check"]             = { [](StellarrBridge& b, const juce::var&)   { b.handleUpdateCheck(); }, false };
+        m["update/install"]           = { [](StellarrBridge& b, const juce::var&)   { b.handleUpdateInstall(); }, false };
+        m["update/open-release-notes"]= { [](StellarrBridge& b, const juce::var& j) { b.handleUpdateOpenReleaseNotes(j); }, false };
+        // Graph --------------------------------------------------------
+        m["addBlock"]                 = { [](StellarrBridge& b, const juce::var& j) { b.handleAddBlock(j); }, true };
+        m["removeBlock"]              = { [](StellarrBridge& b, const juce::var& j) { b.handleRemoveBlock(j); }, true };
+        m["moveBlock"]                = { [](StellarrBridge& b, const juce::var& j) { b.handleMoveBlock(j); }, true };
+        m["addConnection"]            = { [](StellarrBridge& b, const juce::var& j) { b.handleAddConnection(j); }, true };
+        m["removeConnection"]         = { [](StellarrBridge& b, const juce::var& j) { b.handleRemoveConnection(j); }, true };
+        m["setBlockPlugin"]           = { [](StellarrBridge& b, const juce::var& j) { b.handleSetBlockPlugin(j); }, true };
+        m["openPluginEditor"]         = { [](StellarrBridge& b, const juce::var& j) { b.handleOpenPluginEditor(j); }, false };
+        m["copyBlock"]                = { [](StellarrBridge& b, const juce::var& j) { b.handleCopyBlock(j); }, true };
+        m["pasteBlock"]               = { [](StellarrBridge& b, const juce::var& j) { b.handlePasteBlock(j); }, true };
+        m["renameBlock"]              = { [](StellarrBridge& b, const juce::var& j) { b.handleRenameBlock(j); }, true };
+        m["setBlockColor"]            = { [](StellarrBridge& b, const juce::var& j) { b.handleSetBlockColor(j); }, true };
+        // MIDI mappings ------------------------------------------------
+        m["addMidiMapping"]           = { [](StellarrBridge& b, const juce::var& j) { b.handleAddMidiMapping(j); }, true };
+        m["removeMidiMapping"]        = { [](StellarrBridge& b, const juce::var& j) { b.handleRemoveMidiMapping(j); }, true };
+        m["clearMidiMappings"]        = { [](StellarrBridge& b, const juce::var&)   { b.handleClearMidiMappings(); }, true };
+        m["getMidiMappings"]          = { [](StellarrBridge& b, const juce::var&)   { b.emitMidiMappings(); }, false };
+        m["startMidiLearn"]           = { [](StellarrBridge& b, const juce::var& j) { b.handleStartMidiLearn(j); }, true };
+        m["cancelMidiLearn"]          = { [](StellarrBridge& b, const juce::var&)   { b.handleCancelMidiLearn(); }, true };
+        m["setMidiMonitorEnabled"]    = { [](StellarrBridge& b, const juce::var& j) { b.handleSetMidiMonitorEnabled(j); }, false };
+        m["injectMidiCC"]             = { [](StellarrBridge& b, const juce::var& j) { b.handleInjectMidiCC(j); }, false };
+        // Plugin management -------------------------------------------
+        m["scanPlugins"]              = { [](StellarrBridge& b, const juce::var&)   { b.handleScanPlugins(); }, true };
+        m["getScanDirectories"]       = { [](StellarrBridge& b, const juce::var&)   { b.handleGetScanDirectories(); }, false };
+        m["pickScanDirectory"]        = { [](StellarrBridge& b, const juce::var&)   { b.handlePickScanDirectory(); }, true };
+        m["removeScanDirectory"]      = { [](StellarrBridge& b, const juce::var& j) { b.handleRemoveScanDirectory(j); }, true };
+        // Telemetry ----------------------------------------------------
+        m["getTelemetryEnabled"]      = { [](StellarrBridge& b, const juce::var&)   { b.handleGetTelemetryEnabled(); }, false };
+        m["setTelemetryEnabled"]      = { [](StellarrBridge& b, const juce::var& j) { b.handleSetTelemetryEnabled(j); }, false };
+        // Tuner settings ----------------------------------------------
+        m["getReferencePitch"]        = { [](StellarrBridge& b, const juce::var&)   { b.handleGetReferencePitch(); }, false };
+        m["setReferencePitch"]        = { [](StellarrBridge& b, const juce::var& j) { b.handleSetReferencePitch(j); }, false };
+        // Presets ------------------------------------------------------
+        m["newSession"]               = { [](StellarrBridge& b, const juce::var&)   { b.handleNewSession(); }, true };
+        m["saveSession"]              = { [](StellarrBridge& b, const juce::var&)   { b.handleSaveSession(); }, true };
+        m["saveSessionQuiet"]         = { [](StellarrBridge& b, const juce::var&)   { b.handleSaveSessionQuiet(); }, true };
+        m["loadSession"]              = { [](StellarrBridge& b, const juce::var&)   { b.handleLoadSession(); }, false };
+        m["pickPresetDirectory"]      = { [](StellarrBridge& b, const juce::var&)   { b.handlePickPresetDirectory(); }, true };
+        m["loadPresetByIndex"]        = { [](StellarrBridge& b, const juce::var& j) { b.handleLoadPresetByIndex(j); }, false };
+        m["renamePreset"]             = { [](StellarrBridge& b, const juce::var& j) { b.handleRenamePreset(j); }, true };
+        m["deletePreset"]             = { [](StellarrBridge& b, const juce::var& j) { b.handleDeletePreset(j); }, true };
+        m["getPresetList"]            = { [](StellarrBridge& b, const juce::var&)   { b.handleGetPresetList(); }, false };
+        m["setGridSize"]              = { [](StellarrBridge& b, const juce::var& j) { b.handleSetGridSize(j); }, true };
+        // Scenes -------------------------------------------------------
+        m["addScene"]                 = { [](StellarrBridge& b, const juce::var&)   { b.handleAddScene(); }, true };
+        m["recallScene"]              = { [](StellarrBridge& b, const juce::var& j) { b.handleRecallScene(j); }, true };
+        m["saveScene"]                = { [](StellarrBridge& b, const juce::var& j) { b.handleSaveScene(j); }, true };
+        m["renameScene"]              = { [](StellarrBridge& b, const juce::var& j) { b.handleRenameScene(j); }, true };
+        m["deleteScene"]              = { [](StellarrBridge& b, const juce::var& j) { b.handleDeleteScene(j); }, true };
+        // Input block controls ----------------------------------------
+        m["toggleTestTone"]           = { [](StellarrBridge& b, const juce::var& j) { b.handleToggleTestTone(j); }, true };
+        m["getTestToneSamples"]       = { [](StellarrBridge& b, const juce::var&)   { b.handleGetTestToneSamples(); }, false };
+        m["setTestToneSample"]        = { [](StellarrBridge& b, const juce::var& j) { b.handleSetTestToneSample(j); }, true };
+        m["setTunerEnabled"]          = { [](StellarrBridge& b, const juce::var& j) { b.handleSetTunerEnabled(j); }, true };
+        // Block parameters --------------------------------------------
+        m["setBlockMix"]              = { [](StellarrBridge& b, const juce::var& j) { b.handleSetBlockMix(j); }, true };
+        m["setBlockBalance"]          = { [](StellarrBridge& b, const juce::var& j) { b.handleSetBlockBalance(j); }, true };
+        m["setBlockLevel"]            = { [](StellarrBridge& b, const juce::var& j) { b.handleSetBlockLevel(j); }, true };
+        m["toggleBlockBypass"]        = { [](StellarrBridge& b, const juce::var& j) { b.handleToggleBlockBypass(j); }, true };
+        m["setBlockBypassMode"]       = { [](StellarrBridge& b, const juce::var& j) { b.handleSetBlockBypassMode(j); }, true };
+        // Block states -------------------------------------------------
+        m["saveBlockState"]           = { [](StellarrBridge& b, const juce::var& j) { b.handleBlockStateEvent(j, "save"); }, true };
+        m["addBlockState"]            = { [](StellarrBridge& b, const juce::var& j) { b.handleBlockStateEvent(j, "add"); }, true };
+        m["recallBlockState"]         = { [](StellarrBridge& b, const juce::var& j) { b.handleBlockStateEvent(j, "recall"); }, true };
+        m["deleteBlockState"]         = { [](StellarrBridge& b, const juce::var& j) { b.handleBlockStateEvent(j, "delete"); }, true };
+        // Loudness metering -------------------------------------------
+        m["setSelectedBlock"]         = { [](StellarrBridge& b, const juce::var& j) { b.handleSetSelectedBlock(j); }, false };
+        m["setTargetLufs"]            = { [](StellarrBridge& b, const juce::var& j) { b.handleSetTargetLufs(j); }, true };
+        m["setLufsWindow"]            = { [](StellarrBridge& b, const juce::var& j) { b.handleSetLufsWindow(j); }, false };
+        return m;
+    }();
+    return t;
+}
+
 void StellarrBridge::handleEvent(const juce::String& eventName, const juce::var& payload)
 {
     auto json = payload.isString()
         ? juce::JSON::parse(payload.toString())
         : payload;
 
+    auto it = eventTable().find(eventName);
+    if (it == eventTable().end())
+    {
+        DBG("StellarrBridge: unknown event '" << eventName << "'");
+        return;
+    }
+
     // While an async restoreSession is in flight (Phase 1 yielding between
     // plugin loads), drop any event that would mutate the graph, scenes, MIDI
     // mappings, or persisted preset state. Phase 2 calls clearGraph() and
-    // overwrites everything we listed below — letting those edits run during
-    // the load window would silently lose them on the next async tick.
-    //
-    // Read-only events (getPresetList, getMidiMappings, telemetry queries,
-    // etc.) and the lock-guarded preset-load events (loadPresetByIndex,
-    // loadSession — both reject themselves via restoreSession's try_lock)
-    // pass through unchanged.
-    if (pendingRestore.has_value())
+    // overwrites everything; letting those edits run during the load window
+    // would silently lose them on the next async tick. Read-only events and
+    // the lock-guarded preset-load events (loadPresetByIndex, loadSession —
+    // both reject themselves via restoreSession's try_lock) pass through.
+    if (pendingRestore.has_value() && it->second.dropDuringRestore)
     {
-        static const std::set<juce::String> blockedDuringRestore = {
-            // Graph mutations — Phase 2's clearGraph() obliterates these.
-            "addBlock", "removeBlock", "moveBlock",
-            "addConnection", "removeConnection",
-            "setBlockPlugin", "copyBlock", "pasteBlock",
-            "renameBlock", "setBlockColor",
-            // Per-block parameter / bypass / state edits — wiped when the
-            // block is replaced by Phase 2.
-            "setBlockMix", "setBlockBalance", "setBlockLevel",
-            "toggleBlockBypass", "setBlockBypassMode",
-            "saveBlockState", "addBlockState", "recallBlockState", "deleteBlockState",
-            // Output-block target loudness lives on the block being replaced.
-            "setTargetLufs",
-            // Input-block controls (test tone, tuner) — same block-replacement
-            // story as parameter edits. setTunerEnabled is also a tab-switch
-            // signal; if the user opens the Tuner tab mid-load we drop it
-            // here, but the UI normally gates the preset selector behind a
-            // spinner so the typical sequence (click preset, wait, click
-            // tuner) is unaffected.
-            "toggleTestTone", "setTestToneSample", "setTunerEnabled",
-            // Session / preset / grid / scene state — all replaced by Phase 2.
-            "newSession", "saveSession", "saveSessionQuiet",
-            "pickPresetDirectory",
-            "renamePreset", "deletePreset", "setGridSize",
-            "addScene", "recallScene", "saveScene", "renameScene", "deleteScene",
-            // Preset-level MIDI mappings are replaced by Phase 2's
-            // loadPresetMappings(); learn state is similarly transient.
-            "addMidiMapping", "removeMidiMapping", "clearMidiMappings",
-            "startMidiLearn", "cancelMidiLearn",
-            // Plugin scans mutate the PluginManager known-plugins list on a
-            // background thread; restore ticks read from the same list in
-            // createPluginInstance. Defer the scan until the restore is done.
-            "scanPlugins", "pickScanDirectory", "removeScanDirectory"
-        };
-        if (blockedDuringRestore.count(eventName) > 0)
+        DBG("StellarrBridge: dropping '" << eventName << "' while preset restore is in flight");
+        return;
+    }
+
+    it->second.handler(*this, json);
+}
+
+// -- Lifted inline handlers (Phase 3) -----------------------------------------
+// Bodies lifted character-for-character from the old if/else if chain. The
+// `processor != nullptr` guards that used to live in the if-clause now sit at
+// the top of each function. Phase 4 will move these into engine/bridge/*.cpp.
+
+void StellarrBridge::handleRenameBlock(const juce::var& json)
+{
+    if (processor == nullptr) return;
+    auto* obj = json.getDynamicObject();
+    if (obj == nullptr) return;
+
+    auto blockId = obj->getProperty("blockId").toString();
+    auto name = obj->getProperty("name").toString();
+    auto* block = findBlock(blockId);
+    if (block == nullptr) return;
+
+    block->setDisplayName(name);
+
+    auto* detail = new juce::DynamicObject();
+    detail->setProperty("blockId", blockId);
+    detail->setProperty("displayName", name);
+    emitToJs("blockRenamed", detail);
+}
+
+void StellarrBridge::handleSetBlockColor(const juce::var& json)
+{
+    if (processor == nullptr) return;
+    auto* obj = json.getDynamicObject();
+    if (obj == nullptr) return;
+
+    auto blockId = obj->getProperty("blockId").toString();
+    auto color = obj->getProperty("color").toString();
+    auto* block = findBlock(blockId);
+    if (block == nullptr) return;
+
+    block->setBlockColor(color);
+
+    auto* detail = new juce::DynamicObject();
+    detail->setProperty("blockId", blockId);
+    detail->setProperty("blockColor", color);
+    emitToJs("blockColorChanged", detail);
+}
+
+void StellarrBridge::handleAddMidiMapping(const juce::var& json)
+{
+    if (processor == nullptr) return;
+    auto* obj = json.getDynamicObject();
+    if (obj == nullptr) return;
+
+    MidiMapper::Mapping m;
+    m.channel = static_cast<int>(obj->getProperty("channel"));
+    m.ccNumber = static_cast<int>(obj->getProperty("cc"));
+    m.target = MidiMapper::targetFromString(obj->getProperty("target").toString());
+    m.blockId = obj->getProperty("blockId").toString();
+
+    auto tiVar = obj->getProperty("targetIndex");
+    m.targetIndex = tiVar.isVoid() ? -1 : static_cast<int>(tiVar);
+
+    auto ccMinVar = obj->getProperty("ccMin");
+    m.ccMin = ccMinVar.isVoid() ? 0 : static_cast<int>(ccMinVar);
+
+    auto ccMaxVar = obj->getProperty("ccMax");
+    m.ccMax = ccMaxVar.isVoid() ? 127 : static_cast<int>(ccMaxVar);
+
+    auto paramMinVar = obj->getProperty("paramMin");
+    m.paramMin = paramMinVar.isVoid()
+        ? std::numeric_limits<float>::quiet_NaN()
+        : static_cast<float>(static_cast<double>(paramMinVar));
+
+    auto paramMaxVar = obj->getProperty("paramMax");
+    m.paramMax = paramMaxVar.isVoid()
+        ? std::numeric_limits<float>::quiet_NaN()
+        : static_cast<float>(static_cast<double>(paramMaxVar));
+
+    auto curveVar = obj->getProperty("curve");
+    m.curve = curveVar.isVoid()
+        ? MidiMapper::Curve::Linear
+        : MidiMapper::curveFromString(curveVar.toString());
+
+    auto thrVar = obj->getProperty("threshold");
+    m.threshold = thrVar.isVoid()
+        ? 64
+        : juce::jlimit(1, 127, static_cast<int>(thrVar));
+
+    processor->getMidiMapper().addMapping(m);
+    emitMidiMappings();
+}
+
+void StellarrBridge::handleRemoveMidiMapping(const juce::var& json)
+{
+    if (processor == nullptr) return;
+    auto* obj = json.getDynamicObject();
+    if (obj == nullptr) return;
+
+    processor->getMidiMapper().removeMapping(static_cast<int>(obj->getProperty("index")));
+    emitMidiMappings();
+}
+
+void StellarrBridge::handleClearMidiMappings()
+{
+    if (processor == nullptr) return;
+    processor->getMidiMapper().clearAll();
+    emitMidiMappings();
+}
+
+void StellarrBridge::handleStartMidiLearn(const juce::var& json)
+{
+    if (processor == nullptr) return;
+    auto* obj = json.getDynamicObject();
+    if (obj == nullptr) return;
+
+    MidiMapper::LearnArgs args;
+    args.target = MidiMapper::targetFromString(obj->getProperty("target").toString());
+    args.blockId = obj->getProperty("blockId").toString();
+
+    auto tiVar = obj->getProperty("targetIndex");
+    args.targetIndex = tiVar.isVoid() ? -1 : static_cast<int>(tiVar);
+
+    auto ccMinVar = obj->getProperty("ccMin");
+    args.ccMin = ccMinVar.isVoid() ? 0 : static_cast<int>(ccMinVar);
+
+    auto ccMaxVar = obj->getProperty("ccMax");
+    args.ccMax = ccMaxVar.isVoid() ? 127 : static_cast<int>(ccMaxVar);
+
+    auto paramMinVar = obj->getProperty("paramMin");
+    args.paramMin = paramMinVar.isVoid()
+        ? std::numeric_limits<float>::quiet_NaN()
+        : static_cast<float>(static_cast<double>(paramMinVar));
+
+    auto paramMaxVar = obj->getProperty("paramMax");
+    args.paramMax = paramMaxVar.isVoid()
+        ? std::numeric_limits<float>::quiet_NaN()
+        : static_cast<float>(static_cast<double>(paramMaxVar));
+
+    auto curveVar = obj->getProperty("curve");
+    args.curve = curveVar.isVoid()
+        ? MidiMapper::Curve::Linear
+        : MidiMapper::curveFromString(curveVar.toString());
+
+    auto thrVar = obj->getProperty("threshold");
+    args.threshold = thrVar.isVoid()
+        ? 64
+        : juce::jlimit(1, 127, static_cast<int>(thrVar));
+
+    processor->getMidiMapper().startLearn(args);
+    emitMidiMappings();
+}
+
+void StellarrBridge::handleCancelMidiLearn()
+{
+    if (processor == nullptr) return;
+    processor->getMidiMapper().cancelLearn();
+    emitMidiMappings();
+}
+
+void StellarrBridge::handleSetMidiMonitorEnabled(const juce::var& json)
+{
+    if (processor == nullptr) return;
+    auto* obj = json.getDynamicObject();
+    if (obj == nullptr) return;
+    processor->getMidiMapper().setMonitorEnabled(static_cast<bool>(obj->getProperty("enabled")));
+}
+
+void StellarrBridge::handleInjectMidiCC(const juce::var& json)
+{
+    if (processor == nullptr) return;
+    auto* obj = json.getDynamicObject();
+    if (obj == nullptr) return;
+    int ch = static_cast<int>(obj->getProperty("channel")) + 1; // 0-indexed → 1-indexed
+    int cc = static_cast<int>(obj->getProperty("cc"));
+    int val = static_cast<int>(obj->getProperty("value"));
+    processor->getMidiMapper().injectMidi(juce::MidiMessage::controllerEvent(ch, cc, val));
+}
+
+void StellarrBridge::handleToggleTestTone(const juce::var& json)
+{
+    if (processor == nullptr) return;
+    auto* obj = json.getDynamicObject();
+    if (obj == nullptr) return;
+
+    auto blockId = obj->getProperty("blockId").toString();
+    auto nodeIt = blockNodeMap.find(blockId);
+    if (nodeIt == blockNodeMap.end()) return;
+
+    if (auto* node = processor->getGraph().getNodeForId(nodeIt->second))
+    {
+        if (auto* inputBlock = dynamic_cast<stellarr::InputBlock*>(node->getProcessor()))
         {
-            DBG("StellarrBridge: dropping '" << eventName << "' while preset restore is in flight");
-            return;
+            bool enabled = !inputBlock->isTestToneEnabled();
+            inputBlock->setTestToneEnabled(enabled);
+
+            auto* detail = new juce::DynamicObject();
+            detail->setProperty("blockId", blockId);
+            detail->setProperty("enabled", enabled);
+            emitToJs("testToneChanged", detail);
+        }
+    }
+}
+
+void StellarrBridge::handleGetTestToneSamples()
+{
+    auto samplesDir = stellarrGetBundleResource("samples");
+    juce::Array<juce::var> files;
+
+    if (samplesDir.isDirectory())
+    {
+        for (auto& f : samplesDir.findChildFiles(juce::File::findFiles, false, "*.wav"))
+        {
+            auto name = f.getFileNameWithoutExtension();
+            if (name.equalsIgnoreCase("placeholder")) continue; // skip submodule placeholder file
+            files.add(juce::var(name));
         }
     }
 
-    // Startup
-    if (eventName == "bridgeReady")                 handleBridgeReady();
-    else if (eventName == "uiReady")                { if (onUiReady) onUiReady(); handleScreenshotSetup(); }
-    else if (eventName == "screenshotReady")          { handleScreenshotReady(); }
+    // Add "Synth (Default)" as first option
+    juce::Array<juce::var> sorted;
+    sorted.add(juce::var("Synth (Default)"));
+    for (auto& f : files)
+        sorted.add(f);
 
-    // Software updates (Sparkle)
-    else if (eventName == "update/check")            handleUpdateCheck();
-    else if (eventName == "update/install")          handleUpdateInstall();
-    else if (eventName == "update/open-release-notes") handleUpdateOpenReleaseNotes(json);
+    auto* detail = new juce::DynamicObject();
+    detail->setProperty("samples", sorted);
+    emitToJs("testToneSamplesUpdated", detail);
+}
 
-    // Graph
-    else if (eventName == "addBlock")               handleAddBlock(json);
-    else if (eventName == "removeBlock")            handleRemoveBlock(json);
-    else if (eventName == "moveBlock")              handleMoveBlock(json);
-    else if (eventName == "addConnection")          handleAddConnection(json);
-    else if (eventName == "removeConnection")       handleRemoveConnection(json);
-    else if (eventName == "setBlockPlugin")         handleSetBlockPlugin(json);
-    else if (eventName == "openPluginEditor")       handleOpenPluginEditor(json);
-    else if (eventName == "copyBlock")              handleCopyBlock(json);
-    else if (eventName == "pasteBlock")             handlePasteBlock(json);
-    else if (eventName == "renameBlock" && processor != nullptr)
+void StellarrBridge::handleSetTestToneSample(const juce::var& json)
+{
+    if (processor == nullptr) return;
+    auto* obj = json.getDynamicObject();
+    if (obj == nullptr) return;
+
+    auto blockId = obj->getProperty("blockId").toString();
+    auto sampleName = obj->getProperty("sample").toString();
+    auto nodeIt = blockNodeMap.find(blockId);
+    if (nodeIt == blockNodeMap.end()) return;
+
+    if (auto* node = processor->getGraph().getNodeForId(nodeIt->second))
     {
-        auto* obj = json.getDynamicObject();
-        if (obj == nullptr) return;
+        if (auto* inputBlock = dynamic_cast<stellarr::InputBlock*>(node->getProcessor()))
+        {
+            if (sampleName == "Synth (Default)" || sampleName.isEmpty())
+            {
+                inputBlock->clearTestToneSample();
+            }
+            else
+            {
+                auto samplesDir = stellarrGetBundleResource("samples");
+                auto file = samplesDir.getChildFile(sampleName + ".wav");
+                inputBlock->loadTestToneSample(file);
+            }
 
-        auto blockId = obj->getProperty("blockId").toString();
-        auto name = obj->getProperty("name").toString();
-        auto* block = findBlock(blockId);
-        if (block == nullptr) return;
-
-        block->setDisplayName(name);
-
-        auto* detail = new juce::DynamicObject();
-        detail->setProperty("blockId", blockId);
-        detail->setProperty("displayName", name);
-        emitToJs("blockRenamed", detail);
+            auto* detail = new juce::DynamicObject();
+            detail->setProperty("blockId", blockId);
+            detail->setProperty("sample", inputBlock->isUsingSample()
+                ? inputBlock->getCurrentSampleName() : juce::String("Synth (Default)"));
+            emitToJs("testToneSampleChanged", detail);
+        }
     }
-    else if (eventName == "setBlockColor" && processor != nullptr)
+}
+
+void StellarrBridge::handleSetTunerEnabled(const juce::var& json)
+{
+    if (processor == nullptr) return;
+    auto* obj = json.getDynamicObject();
+    if (obj == nullptr) return;
+
+    bool enabled = static_cast<bool>(obj->getProperty("enabled"));
+    tunerActive = enabled;
+
+    for (auto& [blockId, nodeId] : blockNodeMap)
     {
-        auto* obj = json.getDynamicObject();
-        if (obj == nullptr) return;
-
-        auto blockId = obj->getProperty("blockId").toString();
-        auto color = obj->getProperty("color").toString();
-        auto* block = findBlock(blockId);
-        if (block == nullptr) return;
-
-        block->setBlockColor(color);
-
-        auto* detail = new juce::DynamicObject();
-        detail->setProperty("blockId", blockId);
-        detail->setProperty("blockColor", color);
-        emitToJs("blockColorChanged", detail);
-    }
-
-    // MIDI mappings
-    else if (eventName == "addMidiMapping" && processor != nullptr)
-    {
-        auto* obj = json.getDynamicObject();
-        if (obj == nullptr) return;
-
-        MidiMapper::Mapping m;
-        m.channel = static_cast<int>(obj->getProperty("channel"));
-        m.ccNumber = static_cast<int>(obj->getProperty("cc"));
-        m.target = MidiMapper::targetFromString(obj->getProperty("target").toString());
-        m.blockId = obj->getProperty("blockId").toString();
-
-        auto tiVar = obj->getProperty("targetIndex");
-        m.targetIndex = tiVar.isVoid() ? -1 : static_cast<int>(tiVar);
-
-        auto ccMinVar = obj->getProperty("ccMin");
-        m.ccMin = ccMinVar.isVoid() ? 0 : static_cast<int>(ccMinVar);
-
-        auto ccMaxVar = obj->getProperty("ccMax");
-        m.ccMax = ccMaxVar.isVoid() ? 127 : static_cast<int>(ccMaxVar);
-
-        auto paramMinVar = obj->getProperty("paramMin");
-        m.paramMin = paramMinVar.isVoid()
-            ? std::numeric_limits<float>::quiet_NaN()
-            : static_cast<float>(static_cast<double>(paramMinVar));
-
-        auto paramMaxVar = obj->getProperty("paramMax");
-        m.paramMax = paramMaxVar.isVoid()
-            ? std::numeric_limits<float>::quiet_NaN()
-            : static_cast<float>(static_cast<double>(paramMaxVar));
-
-        auto curveVar = obj->getProperty("curve");
-        m.curve = curveVar.isVoid()
-            ? MidiMapper::Curve::Linear
-            : MidiMapper::curveFromString(curveVar.toString());
-
-        auto thrVar = obj->getProperty("threshold");
-        m.threshold = thrVar.isVoid()
-            ? 64
-            : juce::jlimit(1, 127, static_cast<int>(thrVar));
-
-        processor->getMidiMapper().addMapping(m);
-        emitMidiMappings();
-    }
-    else if (eventName == "removeMidiMapping" && processor != nullptr)
-    {
-        auto* obj = json.getDynamicObject();
-        if (obj == nullptr) return;
-
-        processor->getMidiMapper().removeMapping(static_cast<int>(obj->getProperty("index")));
-        emitMidiMappings();
-    }
-    else if (eventName == "clearMidiMappings" && processor != nullptr)
-    {
-        processor->getMidiMapper().clearAll();
-        emitMidiMappings();
-    }
-    else if (eventName == "getMidiMappings")
-    {
-        emitMidiMappings();
-    }
-    else if (eventName == "startMidiLearn" && processor != nullptr)
-    {
-        auto* obj = json.getDynamicObject();
-        if (obj == nullptr) return;
-
-        MidiMapper::LearnArgs args;
-        args.target = MidiMapper::targetFromString(obj->getProperty("target").toString());
-        args.blockId = obj->getProperty("blockId").toString();
-
-        auto tiVar = obj->getProperty("targetIndex");
-        args.targetIndex = tiVar.isVoid() ? -1 : static_cast<int>(tiVar);
-
-        auto ccMinVar = obj->getProperty("ccMin");
-        args.ccMin = ccMinVar.isVoid() ? 0 : static_cast<int>(ccMinVar);
-
-        auto ccMaxVar = obj->getProperty("ccMax");
-        args.ccMax = ccMaxVar.isVoid() ? 127 : static_cast<int>(ccMaxVar);
-
-        auto paramMinVar = obj->getProperty("paramMin");
-        args.paramMin = paramMinVar.isVoid()
-            ? std::numeric_limits<float>::quiet_NaN()
-            : static_cast<float>(static_cast<double>(paramMinVar));
-
-        auto paramMaxVar = obj->getProperty("paramMax");
-        args.paramMax = paramMaxVar.isVoid()
-            ? std::numeric_limits<float>::quiet_NaN()
-            : static_cast<float>(static_cast<double>(paramMaxVar));
-
-        auto curveVar = obj->getProperty("curve");
-        args.curve = curveVar.isVoid()
-            ? MidiMapper::Curve::Linear
-            : MidiMapper::curveFromString(curveVar.toString());
-
-        auto thrVar = obj->getProperty("threshold");
-        args.threshold = thrVar.isVoid()
-            ? 64
-            : juce::jlimit(1, 127, static_cast<int>(thrVar));
-
-        processor->getMidiMapper().startLearn(args);
-        emitMidiMappings();
-    }
-    else if (eventName == "cancelMidiLearn" && processor != nullptr)
-    {
-        processor->getMidiMapper().cancelLearn();
-        emitMidiMappings();
-    }
-    else if (eventName == "setMidiMonitorEnabled" && processor != nullptr)
-    {
-        auto* obj = json.getDynamicObject();
-        if (obj == nullptr) return;
-        processor->getMidiMapper().setMonitorEnabled(static_cast<bool>(obj->getProperty("enabled")));
-    }
-    else if (eventName == "injectMidiCC" && processor != nullptr)
-    {
-        auto* obj = json.getDynamicObject();
-        if (obj == nullptr) return;
-        int ch = static_cast<int>(obj->getProperty("channel")) + 1; // 0-indexed → 1-indexed
-        int cc = static_cast<int>(obj->getProperty("cc"));
-        int val = static_cast<int>(obj->getProperty("value"));
-        processor->getMidiMapper().injectMidi(juce::MidiMessage::controllerEvent(ch, cc, val));
-    }
-
-    // Plugin management
-    else if (eventName == "scanPlugins")            handleScanPlugins();
-    else if (eventName == "getScanDirectories")     handleGetScanDirectories();
-    else if (eventName == "pickScanDirectory")      handlePickScanDirectory();
-    else if (eventName == "removeScanDirectory")    handleRemoveScanDirectory(json);
-
-    // Telemetry
-    else if (eventName == "getTelemetryEnabled")    handleGetTelemetryEnabled();
-    else if (eventName == "setTelemetryEnabled")    handleSetTelemetryEnabled(json);
-
-    // Tuner settings
-    else if (eventName == "getReferencePitch")      handleGetReferencePitch();
-    else if (eventName == "setReferencePitch")      handleSetReferencePitch(json);
-
-    // Presets
-    else if (eventName == "newSession")             handleNewSession();
-    else if (eventName == "saveSession")            handleSaveSession();
-    else if (eventName == "saveSessionQuiet")       handleSaveSessionQuiet();
-    else if (eventName == "loadSession")            handleLoadSession();
-    else if (eventName == "pickPresetDirectory")    handlePickPresetDirectory();
-    else if (eventName == "loadPresetByIndex")      handleLoadPresetByIndex(json);
-    else if (eventName == "renamePreset")           handleRenamePreset(json);
-    else if (eventName == "deletePreset")           handleDeletePreset(json);
-    else if (eventName == "getPresetList")          handleGetPresetList();
-    else if (eventName == "setGridSize")            handleSetGridSize(json);
-
-    // Scenes
-    else if (eventName == "addScene")               handleAddScene();
-    else if (eventName == "recallScene")            handleRecallScene(json);
-    else if (eventName == "saveScene")              handleSaveScene(json);
-    else if (eventName == "renameScene")            handleRenameScene(json);
-    else if (eventName == "deleteScene")            handleDeleteScene(json);
-
-    // Input block controls
-    else if (eventName == "toggleTestTone" && processor != nullptr)
-    {
-        auto* obj = json.getDynamicObject();
-        if (obj == nullptr) return;
-
-        auto blockId = obj->getProperty("blockId").toString();
-        auto nodeIt = blockNodeMap.find(blockId);
-        if (nodeIt == blockNodeMap.end()) return;
-
-        if (auto* node = processor->getGraph().getNodeForId(nodeIt->second))
+        if (auto* node = processor->getGraph().getNodeForId(nodeId))
         {
             if (auto* inputBlock = dynamic_cast<stellarr::InputBlock*>(node->getProcessor()))
-            {
-                bool enabled = !inputBlock->isTestToneEnabled();
-                inputBlock->setTestToneEnabled(enabled);
-
-                auto* detail = new juce::DynamicObject();
-                detail->setProperty("blockId", blockId);
-                detail->setProperty("enabled", enabled);
-                emitToJs("testToneChanged", detail);
-            }
+                inputBlock->setTunerEnabled(enabled);
+            if (auto* outputBlock = dynamic_cast<stellarr::OutputBlock*>(node->getProcessor()))
+                outputBlock->setTunerMute(enabled);
         }
     }
-    else if (eventName == "getTestToneSamples")
-    {
-        auto samplesDir = stellarrGetBundleResource("samples");
-        juce::Array<juce::var> files;
+}
 
-        if (samplesDir.isDirectory())
-        {
-            for (auto& f : samplesDir.findChildFiles(juce::File::findFiles, false, "*.wav"))
-            {
-                auto name = f.getFileNameWithoutExtension();
-                if (name.equalsIgnoreCase("placeholder")) continue; // skip submodule placeholder file
-                files.add(juce::var(name));
-            }
-        }
+void StellarrBridge::handleSetBlockMix(const juce::var& json)
+{
+    handleSetBlockParam(json, "mix",
+        [](stellarr::Block* b, const juce::var& v) { b->setMix(static_cast<float>(v)); },
+        "blockMixChanged",
+        [](stellarr::Block* b) { return juce::var(static_cast<double>(b->getMix())); });
+}
 
-        // Add "Synth (Default)" as first option
-        juce::Array<juce::var> sorted;
-        sorted.add(juce::var("Synth (Default)"));
-        for (auto& f : files)
-            sorted.add(f);
+void StellarrBridge::handleSetBlockBalance(const juce::var& json)
+{
+    handleSetBlockParam(json, "balance",
+        [](stellarr::Block* b, const juce::var& v) { b->setBalance(static_cast<float>(v)); },
+        "blockBalanceChanged",
+        [](stellarr::Block* b) { return juce::var(static_cast<double>(b->getBalance())); });
+}
 
-        auto* detail = new juce::DynamicObject();
-        detail->setProperty("samples", sorted);
-        emitToJs("testToneSamplesUpdated", detail);
-    }
-    else if (eventName == "setTestToneSample" && processor != nullptr)
-    {
-        auto* obj = json.getDynamicObject();
-        if (obj == nullptr) return;
+void StellarrBridge::handleSetBlockLevel(const juce::var& json)
+{
+    handleSetBlockParam(json, "level",
+        [](stellarr::Block* b, const juce::var& v) { b->setLevelDb(static_cast<float>(v)); },
+        "blockLevelChanged",
+        [](stellarr::Block* b) { return juce::var(static_cast<double>(b->getLevelDb())); });
+}
 
-        auto blockId = obj->getProperty("blockId").toString();
-        auto sampleName = obj->getProperty("sample").toString();
-        auto nodeIt = blockNodeMap.find(blockId);
-        if (nodeIt == blockNodeMap.end()) return;
+void StellarrBridge::handleToggleBlockBypass(const juce::var& json)
+{
+    if (processor == nullptr) return;
+    auto* obj = json.getDynamicObject();
+    if (obj == nullptr) return;
 
-        if (auto* node = processor->getGraph().getNodeForId(nodeIt->second))
-        {
-            if (auto* inputBlock = dynamic_cast<stellarr::InputBlock*>(node->getProcessor()))
-            {
-                if (sampleName == "Synth (Default)" || sampleName.isEmpty())
-                {
-                    inputBlock->clearTestToneSample();
-                }
-                else
-                {
-                    auto samplesDir = stellarrGetBundleResource("samples");
-                    auto file = samplesDir.getChildFile(sampleName + ".wav");
-                    inputBlock->loadTestToneSample(file);
-                }
+    auto blockId = obj->getProperty("blockId").toString();
+    auto* block = findBlock(blockId);
+    if (block == nullptr) return;
 
-                auto* detail = new juce::DynamicObject();
-                detail->setProperty("blockId", blockId);
-                detail->setProperty("sample", inputBlock->isUsingSample()
-                    ? inputBlock->getCurrentSampleName() : juce::String("Synth (Default)"));
-                emitToJs("testToneSampleChanged", detail);
-            }
-        }
-    }
-    else if (eventName == "setTunerEnabled" && processor != nullptr)
-    {
-        auto* obj = json.getDynamicObject();
-        if (obj == nullptr) return;
+    bool newState = !block->isBypassed();
+    block->setBypassed(newState);
+    markDirtyAndEmit(blockId, block);
 
-        bool enabled = static_cast<bool>(obj->getProperty("enabled"));
-        tunerActive = enabled;
+    auto* detail = new juce::DynamicObject();
+    detail->setProperty("blockId", blockId);
+    detail->setProperty("bypassed", newState);
+    emitToJs("blockBypassChanged", detail);
+}
 
-        for (auto& [blockId, nodeId] : blockNodeMap)
-        {
-            if (auto* node = processor->getGraph().getNodeForId(nodeId))
-            {
-                if (auto* inputBlock = dynamic_cast<stellarr::InputBlock*>(node->getProcessor()))
-                    inputBlock->setTunerEnabled(enabled);
-                if (auto* outputBlock = dynamic_cast<stellarr::OutputBlock*>(node->getProcessor()))
-                    outputBlock->setTunerMute(enabled);
-            }
-        }
-    }
-
-    // Block parameters (DRY via handleSetBlockParam)
-    else if (eventName == "setBlockMix")
-        handleSetBlockParam(json, "mix",
-            [](stellarr::Block* b, const juce::var& v) { b->setMix(static_cast<float>(v)); },
-            "blockMixChanged",
-            [](stellarr::Block* b) { return juce::var(static_cast<double>(b->getMix())); });
-    else if (eventName == "setBlockBalance")
-        handleSetBlockParam(json, "balance",
-            [](stellarr::Block* b, const juce::var& v) { b->setBalance(static_cast<float>(v)); },
-            "blockBalanceChanged",
-            [](stellarr::Block* b) { return juce::var(static_cast<double>(b->getBalance())); });
-    else if (eventName == "setBlockLevel")
-        handleSetBlockParam(json, "level",
-            [](stellarr::Block* b, const juce::var& v) { b->setLevelDb(static_cast<float>(v)); },
-            "blockLevelChanged",
-            [](stellarr::Block* b) { return juce::var(static_cast<double>(b->getLevelDb())); });
-    else if (eventName == "toggleBlockBypass" && processor != nullptr)
-    {
-        auto* obj = json.getDynamicObject();
-        if (obj == nullptr) return;
-
-        auto blockId = obj->getProperty("blockId").toString();
-        auto* block = findBlock(blockId);
-        if (block == nullptr) return;
-
-        bool newState = !block->isBypassed();
-        block->setBypassed(newState);
-        markDirtyAndEmit(blockId, block);
-
-        auto* detail = new juce::DynamicObject();
-        detail->setProperty("blockId", blockId);
-        detail->setProperty("bypassed", newState);
-        emitToJs("blockBypassChanged", detail);
-    }
-    else if (eventName == "setBlockBypassMode")
-        handleSetBlockParam(json, "bypassMode",
-            [](stellarr::Block* b, const juce::var& v) {
-                b->setBypassMode(stellarr::bypassModeFromString(v.toString()));
-            },
-            "blockBypassModeChanged",
-            [](stellarr::Block* b) {
-                return juce::var(stellarr::bypassModeToString(b->getBypassMode()));
-            });
-
-    // Block states
-    else if (eventName == "saveBlockState")          handleBlockStateEvent(json, "save");
-    else if (eventName == "addBlockState")           handleBlockStateEvent(json, "add");
-    else if (eventName == "recallBlockState")        handleBlockStateEvent(json, "recall");
-    else if (eventName == "deleteBlockState")        handleBlockStateEvent(json, "delete");
-
-    // Loudness metering
-    else if (eventName == "setSelectedBlock")        handleSetSelectedBlock(json);
-    else if (eventName == "setTargetLufs")           handleSetTargetLufs(json);
-    else if (eventName == "setLufsWindow")           handleSetLufsWindow(json);
+void StellarrBridge::handleSetBlockBypassMode(const juce::var& json)
+{
+    handleSetBlockParam(json, "bypassMode",
+        [](stellarr::Block* b, const juce::var& v) {
+            b->setBypassMode(stellarr::bypassModeFromString(v.toString()));
+        },
+        "blockBypassModeChanged",
+        [](stellarr::Block* b) {
+            return juce::var(stellarr::bypassModeToString(b->getBypassMode()));
+        });
 }
 
 // -- Helpers ------------------------------------------------------------------

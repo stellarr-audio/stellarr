@@ -13,7 +13,7 @@ describe('BinaryShaping', () => {
       />,
     );
     expect(
-      screen.getByText((_, el) => el?.textContent === 'ON ≥ 80'),
+      screen.getByText((_, el) => el?.textContent === 'ON ≥ CC 80'),
     ).toBeInTheDocument();
   });
 
@@ -26,7 +26,7 @@ describe('BinaryShaping', () => {
       />,
     );
     expect(
-      screen.getByText((_, el) => el?.textContent === 'RECALL ≥ 80'),
+      screen.getByText((_, el) => el?.textContent === 'RECALL ≥ CC 80'),
     ).toBeInTheDocument();
   });
 

@@ -133,12 +133,44 @@ bool StellarrBridge::restoreSession(juce::var session,
     // Callers must inspect the return value before mutating any "current
     // preset" bookkeeping, otherwise a quiet save could persist the previous
     // graph into the file the user thinks is the new preset.
+    //
+    // Same-thread reentrancy short-circuit FIRST: with the async cooperative
+    // load, the message thread returns between AsyncUpdater ticks and may
+    // re-enter restoreSession (e.g. drainMidiEvents → onPresetChange →
+    // handleLoadPresetByIndex → restoreSession). Calling try_lock from the
+    // thread that already owns the lock is UB on a non-recursive std::mutex,
+    // so reject via the atomic flag before we touch the mutex. The flag
+    // mirrors "a restore is in flight" and is set under the mutex below;
+    // reading it here is well-defined regardless of which thread we're on
+    // because std::atomic carries its own memory ordering.
+    if (restoreInProgress.load(std::memory_order_acquire))
+    {
+        DBG("restoreSession: rejected reentrant request (load already in flight)");
+        return false;
+    }
+
     std::unique_lock<std::mutex> lock(restoreMutex, std::try_to_lock);
     if (!lock.owns_lock())
     {
         DBG("restoreSession: rejected reentrant request");
         return false;
     }
+
+    // Mark in-flight under the mutex so the next reentrant call sees it.
+    restoreInProgress.store(true, std::memory_order_release);
+
+    // RAII rollback in case any exception fires between here and pendingRestore
+    // taking ownership. Without this, an alloc / juce::var copy throw during
+    // pluginBlocks setup would unwind the local lock but leave restoreInProgress
+    // pinned true, permanently rejecting future loads via the atomic fast-path.
+    struct InProgressRollback {
+        std::atomic<bool>& flag;
+        bool committed = false;
+        ~InProgressRollback() {
+            if (!committed) flag.store(false, std::memory_order_release);
+        }
+    };
+    InProgressRollback rollback{restoreInProgress};
 
     // Build the ordered list of plugin blocks up-front so handleAsyncUpdate()
     // can step through them one tick at a time without re-parsing each call.
@@ -170,6 +202,10 @@ bool StellarrBridge::restoreSession(juce::var session,
         std::move(pluginBlocks)
     });
 
+    // pendingRestore now owns the in-flight invariant via RestoreTeardown +
+    // the catch path below; release the rollback guard.
+    rollback.committed = true;
+
     // Emit the start bracket. If the interceptor or webview emit throws,
     // roll back the pendingRestore so the lock isn't held forever — the
     // caller's `started==true` contract is then a lie, but failing fast and
@@ -180,7 +216,10 @@ bool StellarrBridge::restoreSession(juce::var session,
     }
     catch (...)
     {
+        // Order: release the mutex BEFORE clearing the flag (see RestoreTeardown
+        // for the same-thread reentry rationale).
         pendingRestore.reset();   // releases lock via unique_lock dtor
+        restoreInProgress.store(false, std::memory_order_release);
         throw;
     }
 
@@ -272,7 +311,13 @@ void StellarrBridge::handleAsyncUpdate()
         StellarrBridge* self;
         ~RestoreTeardown()
         {
+            // Reset pendingRestore FIRST so the unique_lock destructor releases
+            // restoreMutex before we clear the atomic. If we cleared the flag
+            // first and a destructor in pendingRestore re-entered restoreSession
+            // on the same thread, the short-circuit would miss and try_lock on
+            // an already-owned non-recursive mutex (UB).
             self->pendingRestore.reset();   // releases lock via unique_lock dtor
+            self->restoreInProgress.store(false, std::memory_order_release);
             auto continuations = std::move(self->postRestoreContinuations);
             self->postRestoreContinuations.clear();
             for (auto& cont : continuations)

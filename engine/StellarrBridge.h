@@ -1,6 +1,7 @@
 #pragma once
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <juce_gui_extra/juce_gui_extra.h>
+#include <atomic>
 #include <functional>
 #include <map>
 #include <memory>
@@ -219,6 +220,16 @@ private:
     // rather than queue, so a rapid burst of preset swaps cannot pile up
     // graph rebuilds and crash the audio thread.
     std::mutex restoreMutex;
+
+    // Atomic mirror of "a restore is currently in flight". Read BEFORE the
+    // mutex try_lock so we can short-circuit same-thread reentrancy (e.g.
+    // drainMidiEvents → onPresetChange → handleLoadPresetByIndex →
+    // restoreSession arriving on the message thread between AsyncUpdater
+    // ticks). std::mutex::try_lock from the owning thread is undefined
+    // behaviour, so we cannot rely on the mutex alone for that case.
+    // Set true after the mutex is acquired in restoreSession; cleared
+    // before pendingRestore.reset() in the completion path.
+    std::atomic<bool> restoreInProgress { false };
 
     // Async cooperative preset-load state machine ----------------------------
 

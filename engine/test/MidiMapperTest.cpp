@@ -1615,6 +1615,47 @@ static bool testThresholdJsonRoundTripAndOmit()
     return true;
 }
 
+static bool testThresholdLoadClampsOutOfRange()
+{
+    printf("Test: threshold deserialise clamps to MIDI CC bounds... ");
+
+    auto build = [](int badThreshold) {
+        auto* obj = new juce::DynamicObject();
+        obj->setProperty("ch", -1);
+        obj->setProperty("cc", 7);
+        obj->setProperty("target", "blockBypass");
+        obj->setProperty("blockId", "block-A");
+        obj->setProperty("threshold", badThreshold);
+        juce::Array<juce::var> arr;
+        arr.add(juce::var(obj));
+        return juce::var(arr);
+    };
+
+    {
+        MidiMapper mapper;
+        mapper.loadPresetMappings(build(-50));
+        if (mapper.getMapping(0).threshold != 1)
+        {
+            fprintf(stderr, "  expected clamp to 1, got %d\n", mapper.getMapping(0).threshold);
+            printf("FAIL\n");
+            return false;
+        }
+    }
+    {
+        MidiMapper mapper;
+        mapper.loadPresetMappings(build(999));
+        if (mapper.getMapping(0).threshold != 127)
+        {
+            fprintf(stderr, "  expected clamp to 127, got %d\n", mapper.getMapping(0).threshold);
+            printf("FAIL\n");
+            return false;
+        }
+    }
+
+    printf("PASS\n");
+    return true;
+}
+
 int main()
 {
     int failures = 0;
@@ -1699,6 +1740,7 @@ int main()
     if (!testBlockBypassWithCustomThreshold()) ++failures;
     if (!testBlockStateWithCustomThreshold())  ++failures;
     if (!testThresholdJsonRoundTripAndOmit())  ++failures;
+    if (!testThresholdLoadClampsOutOfRange())  ++failures;
 
     printf("\n%d test(s) failed\n", failures);
     return failures;

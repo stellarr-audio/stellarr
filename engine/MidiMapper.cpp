@@ -575,7 +575,9 @@ void MidiMapper::fromJson(const juce::var& json)
                 m.curve = curveVar.isVoid() ? Curve::Linear : curveFromString(curveVar.toString());
 
                 auto thrVar = obj->getProperty("threshold");
-                m.threshold = thrVar.isVoid() ? 64 : static_cast<int>(thrVar);
+                m.threshold = thrVar.isVoid()
+                    ? 64
+                    : juce::jlimit(1, 127, static_cast<int>(thrVar));
 
                 mappings.push_back(m);
             }
@@ -653,7 +655,9 @@ static std::vector<MidiMapper::Mapping> parseMappingsArray(const juce::var& json
                 m.curve = curveVar.isVoid() ? MidiMapper::Curve::Linear : MidiMapper::curveFromString(curveVar.toString());
 
                 auto thrVar = obj->getProperty("threshold");
-                m.threshold = thrVar.isVoid() ? 64 : static_cast<int>(thrVar);
+                m.threshold = thrVar.isVoid()
+                    ? 64
+                    : juce::jlimit(1, 127, static_cast<int>(thrVar));
 
                 result.push_back(m);
             }

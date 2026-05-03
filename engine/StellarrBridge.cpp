@@ -142,7 +142,9 @@ void StellarrBridge::handleEvent(const juce::String& eventName, const juce::var&
             : MidiMapper::curveFromString(curveVar.toString());
 
         auto thrVar = obj->getProperty("threshold");
-        m.threshold = thrVar.isVoid() ? 64 : static_cast<int>(thrVar);
+        m.threshold = thrVar.isVoid()
+            ? 64
+            : juce::jlimit(1, 127, static_cast<int>(thrVar));
 
         processor->getMidiMapper().addMapping(m);
         emitMidiMappings();
@@ -198,7 +200,9 @@ void StellarrBridge::handleEvent(const juce::String& eventName, const juce::var&
             : MidiMapper::curveFromString(curveVar.toString());
 
         auto thrVar = obj->getProperty("threshold");
-        args.threshold = thrVar.isVoid() ? 64 : static_cast<int>(thrVar);
+        args.threshold = thrVar.isVoid()
+            ? 64
+            : juce::jlimit(1, 127, static_cast<int>(thrVar));
 
         processor->getMidiMapper().startLearn(args);
         emitMidiMappings();

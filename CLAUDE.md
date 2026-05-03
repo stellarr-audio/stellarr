@@ -230,7 +230,13 @@ macOS Apple Silicon, CMake 3.24+, Xcode CLI tools, Node.js 18+, npm. See `docs/C
 - **Focus on text inputs:** `border-color: var(--color-secondary)` (same as hover); `outline: none`.
 - **Active/selected:** `color: var(--color-primary)` + orchid tint background. Never blue/grey.
 - **Section-title convention (Options panel):** orchid for grouping headers (Parameters, States). Neutral `var(--color-text)` for input labels (Plugin, Test Tone, Level, Target Loudness).
-- **Slider fill:** amber (`--color-secondary`). Thumb: neutral (`--color-text`) with surface ring.
+- **Slider design spec** (canonical):
+  - Track: 4px tall, background `color-mix(in srgb, var(--color-muted) 25%, transparent)`. Sharp edges (`--radius: 0`).
+  - Active fill: `var(--color-secondary)` (amber). Direction: from min toward the current value by default; flip to the right of the thumb (current → max) when the active range *is* the right-of-thumb region (e.g. binary "ON" trigger).
+  - Thumb: square 16×16, `var(--color-text)` background, surface ring `box-shadow: 0 0 0 2px var(--color-surface)`. Sharp edges.
+  - Tick row (optional): 1px-wide × 4px-tall ticks in `var(--color-muted)` with 13px (`var(--text-xs)`) tabular-nums labels.
+  - Floating thumb value label (optional): 13px tabular-nums in `var(--color-secondary)`, centred over the thumb. Clamp `left` to `[8%, 92%]` so it doesn't bleed past the track at extremes.
+  - Reusable component: `ui/src/components/common/Slider.tsx` (Radix-backed). Existing Options panel usages (ParametersSection, SignalSection) currently render rounded thumbs — refactor to square in a follow-up PR; don't bundle with feature work unless asked.
 - **Radix-controlled triggers** (Select/DropdownMenu) expose `--trigger-border` and `--trigger-radius` CSS variables — set on a parent to fuse a trigger into an `InputGroup` without modifying its markup.
 
 ### Floating panel titlebar (canonical pattern)
@@ -272,6 +278,12 @@ Used for the Options panel and any modal dialog (e.g. `MidiAssignDialog`). Every
 - Zustand store holds `theme: 'light' | 'dark' | 'system'`; persists under localStorage key `stellarr.theme`
 - `useSyncTheme()` (called in `App.tsx`) writes `data-theme="light"|"dark"` on `<html>` and subscribes to `prefers-color-scheme` changes when `'system'`
 - UI toggle in header flips between resolved light/dark (skips `'system'` to avoid invisible transitions)
+
+### UI mockups + design previews
+
+- **Always render mockups in light AND dark mode side-by-side.** Stellarr ships both themes; a mockup that only shows one half is incomplete. Use a 2-column layout (light left, dark right) per variant, or two stacked sections — never a single theme.
+- Use the real semantic tokens from `ui/src/design/tokens.css`. Don't hardcode hex values. Light theme palette is the `:root[data-theme="light"]` block; dark is `:root[data-theme="dark"]`. Copy the tokens needed (or load them via a `<style>` block in the HTML preview).
+- Save mockup HTML under `.superpowers/brainstorm/<session-id>/content/` (gitignored, persistent across sessions, discoverable). Reference the absolute path back to the user so they can open it.
 
 ### Testing UI
 

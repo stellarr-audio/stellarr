@@ -58,12 +58,11 @@ describe('MidiAssignDialog', () => {
       />,
     );
     expect(screen.getByText('Trigger')).toBeInTheDocument();
-    // State labels follow "OFF · < N" / "ON · ≥ N" format.
-    expect(screen.getByText(/OFF\s+·\s+</)).toBeInTheDocument();
-    expect(screen.getByText(/ON\s+·\s+≥/)).toBeInTheDocument();
+    // BinaryShaping renders threshold help text rather than OFF/ON labels.
+    expect(screen.getByText(/Block turns ON when CC ≥/)).toBeInTheDocument();
   });
 
-  it('renders Trigger section with BinaryShaping for blockState (IGNORED/RECALL)', () => {
+  it('renders Trigger section with BinaryShaping for blockState (recall semantics)', () => {
     render(
       <MidiAssignDialog
         open
@@ -75,7 +74,6 @@ describe('MidiAssignDialog', () => {
       />,
     );
     expect(screen.getByText('Trigger')).toBeInTheDocument();
-    expect(screen.getByText(/IGNORED\s+·\s+</)).toBeInTheDocument();
-    expect(screen.getByText(/RECALL\s+·\s+≥/)).toBeInTheDocument();
+    expect(screen.getByText(/State recalled when CC ≥/)).toBeInTheDocument();
   });
 });

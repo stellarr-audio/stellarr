@@ -37,11 +37,13 @@ function BinaryShapingInner({ meta, threshold, onChange }: Props) {
     onChange(clamped);
   };
 
-  const labels = meta.binaryLabels!;
   const pct =
     ((value - CC_MIN_THRESHOLD) / (CC_MAX_THRESHOLD - CC_MIN_THRESHOLD)) * 100;
   // 64 sits at (64-1)/(127-1) = 63/126 = 50% exactly.
   const midPct = ((64 - CC_MIN_THRESHOLD) / (CC_MAX_THRESHOLD - CC_MIN_THRESHOLD)) * 100;
+  // Clamp the floating "CC N" label so it doesn't bleed past the track edges
+  // at extremes (translateX(-50%) would push it past the parent at 0%/100%).
+  const labelPct = clamp(pct, 8, 92);
 
   return (
     <div className={styles.wrap}>
@@ -57,7 +59,7 @@ function BinaryShapingInner({ meta, threshold, onChange }: Props) {
           className={styles.slider}
           aria-label="Threshold"
         />
-        <div className={styles.handleLabel} style={{ left: `${pct}%` }}>
+        <div className={styles.handleLabel} style={{ left: `${labelPct}%` }}>
           CC {value}
         </div>
       </div>
@@ -69,11 +71,6 @@ function BinaryShapingInner({ meta, threshold, onChange }: Props) {
         <span className={styles.tickLabel} style={{ left: '0%' }}>0</span>
         <span className={styles.tickLabel} style={{ left: `${midPct}%` }}>64</span>
         <span className={styles.tickLabel} style={{ left: '100%' }}>127</span>
-      </div>
-
-      <div className={styles.stateLabels}>
-        <span className={styles.off}>{labels.off} · &lt; {value}</span>
-        <span className={styles.on}>{labels.on} · ≥ {value}</span>
       </div>
 
       <p className={styles.helpText}>{meta.binaryHelpTemplate!(value)}</p>

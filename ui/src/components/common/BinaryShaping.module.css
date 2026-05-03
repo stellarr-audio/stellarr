@@ -7,6 +7,15 @@
   overflow: hidden;
 }
 
+.fieldLabel {
+  font-size: var(--text-base);
+  color: var(--color-text);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin: 0 0 6px;
+  display: block;
+}
+
 /* ── Slider shell ─────────────────────────────────────────────────────── */
 .sliderShell {
   position: relative;
@@ -124,10 +133,29 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* ── Help text ────────────────────────────────────────────────────────── */
-.helpText {
+.tickLabelEdgeStart {
+  left: 0;
+  transform: none;
+  text-align: left;
+}
+
+.tickLabelEdgeEnd {
+  left: auto;
+  right: 0;
+  transform: none;
+  text-align: right;
+}
+
+/* ── Help rule ────────────────────────────────────────────────────────── */
+.helpRule {
+  display: block;
+  margin-top: 14px;
   font-size: var(--text-xs);
   color: var(--color-muted);
-  margin: 0.5rem 0 0;
-  line-height: 1.4;
+  font-variant-numeric: tabular-nums;
+}
+
+.helpRuleAccent {
+  color: var(--color-secondary);
+  font-weight: 600;
 }

@@ -4,7 +4,7 @@ import { BinaryShaping } from '../BinaryShaping';
 import { TARGET_META } from '../shaping/targetMeta';
 
 describe('BinaryShaping', () => {
-  it('shows help text including the threshold', () => {
+  it('shows the rule line including the threshold', () => {
     render(
       <BinaryShaping
         meta={TARGET_META.blockBypass}
@@ -12,7 +12,30 @@ describe('BinaryShaping', () => {
         onChange={vi.fn()}
       />,
     );
-    expect(screen.getByText(/Block turns ON when CC ≥ 80/)).toBeInTheDocument();
+    expect(screen.getByText(/ON when/)).toBeInTheDocument();
+    expect(screen.getByText(/CC ≥ 80/)).toBeInTheDocument();
+  });
+
+  it('uses RECALL label for blockState', () => {
+    render(
+      <BinaryShaping
+        meta={TARGET_META.blockState}
+        threshold={80}
+        onChange={vi.fn()}
+      />,
+    );
+    expect(screen.getByText(/RECALL when/)).toBeInTheDocument();
+  });
+
+  it('renders a Threshold field label', () => {
+    render(
+      <BinaryShaping
+        meta={TARGET_META.blockBypass}
+        threshold={80}
+        onChange={vi.fn()}
+      />,
+    );
+    expect(screen.getByText('Threshold')).toBeInTheDocument();
   });
 
   it('emits onChange when slider value changes', () => {

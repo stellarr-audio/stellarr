@@ -47,6 +47,7 @@ function BinaryShapingInner({ meta, threshold, onChange }: Props) {
 
   return (
     <div className={styles.wrap}>
+      <span className={styles.fieldLabel}>Threshold</span>
       <div className={styles.sliderShell}>
         <div className={styles.trackOnFill} style={{ left: `${pct}%`, right: '0' }} />
         <input
@@ -68,12 +69,14 @@ function BinaryShapingInner({ meta, threshold, onChange }: Props) {
         <div className={styles.tick} style={{ left: '0%' }} />
         <div className={styles.tick} style={{ left: `${midPct}%` }} />
         <div className={styles.tick} style={{ left: '100%' }} />
-        <span className={styles.tickLabel} style={{ left: '0%' }}>0</span>
+        <span className={`${styles.tickLabel} ${styles.tickLabelEdgeStart}`}>0</span>
         <span className={styles.tickLabel} style={{ left: `${midPct}%` }}>64</span>
-        <span className={styles.tickLabel} style={{ left: '100%' }}>127</span>
+        <span className={`${styles.tickLabel} ${styles.tickLabelEdgeEnd}`}>127</span>
       </div>
 
-      <p className={styles.helpText}>{meta.binaryHelpTemplate!(value)}</p>
+      <span className={styles.helpRule}>
+        {meta.binaryLabels!.on} when <span className={styles.helpRuleAccent}>CC ≥ {value}</span>
+      </span>
     </div>
   );
 }

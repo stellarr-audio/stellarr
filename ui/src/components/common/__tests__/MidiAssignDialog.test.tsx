@@ -58,8 +58,9 @@ describe('MidiAssignDialog', () => {
       />,
     );
     expect(screen.getByText('Trigger')).toBeInTheDocument();
-    // BinaryShaping renders threshold help text rather than OFF/ON labels.
-    expect(screen.getByText(/Block turns ON when CC ≥/)).toBeInTheDocument();
+    // BinaryShaping renders the rule line driven by binaryLabels.on.
+    expect(screen.getByText(/ON when/)).toBeInTheDocument();
+    expect(screen.getByText(/CC ≥/)).toBeInTheDocument();
   });
 
   it('renders Trigger section with BinaryShaping for blockState (recall semantics)', () => {
@@ -74,6 +75,6 @@ describe('MidiAssignDialog', () => {
       />,
     );
     expect(screen.getByText('Trigger')).toBeInTheDocument();
-    expect(screen.getByText(/State recalled when CC ≥/)).toBeInTheDocument();
+    expect(screen.getByText(/RECALL when/)).toBeInTheDocument();
   });
 });

@@ -490,10 +490,18 @@ void StellarrBridge::restoreBlockPlugin(juce::AudioProcessorGraph::NodeID nodeId
 
 void StellarrBridge::emitToJs(const juce::String& eventName, juce::DynamicObject* detail)
 {
+    // Wrap the raw DynamicObject* once so the ReferenceCountedObjectPtr inside
+    // `data` keeps it alive across both the interceptor call and the async
+    // WebView emit. Building two separate juce::var's around the same raw
+    // pointer would let the first temporary's destructor delete the object
+    // before the second wrapper takes ownership.
+    auto data = juce::var(detail);
+
+    if (emitInterceptor) emitInterceptor(eventName, data);
+
     if (webView == nullptr) return;
 
     auto eventId = juce::Identifier(eventName);
-    auto data = juce::var(detail);
 
     juce::MessageManager::callAsync([this, eventId, data]()
     {

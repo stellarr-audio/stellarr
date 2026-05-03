@@ -2,11 +2,15 @@
 #include "blocks/GainBlock.h"
 #include "blocks/PluginBlock.h"
 #include "../StellarrBridge.h"
+#include <mutex>
+#include <thread>
+#include <vector>
 
 class PresetSwitchTestAccess
 {
 public:
     static const auto& getBlockNodeMap(StellarrBridge& b) { return b.blockNodeMap; }
+    static std::mutex& getRestoreMutex(StellarrBridge& b) { return b.restoreMutex; }
 };
 
 // -- Batched graph rebuild ----------------------------------------------------
@@ -257,6 +261,181 @@ static bool testPluginReadyGatesProcess()
     return true;
 }
 
+// -- Reentrant restoreSession is rejected by try-lock --------------------------
+
+static bool testRestoreSessionTryLockBlocksReentrant()
+{
+    printf("Test: restoreSession try-lock rejects reentrant request... ");
+
+    StellarrProcessor proc;
+    proc.prepareToPlay(kSampleRate, kBlockSize);
+
+    StellarrBridge bridge;
+    bridge.setProcessor(&proc);
+
+    // Start from a clean known-good baseline
+    bridge.restoreSession(juce::JSON::parse(kSessionPassthrough));
+    auto baselineSize = PresetSwitchTestAccess::getBlockNodeMap(bridge).size();
+
+    // Hold the restoreMutex from the test thread, then dispatch a competing
+    // restoreSession on a separate thread. The competing thread's try_lock
+    // must fail and the body must drop early — we wait on the thread's join
+    // to confirm it returned without blocking. Calling try_lock on a mutex
+    // already locked by the same thread is undefined behaviour for
+    // std::mutex, hence the explicit second thread.
+    auto& mutex = PresetSwitchTestAccess::getRestoreMutex(bridge);
+    {
+        std::unique_lock<std::mutex> heldLock(mutex);
+
+        std::thread competing([&bridge]()
+        {
+            bridge.restoreSession(juce::JSON::parse(kSessionWithPluginBlock));
+        });
+        competing.join();
+
+        auto duringLockSize = PresetSwitchTestAccess::getBlockNodeMap(bridge).size();
+        if (duringLockSize != baselineSize)
+        {
+            fprintf(stderr, "  blockNodeMap mutated while restoreMutex was held (was %zu, now %zu)\n",
+                    baselineSize, duringLockSize);
+            printf("FAIL\n");
+            proc.releaseResources();
+            return false;
+        }
+    }
+
+    // After releasing the lock, restoreSession should succeed normally.
+    bridge.restoreSession(juce::JSON::parse(kSessionWithPluginBlock));
+    auto afterUnlockSize = PresetSwitchTestAccess::getBlockNodeMap(bridge).size();
+    if (afterUnlockSize == 0)
+    {
+        fprintf(stderr, "  restoreSession failed to populate graph after unlock\n");
+        printf("FAIL\n");
+        proc.releaseResources();
+        return false;
+    }
+
+    proc.releaseResources();
+    printf("PASS\n");
+    return true;
+}
+
+// -- restoreSession brackets work with started/finished events ----------------
+
+static bool testRestoreSessionEmitsStartedFinished()
+{
+    printf("Test: restoreSession emits presetLoadStarted then presetLoadFinished... ");
+
+    StellarrProcessor proc;
+    proc.prepareToPlay(kSampleRate, kBlockSize);
+
+    StellarrBridge bridge;
+    bridge.setProcessor(&proc);
+
+    std::vector<juce::String> events;
+    bridge.setEmitInterceptor([&events](const juce::String& name, const juce::var&)
+    {
+        events.push_back(name);
+    });
+
+    bridge.restoreSession(juce::JSON::parse(kSessionPassthrough));
+
+    int startedAt = -1;
+    int finishedAt = -1;
+    for (int i = 0; i < static_cast<int>(events.size()); ++i)
+    {
+        if (events[static_cast<size_t>(i)] == "presetLoadStarted" && startedAt < 0)
+            startedAt = i;
+        else if (events[static_cast<size_t>(i)] == "presetLoadFinished")
+            finishedAt = i;
+    }
+
+    bridge.setEmitInterceptor(nullptr);
+
+    if (startedAt < 0 || finishedAt < 0 || startedAt >= finishedAt)
+    {
+        fprintf(stderr, "  expected presetLoadStarted before presetLoadFinished (started=%d, finished=%d)\n",
+                startedAt, finishedAt);
+        printf("FAIL\n");
+        proc.releaseResources();
+        return false;
+    }
+
+    proc.releaseResources();
+    printf("PASS\n");
+    return true;
+}
+
+// -- restoreSession still emits presetLoadFinished when body throws -----------
+
+static bool testRestoreSessionEmitsFinishedOnException()
+{
+    printf("Test: restoreSession emits presetLoadFinished even when body throws... ");
+
+    StellarrProcessor proc;
+    proc.prepareToPlay(kSampleRate, kBlockSize);
+
+    StellarrBridge bridge;
+    bridge.setProcessor(&proc);
+
+    std::vector<juce::String> events;
+    // Let presetLoadStarted (which is emitted before the try block) succeed,
+    // then throw from inside the try-protected body so the catch path runs
+    // and emits presetLoadFinished before re-throwing. Capture every emit,
+    // including ones triggered by the catch path.
+    bool hasThrown = false;
+    bridge.setEmitInterceptor([&events, &hasThrown](const juce::String& name, const juce::var&)
+    {
+        events.push_back(name);
+        if (!hasThrown && name != "presetLoadStarted" && name != "presetLoadFinished")
+        {
+            hasThrown = true;
+            throw std::runtime_error("test-injected failure during restoreSession body");
+        }
+    });
+
+    bool caught = false;
+    try
+    {
+        bridge.restoreSession(juce::JSON::parse(kSessionPassthrough));
+    }
+    catch (const std::runtime_error&)
+    {
+        caught = true;
+    }
+
+    bridge.setEmitInterceptor(nullptr);
+
+    if (!caught)
+    {
+        fprintf(stderr, "  expected restoreSession to re-throw the injected exception\n");
+        printf("FAIL\n");
+        proc.releaseResources();
+        return false;
+    }
+
+    bool sawStarted = false;
+    bool sawFinished = false;
+    for (auto& name : events)
+    {
+        if (name == "presetLoadStarted") sawStarted = true;
+        else if (name == "presetLoadFinished") sawFinished = true;
+    }
+
+    if (!sawStarted || !sawFinished)
+    {
+        fprintf(stderr, "  expected both started and finished emits (started=%d, finished=%d)\n",
+                static_cast<int>(sawStarted), static_cast<int>(sawFinished));
+        printf("FAIL\n");
+        proc.releaseResources();
+        return false;
+    }
+
+    proc.releaseResources();
+    printf("PASS\n");
+    return true;
+}
+
 int main()
 {
     int failures = 0;
@@ -266,6 +445,9 @@ int main()
     if (!testRapidSessionRestore())             ++failures;
     if (!testClearAndRebuildProducesWorkingGraph()) ++failures;
     if (!testPluginReadyGatesProcess())         ++failures;
+    if (!testRestoreSessionTryLockBlocksReentrant()) ++failures;
+    if (!testRestoreSessionEmitsStartedFinished())   ++failures;
+    if (!testRestoreSessionEmitsFinishedOnException()) ++failures;
 
     printf("\n%d test(s) failed\n", failures);
     return failures;

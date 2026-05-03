@@ -2,6 +2,7 @@
 #include "../blocks/InputBlock.h"
 #include "../blocks/OutputBlock.h"
 #include "SceneCapture.h"
+#include <mutex>
 
 // -- Session serialization ----------------------------------------------------
 
@@ -125,215 +126,249 @@ void StellarrBridge::restoreSession(const juce::var& session)
     auto* obj = session.getDynamicObject();
     if (obj == nullptr) return;
 
-    using UK = juce::AudioProcessorGraph::UpdateKind;
-
-    // -- Phase 1: Pre-create plugin instances while audio is still running -----
-    // This is the slow part (loading plugin binaries from disk). We do it before
-    // suspending so the audio gap is as short as possible.
-
-    struct PluginPreload {
-        juce::String blockId;
-        juce::String pluginId;
-        juce::String pluginName;
-        std::unique_ptr<juce::AudioPluginInstance> instance;
-    };
-    std::vector<PluginPreload> preloads;
-
-    auto blocksVar = obj->getProperty("blocks");
-    if (auto* blocksArray = blocksVar.getArray())
+    // Guard against rapid-fire concurrent invocations (e.g. user mashing the
+    // preset selector). A lost try-lock means another restore is already in
+    // flight — drop this one rather than queue a second graph rebuild on top.
+    //
+    // KNOWN GAP: callers (handleLoadPresetByIndex, handleLoadSession,
+    // handleBridgeReady, handleScreenshotSetup) cannot tell that this
+    // returned early due to contention, so they may still update preset
+    // bookkeeping (currentPresetIndex / lastPresetFile) onto a preset whose
+    // graph was not loaded. A subsequent quiet save would then persist the
+    // still-loaded graph into the wrong file. Surfacing this state to
+    // callers requires either a return-value change (breaks PresetFileTest's
+    // processor-less helper) or per-call cookie plumbing — both belong in
+    // the next task of the preset-swap crash fix plan.
+    std::unique_lock<std::mutex> lock(restoreMutex, std::try_to_lock);
+    if (!lock.owns_lock())
     {
-        for (auto& blockVar : *blocksArray)
-        {
-            auto* blockObj = blockVar.getDynamicObject();
-            if (blockObj == nullptr) continue;
-
-            auto type = blockObj->getProperty("type").toString();
-            if (type != "plugin" && type != "vst") continue;
-
-            auto pluginId = blockObj->getProperty("pluginId").toString();
-            if (pluginId.isEmpty()) continue;
-
-            auto savedId = blockObj->getProperty("id").toString();
-            auto pluginName = blockObj->getProperty("pluginName").toString();
-
-            juce::String errorMessage;
-            auto instance = processor->getPluginManager().createPluginInstance(
-                pluginId, processor->getSampleRate(),
-                processor->getBlockSize(), errorMessage);
-
-            if (instance != nullptr)
-            {
-                instance->setPlayConfigDetails(2, 2, processor->getSampleRate(),
-                                               processor->getBlockSize());
-                instance->prepareToPlay(processor->getSampleRate(),
-                                        processor->getBlockSize());
-            }
-
-            preloads.push_back({savedId, pluginId, pluginName, std::move(instance)});
-        }
+        DBG("restoreSession: rejected reentrant request");
+        return;
     }
 
-    // -- Phase 2: Suspend and rebuild the graph atomically --------------------
-    // Now that all plugins are pre-loaded, the suspension window is minimal:
-    // just pointer swaps, connection wiring, and a single graph rebuild.
+    emitToJs("presetLoadStarted", new juce::DynamicObject());
 
-    processor->suspendProcessing(true);
-
-    clearGraph();
-
-    // Restore blocks (all graph mutations use UpdateKind::none — no intermediate rebuilds)
-    if (auto* blocksArray = blocksVar.getArray())
+    try
     {
-        // Build a lookup from saved block ID to preloaded instance
-        std::map<juce::String, size_t> preloadIndex;
-        for (size_t i = 0; i < preloads.size(); ++i)
-            preloadIndex[preloads[i].blockId] = i;
+        using UK = juce::AudioProcessorGraph::UpdateKind;
 
-        for (auto& blockVar : *blocksArray)
+        // -- Phase 1: Pre-create plugin instances while audio is still running -----
+        // This is the slow part (loading plugin binaries from disk). We do it before
+        // suspending so the audio gap is as short as possible.
+
+        struct PluginPreload {
+            juce::String blockId;
+            juce::String pluginId;
+            juce::String pluginName;
+            std::unique_ptr<juce::AudioPluginInstance> instance;
+        };
+        std::vector<PluginPreload> preloads;
+
+        auto blocksVar = obj->getProperty("blocks");
+        if (auto* blocksArray = blocksVar.getArray())
         {
-            auto* blockObj = blockVar.getDynamicObject();
-            if (blockObj == nullptr) continue;
-
-            auto type = blockObj->getProperty("type").toString();
-            auto col  = static_cast<int>(blockObj->getProperty("col"));
-            auto row  = static_cast<int>(blockObj->getProperty("row"));
-            auto savedId = blockObj->getProperty("id").toString();
-
-            std::unique_ptr<stellarr::Block> block;
-            if (type == "input")       block = std::make_unique<stellarr::InputBlock>();
-            else if (type == "output") block = std::make_unique<stellarr::OutputBlock>();
-            else if (type == "plugin" || type == "vst")  block = std::make_unique<stellarr::PluginBlock>();
-            else continue;
-
-            block->fromJson(blockVar);
-            block->resetToDefault();
-
-            auto blockId = savedId.isNotEmpty() ? savedId : block->getBlockId().toString();
-            auto nodeId = processor->addBlock(std::move(block), UK::none);
-            if (nodeId.uid == 0) continue;
-
-            blockNodeMap[blockId] = nodeId;
-            blockPositions[blockId] = {col, row};
-
-            connectIOBlock(type, nodeId, UK::none);
-
-            // Install pre-loaded plugin instance (just a pointer swap, fast)
-            if (type == "plugin" || type == "vst")
+            for (auto& blockVar : *blocksArray)
             {
-                auto preloadIt = preloadIndex.find(blockId);
-                if (preloadIt != preloadIndex.end())
+                auto* blockObj = blockVar.getDynamicObject();
+                if (blockObj == nullptr) continue;
+
+                auto type = blockObj->getProperty("type").toString();
+                if (type != "plugin" && type != "vst") continue;
+
+                auto pluginId = blockObj->getProperty("pluginId").toString();
+                if (pluginId.isEmpty()) continue;
+
+                auto savedId = blockObj->getProperty("id").toString();
+                auto pluginName = blockObj->getProperty("pluginName").toString();
+
+                juce::String errorMessage;
+                auto instance = processor->getPluginManager().createPluginInstance(
+                    pluginId, processor->getSampleRate(),
+                    processor->getBlockSize(), errorMessage);
+
+                if (instance != nullptr)
                 {
-                    auto& pl = preloads[preloadIt->second];
-                    if (auto* node = processor->getGraph().getNodeForId(nodeId))
+                    instance->setPlayConfigDetails(2, 2, processor->getSampleRate(),
+                                                   processor->getBlockSize());
+                    instance->prepareToPlay(processor->getSampleRate(),
+                                            processor->getBlockSize());
+                }
+
+                preloads.push_back({savedId, pluginId, pluginName, std::move(instance)});
+            }
+        }
+
+        // -- Phase 2: Suspend and rebuild the graph atomically --------------------
+        // Now that all plugins are pre-loaded, the suspension window is minimal:
+        // just pointer swaps, connection wiring, and a single graph rebuild.
+
+        processor->suspendProcessing(true);
+
+        clearGraph();
+
+        // Restore blocks (all graph mutations use UpdateKind::none — no intermediate rebuilds)
+        if (auto* blocksArray = blocksVar.getArray())
+        {
+            // Build a lookup from saved block ID to preloaded instance
+            std::map<juce::String, size_t> preloadIndex;
+            for (size_t i = 0; i < preloads.size(); ++i)
+                preloadIndex[preloads[i].blockId] = i;
+
+            for (auto& blockVar : *blocksArray)
+            {
+                auto* blockObj = blockVar.getDynamicObject();
+                if (blockObj == nullptr) continue;
+
+                auto type = blockObj->getProperty("type").toString();
+                auto col  = static_cast<int>(blockObj->getProperty("col"));
+                auto row  = static_cast<int>(blockObj->getProperty("row"));
+                auto savedId = blockObj->getProperty("id").toString();
+
+                std::unique_ptr<stellarr::Block> block;
+                if (type == "input")       block = std::make_unique<stellarr::InputBlock>();
+                else if (type == "output") block = std::make_unique<stellarr::OutputBlock>();
+                else if (type == "plugin" || type == "vst")  block = std::make_unique<stellarr::PluginBlock>();
+                else continue;
+
+                block->fromJson(blockVar);
+                block->resetToDefault();
+
+                auto blockId = savedId.isNotEmpty() ? savedId : block->getBlockId().toString();
+                auto nodeId = processor->addBlock(std::move(block), UK::none);
+                if (nodeId.uid == 0) continue;
+
+                blockNodeMap[blockId] = nodeId;
+                blockPositions[blockId] = {col, row};
+
+                connectIOBlock(type, nodeId, UK::none);
+
+                // Install pre-loaded plugin instance (just a pointer swap, fast)
+                if (type == "plugin" || type == "vst")
+                {
+                    auto preloadIt = preloadIndex.find(blockId);
+                    if (preloadIt != preloadIndex.end())
                     {
-                        if (auto* pb = dynamic_cast<stellarr::PluginBlock*>(node->getProcessor()))
+                        auto& pl = preloads[preloadIt->second];
+                        if (auto* node = processor->getGraph().getNodeForId(nodeId))
                         {
-                            if (pl.instance != nullptr)
+                            if (auto* pb = dynamic_cast<stellarr::PluginBlock*>(node->getProcessor()))
                             {
-                                pb->setPlugin(std::move(pl.instance), pl.pluginId);
-                                pb->restorePluginState();
-                            }
-                            else
-                            {
-                                pb->setPluginMissing(true);
-                                pb->setMissingPluginName(pl.pluginName);
+                                if (pl.instance != nullptr)
+                                {
+                                    pb->setPlugin(std::move(pl.instance), pl.pluginId);
+                                    pb->restorePluginState();
+                                }
+                                else
+                                {
+                                    pb->setPluginMissing(true);
+                                    pb->setMissingPluginName(pl.pluginName);
+                                }
                             }
                         }
                     }
                 }
             }
         }
-    }
 
-    // Restore connections (also batched)
-    auto connectionsVar = obj->getProperty("connections");
-    if (auto* connectionsArray = connectionsVar.getArray())
-    {
-        for (auto& connVar : *connectionsArray)
+        // Restore connections (also batched)
+        auto connectionsVar = obj->getProperty("connections");
+        if (auto* connectionsArray = connectionsVar.getArray())
         {
-            auto* connObj = connVar.getDynamicObject();
-            if (connObj == nullptr) continue;
-
-            auto sourceId = connObj->getProperty("sourceId").toString();
-            auto destId   = connObj->getProperty("destId").toString();
-
-            auto srcIt = blockNodeMap.find(sourceId);
-            auto dstIt = blockNodeMap.find(destId);
-            if (srcIt == blockNodeMap.end() || dstIt == blockNodeMap.end()) continue;
-
-            processor->connectBlocks(srcIt->second, dstIt->second, 2, UK::none);
-        }
-    }
-
-    // Single atomic rebuild — audio thread picks up the complete new graph in one swap
-    processor->rebuildGraph();
-
-    // Restore scenes
-    scenes.clear();
-    activeSceneIndex = -1;
-    auto scenesVar = obj->getProperty("scenes");
-    if (auto* scenesArr = scenesVar.getArray())
-    {
-        for (auto& sv : *scenesArr)
-        {
-            if (auto* so = sv.getDynamicObject())
+            for (auto& connVar : *connectionsArray)
             {
-                Scene scene;
-                scene.name = so->getProperty("name").toString();
-                auto mapVar = so->getProperty("blockStateMap");
-                if (auto* mapObj = mapVar.getDynamicObject())
-                {
-                    for (auto& prop : mapObj->getProperties())
-                        scene.blockStateMap[prop.name.toString()] = static_cast<int>(prop.value);
-                }
-                auto bypassVar = so->getProperty("blockBypassMap");
-                if (auto* bypassObj = bypassVar.getDynamicObject())
-                {
-                    for (auto& prop : bypassObj->getProperties())
-                        scene.blockBypassMap[prop.name.toString()] = static_cast<bool>(prop.value);
-                }
-                scenes.push_back(scene);
+                auto* connObj = connVar.getDynamicObject();
+                if (connObj == nullptr) continue;
+
+                auto sourceId = connObj->getProperty("sourceId").toString();
+                auto destId   = connObj->getProperty("destId").toString();
+
+                auto srcIt = blockNodeMap.find(sourceId);
+                auto dstIt = blockNodeMap.find(destId);
+                if (srcIt == blockNodeMap.end() || dstIt == blockNodeMap.end()) continue;
+
+                processor->connectBlocks(srcIt->second, dstIt->second, 2, UK::none);
             }
         }
-        activeSceneIndex = static_cast<int>(obj->getProperty("activeSceneIndex"));
-        if (activeSceneIndex >= static_cast<int>(scenes.size()))
-            activeSceneIndex = scenes.empty() ? -1 : 0;
-    }
 
-    // Ensure at least one scene exists
-    if (scenes.empty())
-    {
-        Scene defaultScene;
-        defaultScene.name = "Scene 1";
-        captureIntoScene(defaultScene, blockNodeMap, processor->getGraph());
-        scenes.push_back(defaultScene);
-        activeSceneIndex = 0;
-    }
+        // Single atomic rebuild — audio thread picks up the complete new graph in one swap
+        processor->rebuildGraph();
 
-    // Restore preset-level MIDI mappings (always clear old, keeps global intact)
-    processor->getMidiMapper().loadPresetMappings(
-        obj->hasProperty("midiMappings") ? obj->getProperty("midiMappings") : juce::var());
-    emitMidiMappings();
-
-    // Resume graph-level routing
-    processor->suspendProcessing(false);
-
-    // Restore grid dimensions (falls back to current defaults if absent)
-    if (obj->hasProperty("grid"))
-    {
-        if (auto* gridObj = obj->getProperty("grid").getDynamicObject())
+        // Restore scenes
+        scenes.clear();
+        activeSceneIndex = -1;
+        auto scenesVar = obj->getProperty("scenes");
+        if (auto* scenesArr = scenesVar.getArray())
         {
-            auto cols = gridObj->getProperty("columns");
-            auto rows = gridObj->getProperty("rows");
-            if (cols.isInt() || cols.isInt64() || cols.isDouble())
-                gridCols = static_cast<int>(cols);
-            if (rows.isInt() || rows.isInt64() || rows.isDouble())
-                gridRows = static_cast<int>(rows);
+            for (auto& sv : *scenesArr)
+            {
+                if (auto* so = sv.getDynamicObject())
+                {
+                    Scene scene;
+                    scene.name = so->getProperty("name").toString();
+                    auto mapVar = so->getProperty("blockStateMap");
+                    if (auto* mapObj = mapVar.getDynamicObject())
+                    {
+                        for (auto& prop : mapObj->getProperties())
+                            scene.blockStateMap[prop.name.toString()] = static_cast<int>(prop.value);
+                    }
+                    auto bypassVar = so->getProperty("blockBypassMap");
+                    if (auto* bypassObj = bypassVar.getDynamicObject())
+                    {
+                        for (auto& prop : bypassObj->getProperties())
+                            scene.blockBypassMap[prop.name.toString()] = static_cast<bool>(prop.value);
+                    }
+                    scenes.push_back(scene);
+                }
+            }
+            activeSceneIndex = static_cast<int>(obj->getProperty("activeSceneIndex"));
+            if (activeSceneIndex >= static_cast<int>(scenes.size()))
+                activeSceneIndex = scenes.empty() ? -1 : 0;
         }
+
+        // Ensure at least one scene exists
+        if (scenes.empty())
+        {
+            Scene defaultScene;
+            defaultScene.name = "Scene 1";
+            captureIntoScene(defaultScene, blockNodeMap, processor->getGraph());
+            scenes.push_back(defaultScene);
+            activeSceneIndex = 0;
+        }
+
+        // Restore preset-level MIDI mappings (always clear old, keeps global intact)
+        processor->getMidiMapper().loadPresetMappings(
+            obj->hasProperty("midiMappings") ? obj->getProperty("midiMappings") : juce::var());
+        emitMidiMappings();
+
+        // Resume graph-level routing
+        processor->suspendProcessing(false);
+
+        // Restore grid dimensions (falls back to current defaults if absent)
+        if (obj->hasProperty("grid"))
+        {
+            if (auto* gridObj = obj->getProperty("grid").getDynamicObject())
+            {
+                auto cols = gridObj->getProperty("columns");
+                auto rows = gridObj->getProperty("rows");
+                if (cols.isInt() || cols.isInt64() || cols.isDouble())
+                    gridCols = static_cast<int>(cols);
+                if (rows.isInt() || rows.isInt64() || rows.isDouble())
+                    gridRows = static_cast<int>(rows);
+            }
+        }
+
+        sendGraphState();
+        emitGridState();
+    }
+    catch (...)
+    {
+        // Surface the failure to the UI before propagating so the loading
+        // state is cleared; existing crash-reporter paths still see the throw.
+        emitToJs("presetLoadFinished", new juce::DynamicObject());
+        throw;
     }
 
-    sendGraphState();
-    emitGridState();
+    emitToJs("presetLoadFinished", new juce::DynamicObject());
 }
 
 // -- Preset management --------------------------------------------------------

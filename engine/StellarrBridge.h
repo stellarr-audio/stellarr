@@ -1,8 +1,10 @@
 #pragma once
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <juce_gui_extra/juce_gui_extra.h>
+#include <functional>
 #include <map>
 #include <memory>
+#include <mutex>
 #include <vector>
 #include "Telemetry.h"
 
@@ -42,6 +44,12 @@ public:
     int getCurrentPresetIndex() const { return currentPresetIndex; }
     const juce::File& getLastPresetFile() const { return lastPresetFile; }
     void setPresetDirectory(const juce::File& dir) { presetDirectory = dir; }
+
+    // Testing seam — intercept emitToJs calls before they hit the WebView.
+    // Fired synchronously on the calling thread; useful for asserting event
+    // sequences without spinning up a real browser.
+    using EmitInterceptor = std::function<void(const juce::String&, const juce::var&)>;
+    void setEmitInterceptor(EmitInterceptor cb) { emitInterceptor = std::move(cb); }
 
 private:
     friend class PresetFileTestAccess;
@@ -187,4 +195,12 @@ private:
     // Grid size — persisted with the session. Defaults match the UI.
     int gridCols = 12;
     int gridRows = 5;
+
+    // Guards restoreSession against concurrent / re-entrant invocations.
+    // Acquired via std::try_to_lock — competing callers drop their request
+    // rather than queue, so a rapid burst of preset swaps cannot pile up
+    // graph rebuilds and crash the audio thread.
+    std::mutex restoreMutex;
+
+    EmitInterceptor emitInterceptor;
 };

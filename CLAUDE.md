@@ -281,6 +281,7 @@ Used for the Options panel and any modal dialog (e.g. `MidiAssignDialog`). Every
 
 ### UI mockups + design previews
 
+- **Preview-before-implement is mandatory for any new or modified visual UI.** When the user asks for a UI change (new component, restyled control, layout shift, colour swap), produce an HTML mockup first and wait for the user to pick / approve before touching `.tsx` / `.module.css`. Don't bundle "I'll show you the preview AND implement it" — split into two turns. Applies even to small tweaks; the user wants to see it before code lands.
 - **Always render mockups in light AND dark mode side-by-side.** Stellarr ships both themes; a mockup that only shows one half is incomplete. Use a 2-column layout (light left, dark right) per variant, or two stacked sections — never a single theme.
 - Use the real semantic tokens from `ui/src/design/tokens.css`. Don't hardcode hex values. Light theme palette is the `:root[data-theme="light"]` block; dark is `:root[data-theme="dark"]`. Copy the tokens needed (or load them via a `<style>` block in the HTML preview).
 - Save mockup HTML under `.superpowers/brainstorm/<session-id>/content/` (gitignored, persistent across sessions, discoverable). Reference the absolute path back to the user so they can open it.

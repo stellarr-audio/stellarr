@@ -34,13 +34,14 @@
   width: 16px;
   height: 16px;
   border-radius: 0;
-  background: var(--color-text);
+  background: var(--color-secondary);
   box-shadow: 0 0 0 2px var(--color-surface);
   outline: none;
   cursor: grab;
 }
 
+/* Focus ring uses orchid so it stays distinguishable from the amber thumb. */
 .thumb:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 2px var(--color-surface), 0 0 0 4px var(--color-secondary);
+  box-shadow: 0 0 0 2px var(--color-surface), 0 0 0 4px var(--color-primary);
 }

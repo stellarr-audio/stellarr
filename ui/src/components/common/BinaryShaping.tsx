@@ -48,7 +48,7 @@ function BinaryShapingInner({ meta, threshold, onChange }: Props) {
       <div className={styles.labelRow}>
         <span className={styles.fieldLabel}>Threshold</span>
         <span className={styles.helpRule}>
-          {meta.binaryLabels!.on} when <span className={styles.helpRuleAccent}>CC ≥ {value}</span>
+          {meta.binaryLabels!.on} ≥ {value}
         </span>
       </div>
       <div className={styles.sliderShell}>

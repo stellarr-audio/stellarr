@@ -12,8 +12,7 @@ describe('BinaryShaping', () => {
         onChange={vi.fn()}
       />,
     );
-    expect(screen.getByText(/ON when/)).toBeInTheDocument();
-    expect(screen.getByText(/CC ≥ 80/)).toBeInTheDocument();
+    expect(screen.getByText(/ON ≥ 80/)).toBeInTheDocument();
   });
 
   it('uses RECALL label for blockState', () => {
@@ -24,7 +23,7 @@ describe('BinaryShaping', () => {
         onChange={vi.fn()}
       />,
     );
-    expect(screen.getByText(/RECALL when/)).toBeInTheDocument();
+    expect(screen.getByText(/RECALL ≥ 80/)).toBeInTheDocument();
   });
 
   it('renders a Threshold field label', () => {

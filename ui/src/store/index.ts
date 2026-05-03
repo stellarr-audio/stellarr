@@ -71,6 +71,7 @@ export interface MidiMapping {
   paramMin?: number;
   paramMax?: number;
   curve?: MidiCurve;
+  threshold?: number;
 }
 
 export interface MidiMonitorEvent {

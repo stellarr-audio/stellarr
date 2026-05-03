@@ -67,4 +67,23 @@ describe('TARGET_META', () => {
     expect(meta.paramToDisplay!(-12.5)).toBe(-12.5);
     expect(meta.paramFromDisplay!(-12.5)).toBe(-12.5);
   });
+
+  it('declares blockBypass as binary with OFF/ON labels', () => {
+    const meta = TARGET_META.blockBypass;
+    expect(meta.kind).toBe('binary');
+    expect(meta.binaryLabels).toEqual({ off: 'OFF', on: 'ON' });
+    expect(meta.binaryHelpTemplate?.(64)).toMatch(/Block turns ON when CC ≥ 64/);
+  });
+
+  it('declares tunerToggle as binary with OFF/ON labels', () => {
+    expect(TARGET_META.tunerToggle.kind).toBe('binary');
+    expect(TARGET_META.tunerToggle.binaryLabels).toEqual({ off: 'OFF', on: 'ON' });
+  });
+
+  it('declares blockState as binary with IGNORED/RECALL labels', () => {
+    const meta = TARGET_META.blockState;
+    expect(meta.kind).toBe('binary');
+    expect(meta.binaryLabels).toEqual({ off: 'IGNORED', on: 'RECALL' });
+    expect(meta.binaryHelpTemplate?.(80)).toMatch(/State recalled when CC ≥ 80/);
+  });
 });

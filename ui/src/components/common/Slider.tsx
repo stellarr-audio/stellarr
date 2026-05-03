@@ -8,9 +8,22 @@ interface Props {
   step?: number;
   defaultValue?: number;
   onChange: (value: number) => void;
+  fillSide?: 'left' | 'right';
+  ariaLabel?: string;
 }
 
-export function Slider({ value, min = 0, max = 100, step = 1, defaultValue = 0, onChange }: Props) {
+export function Slider({
+  value,
+  min = 0,
+  max = 100,
+  step = 1,
+  defaultValue = 0,
+  onChange,
+  fillSide = 'left',
+  ariaLabel,
+}: Props) {
+  const pct = max > min ? ((value - min) / (max - min)) * 100 : 0;
+
   return (
     <RadixSlider.Root
       onDoubleClick={() => onChange(defaultValue)}
@@ -22,9 +35,13 @@ export function Slider({ value, min = 0, max = 100, step = 1, defaultValue = 0, 
       className={styles.root}
     >
       <RadixSlider.Track className={styles.track}>
-        <RadixSlider.Range className={styles.range} />
+        {fillSide === 'left' ? (
+          <RadixSlider.Range className={styles.range} />
+        ) : (
+          <div className={styles.rangeRight} style={{ left: `${pct}%`, right: 0 }} />
+        )}
       </RadixSlider.Track>
-      <RadixSlider.Thumb className={styles.thumb} />
+      <RadixSlider.Thumb className={styles.thumb} aria-label={ariaLabel} />
     </RadixSlider.Root>
   );
 }

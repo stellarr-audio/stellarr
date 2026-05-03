@@ -161,3 +161,33 @@ Test whenever you touch MIDI mapping, MidiMapper, the MIDI page, or MIDI-trigger
 4. Set Curve to S-curve. Sweep again.
 
 **Expected:** Log -- changes feel more responsive at low CC values. Exp -- changes feel more responsive at high CC values. S-curve -- plateau at the ends, steep transition in the middle.
+
+### TC-MI-016: Per-mapping threshold for Block Bypass
+
+**Steps:**
+1. Map a CC to a Block Bypass. Open the assign dialog.
+2. In the Trigger section, drag the Threshold slider to 80. Save.
+3. Send the assigned CC at value 79.
+4. Send the assigned CC at value 80.
+5. Send the assigned CC at value 0.
+
+**Expected:** CC 79 -> block bypassed (effect off). CC 80 -> block engaged (effect on). CC 0 -> block bypassed.
+
+### TC-MI-017: Per-mapping threshold for Block State
+
+**Steps:**
+1. On a block with multiple states, map a CC to State 2. Drag Threshold to 110. Save.
+2. Send the assigned CC at value 64.
+3. Send the assigned CC at value 110.
+
+**Expected:** CC 64 -> State 2 does NOT activate. CC 110 -> State 2 activates.
+
+### TC-MI-018: Default threshold + bypass polarity change
+
+**Steps:**
+1. Open a v0.16.0-pre preset with Bypass and State mappings.
+2. For Block State mappings: verify they respond exactly as before (CC ≥ 64 recalls the state).
+3. For Block Bypass mappings: verify polarity has flipped per the v0.16.0 release notes (CC ≥ 64 now engages the block; previously it bypassed). Toggle bypass via the UI and re-test if the saved direction is now wrong.
+4. Open the assign dialog for any binary mapping; verify the Trigger threshold defaults to 64 and the rule line reads `ON >= CC 64` (or `RECALL >= CC 64` for State).
+
+**Expected:** State mappings unchanged. Bypass mappings now engage the block when CC is high (correction; documented breaking change). Threshold default 64.

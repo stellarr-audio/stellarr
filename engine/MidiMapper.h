@@ -41,6 +41,8 @@ public:
         float paramMin = std::numeric_limits<float>::quiet_NaN();
         float paramMax = std::numeric_limits<float>::quiet_NaN();
         Curve curve    = Curve::Linear;
+        // Binary-target shaping: replaces the hardcoded "CC >= 64" check.
+        int   threshold = 64;
     };
 
     struct LearnArgs
@@ -54,6 +56,7 @@ public:
         float paramMin = std::numeric_limits<float>::quiet_NaN();
         float paramMax = std::numeric_limits<float>::quiet_NaN();
         Curve curve    = Curve::Linear;
+        int   threshold = 64;
     };
 
     MidiMapper();
@@ -208,6 +211,7 @@ private:
         float learnParamMin = std::numeric_limits<float>::quiet_NaN();
         float learnParamMax = std::numeric_limits<float>::quiet_NaN();
         Curve learnCurve    = Curve::Linear;
+        int   learnThreshold = 64;
         std::array<char, 40> blockId {}; // null-terminated; UUID = 36 chars
     };
 
@@ -256,4 +260,5 @@ private:
     float learnParamMin = std::numeric_limits<float>::quiet_NaN();
     float learnParamMax = std::numeric_limits<float>::quiet_NaN();
     Curve learnCurve    = Curve::Linear;
+    int   learnThreshold = 64;
 };

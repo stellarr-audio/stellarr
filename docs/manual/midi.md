@@ -104,6 +104,17 @@ The **Curve** dropdown picks the shape of the response between the two anchors:
 
 The mapping preview below the inputs draws the full curve between the anchors. Hover the preview to read the precise CC value and the parameter it maps to.
 
+## Trigger threshold
+
+For binary targets (Block Bypass, Block State), each MIDI mapping has a per-mapping **Threshold** that decides where the CC value flips the action. Open the assign dialog and look at the **Trigger** section.
+
+- **Block Bypass** -- the block engages when CC ≥ threshold and bypasses when CC < threshold. The default 64 matches a standard footswitch (127 on press, 0 on release).
+- **Block State** -- the state recalls when CC ≥ threshold; lower values are ignored.
+
+> **Polarity change (v0.16.0):** in earlier builds, `CC ≥ 64` would *bypass* a block (turn the effect off). It now *engages* the block (turn the effect on), matching the docs and footswitch convention. Existing Bypass mappings will trigger the opposite of the previous behaviour -- check your saved presets after upgrading.
+
+The Threshold slider runs from CC 1 to 127 with the active region (right of the handle) tinted amber. The rule line beside the label spells out the resulting behaviour, e.g. `ON ≥ CC 80` for a Bypass mapping or `RECALL ≥ CC 80` for a State mapping.
+
 ## MIDI Page
 
 The **MIDI** tab shows all active mappings in a table:

@@ -1,0 +1,36 @@
+.wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  /* Contain absolutely-positioned children (track fill, handle label, ticks)
+     so they can't bleed past the dialog body and trigger horizontal scroll. */
+  overflow: hidden;
+}
+
+.labelRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin: 0 0 8px;
+}
+
+.fieldLabel {
+  font-size: var(--text-base);
+  color: var(--color-text);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin: 0;
+  display: block;
+}
+
+/* ── Help rule (matches Options panel paramValue weight + colour) ─────── */
+.helpRule {
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--color-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.helpRuleAccent {
+  color: var(--color-secondary-text);
+}

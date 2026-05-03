@@ -123,6 +123,7 @@ void MidiMapper::processMidi(juce::MidiBuffer& midi)
             evt.learnParamMin = learnParamMin;
             evt.learnParamMax = learnParamMax;
             evt.learnCurve    = learnCurve;
+            evt.learnThreshold = learnThreshold;
             copyBlockId(evt.blockId, learnBlockId);
 
             // Only latch off and consume the CC if the message thread will
@@ -180,7 +181,9 @@ void MidiMapper::processMidi(juce::MidiBuffer& midi)
 
                     case Target::blockBypass:
                         evt.kind = OutboundEvent::Kind::blockBypass;
-                        evt.value = (value >= 64) ? 1 : 0;
+                        // CC >= threshold engages the block (clears bypass). evt.value carries
+                        // the "bypassed" bool; engaged means bypassed=false.
+                        evt.value = (value >= m.threshold) ? 0 : 1;
                         pushOutbound(evt);
                         break;
 
@@ -213,12 +216,12 @@ void MidiMapper::processMidi(juce::MidiBuffer& midi)
 
                     case Target::tunerToggle:
                         evt.kind = OutboundEvent::Kind::tunerToggle;
-                        evt.value = (value >= 64) ? 1 : 0;
+                        evt.value = (value >= m.threshold) ? 1 : 0;
                         pushOutbound(evt);
                         break;
 
                     case Target::blockState:
-                        if (value >= 64)
+                        if (value >= m.threshold)
                         {
                             evt.kind = OutboundEvent::Kind::blockState;
                             evt.targetIndex = static_cast<int8_t>(m.targetIndex);
@@ -226,7 +229,7 @@ void MidiMapper::processMidi(juce::MidiBuffer& midi)
                         }
                         else
                         {
-                            // CC < 64 ignored. Still consumed so the message does not pass through.
+                            // CC < threshold ignored. Still consumed so the message does not pass through.
                         }
                         break;
 
@@ -307,6 +310,7 @@ int MidiMapper::drainOutboundEvents()
                 m.paramMin = evt.learnParamMin;
                 m.paramMax = evt.learnParamMax;
                 m.curve    = evt.learnCurve;
+                m.threshold = evt.learnThreshold;
 
                 addMapping(m);
 
@@ -428,6 +432,7 @@ void MidiMapper::startLearn(const LearnArgs& args)
     learnParamMin = args.paramMin;
     learnParamMax = args.paramMax;
     learnCurve = args.curve;
+    learnThreshold = args.threshold;
     learning.store(true, std::memory_order_release);
 }
 
@@ -524,6 +529,8 @@ juce::var MidiMapper::toJson() const
             obj->setProperty("paramMax", static_cast<double>(m.paramMax));
         if (m.curve != Curve::Linear)
             obj->setProperty("curve", curveToString(m.curve));
+        if (m.threshold != 64)
+            obj->setProperty("threshold", m.threshold);
         arr.add(juce::var(obj));
     }
     return arr;
@@ -567,6 +574,11 @@ void MidiMapper::fromJson(const juce::var& json)
                 auto curveVar = obj->getProperty("curve");
                 m.curve = curveVar.isVoid() ? Curve::Linear : curveFromString(curveVar.toString());
 
+                auto thrVar = obj->getProperty("threshold");
+                m.threshold = thrVar.isVoid()
+                    ? 64
+                    : juce::jlimit(1, 127, static_cast<int>(thrVar));
+
                 mappings.push_back(m);
             }
         }
@@ -599,6 +611,8 @@ static juce::var filterMappingsToJson(const std::vector<MidiMapper::Mapping>& ma
             obj->setProperty("paramMax", static_cast<double>(m.paramMax));
         if (m.curve != MidiMapper::Curve::Linear)
             obj->setProperty("curve", MidiMapper::curveToString(m.curve));
+        if (m.threshold != 64)
+            obj->setProperty("threshold", m.threshold);
         arr.add(juce::var(obj));
     }
     return arr;
@@ -639,6 +653,11 @@ static std::vector<MidiMapper::Mapping> parseMappingsArray(const juce::var& json
 
                 auto curveVar = obj->getProperty("curve");
                 m.curve = curveVar.isVoid() ? MidiMapper::Curve::Linear : MidiMapper::curveFromString(curveVar.toString());
+
+                auto thrVar = obj->getProperty("threshold");
+                m.threshold = thrVar.isVoid()
+                    ? 64
+                    : juce::jlimit(1, 127, static_cast<int>(thrVar));
 
                 result.push_back(m);
             }

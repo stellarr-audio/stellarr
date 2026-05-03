@@ -46,4 +46,38 @@ describe('MidiAssignDialog', () => {
     );
     expect(screen.queryAllByText('Mix %').length).toBe(0);
   });
+
+  it('renders Trigger section with BinaryShaping for blockBypass', () => {
+    render(
+      <MidiAssignDialog
+        open
+        onOpenChange={() => {}}
+        title="Assign MIDI"
+        target="blockBypass"
+        blockId="b1"
+      />,
+    );
+    expect(screen.getByText('Trigger')).toBeInTheDocument();
+    // BinaryShaping renders the rule line driven by binaryLabels.on.
+    expect(
+      screen.getByText((_, el) => el?.textContent?.startsWith('ON ≥') ?? false),
+    ).toBeInTheDocument();
+  });
+
+  it('renders Trigger section with BinaryShaping for blockState (recall semantics)', () => {
+    render(
+      <MidiAssignDialog
+        open
+        onOpenChange={() => {}}
+        title="Assign MIDI"
+        target="blockState"
+        blockId="b1"
+        targetIndex={1}
+      />,
+    );
+    expect(screen.getByText('Trigger')).toBeInTheDocument();
+    expect(
+      screen.getByText((_, el) => el?.textContent?.startsWith('RECALL ≥') ?? false),
+    ).toBeInTheDocument();
+  });
 });

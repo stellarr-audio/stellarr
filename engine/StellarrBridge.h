@@ -7,6 +7,7 @@
 #include <memory>
 #include <mutex>
 #include <optional>
+#include <unordered_map>
 #include <vector>
 #include "Telemetry.h"
 
@@ -178,6 +179,43 @@ private:
 
     // Generic block state handler
     void handleBlockStateEvent(const juce::var& json, const juce::String& action);
+
+    // Lifted inline handlers (Phase 3) — these are called from the dispatch
+    // table in StellarrBridge.cpp. Phase 4 will move the bodies into the
+    // matching engine/bridge/*.cpp files.
+    void handleRenameBlock(const juce::var& json);
+    void handleSetBlockColor(const juce::var& json);
+    void handleAddMidiMapping(const juce::var& json);
+    void handleRemoveMidiMapping(const juce::var& json);
+    void handleClearMidiMappings();
+    void handleStartMidiLearn(const juce::var& json);
+    void handleCancelMidiLearn();
+    void handleSetMidiMonitorEnabled(const juce::var& json);
+    void handleInjectMidiCC(const juce::var& json);
+    void handleToggleTestTone(const juce::var& json);
+    void handleGetTestToneSamples();
+    void handleSetTestToneSample(const juce::var& json);
+    void handleSetTunerEnabled(const juce::var& json);
+    void handleSetBlockMix(const juce::var& json);
+    void handleSetBlockBalance(const juce::var& json);
+    void handleSetBlockLevel(const juce::var& json);
+    void handleToggleBlockBypass(const juce::var& json);
+    void handleSetBlockBypassMode(const juce::var& json);
+
+    // Dispatch table for handleEvent. Defined as a private nested type +
+    // private static accessor so the table's lambdas have access to the
+    // private handle* member functions without needing friend declarations.
+    struct EventEntry
+    {
+        std::function<void(StellarrBridge&, const juce::var&)> handler;
+        // True if this event must be dropped while a preset restore is in
+        // flight. Covers events that mutate graph / scenes / MIDI mappings /
+        // persisted state — anything Phase 2's clearGraph() would obliterate
+        // mid-load.
+        bool dropDuringRestore = false;
+    };
+    using EventTable = std::unordered_map<juce::String, EventEntry>;
+    static const EventTable& eventTable();
 
     // Software updates (Sparkle)
     void ensureUpdateShim();

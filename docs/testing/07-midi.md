@@ -182,11 +182,12 @@ Test whenever you touch MIDI mapping, MidiMapper, the MIDI page, or MIDI-trigger
 
 **Expected:** CC 64 -> State 2 does NOT activate. CC 110 -> State 2 activates.
 
-### TC-MI-018: Default threshold preserves legacy behaviour
+### TC-MI-018: Default threshold + bypass polarity change
 
 **Steps:**
-1. Open a v0.16.0-pre preset (or any preset created before this feature) with Bypass / State mappings.
-2. Verify the mappings still respond to CC the same way as in the older build.
-3. Open the assign dialog for any binary mapping; verify the Trigger threshold defaults to 64 and the rule line reads `ON >= CC 64` (or `RECALL >= CC 64` for State).
+1. Open a v0.16.0-pre preset with Bypass and State mappings.
+2. For Block State mappings: verify they respond exactly as before (CC ≥ 64 recalls the state).
+3. For Block Bypass mappings: verify polarity has flipped per the v0.16.0 release notes (CC ≥ 64 now engages the block; previously it bypassed). Toggle bypass via the UI and re-test if the saved direction is now wrong.
+4. Open the assign dialog for any binary mapping; verify the Trigger threshold defaults to 64 and the rule line reads `ON >= CC 64` (or `RECALL >= CC 64` for State).
 
-**Expected:** No behavioural change for legacy mappings; defaults equal pre-feature behaviour.
+**Expected:** State mappings unchanged. Bypass mappings now engage the block when CC is high (correction; documented breaking change). Threshold default 64.

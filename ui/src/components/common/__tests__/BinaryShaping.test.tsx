@@ -51,7 +51,8 @@ describe('BinaryShaping', () => {
       />,
     );
     const slider = screen.getByRole('slider');
-    fireEvent.change(slider, { target: { value: '100' } });
-    expect(onChange).toHaveBeenCalledWith(100);
+    slider.focus();
+    fireEvent.keyDown(slider, { key: 'ArrowRight' });
+    expect(onChange).toHaveBeenCalledWith(65);
   });
 });

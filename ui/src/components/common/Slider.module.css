@@ -12,25 +12,35 @@
   position: relative;
   flex-grow: 1;
   height: 4px;
-  border-radius: 9999px;
-  background: var(--color-border);
+  background: color-mix(in srgb, var(--color-muted) 25%, transparent);
   overflow: hidden;
 }
 
 .range {
   position: absolute;
   height: 100%;
-  border-radius: 9999px;
   background: var(--color-secondary);
+}
+
+.rangeRight {
+  position: absolute;
+  height: 100%;
+  background: var(--color-secondary);
+  pointer-events: none;
 }
 
 .thumb {
   display: block;
   width: 16px;
   height: 16px;
-  border-radius: 9999px;
+  border-radius: 0;
   background: var(--color-text);
   box-shadow: 0 0 0 2px var(--color-surface);
   outline: none;
   cursor: grab;
+}
+
+.thumb:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-surface), 0 0 0 4px var(--color-secondary);
 }

@@ -53,19 +53,19 @@ dev-ui: setup clear-cache
 
 dev-cpp:
 	cmake -B build -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=OFF -DCMAKE_EXPORT_COMPILE_COMMANDS=ON $(SENTRY_CMAKE_FLAG) $(FLAVOUR_CMAKE_FLAG)
-	cmake --build build -j6
+	cmake --build build -j8
 
 dev: dev-ui dev-cpp
 
 debug-cpp:
 	cmake -B build -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=ON -DCMAKE_EXPORT_COMPILE_COMMANDS=ON $(SENTRY_CMAKE_FLAG) $(FLAVOUR_CMAKE_FLAG)
-	cmake --build build -j6
+	cmake --build build -j8
 
 debug: dev-ui debug-cpp
 
 release-cpp:
 	cmake -B build-release -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF $(SENTRY_CMAKE_FLAG) $(FLAVOUR_CMAKE_FLAG)
-	cmake --build build-release --config Release -j6
+	cmake --build build-release --config Release -j8
 
 release: dev-ui release-cpp
 

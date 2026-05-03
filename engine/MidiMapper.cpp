@@ -1,4 +1,5 @@
 #include "MidiMapper.h"
+#include "bridge/BridgeJson.h"
 #include <algorithm>
 #include <cmath>
 
@@ -506,33 +507,49 @@ MidiMapper::Curve MidiMapper::curveFromString(const juce::String& s)
     return Curve::Linear;
 }
 
+static juce::var mappingToJson(const MidiMapper::Mapping& m)
+{
+    auto* obj = new juce::DynamicObject();
+    obj->setProperty("channel", m.channel);
+    obj->setProperty("cc", m.ccNumber);
+    obj->setProperty("target", MidiMapper::targetToString(m.target));
+    if (m.blockId.isNotEmpty())     obj->setProperty("blockId", m.blockId);
+    if (m.targetIndex >= 0)         obj->setProperty("targetIndex", m.targetIndex);
+    if (m.ccMin != 0)               obj->setProperty("ccMin", m.ccMin);
+    if (m.ccMax != 127)             obj->setProperty("ccMax", m.ccMax);
+    if (! std::isnan(m.paramMin))   obj->setProperty("paramMin", static_cast<double>(m.paramMin));
+    if (! std::isnan(m.paramMax))   obj->setProperty("paramMax", static_cast<double>(m.paramMax));
+    if (m.curve != MidiMapper::Curve::Linear)
+        obj->setProperty("curve", MidiMapper::curveToString(m.curve));
+    if (m.threshold != 64)          obj->setProperty("threshold", m.threshold);
+    return juce::var(obj);
+}
+
+static MidiMapper::Mapping parseMapping(const juce::DynamicObject& obj)
+{
+    using namespace stellarr::bridge::json;
+    MidiMapper::Mapping m;
+    m.channel     = static_cast<int>(obj.getProperty("channel"));
+    m.ccNumber    = static_cast<int>(obj.getProperty("cc"));
+    m.target      = MidiMapper::targetFromString(obj.getProperty("target").toString());
+    m.blockId     = obj.getProperty("blockId").toString();
+    m.targetIndex = getOptInt        (obj, "targetIndex", -1);
+    m.ccMin       = getOptInt        (obj, "ccMin",        0);
+    m.ccMax       = getOptInt        (obj, "ccMax",      127);
+    m.paramMin    = getOptFloat      (obj, "paramMin", std::numeric_limits<float>::quiet_NaN());
+    m.paramMax    = getOptFloat      (obj, "paramMax", std::numeric_limits<float>::quiet_NaN());
+    auto curveVar = obj.getProperty("curve");
+    m.curve       = curveVar.isVoid()
+                        ? MidiMapper::Curve::Linear
+                        : MidiMapper::curveFromString(curveVar.toString());
+    m.threshold   = getOptIntClamped (obj, "threshold", 1, 127, 64);
+    return m;
+}
+
 juce::var MidiMapper::toJson() const
 {
     juce::Array<juce::var> arr;
-    for (auto& m : mappings)
-    {
-        auto* obj = new juce::DynamicObject();
-        obj->setProperty("channel", m.channel);
-        obj->setProperty("cc", m.ccNumber);
-        obj->setProperty("target", targetToString(m.target));
-        if (m.blockId.isNotEmpty())
-            obj->setProperty("blockId", m.blockId);
-        if (m.targetIndex >= 0)
-            obj->setProperty("targetIndex", m.targetIndex);
-        if (m.ccMin != 0)
-            obj->setProperty("ccMin", m.ccMin);
-        if (m.ccMax != 127)
-            obj->setProperty("ccMax", m.ccMax);
-        if (! std::isnan(m.paramMin))
-            obj->setProperty("paramMin", static_cast<double>(m.paramMin));
-        if (! std::isnan(m.paramMax))
-            obj->setProperty("paramMax", static_cast<double>(m.paramMax));
-        if (m.curve != Curve::Linear)
-            obj->setProperty("curve", curveToString(m.curve));
-        if (m.threshold != 64)
-            obj->setProperty("threshold", m.threshold);
-        arr.add(juce::var(obj));
-    }
+    for (auto& m : mappings) arr.add(mappingToJson(m));
     return arr;
 }
 
@@ -540,49 +557,10 @@ void MidiMapper::fromJson(const juce::var& json)
 {
     juce::SpinLock::ScopedLockType scopedLock(mappingsLock);
     mappings.clear();
-
     if (auto* arr = json.getArray())
-    {
         for (auto& item : *arr)
-        {
             if (auto* obj = item.getDynamicObject())
-            {
-                Mapping m;
-                m.channel = static_cast<int>(obj->getProperty("channel"));
-                m.ccNumber = static_cast<int>(obj->getProperty("cc"));
-                m.target = targetFromString(obj->getProperty("target").toString());
-                m.blockId = obj->getProperty("blockId").toString();
-                auto tiVar = obj->getProperty("targetIndex");
-                m.targetIndex = tiVar.isVoid() ? -1 : static_cast<int>(tiVar);
-
-                auto ccMinVar = obj->getProperty("ccMin");
-                m.ccMin = ccMinVar.isVoid() ? 0 : static_cast<int>(ccMinVar);
-
-                auto ccMaxVar = obj->getProperty("ccMax");
-                m.ccMax = ccMaxVar.isVoid() ? 127 : static_cast<int>(ccMaxVar);
-
-                auto paramMinVar = obj->getProperty("paramMin");
-                m.paramMin = paramMinVar.isVoid()
-                    ? std::numeric_limits<float>::quiet_NaN()
-                    : static_cast<float>(static_cast<double>(paramMinVar));
-
-                auto paramMaxVar = obj->getProperty("paramMax");
-                m.paramMax = paramMaxVar.isVoid()
-                    ? std::numeric_limits<float>::quiet_NaN()
-                    : static_cast<float>(static_cast<double>(paramMaxVar));
-
-                auto curveVar = obj->getProperty("curve");
-                m.curve = curveVar.isVoid() ? Curve::Linear : curveFromString(curveVar.toString());
-
-                auto thrVar = obj->getProperty("threshold");
-                m.threshold = thrVar.isVoid()
-                    ? 64
-                    : juce::jlimit(1, 127, static_cast<int>(thrVar));
-
-                mappings.push_back(m);
-            }
-        }
-    }
+                mappings.push_back(parseMapping(*obj));
 }
 
 // -- Split serialization (preset vs global) -----------------------------------
@@ -593,27 +571,7 @@ static juce::var filterMappingsToJson(const std::vector<MidiMapper::Mapping>& ma
     for (auto& m : mappings)
     {
         if (MidiMapper::isGlobalTarget(m.target) != global) continue;
-        auto* obj = new juce::DynamicObject();
-        obj->setProperty("channel", m.channel);
-        obj->setProperty("cc", m.ccNumber);
-        obj->setProperty("target", MidiMapper::targetToString(m.target));
-        if (m.blockId.isNotEmpty())
-            obj->setProperty("blockId", m.blockId);
-        if (m.targetIndex >= 0)
-            obj->setProperty("targetIndex", m.targetIndex);
-        if (m.ccMin != 0)
-            obj->setProperty("ccMin", m.ccMin);
-        if (m.ccMax != 127)
-            obj->setProperty("ccMax", m.ccMax);
-        if (! std::isnan(m.paramMin))
-            obj->setProperty("paramMin", static_cast<double>(m.paramMin));
-        if (! std::isnan(m.paramMax))
-            obj->setProperty("paramMax", static_cast<double>(m.paramMax));
-        if (m.curve != MidiMapper::Curve::Linear)
-            obj->setProperty("curve", MidiMapper::curveToString(m.curve));
-        if (m.threshold != 64)
-            obj->setProperty("threshold", m.threshold);
-        arr.add(juce::var(obj));
+        arr.add(mappingToJson(m));
     }
     return arr;
 }
@@ -622,47 +580,9 @@ static std::vector<MidiMapper::Mapping> parseMappingsArray(const juce::var& json
 {
     std::vector<MidiMapper::Mapping> result;
     if (auto* arr = json.getArray())
-    {
         for (auto& item : *arr)
-        {
             if (auto* obj = item.getDynamicObject())
-            {
-                MidiMapper::Mapping m;
-                m.channel = static_cast<int>(obj->getProperty("channel"));
-                m.ccNumber = static_cast<int>(obj->getProperty("cc"));
-                m.target = MidiMapper::targetFromString(obj->getProperty("target").toString());
-                m.blockId = obj->getProperty("blockId").toString();
-                auto tiVar = obj->getProperty("targetIndex");
-                m.targetIndex = tiVar.isVoid() ? -1 : static_cast<int>(tiVar);
-
-                auto ccMinVar = obj->getProperty("ccMin");
-                m.ccMin = ccMinVar.isVoid() ? 0 : static_cast<int>(ccMinVar);
-
-                auto ccMaxVar = obj->getProperty("ccMax");
-                m.ccMax = ccMaxVar.isVoid() ? 127 : static_cast<int>(ccMaxVar);
-
-                auto paramMinVar = obj->getProperty("paramMin");
-                m.paramMin = paramMinVar.isVoid()
-                    ? std::numeric_limits<float>::quiet_NaN()
-                    : static_cast<float>(static_cast<double>(paramMinVar));
-
-                auto paramMaxVar = obj->getProperty("paramMax");
-                m.paramMax = paramMaxVar.isVoid()
-                    ? std::numeric_limits<float>::quiet_NaN()
-                    : static_cast<float>(static_cast<double>(paramMaxVar));
-
-                auto curveVar = obj->getProperty("curve");
-                m.curve = curveVar.isVoid() ? MidiMapper::Curve::Linear : MidiMapper::curveFromString(curveVar.toString());
-
-                auto thrVar = obj->getProperty("threshold");
-                m.threshold = thrVar.isVoid()
-                    ? 64
-                    : juce::jlimit(1, 127, static_cast<int>(thrVar));
-
-                result.push_back(m);
-            }
-        }
-    }
+                result.push_back(parseMapping(*obj));
     return result;
 }
 

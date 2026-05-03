@@ -155,6 +155,8 @@ interface StellarrState {
   midiMonitorEvents: MidiMonitorEvent[];
   midiMonitorEnabled: boolean;
   midiMappingActivity: Record<number, number>; // mapping index → timestamp of last activity
+  isLoadingPreset: boolean;
+  setIsLoadingPreset: (loading: boolean) => void;
 
   lufsWindow: 'momentary' | 'shortTerm';
   lufsByBlockId: Record<string, number>;
@@ -301,6 +303,8 @@ export const useStore = create<StellarrState>((set, get) => ({
   midiMonitorEvents: [],
   midiMonitorEnabled: false,
   midiMappingActivity: {},
+  isLoadingPreset: false,
+  setIsLoadingPreset: (loading) => set({ isLoadingPreset: loading }),
   lufsWindow: 'shortTerm',
   lufsByBlockId: {},
   targetLufsByBlockId: {},

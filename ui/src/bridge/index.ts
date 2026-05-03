@@ -702,6 +702,14 @@ export function initBridge(): void {
     useStore.getState().setPresetList(String(d.directory), files, Number(d.currentIndex));
   });
 
+  juce.backend.addEventListener('presetLoadStarted', () => {
+    useStore.getState().setIsLoadingPreset(true);
+  });
+
+  juce.backend.addEventListener('presetLoadFinished', () => {
+    useStore.getState().setIsLoadingPreset(false);
+  });
+
   juce.backend.addEventListener('blockStatesChanged', (detail: unknown) => {
     const d = asRecord(detail);
     const dirty = Array.isArray(d.dirtyStates) ? (d.dirtyStates as unknown[]).map(Number) : [];

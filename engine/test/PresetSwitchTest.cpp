@@ -11,6 +11,8 @@ class PresetSwitchTestAccess
 public:
     static const auto& getBlockNodeMap(StellarrBridge& b) { return b.blockNodeMap; }
     static std::mutex& getRestoreMutex(StellarrBridge& b) { return b.restoreMutex; }
+    static void loadPresetByIndex(StellarrBridge& b, const juce::var& j) { b.handleLoadPresetByIndex(j); }
+    static juce::StringArray& getPresetFiles(StellarrBridge& b) { return b.presetFiles; }
 };
 
 // -- Batched graph rebuild ----------------------------------------------------
@@ -436,6 +438,91 @@ static bool testRestoreSessionEmitsFinishedOnException()
     return true;
 }
 
+// -- handleLoadPresetByIndex preserves bookkeeping when restore is rejected ---
+
+static bool testRestoreSessionRejectionPreservesCallerBookkeeping()
+{
+    printf("Test: handleLoadPresetByIndex doesn't mutate state when restore is rejected... ");
+
+    StellarrProcessor proc;
+    proc.prepareToPlay(kSampleRate, kBlockSize);
+
+    StellarrBridge bridge;
+    bridge.setProcessor(&proc);
+
+    // Stage two preset files on disk so handleLoadPresetByIndex has something
+    // to read. Contents don't matter — we never let restoreSession run to
+    // completion in the racing thread.
+    auto dir = juce::File::getSpecialLocation(juce::File::tempDirectory)
+                   .getChildFile("stellarr_test_preset_swap_"
+                                 + juce::String(juce::Random::getSystemRandom().nextInt()));
+    dir.createDirectory();
+    auto fileA = dir.getChildFile("Preset_A.stellarr");
+    auto fileB = dir.getChildFile("Preset_B.stellarr");
+    fileA.replaceWithText(kSessionPassthrough);
+    fileB.replaceWithText(kSessionWithPluginBlock);
+
+    bridge.setPresetDirectory(dir);
+    auto& files = PresetSwitchTestAccess::getPresetFiles(bridge);
+    files.clear();
+    files.add("Preset_A.stellarr");
+    files.add("Preset_B.stellarr");
+
+    // Load preset A so currentPresetIndex is established.
+    PresetSwitchTestAccess::loadPresetByIndex(bridge, juce::JSON::parse(R"({"index":0})"));
+    if (bridge.getCurrentPresetIndex() != 0)
+    {
+        fprintf(stderr, "  precondition failed: expected currentPresetIndex=0, got %d\n",
+                bridge.getCurrentPresetIndex());
+        printf("FAIL\n");
+        dir.deleteRecursively();
+        proc.releaseResources();
+        return false;
+    }
+    auto baselineFile = bridge.getLastPresetFile().getFileName();
+
+    // Hold the restoreMutex on the test thread, then ask a competing thread
+    // to load preset B. The try_lock inside restoreSession must fail; the
+    // caller must observe that and leave currentPresetIndex / lastPresetFile
+    // untouched. (Same-thread try_lock on std::mutex is UB, hence the
+    // separate thread.)
+    auto& mutex = PresetSwitchTestAccess::getRestoreMutex(bridge);
+    {
+        std::unique_lock<std::mutex> heldLock(mutex);
+
+        std::thread competing([&bridge]()
+        {
+            PresetSwitchTestAccess::loadPresetByIndex(bridge, juce::JSON::parse(R"({"index":1})"));
+        });
+        competing.join();
+
+        if (bridge.getCurrentPresetIndex() != 0)
+        {
+            fprintf(stderr, "  currentPresetIndex mutated despite restore rejection (now %d)\n",
+                    bridge.getCurrentPresetIndex());
+            printf("FAIL\n");
+            dir.deleteRecursively();
+            proc.releaseResources();
+            return false;
+        }
+
+        if (bridge.getLastPresetFile().getFileName() != baselineFile)
+        {
+            fprintf(stderr, "  lastPresetFile mutated despite restore rejection (now %s)\n",
+                    bridge.getLastPresetFile().getFileName().toRawUTF8());
+            printf("FAIL\n");
+            dir.deleteRecursively();
+            proc.releaseResources();
+            return false;
+        }
+    }
+
+    dir.deleteRecursively();
+    proc.releaseResources();
+    printf("PASS\n");
+    return true;
+}
+
 int main()
 {
     int failures = 0;
@@ -448,6 +535,7 @@ int main()
     if (!testRestoreSessionTryLockBlocksReentrant()) ++failures;
     if (!testRestoreSessionEmitsStartedFinished())   ++failures;
     if (!testRestoreSessionEmitsFinishedOnException()) ++failures;
+    if (!testRestoreSessionRejectionPreservesCallerBookkeeping()) ++failures;
 
     printf("\n%d test(s) failed\n", failures);
     return failures;

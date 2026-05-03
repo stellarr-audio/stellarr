@@ -636,9 +636,8 @@ void StellarrBridge::handleBridgeReady()
                         {
                             auto jsonStr = file.loadFileAsString();
                             auto session = juce::JSON::parse(jsonStr);
-                            if (session.getDynamicObject() != nullptr)
+                            if (session.getDynamicObject() != nullptr && restoreSession(session))
                             {
-                                restoreSession(session);
                                 lastPresetFile = file;
                                 presetDirectory = file.getParentDirectory();
                                 handleGetPresetList();
@@ -792,9 +791,8 @@ void StellarrBridge::handleScreenshotSetup()
         {
             auto jsonStr = file.loadFileAsString();
             auto session = juce::JSON::parse(jsonStr);
-            if (session.getDynamicObject() != nullptr)
+            if (session.getDynamicObject() != nullptr && restoreSession(session))
             {
-                restoreSession(session);
                 sendGraphState();
 
                 // Recall scene if specified

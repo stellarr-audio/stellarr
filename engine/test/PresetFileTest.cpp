@@ -18,12 +18,27 @@ static juce::File createTempPresetDir(int count)
                    .getChildFile("stellarr_test_presets_" + juce::String(juce::Random::getSystemRandom().nextInt()));
     dir.createDirectory();
 
+    // Use a minimal-but-restorable session shape (input + output, no
+    // connections) so restoreSession succeeds and the bookkeeping path runs.
+    // A bare {"blocks":[]} parses but loadPresetByIndex now gates state on
+    // restoreSession returning true — and that requires a processor anyway.
+    static constexpr const char* kMinimalSession = R"({
+        "version": 1,
+        "blocks": [
+            {"id":"in1","type":"input","name":"Input","col":0,"row":2},
+            {"id":"out1","type":"output","name":"Output","col":11,"row":2}
+        ],
+        "connections": [{"sourceId":"in1","destId":"out1"}],
+        "scenes": [],
+        "activeSceneIndex": -1
+    })";
+
     for (int i = 0; i < count; ++i)
     {
         char letter = static_cast<char>('A' + i);
         auto name = "Preset_" + juce::String(&letter, 1);
         auto file = dir.getChildFile(name + ".stellarr");
-        file.replaceWithText("{\"blocks\":[]}");
+        file.replaceWithText(kMinimalSession);
     }
 
     return dir;
@@ -88,7 +103,10 @@ static bool testRenameActivePreset()
     printf("Test: rename active preset updates tracking... ");
 
     auto dir = createTempPresetDir(2); // A, B
+    StellarrProcessor proc;
+    proc.prepareToPlay(kSampleRate, kBlockSize);
     StellarrBridge bridge;
+    bridge.setProcessor(&proc);
     bridge.setPresetDirectory(dir);
     PresetFileTestAccess::getPresetList(bridge);
 
@@ -219,7 +237,10 @@ static bool testDeleteActivePreset()
     printf("Test: delete active preset clears active state... ");
 
     auto dir = createTempPresetDir(3);
+    StellarrProcessor proc;
+    proc.prepareToPlay(kSampleRate, kBlockSize);
     StellarrBridge bridge;
+    bridge.setProcessor(&proc);
     bridge.setPresetDirectory(dir);
     PresetFileTestAccess::getPresetList(bridge);
 
@@ -248,7 +269,10 @@ static bool testDeleteBeforeActive()
     printf("Test: delete before active shifts index down... ");
 
     auto dir = createTempPresetDir(3); // A(0), B(1), C(2)
+    StellarrProcessor proc;
+    proc.prepareToPlay(kSampleRate, kBlockSize);
     StellarrBridge bridge;
+    bridge.setProcessor(&proc);
     bridge.setPresetDirectory(dir);
     PresetFileTestAccess::getPresetList(bridge);
 
@@ -277,7 +301,10 @@ static bool testDeleteAfterActive()
     printf("Test: delete after active leaves index unchanged... ");
 
     auto dir = createTempPresetDir(3); // A(0), B(1), C(2)
+    StellarrProcessor proc;
+    proc.prepareToPlay(kSampleRate, kBlockSize);
     StellarrBridge bridge;
+    bridge.setProcessor(&proc);
     bridge.setPresetDirectory(dir);
     PresetFileTestAccess::getPresetList(bridge);
 

@@ -119,31 +119,24 @@ void StellarrBridge::clearGraph()
     blockPositions.clear();
 }
 
-void StellarrBridge::restoreSession(const juce::var& session)
+bool StellarrBridge::restoreSession(const juce::var& session)
 {
-    if (processor == nullptr) return;
+    if (processor == nullptr) return false;
 
     auto* obj = session.getDynamicObject();
-    if (obj == nullptr) return;
+    if (obj == nullptr) return false;
 
     // Guard against rapid-fire concurrent invocations (e.g. user mashing the
     // preset selector). A lost try-lock means another restore is already in
     // flight — drop this one rather than queue a second graph rebuild on top.
-    //
-    // KNOWN GAP: callers (handleLoadPresetByIndex, handleLoadSession,
-    // handleBridgeReady, handleScreenshotSetup) cannot tell that this
-    // returned early due to contention, so they may still update preset
-    // bookkeeping (currentPresetIndex / lastPresetFile) onto a preset whose
-    // graph was not loaded. A subsequent quiet save would then persist the
-    // still-loaded graph into the wrong file. Surfacing this state to
-    // callers requires either a return-value change (breaks PresetFileTest's
-    // processor-less helper) or per-call cookie plumbing — both belong in
-    // the next task of the preset-swap crash fix plan.
+    // Callers must inspect the return value before mutating any "current
+    // preset" bookkeeping, otherwise a quiet save could persist the previous
+    // graph into the file the user thinks is the new preset.
     std::unique_lock<std::mutex> lock(restoreMutex, std::try_to_lock);
     if (!lock.owns_lock())
     {
         DBG("restoreSession: rejected reentrant request");
-        return;
+        return false;
     }
 
     emitToJs("presetLoadStarted", new juce::DynamicObject());
@@ -364,11 +357,13 @@ void StellarrBridge::restoreSession(const juce::var& session)
     {
         // Surface the failure to the UI before propagating so the loading
         // state is cleared; existing crash-reporter paths still see the throw.
+        // The exception itself signals failure to callers — no return needed.
         emitToJs("presetLoadFinished", new juce::DynamicObject());
         throw;
     }
 
     emitToJs("presetLoadFinished", new juce::DynamicObject());
+    return true;
 }
 
 // -- Preset management --------------------------------------------------------
@@ -502,7 +497,7 @@ void StellarrBridge::handleLoadSession()
         auto file = chooser.getResult();
         auto jsonStr = file.loadFileAsString();
         auto session = juce::JSON::parse(jsonStr);
-        restoreSession(session);
+        if (!restoreSession(session)) return;
         setPresetFromFile(file);
     });
 }
@@ -620,11 +615,17 @@ void StellarrBridge::handleLoadPresetByIndex(const juce::var& json)
     auto index = static_cast<int>(obj->getProperty("index"));
     if (index < 0 || index >= presetFiles.size()) return;
 
-    currentPresetIndex = index;
     auto file = presetDirectory.getChildFile(presetFiles[index]);
     auto jsonStr = file.loadFileAsString();
     auto session = juce::JSON::parse(jsonStr);
-    restoreSession(session);
+
+    // Only update preset bookkeeping if the graph actually loaded. If
+    // restoreSession was rejected (lock held by a concurrent request, or
+    // malformed session), keep the previous active preset so a subsequent
+    // quiet save persists the right file.
+    if (!restoreSession(session)) return;
+
+    currentPresetIndex = index;
     setPresetFromFile(file);
 }
 

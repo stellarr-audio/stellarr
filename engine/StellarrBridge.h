@@ -30,7 +30,10 @@ public:
     };
 
     juce::var serialiseSession() const;
-    void restoreSession(const juce::var& session);
+    // Returns true on successful load, false on early rejection (malformed
+    // session or restoreMutex contention). Propagates exceptions thrown from
+    // the body — callers must treat that as failure too.
+    bool restoreSession(const juce::var& session);
     void sendSystemStats(double cpuPercent, float outputPeakLinear);
     void sendBlockMetrics();
     void drainMidiEvents();

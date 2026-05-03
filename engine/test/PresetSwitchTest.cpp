@@ -2,12 +2,51 @@
 #include "blocks/GainBlock.h"
 #include "blocks/PluginBlock.h"
 #include "../StellarrBridge.h"
+#include <atomic>
+#include <functional>
+#include <mutex>
+#include <thread>
+#include <vector>
 
 class PresetSwitchTestAccess
 {
 public:
     static const auto& getBlockNodeMap(StellarrBridge& b) { return b.blockNodeMap; }
+    static std::mutex& getRestoreMutex(StellarrBridge& b) { return b.restoreMutex; }
+    static void loadPresetByIndex(StellarrBridge& b, const juce::var& j) { b.handleLoadPresetByIndex(j); }
+    static juce::StringArray& getPresetFiles(StellarrBridge& b) { return b.presetFiles; }
 };
+
+// Pump the JUCE message loop until `done` returns true or the timeout fires.
+// Returns true if `done` flipped within the budget. Required because
+// restoreSession now schedules its work through juce::AsyncUpdater, so the
+// message thread must service the queue before the load completes.
+static bool waitForRestoreCompletion(std::function<bool()> done, int timeoutMs = 5000)
+{
+    auto deadline = juce::Time::getMillisecondCounter() + static_cast<juce::uint32>(timeoutMs);
+    while (!done() && juce::Time::getMillisecondCounter() < deadline)
+        juce::MessageManager::getInstance()->runDispatchLoopUntil(10);
+    return done();
+}
+
+// Synchronous restoreSession wrapper for tests — kicks off the async restore
+// then drives the message loop until the completion callback fires. Returns
+// the success flag from the callback, or `false` if the restore was rejected
+// up front (no callback fires in that case).
+static bool restoreSessionSync(StellarrBridge& bridge, const juce::var& session,
+                               int timeoutMs = 5000)
+{
+    std::atomic<bool> done{false};
+    std::atomic<bool> success{false};
+    bool started = bridge.restoreSession(session, [&](bool ok)
+    {
+        success.store(ok);
+        done.store(true);
+    });
+    if (!started) return false;
+    waitForRestoreCompletion([&]{ return done.load(); }, timeoutMs);
+    return success.load();
+}
 
 // -- Batched graph rebuild ----------------------------------------------------
 
@@ -153,13 +192,25 @@ static bool testRapidSessionRestore()
     StellarrBridge bridge;
     bridge.setProcessor(&proc);
 
-    // Alternate between two sessions 20 times in rapid succession
+    // Alternate between two sessions 20 times in rapid succession. With the
+    // async cooperative restore, fire-and-forget calls now mostly get rejected
+    // by the in-flight try-lock — pump the loop briefly between each so at
+    // least some land. The point of the test is "does not crash", not
+    // "every load succeeds".
     for (int i = 0; i < 20; ++i)
     {
         auto session = juce::JSON::parse(
             (i % 2 == 0) ? kSessionWithPluginBlock : kSessionPassthrough);
         bridge.restoreSession(session);
+        juce::MessageManager::getInstance()->runDispatchLoopUntil(5);
     }
+
+    // Drain any in-flight restore so the assertions below see a stable graph.
+    waitForRestoreCompletion([&]{
+        // Best-effort: nothing surfaces a "is restoring" flag publicly, so
+        // pump for a fixed budget. 200 ms is generous given no real plugins.
+        return false;
+    }, 200);
 
     // Verify the graph is functional after all switches
     auto& map = PresetSwitchTestAccess::getBlockNodeMap(bridge);
@@ -195,10 +246,10 @@ static bool testClearAndRebuildProducesWorkingGraph()
     bridge.setProcessor(&proc);
 
     // Load a session with a (missing) plugin block
-    bridge.restoreSession(juce::JSON::parse(kSessionWithPluginBlock));
+    restoreSessionSync(bridge, juce::JSON::parse(kSessionWithPluginBlock));
 
     // Now restore a clean passthrough session
-    bridge.restoreSession(juce::JSON::parse(kSessionPassthrough));
+    restoreSessionSync(bridge, juce::JSON::parse(kSessionPassthrough));
 
     // Verify audio passes through without crashing and produces non-silent output
     juce::AudioBuffer<float> buf(2, kTotalSamples);
@@ -257,8 +308,301 @@ static bool testPluginReadyGatesProcess()
     return true;
 }
 
+// -- Reentrant restoreSession is rejected by try-lock --------------------------
+
+static bool testRestoreSessionTryLockBlocksReentrant()
+{
+    printf("Test: restoreSession try-lock rejects reentrant request... ");
+
+    StellarrProcessor proc;
+    proc.prepareToPlay(kSampleRate, kBlockSize);
+
+    StellarrBridge bridge;
+    bridge.setProcessor(&proc);
+
+    // Start from a clean known-good baseline
+    restoreSessionSync(bridge, juce::JSON::parse(kSessionPassthrough));
+    auto baselineSize = PresetSwitchTestAccess::getBlockNodeMap(bridge).size();
+
+    // Hold the restoreMutex from the test thread, then dispatch a competing
+    // restoreSession on a separate thread. The competing thread's try_lock
+    // must fail and the body must drop early — we wait on the thread's join
+    // to confirm it returned without blocking. Calling try_lock on a mutex
+    // already locked by the same thread is undefined behaviour for
+    // std::mutex, hence the explicit second thread.
+    auto& mutex = PresetSwitchTestAccess::getRestoreMutex(bridge);
+    {
+        std::unique_lock<std::mutex> heldLock(mutex);
+
+        std::atomic<bool> startedFlag{true};
+        std::thread competing([&bridge, &startedFlag]()
+        {
+            startedFlag.store(bridge.restoreSession(juce::JSON::parse(kSessionWithPluginBlock)));
+        });
+        competing.join();
+
+        if (startedFlag.load())
+        {
+            fprintf(stderr, "  competing restoreSession was accepted despite lock contention\n");
+            printf("FAIL\n");
+            proc.releaseResources();
+            return false;
+        }
+
+        auto duringLockSize = PresetSwitchTestAccess::getBlockNodeMap(bridge).size();
+        if (duringLockSize != baselineSize)
+        {
+            fprintf(stderr, "  blockNodeMap mutated while restoreMutex was held (was %zu, now %zu)\n",
+                    baselineSize, duringLockSize);
+            printf("FAIL\n");
+            proc.releaseResources();
+            return false;
+        }
+    }
+
+    // After releasing the lock, restoreSession should succeed normally.
+    restoreSessionSync(bridge, juce::JSON::parse(kSessionWithPluginBlock));
+    auto afterUnlockSize = PresetSwitchTestAccess::getBlockNodeMap(bridge).size();
+    if (afterUnlockSize == 0)
+    {
+        fprintf(stderr, "  restoreSession failed to populate graph after unlock\n");
+        printf("FAIL\n");
+        proc.releaseResources();
+        return false;
+    }
+
+    proc.releaseResources();
+    printf("PASS\n");
+    return true;
+}
+
+// -- restoreSession brackets work with started/finished events ----------------
+
+static bool testRestoreSessionEmitsStartedFinished()
+{
+    printf("Test: restoreSession emits presetLoadStarted then presetLoadFinished... ");
+
+    StellarrProcessor proc;
+    proc.prepareToPlay(kSampleRate, kBlockSize);
+
+    StellarrBridge bridge;
+    bridge.setProcessor(&proc);
+
+    std::vector<juce::String> events;
+    bridge.setEmitInterceptor([&events](const juce::String& name, const juce::var&)
+    {
+        events.push_back(name);
+    });
+
+    restoreSessionSync(bridge, juce::JSON::parse(kSessionPassthrough));
+
+    int startedAt = -1;
+    int finishedAt = -1;
+    for (int i = 0; i < static_cast<int>(events.size()); ++i)
+    {
+        if (events[static_cast<size_t>(i)] == "presetLoadStarted" && startedAt < 0)
+            startedAt = i;
+        else if (events[static_cast<size_t>(i)] == "presetLoadFinished")
+            finishedAt = i;
+    }
+
+    bridge.setEmitInterceptor(nullptr);
+
+    if (startedAt < 0 || finishedAt < 0 || startedAt >= finishedAt)
+    {
+        fprintf(stderr, "  expected presetLoadStarted before presetLoadFinished (started=%d, finished=%d)\n",
+                startedAt, finishedAt);
+        printf("FAIL\n");
+        proc.releaseResources();
+        return false;
+    }
+
+    proc.releaseResources();
+    printf("PASS\n");
+    return true;
+}
+
+// -- restoreSession still emits presetLoadFinished when body throws -----------
+
+static bool testRestoreSessionEmitsFinishedOnException()
+{
+    printf("Test: restoreSession emits presetLoadFinished and reports failure when body throws... ");
+
+    StellarrProcessor proc;
+    proc.prepareToPlay(kSampleRate, kBlockSize);
+
+    StellarrBridge bridge;
+    bridge.setProcessor(&proc);
+
+    std::vector<juce::String> events;
+    // Throw from a non-bracket emit so it surfaces inside finishRestore on
+    // the async update tick. The body's catch wraps that in success=false
+    // and still emits presetLoadFinished.
+    bool hasThrown = false;
+    bridge.setEmitInterceptor([&events, &hasThrown](const juce::String& name, const juce::var&)
+    {
+        events.push_back(name);
+        if (!hasThrown && name != "presetLoadStarted" && name != "presetLoadFinished")
+        {
+            hasThrown = true;
+            throw std::runtime_error("test-injected failure during restoreSession body");
+        }
+    });
+
+    std::atomic<bool> done{false};
+    std::atomic<bool> success{true}; // start true so we can see it flip
+    bool started = bridge.restoreSession(juce::JSON::parse(kSessionPassthrough),
+                                         [&](bool ok)
+    {
+        success.store(ok);
+        done.store(true);
+    });
+
+    bool completed = started && waitForRestoreCompletion([&]{ return done.load(); });
+
+    bridge.setEmitInterceptor(nullptr);
+
+    if (!started)
+    {
+        fprintf(stderr, "  restoreSession refused to start\n");
+        printf("FAIL\n");
+        proc.releaseResources();
+        return false;
+    }
+
+    if (!completed)
+    {
+        fprintf(stderr, "  restoreSession completion callback never fired\n");
+        printf("FAIL\n");
+        proc.releaseResources();
+        return false;
+    }
+
+    if (success.load())
+    {
+        fprintf(stderr, "  expected callback success=false after thrown emit\n");
+        printf("FAIL\n");
+        proc.releaseResources();
+        return false;
+    }
+
+    bool sawStarted = false;
+    bool sawFinished = false;
+    for (auto& name : events)
+    {
+        if (name == "presetLoadStarted") sawStarted = true;
+        else if (name == "presetLoadFinished") sawFinished = true;
+    }
+
+    if (!sawStarted || !sawFinished)
+    {
+        fprintf(stderr, "  expected both started and finished emits (started=%d, finished=%d)\n",
+                static_cast<int>(sawStarted), static_cast<int>(sawFinished));
+        printf("FAIL\n");
+        proc.releaseResources();
+        return false;
+    }
+
+    proc.releaseResources();
+    printf("PASS\n");
+    return true;
+}
+
+// -- handleLoadPresetByIndex preserves bookkeeping when restore is rejected ---
+
+static bool testRestoreSessionRejectionPreservesCallerBookkeeping()
+{
+    printf("Test: handleLoadPresetByIndex doesn't mutate state when restore is rejected... ");
+
+    StellarrProcessor proc;
+    proc.prepareToPlay(kSampleRate, kBlockSize);
+
+    StellarrBridge bridge;
+    bridge.setProcessor(&proc);
+
+    // Stage two preset files on disk so handleLoadPresetByIndex has something
+    // to read. Contents don't matter — we never let restoreSession run to
+    // completion in the racing thread.
+    auto dir = juce::File::getSpecialLocation(juce::File::tempDirectory)
+                   .getChildFile("stellarr_test_preset_swap_"
+                                 + juce::String(juce::Random::getSystemRandom().nextInt()));
+    dir.createDirectory();
+    auto fileA = dir.getChildFile("Preset_A.stellarr");
+    auto fileB = dir.getChildFile("Preset_B.stellarr");
+    fileA.replaceWithText(kSessionPassthrough);
+    fileB.replaceWithText(kSessionWithPluginBlock);
+
+    bridge.setPresetDirectory(dir);
+    auto& files = PresetSwitchTestAccess::getPresetFiles(bridge);
+    files.clear();
+    files.add("Preset_A.stellarr");
+    files.add("Preset_B.stellarr");
+
+    // Load preset A so currentPresetIndex is established. handleLoadPresetByIndex
+    // schedules the restore via AsyncUpdater — pump the loop until the
+    // bookkeeping callback runs.
+    PresetSwitchTestAccess::loadPresetByIndex(bridge, juce::JSON::parse(R"({"index":0})"));
+    waitForRestoreCompletion([&]{ return bridge.getCurrentPresetIndex() == 0; });
+    if (bridge.getCurrentPresetIndex() != 0)
+    {
+        fprintf(stderr, "  precondition failed: expected currentPresetIndex=0, got %d\n",
+                bridge.getCurrentPresetIndex());
+        printf("FAIL\n");
+        dir.deleteRecursively();
+        proc.releaseResources();
+        return false;
+    }
+    auto baselineFile = bridge.getLastPresetFile().getFileName();
+
+    // Hold the restoreMutex on the test thread, then ask a competing thread
+    // to load preset B. The try_lock inside restoreSession must fail; the
+    // caller must observe that and leave currentPresetIndex / lastPresetFile
+    // untouched. (Same-thread try_lock on std::mutex is UB, hence the
+    // separate thread.)
+    auto& mutex = PresetSwitchTestAccess::getRestoreMutex(bridge);
+    {
+        std::unique_lock<std::mutex> heldLock(mutex);
+
+        std::thread competing([&bridge]()
+        {
+            PresetSwitchTestAccess::loadPresetByIndex(bridge, juce::JSON::parse(R"({"index":1})"));
+        });
+        competing.join();
+
+        if (bridge.getCurrentPresetIndex() != 0)
+        {
+            fprintf(stderr, "  currentPresetIndex mutated despite restore rejection (now %d)\n",
+                    bridge.getCurrentPresetIndex());
+            printf("FAIL\n");
+            dir.deleteRecursively();
+            proc.releaseResources();
+            return false;
+        }
+
+        if (bridge.getLastPresetFile().getFileName() != baselineFile)
+        {
+            fprintf(stderr, "  lastPresetFile mutated despite restore rejection (now %s)\n",
+                    bridge.getLastPresetFile().getFileName().toRawUTF8());
+            printf("FAIL\n");
+            dir.deleteRecursively();
+            proc.releaseResources();
+            return false;
+        }
+    }
+
+    dir.deleteRecursively();
+    proc.releaseResources();
+    printf("PASS\n");
+    return true;
+}
+
 int main()
 {
+    // restoreSession schedules its work through juce::AsyncUpdater, which
+    // requires a live MessageManager. ScopedJuceInitialiser_GUI sets one up
+    // for the duration of the test process.
+    juce::ScopedJuceInitialiser_GUI juceInit;
+
     int failures = 0;
 
     if (!testBatchedRebuildRoutesAudio())       ++failures;
@@ -266,6 +610,10 @@ int main()
     if (!testRapidSessionRestore())             ++failures;
     if (!testClearAndRebuildProducesWorkingGraph()) ++failures;
     if (!testPluginReadyGatesProcess())         ++failures;
+    if (!testRestoreSessionTryLockBlocksReentrant()) ++failures;
+    if (!testRestoreSessionEmitsStartedFinished())   ++failures;
+    if (!testRestoreSessionEmitsFinishedOnException()) ++failures;
+    if (!testRestoreSessionRejectionPreservesCallerBookkeeping()) ++failures;
 
     printf("\n%d test(s) failed\n", failures);
     return failures;

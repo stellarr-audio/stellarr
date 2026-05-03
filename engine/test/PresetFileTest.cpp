@@ -11,6 +11,19 @@ public:
     static void loadPresetByIndex(StellarrBridge& b, const juce::var& j) { b.handleLoadPresetByIndex(j); }
 };
 
+// handleLoadPresetByIndex now schedules its restore via juce::AsyncUpdater.
+// Pump the message loop until the bookkeeping callback either updates
+// currentPresetIndex or the timeout expires.
+static void waitForPresetLoad(StellarrBridge& bridge, int expectedIndex, int timeoutMs = 5000)
+{
+    auto deadline = juce::Time::getMillisecondCounter() + static_cast<juce::uint32>(timeoutMs);
+    while (bridge.getCurrentPresetIndex() != expectedIndex
+           && juce::Time::getMillisecondCounter() < deadline)
+    {
+        juce::MessageManager::getInstance()->runDispatchLoopUntil(10);
+    }
+}
+
 // Helper: create a temp preset directory with N .stellarr files
 static juce::File createTempPresetDir(int count)
 {
@@ -18,12 +31,27 @@ static juce::File createTempPresetDir(int count)
                    .getChildFile("stellarr_test_presets_" + juce::String(juce::Random::getSystemRandom().nextInt()));
     dir.createDirectory();
 
+    // Use a minimal-but-restorable session shape (input + output, no
+    // connections) so restoreSession succeeds and the bookkeeping path runs.
+    // A bare {"blocks":[]} parses but loadPresetByIndex now gates state on
+    // restoreSession returning true — and that requires a processor anyway.
+    static constexpr const char* kMinimalSession = R"({
+        "version": 1,
+        "blocks": [
+            {"id":"in1","type":"input","name":"Input","col":0,"row":2},
+            {"id":"out1","type":"output","name":"Output","col":11,"row":2}
+        ],
+        "connections": [{"sourceId":"in1","destId":"out1"}],
+        "scenes": [],
+        "activeSceneIndex": -1
+    })";
+
     for (int i = 0; i < count; ++i)
     {
         char letter = static_cast<char>('A' + i);
         auto name = "Preset_" + juce::String(&letter, 1);
         auto file = dir.getChildFile(name + ".stellarr");
-        file.replaceWithText("{\"blocks\":[]}");
+        file.replaceWithText(kMinimalSession);
     }
 
     return dir;
@@ -88,13 +116,17 @@ static bool testRenameActivePreset()
     printf("Test: rename active preset updates tracking... ");
 
     auto dir = createTempPresetDir(2); // A, B
+    StellarrProcessor proc;
+    proc.prepareToPlay(kSampleRate, kBlockSize);
     StellarrBridge bridge;
+    bridge.setProcessor(&proc);
     bridge.setPresetDirectory(dir);
     PresetFileTestAccess::getPresetList(bridge);
 
     // Simulate loading preset B (index 1)
     auto loadJson = juce::JSON::parse(R"({"index":1})");
     PresetFileTestAccess::loadPresetByIndex(bridge,loadJson);
+    waitForPresetLoad(bridge, 1);
 
     if (bridge.getCurrentPresetIndex() != 1)
     {
@@ -219,13 +251,17 @@ static bool testDeleteActivePreset()
     printf("Test: delete active preset clears active state... ");
 
     auto dir = createTempPresetDir(3);
+    StellarrProcessor proc;
+    proc.prepareToPlay(kSampleRate, kBlockSize);
     StellarrBridge bridge;
+    bridge.setProcessor(&proc);
     bridge.setPresetDirectory(dir);
     PresetFileTestAccess::getPresetList(bridge);
 
     // Load preset B (index 1)
     auto loadJson = juce::JSON::parse(R"({"index":1})");
     PresetFileTestAccess::loadPresetByIndex(bridge,loadJson);
+    waitForPresetLoad(bridge, 1);
 
     // Delete it
     auto deleteJson = juce::JSON::parse(R"({"index":1})");
@@ -248,13 +284,17 @@ static bool testDeleteBeforeActive()
     printf("Test: delete before active shifts index down... ");
 
     auto dir = createTempPresetDir(3); // A(0), B(1), C(2)
+    StellarrProcessor proc;
+    proc.prepareToPlay(kSampleRate, kBlockSize);
     StellarrBridge bridge;
+    bridge.setProcessor(&proc);
     bridge.setPresetDirectory(dir);
     PresetFileTestAccess::getPresetList(bridge);
 
     // Load preset C (index 2)
     auto loadJson = juce::JSON::parse(R"({"index":2})");
     PresetFileTestAccess::loadPresetByIndex(bridge,loadJson);
+    waitForPresetLoad(bridge, 2);
 
     // Delete preset A (index 0) — active should shift from 2 to 1
     auto deleteJson = juce::JSON::parse(R"({"index":0})");
@@ -277,13 +317,17 @@ static bool testDeleteAfterActive()
     printf("Test: delete after active leaves index unchanged... ");
 
     auto dir = createTempPresetDir(3); // A(0), B(1), C(2)
+    StellarrProcessor proc;
+    proc.prepareToPlay(kSampleRate, kBlockSize);
     StellarrBridge bridge;
+    bridge.setProcessor(&proc);
     bridge.setPresetDirectory(dir);
     PresetFileTestAccess::getPresetList(bridge);
 
     // Load preset A (index 0)
     auto loadJson = juce::JSON::parse(R"({"index":0})");
     PresetFileTestAccess::loadPresetByIndex(bridge,loadJson);
+    waitForPresetLoad(bridge, 0);
 
     // Delete preset C (index 2) — active should stay at 0
     auto deleteJson = juce::JSON::parse(R"({"index":2})");
@@ -327,6 +371,8 @@ static bool testDeleteInvalidIndex()
 
 int main()
 {
+    juce::ScopedJuceInitialiser_GUI juceInit;
+
     int failures = 0;
 
     // Rename

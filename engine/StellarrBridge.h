@@ -17,7 +17,7 @@ class StellarrBridge : private juce::AsyncUpdater
 {
 public:
     StellarrBridge();
-    ~StellarrBridge();
+    ~StellarrBridge() override;
 
     void setProcessor(StellarrProcessor* proc);
     void setAppProperties(juce::ApplicationProperties* props);

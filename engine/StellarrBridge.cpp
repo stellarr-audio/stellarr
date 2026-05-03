@@ -7,6 +7,8 @@
 #include "blocks/PluginBlock.h"
 #include <cmath>
 #include <limits>
+#include <optional>
+#include <set>
 
 StellarrBridge::StellarrBridge() = default;
 StellarrBridge::~StellarrBridge() = default;
@@ -49,6 +51,59 @@ void StellarrBridge::handleEvent(const juce::String& eventName, const juce::var&
     auto json = payload.isString()
         ? juce::JSON::parse(payload.toString())
         : payload;
+
+    // While an async restoreSession is in flight (Phase 1 yielding between
+    // plugin loads), drop any event that would mutate the graph, scenes, MIDI
+    // mappings, or persisted preset state. Phase 2 calls clearGraph() and
+    // overwrites everything we listed below — letting those edits run during
+    // the load window would silently lose them on the next async tick.
+    //
+    // Read-only events (getPresetList, getMidiMappings, telemetry queries,
+    // etc.) and the lock-guarded preset-load events (loadPresetByIndex,
+    // loadSession — both reject themselves via restoreSession's try_lock)
+    // pass through unchanged.
+    if (pendingRestore.has_value())
+    {
+        static const std::set<juce::String> blockedDuringRestore = {
+            // Graph mutations — Phase 2's clearGraph() obliterates these.
+            "addBlock", "removeBlock", "moveBlock",
+            "addConnection", "removeConnection",
+            "setBlockPlugin", "copyBlock", "pasteBlock",
+            "renameBlock", "setBlockColor",
+            // Per-block parameter / bypass / state edits — wiped when the
+            // block is replaced by Phase 2.
+            "setBlockMix", "setBlockBalance", "setBlockLevel",
+            "toggleBlockBypass", "setBlockBypassMode",
+            "saveBlockState", "addBlockState", "recallBlockState", "deleteBlockState",
+            // Output-block target loudness lives on the block being replaced.
+            "setTargetLufs",
+            // Input-block controls (test tone, tuner) — same block-replacement
+            // story as parameter edits. setTunerEnabled is also a tab-switch
+            // signal; if the user opens the Tuner tab mid-load we drop it
+            // here, but the UI normally gates the preset selector behind a
+            // spinner so the typical sequence (click preset, wait, click
+            // tuner) is unaffected.
+            "toggleTestTone", "setTestToneSample", "setTunerEnabled",
+            // Session / preset / grid / scene state — all replaced by Phase 2.
+            "newSession", "saveSession", "saveSessionQuiet",
+            "pickPresetDirectory",
+            "renamePreset", "deletePreset", "setGridSize",
+            "addScene", "recallScene", "saveScene", "renameScene", "deleteScene",
+            // Preset-level MIDI mappings are replaced by Phase 2's
+            // loadPresetMappings(); learn state is similarly transient.
+            "addMidiMapping", "removeMidiMapping", "clearMidiMappings",
+            "startMidiLearn", "cancelMidiLearn",
+            // Plugin scans mutate the PluginManager known-plugins list on a
+            // background thread; restore ticks read from the same list in
+            // createPluginInstance. Defer the scan until the restore is done.
+            "scanPlugins", "pickScanDirectory", "removeScanDirectory"
+        };
+        if (blockedDuringRestore.count(eventName) > 0)
+        {
+            DBG("StellarrBridge: dropping '" << eventName << "' while preset restore is in flight");
+            return;
+        }
+    }
 
     // Startup
     if (eventName == "bridgeReady")                 handleBridgeReady();
@@ -510,6 +565,21 @@ void StellarrBridge::emitToJs(const juce::String& eventName, juce::DynamicObject
     });
 }
 
+void StellarrBridge::emitToJsSync(const juce::String& eventName, juce::DynamicObject* detail)
+{
+    // Same lifetime guard as emitToJs.
+    auto data = juce::var(detail);
+
+    if (emitInterceptor) emitInterceptor(eventName, data);
+
+    if (webView == nullptr) return;
+
+    jassert(juce::MessageManager::getInstance()->isThisTheMessageThread());
+
+    auto eventId = juce::Identifier(eventName);
+    webView->emitEventIfBrowserIsVisible(eventId, data);
+}
+
 stellarr::Block* StellarrBridge::findBlock(const juce::String& blockId)
 {
     if (processor == nullptr) return nullptr;
@@ -608,7 +678,26 @@ void StellarrBridge::handleBridgeReady()
             {
                 sendStartupProgress("Restoring session...", 60);
 
-                bool restored = false;
+                // Final-step lambda — runs after the optional preset restore
+                // either succeeds, fails, or is skipped. Seeds an empty
+                // input/output graph if nothing was restored, then completes
+                // startup.
+                auto finishStartup = [this](bool restored)
+                {
+                    if (!restored && blockNodeMap.empty())
+                    {
+                        auto inputJson = juce::JSON::parse(R"({"type":"input","col":0,"row":2})");
+                        auto outputJson = juce::JSON::parse(R"({"type":"output","col":11,"row":2})");
+                        handleAddBlock(inputJson);
+                        handleAddBlock(outputJson);
+                    }
+
+                    sendGraphState();
+                    sendPresetList();
+
+                    sendStartupProgress("Ready", 100);
+                    emitToJs("startupComplete", new juce::DynamicObject());
+                };
 
                 if (appProperties != nullptr)
                 {
@@ -636,40 +725,37 @@ void StellarrBridge::handleBridgeReady()
                         {
                             auto jsonStr = file.loadFileAsString();
                             auto session = juce::JSON::parse(jsonStr);
-                            if (session.getDynamicObject() != nullptr && restoreSession(session))
+                            if (session.getDynamicObject() != nullptr)
                             {
-                                lastPresetFile = file;
-                                presetDirectory = file.getParentDirectory();
-                                handleGetPresetList();
-
-                                for (int i = 0; i < presetFiles.size(); ++i)
-                                {
-                                    if (presetFiles[i] == file.getFileName())
+                                bool started = restoreSession(session,
+                                    [this, file, finishStartup](bool ok)
                                     {
-                                        currentPresetIndex = i;
-                                        break;
-                                    }
-                                }
+                                        if (ok)
+                                        {
+                                            lastPresetFile = file;
+                                            presetDirectory = file.getParentDirectory();
+                                            handleGetPresetList();
 
-                                restored = true;
+                                            for (int i = 0; i < presetFiles.size(); ++i)
+                                            {
+                                                if (presetFiles[i] == file.getFileName())
+                                                {
+                                                    currentPresetIndex = i;
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                        finishStartup(ok);
+                                    });
+
+                                if (started) return; // finishStartup runs in callback
                             }
                         }
                     }
                 }
 
-                if (!restored && blockNodeMap.empty())
-                {
-                    auto inputJson = juce::JSON::parse(R"({"type":"input","col":0,"row":2})");
-                    auto outputJson = juce::JSON::parse(R"({"type":"output","col":11,"row":2})");
-                    handleAddBlock(inputJson);
-                    handleAddBlock(outputJson);
-                }
-
-                sendGraphState();
-                sendPresetList();
-
-                sendStartupProgress("Ready", 100);
-                emitToJs("startupComplete", new juce::DynamicObject());
+                // No restore was started — fall through to default seed.
+                finishStartup(false);
             });
         });
     });
@@ -772,13 +858,27 @@ void StellarrBridge::handleScreenshotSetup()
     auto configFile = juce::File("/tmp/stellarr-screenshot-config.json");
     if (!configFile.existsAsFile()) return;
 
+    // If a restore is already in flight (e.g. the startup last-session
+    // restore is still loading plugins when uiReady fires), defer the entire
+    // screenshot setup until that load completes — otherwise the capture
+    // script's fixed timers can race the still-rebuilding graph. Leave the
+    // config file in place so the deferred call can re-read it.
+    if (pendingRestore.has_value())
+    {
+        runWhenRestoreIdle([this]() { handleScreenshotSetup(); });
+        return;
+    }
+
     auto screenshotConfig = juce::JSON::parse(configFile.loadFileAsString());
     configFile.deleteFile();
 
     auto* obj = screenshotConfig.getDynamicObject();
     if (obj == nullptr) return;
 
-    // Load preset if specified
+    // Load preset if specified. The screenshotSetup emit kicks off the UI's
+    // capture timers, so it must NOT fire until any async preset restore has
+    // finished — otherwise the screenshot script can race the still-loading
+    // graph and capture a partial or stale state.
     auto presetPath = obj->getProperty("preset").toString();
     if (presetPath.isNotEmpty())
     {
@@ -791,22 +891,41 @@ void StellarrBridge::handleScreenshotSetup()
         {
             auto jsonStr = file.loadFileAsString();
             auto session = juce::JSON::parse(jsonStr);
-            if (session.getDynamicObject() != nullptr && restoreSession(session))
+            if (session.getDynamicObject() != nullptr)
             {
-                sendGraphState();
-
-                // Recall scene if specified
+                // Snapshot scene index up front — obj may not survive into
+                // the async callback.
+                std::optional<int> sceneIndex;
                 if (obj->hasProperty("scene"))
+                    sceneIndex = static_cast<int>(obj->getProperty("scene"));
+
+                // Hold a ref-counted handle to the config so the JS-bound
+                // payload survives across the async tick.
+                juce::var configHandle = screenshotConfig;
+
+                bool started = restoreSession(session,
+                    [this, sceneIndex, configHandle](bool ok)
                 {
-                    auto sceneJson = juce::JSON::parse(
-                        "{\"index\":" + juce::String(static_cast<int>(obj->getProperty("scene"))) + "}");
-                    handleRecallScene(sceneJson);
-                }
+                    if (ok)
+                    {
+                        sendGraphState();
+                        if (sceneIndex.has_value())
+                        {
+                            auto sceneJson = juce::JSON::parse(
+                                "{\"index\":" + juce::String(*sceneIndex) + "}");
+                            handleRecallScene(sceneJson);
+                        }
+                    }
+                    if (auto* o = configHandle.getDynamicObject())
+                        emitToJs("screenshotSetup", o);
+                });
+
+                if (started) return; // emit is deferred to the callback
             }
         }
     }
 
-    // Send config to UI for page navigation and actions
+    // No async restore in flight — emit synchronously as before.
     emitToJs("screenshotSetup", obj);
 }
 

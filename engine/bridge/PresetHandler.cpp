@@ -119,7 +119,8 @@ void StellarrBridge::clearGraph()
     blockPositions.clear();
 }
 
-bool StellarrBridge::restoreSession(const juce::var& session)
+bool StellarrBridge::restoreSession(juce::var session,
+                                    std::function<void(bool)> onComplete)
 {
     if (processor == nullptr) return false;
 
@@ -139,43 +140,84 @@ bool StellarrBridge::restoreSession(const juce::var& session)
         return false;
     }
 
-    emitToJs("presetLoadStarted", new juce::DynamicObject());
+    // Build the ordered list of plugin blocks up-front so handleAsyncUpdate()
+    // can step through them one tick at a time without re-parsing each call.
+    std::vector<juce::var> pluginBlocks;
+    auto blocksVar = obj->getProperty("blocks");
+    if (auto* blocksArray = blocksVar.getArray())
+    {
+        for (auto& blockVar : *blocksArray)
+        {
+            auto* blockObj = blockVar.getDynamicObject();
+            if (blockObj == nullptr) continue;
 
+            auto type = blockObj->getProperty("type").toString();
+            if (type != "plugin" && type != "vst") continue;
+
+            auto pluginId = blockObj->getProperty("pluginId").toString();
+            if (pluginId.isEmpty()) continue;
+
+            pluginBlocks.push_back(blockVar);
+        }
+    }
+
+    pendingRestore.emplace(PendingRestore{
+        std::move(lock),
+        std::move(session),
+        {},                  // preloads — accumulated tick by tick
+        0,                   // nextIndex
+        std::move(onComplete),
+        std::move(pluginBlocks)
+    });
+
+    // Emit the start bracket. If the interceptor or webview emit throws,
+    // roll back the pendingRestore so the lock isn't held forever — the
+    // caller's `started==true` contract is then a lie, but failing fast and
+    // re-throwing is preferable to a permanently-wedged bridge.
     try
     {
-        using UK = juce::AudioProcessorGraph::UpdateKind;
+        emitToJsSync("presetLoadStarted", new juce::DynamicObject());
+    }
+    catch (...)
+    {
+        pendingRestore.reset();   // releases lock via unique_lock dtor
+        throw;
+    }
 
-        // -- Phase 1: Pre-create plugin instances while audio is still running -----
-        // This is the slow part (loading plugin binaries from disk). We do it before
-        // suspending so the audio gap is as short as possible.
+    // Schedule the first tick. Even when there are zero plugins to load we
+    // still defer Phase 2 to a tick so the UI has a chance to paint the
+    // spinner before the graph rebuild runs.
+    triggerAsyncUpdate();
+    return true;
+}
 
-        struct PluginPreload {
-            juce::String blockId;
-            juce::String pluginId;
-            juce::String pluginName;
-            std::unique_ptr<juce::AudioPluginInstance> instance;
-        };
-        std::vector<PluginPreload> preloads;
+void StellarrBridge::handleAsyncUpdate()
+{
+    // Defensive: should always be set when a tick fires, but if something
+    // cancelled out from under us (e.g. cleared during shutdown) just bail.
+    if (!pendingRestore.has_value()) return;
 
-        auto blocksVar = obj->getProperty("blocks");
-        if (auto* blocksArray = blocksVar.getArray())
+    auto& pr = *pendingRestore;
+
+    // Phase 1: load one plugin per tick. Each createPluginInstance call may
+    // block the message thread for hundreds of ms; yielding between them lets
+    // the UI paint and process input.
+    if (pr.nextIndex < pr.pluginBlocks.size())
+    {
+        auto& blockVar = pr.pluginBlocks[pr.nextIndex];
+        auto* blockObj = blockVar.getDynamicObject();
+        // Already filtered in restoreSession() but guard again defensively.
+        if (blockObj != nullptr)
         {
-            for (auto& blockVar : *blocksArray)
+            auto savedId    = blockObj->getProperty("id").toString();
+            auto pluginId   = blockObj->getProperty("pluginId").toString();
+            auto pluginName = blockObj->getProperty("pluginName").toString();
+
+            std::unique_ptr<juce::AudioPluginInstance> instance;
+            try
             {
-                auto* blockObj = blockVar.getDynamicObject();
-                if (blockObj == nullptr) continue;
-
-                auto type = blockObj->getProperty("type").toString();
-                if (type != "plugin" && type != "vst") continue;
-
-                auto pluginId = blockObj->getProperty("pluginId").toString();
-                if (pluginId.isEmpty()) continue;
-
-                auto savedId = blockObj->getProperty("id").toString();
-                auto pluginName = blockObj->getProperty("pluginName").toString();
-
                 juce::String errorMessage;
-                auto instance = processor->getPluginManager().createPluginInstance(
+                instance = processor->getPluginManager().createPluginInstance(
                     pluginId, processor->getSampleRate(),
                     processor->getBlockSize(), errorMessage);
 
@@ -186,26 +228,129 @@ bool StellarrBridge::restoreSession(const juce::var& session)
                     instance->prepareToPlay(processor->getSampleRate(),
                                             processor->getBlockSize());
                 }
-
-                preloads.push_back({savedId, pluginId, pluginName, std::move(instance)});
             }
+            catch (...)
+            {
+                // Single-plugin failure must not kill the whole restore — the
+                // session may have many other working plugins. Record nullptr
+                // so Phase 2 sets the missing-plugin marker, mirroring the
+                // existing "instance == nullptr" branch.
+                instance.reset();
+                DBG("restoreSession: plugin load threw for " << pluginId);
+            }
+
+            pr.preloads.push_back({savedId, pluginId, pluginName, std::move(instance)});
         }
 
-        // -- Phase 2: Suspend and rebuild the graph atomically --------------------
-        // Now that all plugins are pre-loaded, the suspension window is minimal:
-        // just pointer swaps, connection wiring, and a single graph rebuild.
+        ++pr.nextIndex;
+        triggerAsyncUpdate();
+        return;
+    }
 
+    // Phase 2: all plugins pre-loaded — install everything in one suspended
+    // window, then notify and release.
+    bool success = false;
+    try
+    {
+        success = finishRestore();
+    }
+    catch (...)
+    {
+        success = false;
+        DBG("restoreSession: finishRestore threw");
+    }
+
+    // Move the user callback off of pendingRestore before any further work
+    // touches it — if the bracket emit or callback throws, the RAII cleanup
+    // below still resets state and drains continuations.
+    auto callback = std::move(pr.onComplete);
+
+    // RAII teardown — guarantees the restore lock is released and any
+    // post-restore continuations fire even if presetLoadFinished or the
+    // user callback throws (e.g. via the test emit interceptor).
+    struct RestoreTeardown {
+        StellarrBridge* self;
+        ~RestoreTeardown()
+        {
+            self->pendingRestore.reset();   // releases lock via unique_lock dtor
+            auto continuations = std::move(self->postRestoreContinuations);
+            self->postRestoreContinuations.clear();
+            for (auto& cont : continuations)
+            {
+                if (!cont) continue;
+                try { cont(); }
+                catch (...) { DBG("restoreSession: post-restore continuation threw"); }
+            }
+        }
+    } teardown{this};
+
+    // Use async emit (not sync) so presetLoadFinished is delivered AFTER the
+    // queued graphState / gridState / scene / MIDI mapping updates emitted
+    // during finishRestore(). The UI's loading-state flag gates pointer
+    // events on the preset surfaces — clearing it before the new graph
+    // arrives lets the user click on stale UI for a few frames.
+    emitToJs("presetLoadFinished", new juce::DynamicObject());
+
+    if (callback) callback(success);
+}
+
+void StellarrBridge::runWhenRestoreIdle(std::function<void()> cb)
+{
+    if (!cb) return;
+    if (!pendingRestore.has_value())
+    {
+        cb();
+        return;
+    }
+    postRestoreContinuations.push_back(std::move(cb));
+}
+
+bool StellarrBridge::finishRestore()
+{
+    if (!pendingRestore.has_value()) return false;
+    auto& pr = *pendingRestore;
+
+    auto* obj = pr.session.getDynamicObject();
+    if (obj == nullptr) return false;
+
+    using UK = juce::AudioProcessorGraph::UpdateKind;
+
+    // Mutate the graph inside a tight suspended window. RAII resume guard
+    // covers exceptions thrown by plugin state restore so audio still resumes
+    // even on failure — but it also calls rebuildGraph() defensively first so
+    // the audio thread never sees a partial mutation (cleared blocks, no
+    // fresh render sequence). Scope is intentionally narrow: block/connection
+    // install plus the single rebuild plus the MIDI mapping swap — everything
+    // afterwards (scenes, grid, UI emits) runs with audio live again to keep
+    // the gap minimal.
+    {
         processor->suspendProcessing(true);
+        struct ResumeGuard {
+            StellarrProcessor* p;
+            bool rebuilt = false;
+            ~ResumeGuard()
+            {
+                if (p == nullptr) return;
+                // Defensive rebuild only if the body threw before its
+                // explicit rebuildGraph() ran. Avoids duplicating the
+                // expensive rebuild on the success path.
+                if (!rebuilt)
+                {
+                    try { p->rebuildGraph(); } catch (...) {}
+                }
+                p->suspendProcessing(false);
+            }
+        } resumeGuard{processor, false};
 
         clearGraph();
 
-        // Restore blocks (all graph mutations use UpdateKind::none — no intermediate rebuilds)
+        auto blocksVar = obj->getProperty("blocks");
         if (auto* blocksArray = blocksVar.getArray())
         {
             // Build a lookup from saved block ID to preloaded instance
             std::map<juce::String, size_t> preloadIndex;
-            for (size_t i = 0; i < preloads.size(); ++i)
-                preloadIndex[preloads[i].blockId] = i;
+            for (size_t i = 0; i < pr.preloads.size(); ++i)
+                preloadIndex[pr.preloads[i].blockId] = i;
 
             for (auto& blockVar : *blocksArray)
             {
@@ -241,7 +386,7 @@ bool StellarrBridge::restoreSession(const juce::var& session)
                     auto preloadIt = preloadIndex.find(blockId);
                     if (preloadIt != preloadIndex.end())
                     {
-                        auto& pl = preloads[preloadIt->second];
+                        auto& pl = pr.preloads[preloadIt->second];
                         if (auto* node = processor->getGraph().getNodeForId(nodeId))
                         {
                             if (auto* pb = dynamic_cast<stellarr::PluginBlock*>(node->getProcessor()))
@@ -285,84 +430,78 @@ bool StellarrBridge::restoreSession(const juce::var& session)
 
         // Single atomic rebuild — audio thread picks up the complete new graph in one swap
         processor->rebuildGraph();
+        resumeGuard.rebuilt = true;
 
-        // Restore scenes
-        scenes.clear();
-        activeSceneIndex = -1;
-        auto scenesVar = obj->getProperty("scenes");
-        if (auto* scenesArr = scenesVar.getArray())
-        {
-            for (auto& sv : *scenesArr)
-            {
-                if (auto* so = sv.getDynamicObject())
-                {
-                    Scene scene;
-                    scene.name = so->getProperty("name").toString();
-                    auto mapVar = so->getProperty("blockStateMap");
-                    if (auto* mapObj = mapVar.getDynamicObject())
-                    {
-                        for (auto& prop : mapObj->getProperties())
-                            scene.blockStateMap[prop.name.toString()] = static_cast<int>(prop.value);
-                    }
-                    auto bypassVar = so->getProperty("blockBypassMap");
-                    if (auto* bypassObj = bypassVar.getDynamicObject())
-                    {
-                        for (auto& prop : bypassObj->getProperties())
-                            scene.blockBypassMap[prop.name.toString()] = static_cast<bool>(prop.value);
-                    }
-                    scenes.push_back(scene);
-                }
-            }
-            activeSceneIndex = static_cast<int>(obj->getProperty("activeSceneIndex"));
-            if (activeSceneIndex >= static_cast<int>(scenes.size()))
-                activeSceneIndex = scenes.empty() ? -1 : 0;
-        }
-
-        // Ensure at least one scene exists
-        if (scenes.empty())
-        {
-            Scene defaultScene;
-            defaultScene.name = "Scene 1";
-            captureIntoScene(defaultScene, blockNodeMap, processor->getGraph());
-            scenes.push_back(defaultScene);
-            activeSceneIndex = 0;
-        }
-
-        // Restore preset-level MIDI mappings (always clear old, keeps global intact)
+        // Swap preset-level MIDI mappings inside the suspended window so the
+        // audio thread never processes a block against the previous preset's
+        // mappings — otherwise an inbound CC arriving in the gap could
+        // mutate the wrong block.
         processor->getMidiMapper().loadPresetMappings(
             obj->hasProperty("midiMappings") ? obj->getProperty("midiMappings") : juce::var());
-        emitMidiMappings();
+    }   // ResumeGuard fires here — audio is live again before the UI emits below.
 
-        // Resume graph-level routing
-        processor->suspendProcessing(false);
-
-        // Restore grid dimensions (falls back to current defaults if absent)
-        if (obj->hasProperty("grid"))
+    // Restore scenes
+    scenes.clear();
+    activeSceneIndex = -1;
+    auto scenesVar = obj->getProperty("scenes");
+    if (auto* scenesArr = scenesVar.getArray())
+    {
+        for (auto& sv : *scenesArr)
         {
-            if (auto* gridObj = obj->getProperty("grid").getDynamicObject())
+            if (auto* so = sv.getDynamicObject())
             {
-                auto cols = gridObj->getProperty("columns");
-                auto rows = gridObj->getProperty("rows");
-                if (cols.isInt() || cols.isInt64() || cols.isDouble())
-                    gridCols = static_cast<int>(cols);
-                if (rows.isInt() || rows.isInt64() || rows.isDouble())
-                    gridRows = static_cast<int>(rows);
+                Scene scene;
+                scene.name = so->getProperty("name").toString();
+                auto mapVar = so->getProperty("blockStateMap");
+                if (auto* mapObj = mapVar.getDynamicObject())
+                {
+                    for (auto& prop : mapObj->getProperties())
+                        scene.blockStateMap[prop.name.toString()] = static_cast<int>(prop.value);
+                }
+                auto bypassVar = so->getProperty("blockBypassMap");
+                if (auto* bypassObj = bypassVar.getDynamicObject())
+                {
+                    for (auto& prop : bypassObj->getProperties())
+                        scene.blockBypassMap[prop.name.toString()] = static_cast<bool>(prop.value);
+                }
+                scenes.push_back(scene);
             }
         }
-
-        sendGraphState();
-        emitGridState();
+        activeSceneIndex = static_cast<int>(obj->getProperty("activeSceneIndex"));
+        if (activeSceneIndex >= static_cast<int>(scenes.size()))
+            activeSceneIndex = scenes.empty() ? -1 : 0;
     }
-    catch (...)
+
+    // Ensure at least one scene exists
+    if (scenes.empty())
     {
-        // Surface the failure to the UI before propagating so the loading
-        // state is cleared; existing crash-reporter paths still see the throw.
-        // The exception itself signals failure to callers — no return needed.
-        emitToJs("presetLoadFinished", new juce::DynamicObject());
-        throw;
+        Scene defaultScene;
+        defaultScene.name = "Scene 1";
+        captureIntoScene(defaultScene, blockNodeMap, processor->getGraph());
+        scenes.push_back(defaultScene);
+        activeSceneIndex = 0;
     }
 
-    emitToJs("presetLoadFinished", new juce::DynamicObject());
+    // Mappings were swapped atomically inside the suspended window; this
+    // emit just informs the UI of the new mapping list.
+    emitMidiMappings();
+
+    // Restore grid dimensions (falls back to current defaults if absent)
+    if (obj->hasProperty("grid"))
+    {
+        if (auto* gridObj = obj->getProperty("grid").getDynamicObject())
+        {
+            auto cols = gridObj->getProperty("columns");
+            auto rows = gridObj->getProperty("rows");
+            if (cols.isInt() || cols.isInt64() || cols.isDouble())
+                gridCols = static_cast<int>(cols);
+            if (rows.isInt() || rows.isInt64() || rows.isDouble())
+                gridRows = static_cast<int>(rows);
+        }
+    }
+
+    sendGraphState();
+    emitGridState();
     return true;
 }
 
@@ -497,8 +636,11 @@ void StellarrBridge::handleLoadSession()
         auto file = chooser.getResult();
         auto jsonStr = file.loadFileAsString();
         auto session = juce::JSON::parse(jsonStr);
-        if (!restoreSession(session)) return;
-        setPresetFromFile(file);
+        restoreSession(session, [this, file](bool ok)
+        {
+            if (!ok) return;
+            setPresetFromFile(file);
+        });
     });
 }
 
@@ -615,18 +757,25 @@ void StellarrBridge::handleLoadPresetByIndex(const juce::var& json)
     auto index = static_cast<int>(obj->getProperty("index"));
     if (index < 0 || index >= presetFiles.size()) return;
 
+    // Clicking the already-active preset is a no-op — no spinner, no graph
+    // rebuild, no disk read. The active-row highlight in the UI is driven by
+    // currentPresetIndex which is already set, so nothing to update.
+    if (index == currentPresetIndex) return;
+
     auto file = presetDirectory.getChildFile(presetFiles[index]);
     auto jsonStr = file.loadFileAsString();
     auto session = juce::JSON::parse(jsonStr);
 
-    // Only update preset bookkeeping if the graph actually loaded. If
-    // restoreSession was rejected (lock held by a concurrent request, or
-    // malformed session), keep the previous active preset so a subsequent
-    // quiet save persists the right file.
-    if (!restoreSession(session)) return;
-
-    currentPresetIndex = index;
-    setPresetFromFile(file);
+    // Only update preset bookkeeping once the graph actually loads. If
+    // restoreSession is rejected (lock held by a concurrent request, or
+    // malformed session) or fails inside Phase 1/2, keep the previous active
+    // preset so a subsequent quiet save persists the right file.
+    restoreSession(session, [this, index, file](bool ok)
+    {
+        if (!ok) return;
+        currentPresetIndex = index;
+        setPresetFromFile(file);
+    });
 }
 
 void StellarrBridge::sendPresetList()

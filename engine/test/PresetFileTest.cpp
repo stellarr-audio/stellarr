@@ -11,6 +11,19 @@ public:
     static void loadPresetByIndex(StellarrBridge& b, const juce::var& j) { b.handleLoadPresetByIndex(j); }
 };
 
+// handleLoadPresetByIndex now schedules its restore via juce::AsyncUpdater.
+// Pump the message loop until the bookkeeping callback either updates
+// currentPresetIndex or the timeout expires.
+static void waitForPresetLoad(StellarrBridge& bridge, int expectedIndex, int timeoutMs = 5000)
+{
+    auto deadline = juce::Time::getMillisecondCounter() + static_cast<juce::uint32>(timeoutMs);
+    while (bridge.getCurrentPresetIndex() != expectedIndex
+           && juce::Time::getMillisecondCounter() < deadline)
+    {
+        juce::MessageManager::getInstance()->runDispatchLoopUntil(10);
+    }
+}
+
 // Helper: create a temp preset directory with N .stellarr files
 static juce::File createTempPresetDir(int count)
 {
@@ -113,6 +126,7 @@ static bool testRenameActivePreset()
     // Simulate loading preset B (index 1)
     auto loadJson = juce::JSON::parse(R"({"index":1})");
     PresetFileTestAccess::loadPresetByIndex(bridge,loadJson);
+    waitForPresetLoad(bridge, 1);
 
     if (bridge.getCurrentPresetIndex() != 1)
     {
@@ -247,6 +261,7 @@ static bool testDeleteActivePreset()
     // Load preset B (index 1)
     auto loadJson = juce::JSON::parse(R"({"index":1})");
     PresetFileTestAccess::loadPresetByIndex(bridge,loadJson);
+    waitForPresetLoad(bridge, 1);
 
     // Delete it
     auto deleteJson = juce::JSON::parse(R"({"index":1})");
@@ -279,6 +294,7 @@ static bool testDeleteBeforeActive()
     // Load preset C (index 2)
     auto loadJson = juce::JSON::parse(R"({"index":2})");
     PresetFileTestAccess::loadPresetByIndex(bridge,loadJson);
+    waitForPresetLoad(bridge, 2);
 
     // Delete preset A (index 0) — active should shift from 2 to 1
     auto deleteJson = juce::JSON::parse(R"({"index":0})");
@@ -311,6 +327,7 @@ static bool testDeleteAfterActive()
     // Load preset A (index 0)
     auto loadJson = juce::JSON::parse(R"({"index":0})");
     PresetFileTestAccess::loadPresetByIndex(bridge,loadJson);
+    waitForPresetLoad(bridge, 0);
 
     // Delete preset C (index 2) — active should stay at 0
     auto deleteJson = juce::JSON::parse(R"({"index":2})");
@@ -354,6 +371,8 @@ static bool testDeleteInvalidIndex()
 
 int main()
 {
+    juce::ScopedJuceInitialiser_GUI juceInit;
+
     int failures = 0;
 
     // Rename

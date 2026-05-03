@@ -5,6 +5,7 @@
 #include <map>
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <vector>
 #include "Telemetry.h"
 
@@ -12,7 +13,7 @@ class StellarrProcessor;
 namespace stellarr { class Block; class PluginBlock; }
 namespace stellarr::update { class Shim; struct State; }
 
-class StellarrBridge
+class StellarrBridge : private juce::AsyncUpdater
 {
 public:
     StellarrBridge();
@@ -30,10 +31,20 @@ public:
     };
 
     juce::var serialiseSession() const;
-    // Returns true on successful load, false on early rejection (malformed
-    // session or restoreMutex contention). Propagates exceptions thrown from
-    // the body — callers must treat that as failure too.
-    bool restoreSession(const juce::var& session);
+    // Begins an async cooperative preset load. Returns true if the load was
+    // STARTED (lock acquired, session well-formed); returns false on early
+    // rejection (malformed session or restoreMutex contention) — no events,
+    // no callback, in that case.
+    //
+    // When true is returned, plugin instances are loaded one per
+    // message-loop tick (via juce::AsyncUpdater) so the UI stays responsive.
+    // The optional onComplete callback fires later on the message thread
+    // with success=true if Phase 1+2 completed cleanly, or success=false if
+    // anything threw mid-way. presetLoadStarted is emitted synchronously
+    // before this call returns; presetLoadFinished is emitted just before
+    // onComplete fires.
+    bool restoreSession(juce::var session,
+                        std::function<void(bool success)> onComplete = nullptr);
     void sendSystemStats(double cpuPercent, float outputPeakLinear);
     void sendBlockMetrics();
     void drainMidiEvents();
@@ -142,6 +153,10 @@ private:
                             const juce::String& pluginId, const juce::String& savedPluginName);
 
     void emitToJs(const juce::String& eventName, juce::DynamicObject* detail);
+    // Synchronous variant: caller must already be on the message thread. Used
+    // for events that need to reach JS BEFORE the message thread proceeds with
+    // a long-running operation (e.g. presetLoadStarted before plugin preload).
+    void emitToJsSync(const juce::String& eventName, juce::DynamicObject* detail);
     void emitBlockStates(const juce::String& blockId, stellarr::PluginBlock* pluginBlock);
     void emitBlockParams(const juce::String& blockId, stellarr::Block* block);
     void clearAllDirtyStates();
@@ -204,6 +219,56 @@ private:
     // rather than queue, so a rapid burst of preset swaps cannot pile up
     // graph rebuilds and crash the audio thread.
     std::mutex restoreMutex;
+
+    // Async cooperative preset-load state machine ----------------------------
+
+    // One pre-loaded plugin instance for a block in the incoming session.
+    struct PluginPreload {
+        juce::String blockId;
+        juce::String pluginId;
+        juce::String pluginName;
+        std::unique_ptr<juce::AudioPluginInstance> instance;
+    };
+
+    // Per-load state owned only while a restore is in flight. The unique_lock
+    // releases restoreMutex via destructor when this struct is reset, which
+    // guarantees the lock is freed on completion AND on exception (RAII).
+    struct PendingRestore {
+        std::unique_lock<std::mutex> lock;
+        juce::var session;
+        std::vector<PluginPreload> preloads;
+        size_t nextIndex = 0;
+        std::function<void(bool)> onComplete;
+        // Cached parse — blocks array and plugin block list. We compute the
+        // ordered list of plugin blocks once at start so handleAsyncUpdate()
+        // can index it directly without re-iterating the JSON each tick.
+        std::vector<juce::var> pluginBlocks;
+    };
+
+    std::optional<PendingRestore> pendingRestore;
+
+    // Continuations queued while another restore was in flight. Fired (in
+    // order) on the message thread once pendingRestore is reset. Used by
+    // callers (e.g. handleScreenshotSetup) that need to wait for a current
+    // load to drain before performing their next step.
+    std::vector<std::function<void()>> postRestoreContinuations;
+public:
+    // Schedule `cb` to run after the currently-in-flight restoreSession
+    // completes. If no restore is in flight, `cb` runs synchronously before
+    // this returns. Must be called on the message thread.
+    void runWhenRestoreIdle(std::function<void()> cb);
+private:
+
+    // juce::AsyncUpdater override — called on the message thread for each
+    // cooperative tick of an in-flight preset load.
+    void handleAsyncUpdate() override;
+
+    // Phase 2 — runs in the final tick once all plugin instances have been
+    // pre-loaded. Performs the suspend/clear/install/rebuild sequence.
+    // Returns true on success, false on caught exception. Does NOT emit
+    // presetLoadFinished or fire the completion callback — caller (always
+    // handleAsyncUpdate) does that after release.
+    bool finishRestore();
 
     EmitInterceptor emitInterceptor;
 };

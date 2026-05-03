@@ -16,18 +16,30 @@ void StellarrBridge::setupMidiMapper()
     // mapper.drainOutboundEvents() called by the editor's timer). The audio
     // thread enqueues OutboundEvents into a lock-free SPSC fifo and never
     // touches std::function or MessageManager.
+    //
+    // Each callback that mutates per-preset state (graph, scenes, block
+    // params, tuner) early-returns when an async restore is in flight —
+    // Phase 2 will clearGraph() and reload everything from the new preset,
+    // so applying the MIDI mutation now would silently lose it. Mirrors the
+    // pendingRestore gate at the top of handleEvent for WebView events.
 
     mapper.onPresetChange = [this](int index) {
+        // handleLoadPresetByIndex is itself protected by restoreSession's
+        // try_lock — a competing call during an in-flight restore is dropped
+        // there. Still, dedupe and bookkeeping are skipped on rejection, so
+        // the call is harmless either way.
         auto json = juce::JSON::parse("{\"index\":" + juce::String(index) + "}");
         handleLoadPresetByIndex(json);
     };
 
     mapper.onSceneSwitch = [this](int index) {
+        if (pendingRestore.has_value()) return;
         auto json = juce::JSON::parse("{\"index\":" + juce::String(index) + "}");
         handleRecallScene(json);
     };
 
     mapper.onBlockBypass = [this](const juce::String& blockId, bool state) {
+        if (pendingRestore.has_value()) return;
         auto* block = findBlock(blockId);
         if (block == nullptr) return;
 
@@ -41,6 +53,7 @@ void StellarrBridge::setupMidiMapper()
     };
 
     mapper.onBlockMix = [this](const juce::String& blockId, float value) {
+        if (pendingRestore.has_value()) return;
         auto* block = findBlock(blockId);
         if (block == nullptr) return;
 
@@ -54,6 +67,7 @@ void StellarrBridge::setupMidiMapper()
     };
 
     mapper.onBlockBalance = [this](const juce::String& blockId, float value) {
+        if (pendingRestore.has_value()) return;
         auto* block = findBlock(blockId);
         if (block == nullptr) return;
 
@@ -67,6 +81,7 @@ void StellarrBridge::setupMidiMapper()
     };
 
     mapper.onBlockLevel = [this](const juce::String& blockId, float levelDb) {
+        if (pendingRestore.has_value()) return;
         auto* block = findBlock(blockId);
         if (block == nullptr) return;
 
@@ -80,6 +95,7 @@ void StellarrBridge::setupMidiMapper()
     };
 
     mapper.onTunerToggle = [this](bool enabled) {
+        if (pendingRestore.has_value()) return;
         tunerActive = enabled;
         for (auto& [blockId, nodeId] : blockNodeMap)
         {
@@ -94,6 +110,7 @@ void StellarrBridge::setupMidiMapper()
     };
 
     mapper.onBlockState = [this](const juce::String& blockId, int stateIndex) {
+        if (pendingRestore.has_value()) return;
         auto* pluginBlock = findPluginBlock(blockId);
         if (pluginBlock == nullptr) return;
 

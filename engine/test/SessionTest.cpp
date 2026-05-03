@@ -2,12 +2,22 @@
 #include "blocks/GainBlock.h"
 #include "blocks/PluginBlock.h"
 #include "../StellarrBridge.h"
+#include <atomic>
 
 class SessionTestAccess
 {
 public:
     static const auto& getBlockNodeMap(StellarrBridge& b) { return b.blockNodeMap; }
 };
+
+// Pump the JUCE message loop until `done` is set or the timeout fires.
+static bool waitForRestore(std::atomic<bool>& done, int timeoutMs = 5000)
+{
+    auto deadline = juce::Time::getMillisecondCounter() + static_cast<juce::uint32>(timeoutMs);
+    while (!done.load() && juce::Time::getMillisecondCounter() < deadline)
+        juce::MessageManager::getInstance()->runDispatchLoopUntil(10);
+    return done.load();
+}
 
 static bool testRestoreSessionMissingPlugin()
 {
@@ -41,7 +51,9 @@ static bool testRestoreSessionMissingPlugin()
         "activeSceneIndex": -1
     })");
 
-    bridge.restoreSession(session);
+    std::atomic<bool> done{false};
+    bridge.restoreSession(session, [&](bool){ done.store(true); });
+    waitForRestore(done);
 
     // Find the plugin block and check the missing flag
     auto& map = SessionTestAccess::getBlockNodeMap(bridge);
@@ -233,6 +245,8 @@ static bool testSessionWithConnections()
 
 int main()
 {
+    juce::ScopedJuceInitialiser_GUI juceInit;
+
     int failures = 0;
 
     if (!testRestoreSessionMissingPlugin()) ++failures;

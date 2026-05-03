@@ -7,12 +7,19 @@
   overflow: hidden;
 }
 
+.labelRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin: 0 0 8px;
+}
+
 .fieldLabel {
   font-size: var(--text-base);
   color: var(--color-text);
   letter-spacing: 0.05em;
   text-transform: uppercase;
-  margin: 0 0 6px;
+  margin: 0;
   display: block;
 }
 
@@ -108,48 +115,8 @@
   pointer-events: none;
 }
 
-/* ── Tick row ─────────────────────────────────────────────────────────── */
-.tickRow {
-  position: relative;
-  height: 22px;
-  margin-top: 2px;
-}
-
-.tick {
-  position: absolute;
-  top: 0;
-  width: 1px;
-  height: 4px;
-  background: var(--color-muted);
-  transform: translateX(-50%);
-}
-
-.tickLabel {
-  position: absolute;
-  top: 6px;
-  transform: translateX(-50%);
-  font-size: var(--text-xs);
-  color: var(--color-muted);
-  font-variant-numeric: tabular-nums;
-}
-
-.tickLabelEdgeStart {
-  left: 0;
-  transform: none;
-  text-align: left;
-}
-
-.tickLabelEdgeEnd {
-  left: auto;
-  right: 0;
-  transform: none;
-  text-align: right;
-}
-
 /* ── Help rule ────────────────────────────────────────────────────────── */
 .helpRule {
-  display: block;
-  margin-top: 14px;
   font-size: var(--text-xs);
   color: var(--color-muted);
   font-variant-numeric: tabular-nums;

@@ -39,15 +39,18 @@ function BinaryShapingInner({ meta, threshold, onChange }: Props) {
 
   const pct =
     ((value - CC_MIN_THRESHOLD) / (CC_MAX_THRESHOLD - CC_MIN_THRESHOLD)) * 100;
-  // 64 sits at (64-1)/(127-1) = 63/126 = 50% exactly.
-  const midPct = ((64 - CC_MIN_THRESHOLD) / (CC_MAX_THRESHOLD - CC_MIN_THRESHOLD)) * 100;
   // Clamp the floating "CC N" label so it doesn't bleed past the track edges
   // at extremes (translateX(-50%) would push it past the parent at 0%/100%).
   const labelPct = clamp(pct, 8, 92);
 
   return (
     <div className={styles.wrap}>
-      <span className={styles.fieldLabel}>Threshold</span>
+      <div className={styles.labelRow}>
+        <span className={styles.fieldLabel}>Threshold</span>
+        <span className={styles.helpRule}>
+          {meta.binaryLabels!.on} when <span className={styles.helpRuleAccent}>CC ≥ {value}</span>
+        </span>
+      </div>
       <div className={styles.sliderShell}>
         <div className={styles.trackOnFill} style={{ left: `${pct}%`, right: '0' }} />
         <input
@@ -64,19 +67,6 @@ function BinaryShapingInner({ meta, threshold, onChange }: Props) {
           CC {value}
         </div>
       </div>
-
-      <div className={styles.tickRow}>
-        <div className={styles.tick} style={{ left: '0%' }} />
-        <div className={styles.tick} style={{ left: `${midPct}%` }} />
-        <div className={styles.tick} style={{ left: '100%' }} />
-        <span className={`${styles.tickLabel} ${styles.tickLabelEdgeStart}`}>0</span>
-        <span className={styles.tickLabel} style={{ left: `${midPct}%` }}>64</span>
-        <span className={`${styles.tickLabel} ${styles.tickLabelEdgeEnd}`}>127</span>
-      </div>
-
-      <span className={styles.helpRule}>
-        {meta.binaryLabels!.on} when <span className={styles.helpRuleAccent}>CC ≥ {value}</span>
-      </span>
     </div>
   );
 }

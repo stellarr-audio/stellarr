@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { DropdownMenu } from 'radix-ui';
 import {
   CheckIcon,
@@ -8,6 +8,7 @@ import {
   DotsHorizontalIcon,
   Link1Icon,
 } from '@radix-ui/react-icons';
+import { TbLoader2 } from 'react-icons/tb';
 import { useStore, sceneRewireRequired } from '../../store';
 import { IconButton } from '../common/IconButton';
 import {
@@ -35,10 +36,12 @@ function DropdownTriggerContent({
   label,
   value,
   hasValue,
+  loading = false,
 }: {
   label: string;
   value: string;
   hasValue: boolean;
+  loading?: boolean;
 }) {
   return (
     <>
@@ -49,7 +52,16 @@ function DropdownTriggerContent({
         >
           {value}
         </span>
-        <ChevronDownIcon width={12} height={12} className={styles.triggerChevron} />
+        {loading ? (
+          <TbLoader2
+            size={12}
+            className={styles.spinner}
+            data-testid="preset-loading-spinner"
+            aria-hidden
+          />
+        ) : (
+          <ChevronDownIcon width={12} height={12} className={styles.triggerChevron} />
+        )}
       </span>
     </>
   );
@@ -82,6 +94,7 @@ export function PresetBrowser() {
   const scenes = useStore((s) => s.scenes);
   const activeSceneIndex = useStore((s) => s.activeSceneIndex);
   const blocks = useStore((s) => s.blocks);
+  const isLoadingPreset = useStore((s) => s.isLoadingPreset);
 
   const currentName =
     currentPresetIndex >= 0 && currentPresetIndex < presetFiles.length
@@ -119,6 +132,7 @@ export function PresetBrowser() {
           presetFiles={presetFiles}
           currentPresetIndex={currentPresetIndex}
           presetMidi={presetMidi}
+          isLoadingPreset={isLoadingPreset}
         />
         <IconButton
           inGroup
@@ -128,6 +142,9 @@ export function PresetBrowser() {
           className={presetMidi ? styles.sceneMidiBtnAssigned : undefined}
         />
       </div>
+      <span role="status" aria-live="polite" className={styles.srOnly}>
+        {isLoadingPreset ? `Loading preset ${currentName}` : ''}
+      </span>
       <MidiAssignDialog
         open={presetMidiOpen}
         onOpenChange={setPresetMidiOpen}
@@ -210,12 +227,25 @@ function PresetDropdown({
   presetFiles,
   currentPresetIndex,
   presetMidi,
+  isLoadingPreset,
 }: {
   currentName: string;
   presetFiles: string[];
   currentPresetIndex: number;
   presetMidi: import('../../store').MidiMapping | null;
+  isLoadingPreset: boolean;
 }) {
+  // Control the dropdown open state so that we can veto opening while a
+  // preset is loading. Radix's uncontrolled state toggles from the trigger's
+  // own pointer/key handlers and only notifies via onOpenChange, so a return
+  // from there alone does not actually prevent the menu from opening.
+  const [menuOpen, setMenuOpen] = useState(false);
+  // If a preset load is initiated externally (e.g. MIDI Program Change) while
+  // the menu is already open, force it shut so the user cannot fire a second
+  // load against the in-flight one.
+  useEffect(() => {
+    if (isLoadingPreset && menuOpen) setMenuOpen(false);
+  }, [isLoadingPreset, menuOpen]);
   const [renameOpen, setRenameOpen] = useState(false);
   const [renamingIndex, setRenamingIndex] = useState(0);
   const [renameValue, setRenameValue] = useState('');
@@ -267,12 +297,45 @@ function PresetDropdown({
         message={`Are you sure you want to delete "${deleteName}"? This cannot be undone.`}
         onConfirm={confirmDelete}
       />
-      <DropdownMenu.Root>
-        <DropdownMenu.Trigger className={styles.dropdownTrigger}>
+      <DropdownMenu.Root
+        open={menuOpen}
+        onOpenChange={(open) => {
+          // Veto open while a preset load is in flight. Pointer / keyboard
+          // handlers below also short-circuit, but controlled state is the
+          // ultimate gate Radix honours.
+          if (isLoadingPreset && open) return;
+          setMenuOpen(open);
+        }}
+      >
+        <DropdownMenu.Trigger
+          className={styles.dropdownTrigger}
+          aria-disabled={isLoadingPreset || undefined}
+          aria-busy={isLoadingPreset || undefined}
+          data-loading={isLoadingPreset || undefined}
+          onPointerDown={(e) => {
+            if (isLoadingPreset) {
+              e.preventDefault();
+              e.stopPropagation();
+            }
+          }}
+          onKeyDown={(e) => {
+            if (isLoadingPreset && (e.key === 'Enter' || e.key === ' ')) {
+              e.preventDefault();
+              e.stopPropagation();
+            }
+          }}
+          onClick={(e) => {
+            if (isLoadingPreset) {
+              e.preventDefault();
+              e.stopPropagation();
+            }
+          }}
+        >
           <DropdownTriggerContent
             label="Preset"
             value={currentName}
             hasValue={currentPresetIndex >= 0}
+            loading={isLoadingPreset}
           />
         </DropdownMenu.Trigger>
         <DropdownMenu.Portal>

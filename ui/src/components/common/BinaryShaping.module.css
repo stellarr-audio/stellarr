@@ -47,8 +47,18 @@
   z-index: 2;
 }
 
+/* Suppress the default browser outline only when keyboard focus arrives;
+   the explicit amber ring on the thumb (below) carries the affordance. */
 .slider:focus {
   outline: none;
+}
+
+.slider:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 2px var(--color-surface), 0 0 0 4px var(--color-secondary);
+}
+
+.slider:focus-visible::-moz-range-thumb {
+  box-shadow: 0 0 0 2px var(--color-surface), 0 0 0 4px var(--color-secondary);
 }
 
 .slider::-webkit-slider-runnable-track {

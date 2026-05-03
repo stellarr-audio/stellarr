@@ -267,17 +267,8 @@
   border-left: 1px solid var(--color-border);
 }
 
-/* Loading state: preset dropdown trigger while isLoadingPreset is true */
-@keyframes presetSpin {
-  to { transform: rotate(360deg); }
-}
-
-.spinner {
-  animation: presetSpin 1s linear infinite;
-  color: var(--color-secondary);
-  flex-shrink: 0;
-}
-
+/* Loading state: preset dropdown trigger while isLoadingPreset is true.
+   Spinner glyph itself lives in StarLoader; nothing trigger-side to animate. */
 .dropdownTrigger[data-loading='true'] {
   cursor: not-allowed;
 }

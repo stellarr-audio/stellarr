@@ -8,8 +8,8 @@ import {
   DotsHorizontalIcon,
   Link1Icon,
 } from '@radix-ui/react-icons';
-import { TbLoader2 } from 'react-icons/tb';
 import { useStore, sceneRewireRequired } from '../../store';
+import { StarLoader } from '../common/StarLoader';
 import { IconButton } from '../common/IconButton';
 import {
   requestNewSession,
@@ -53,11 +53,10 @@ function DropdownTriggerContent({
           {value}
         </span>
         {loading ? (
-          <TbLoader2
-            size={12}
-            className={styles.spinner}
+          <StarLoader
+            size={14}
             data-testid="preset-loading-spinner"
-            aria-hidden
+            aria-label="Loading preset"
           />
         ) : (
           <ChevronDownIcon width={12} height={12} className={styles.triggerChevron} />

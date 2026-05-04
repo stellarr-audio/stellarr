@@ -37,4 +37,13 @@ namespace stellarr::bridge::json
         auto v = obj.getProperty(key);
         return v.isVoid() ? fallback : juce::jlimit(lo, hi, static_cast<int>(v));
     }
+
+    // Read a string property; returns fallback if absent (void).
+    inline juce::String getOptString(const juce::DynamicObject& obj,
+                                     const juce::Identifier& key,
+                                     const juce::String& fallback)
+    {
+        auto v = obj.getProperty(key);
+        return v.isVoid() ? fallback : v.toString();
+    }
 }

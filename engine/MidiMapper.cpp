@@ -538,10 +538,7 @@ static MidiMapper::Mapping parseMapping(const juce::DynamicObject& obj)
     m.ccMax       = getOptInt        (obj, "ccMax",      127);
     m.paramMin    = getOptFloat      (obj, "paramMin", std::numeric_limits<float>::quiet_NaN());
     m.paramMax    = getOptFloat      (obj, "paramMax", std::numeric_limits<float>::quiet_NaN());
-    auto curveVar = obj.getProperty("curve");
-    m.curve       = curveVar.isVoid()
-                        ? MidiMapper::Curve::Linear
-                        : MidiMapper::curveFromString(curveVar.toString());
+    m.curve       = MidiMapper::curveFromString(getOptString(obj, "curve", "linear"));
     m.threshold   = getOptIntClamped (obj, "threshold", 1, 127, 64);
     return m;
 }

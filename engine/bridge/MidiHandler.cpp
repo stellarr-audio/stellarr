@@ -208,10 +208,7 @@ void StellarrBridge::handleAddMidiMapping(const juce::var& json)
     m.ccMax       = getOptInt        (*obj, "ccMax",      127);
     m.paramMin    = getOptFloat      (*obj, "paramMin", std::numeric_limits<float>::quiet_NaN());
     m.paramMax    = getOptFloat      (*obj, "paramMax", std::numeric_limits<float>::quiet_NaN());
-    auto curveVar = obj->getProperty("curve");
-    m.curve       = curveVar.isVoid()
-                        ? MidiMapper::Curve::Linear
-                        : MidiMapper::curveFromString(curveVar.toString());
+    m.curve       = MidiMapper::curveFromString(getOptString(*obj, "curve", "linear"));
     m.threshold   = getOptIntClamped (*obj, "threshold", 1, 127, 64);
 
     processor->getMidiMapper().addMapping(m);
@@ -250,10 +247,7 @@ void StellarrBridge::handleStartMidiLearn(const juce::var& json)
     args.ccMax       = getOptInt        (*obj, "ccMax",      127);
     args.paramMin    = getOptFloat      (*obj, "paramMin", std::numeric_limits<float>::quiet_NaN());
     args.paramMax    = getOptFloat      (*obj, "paramMax", std::numeric_limits<float>::quiet_NaN());
-    auto curveVar    = obj->getProperty("curve");
-    args.curve       = curveVar.isVoid()
-                           ? MidiMapper::Curve::Linear
-                           : MidiMapper::curveFromString(curveVar.toString());
+    args.curve       = MidiMapper::curveFromString(getOptString(*obj, "curve", "linear"));
     args.threshold   = getOptIntClamped (*obj, "threshold", 1, 127, 64);
 
     processor->getMidiMapper().startLearn(args);

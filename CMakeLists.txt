@@ -130,6 +130,7 @@ target_sources(Stellarr
         engine/bridge/InputBlockHandler.cpp
         engine/bridge/ParamHandler.cpp
         engine/bridge/SceneHandler.cpp
+        engine/bridge/SessionSerializer.cpp
         engine/bridge/PresetHandler.cpp
         engine/bridge/MidiHandler.cpp
         engine/bridge/UpdateHandler.cpp

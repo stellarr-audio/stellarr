@@ -273,42 +273,6 @@ void StellarrBridge::handleSetTunerEnabled(const juce::var& json)
     }
 }
 
-void StellarrBridge::handleSetBlockMix(const juce::var& json)
-{
-    handleSetBlockParam(json, "mix",
-        [](stellarr::Block* b, const juce::var& v) { b->setMix(static_cast<float>(v)); },
-        "blockMixChanged",
-        [](stellarr::Block* b) { return juce::var(static_cast<double>(b->getMix())); });
-}
-
-void StellarrBridge::handleSetBlockBalance(const juce::var& json)
-{
-    handleSetBlockParam(json, "balance",
-        [](stellarr::Block* b, const juce::var& v) { b->setBalance(static_cast<float>(v)); },
-        "blockBalanceChanged",
-        [](stellarr::Block* b) { return juce::var(static_cast<double>(b->getBalance())); });
-}
-
-void StellarrBridge::handleSetBlockLevel(const juce::var& json)
-{
-    handleSetBlockParam(json, "level",
-        [](stellarr::Block* b, const juce::var& v) { b->setLevelDb(static_cast<float>(v)); },
-        "blockLevelChanged",
-        [](stellarr::Block* b) { return juce::var(static_cast<double>(b->getLevelDb())); });
-}
-
-void StellarrBridge::handleSetBlockBypassMode(const juce::var& json)
-{
-    handleSetBlockParam(json, "bypassMode",
-        [](stellarr::Block* b, const juce::var& v) {
-            b->setBypassMode(stellarr::bypassModeFromString(v.toString()));
-        },
-        "blockBypassModeChanged",
-        [](stellarr::Block* b) {
-            return juce::var(stellarr::bypassModeToString(b->getBypassMode()));
-        });
-}
-
 // -- Helpers ------------------------------------------------------------------
 
 void StellarrBridge::connectIOBlock(const juce::String& type,

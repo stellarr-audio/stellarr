@@ -127,6 +127,7 @@ target_sources(Stellarr
         engine/StellarrEditor.cpp
         engine/StellarrBridge.cpp
         engine/bridge/GraphHandler.cpp
+        engine/bridge/InputBlockHandler.cpp
         engine/bridge/ParamHandler.cpp
         engine/bridge/SceneHandler.cpp
         engine/bridge/PresetHandler.cpp

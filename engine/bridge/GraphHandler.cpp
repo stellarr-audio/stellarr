@@ -314,3 +314,63 @@ void StellarrBridge::handleOpenPluginEditor(const juce::var& json)
         pluginBlock->openPluginEditor();
     });
 }
+
+// -- Block metadata handlers --------------------------------------------------
+
+void StellarrBridge::handleRenameBlock(const juce::var& json)
+{
+    if (processor == nullptr) return;
+    auto* obj = json.getDynamicObject();
+    if (obj == nullptr) return;
+
+    auto blockId = obj->getProperty("blockId").toString();
+    auto name = obj->getProperty("name").toString();
+    auto* block = findBlock(blockId);
+    if (block == nullptr) return;
+
+    block->setDisplayName(name);
+
+    auto* detail = new juce::DynamicObject();
+    detail->setProperty("blockId", blockId);
+    detail->setProperty("displayName", name);
+    emitToJs("blockRenamed", detail);
+}
+
+void StellarrBridge::handleSetBlockColor(const juce::var& json)
+{
+    if (processor == nullptr) return;
+    auto* obj = json.getDynamicObject();
+    if (obj == nullptr) return;
+
+    auto blockId = obj->getProperty("blockId").toString();
+    auto color = obj->getProperty("color").toString();
+    auto* block = findBlock(blockId);
+    if (block == nullptr) return;
+
+    block->setBlockColor(color);
+
+    auto* detail = new juce::DynamicObject();
+    detail->setProperty("blockId", blockId);
+    detail->setProperty("blockColor", color);
+    emitToJs("blockColorChanged", detail);
+}
+
+void StellarrBridge::handleToggleBlockBypass(const juce::var& json)
+{
+    if (processor == nullptr) return;
+    auto* obj = json.getDynamicObject();
+    if (obj == nullptr) return;
+
+    auto blockId = obj->getProperty("blockId").toString();
+    auto* block = findBlock(blockId);
+    if (block == nullptr) return;
+
+    bool newState = !block->isBypassed();
+    block->setBypassed(newState);
+    markDirtyAndEmit(blockId, block);
+
+    auto* detail = new juce::DynamicObject();
+    detail->setProperty("blockId", blockId);
+    detail->setProperty("bypassed", newState);
+    emitToJs("blockBypassChanged", detail);
+}

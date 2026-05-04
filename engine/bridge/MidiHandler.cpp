@@ -4,7 +4,9 @@
 #include "../blocks/PluginBlock.h"
 #include "../blocks/InputBlock.h"
 #include "../blocks/OutputBlock.h"
+#include "BridgeJson.h"
 #include <cmath>
+#include <limits>
 
 void StellarrBridge::setupMidiMapper()
 {
@@ -185,4 +187,101 @@ void StellarrBridge::emitMidiMappings()
     detail->setProperty("mappings", arr);
     detail->setProperty("learning", mapper.isLearning());
     emitToJs("midiMappingsChanged", detail);
+}
+
+// -- MIDI mapping handlers ----------------------------------------------------
+
+void StellarrBridge::handleAddMidiMapping(const juce::var& json)
+{
+    if (processor == nullptr) return;
+    auto* obj = json.getDynamicObject();
+    if (obj == nullptr) return;
+
+    using namespace stellarr::bridge::json;
+    MidiMapper::Mapping m;
+    m.channel     = static_cast<int>(obj->getProperty("channel"));
+    m.ccNumber    = static_cast<int>(obj->getProperty("cc"));
+    m.target      = MidiMapper::targetFromString(obj->getProperty("target").toString());
+    m.blockId     = obj->getProperty("blockId").toString();
+    m.targetIndex = getOptInt        (*obj, "targetIndex", -1);
+    m.ccMin       = getOptInt        (*obj, "ccMin",        0);
+    m.ccMax       = getOptInt        (*obj, "ccMax",      127);
+    m.paramMin    = getOptFloat      (*obj, "paramMin", std::numeric_limits<float>::quiet_NaN());
+    m.paramMax    = getOptFloat      (*obj, "paramMax", std::numeric_limits<float>::quiet_NaN());
+    auto curveVar = obj->getProperty("curve");
+    m.curve       = curveVar.isVoid()
+                        ? MidiMapper::Curve::Linear
+                        : MidiMapper::curveFromString(curveVar.toString());
+    m.threshold   = getOptIntClamped (*obj, "threshold", 1, 127, 64);
+
+    processor->getMidiMapper().addMapping(m);
+    emitMidiMappings();
+}
+
+void StellarrBridge::handleRemoveMidiMapping(const juce::var& json)
+{
+    if (processor == nullptr) return;
+    auto* obj = json.getDynamicObject();
+    if (obj == nullptr) return;
+
+    processor->getMidiMapper().removeMapping(static_cast<int>(obj->getProperty("index")));
+    emitMidiMappings();
+}
+
+void StellarrBridge::handleClearMidiMappings()
+{
+    if (processor == nullptr) return;
+    processor->getMidiMapper().clearAll();
+    emitMidiMappings();
+}
+
+void StellarrBridge::handleStartMidiLearn(const juce::var& json)
+{
+    if (processor == nullptr) return;
+    auto* obj = json.getDynamicObject();
+    if (obj == nullptr) return;
+
+    using namespace stellarr::bridge::json;
+    MidiMapper::LearnArgs args;
+    args.target      = MidiMapper::targetFromString(obj->getProperty("target").toString());
+    args.blockId     = obj->getProperty("blockId").toString();
+    args.targetIndex = getOptInt        (*obj, "targetIndex", -1);
+    args.ccMin       = getOptInt        (*obj, "ccMin",        0);
+    args.ccMax       = getOptInt        (*obj, "ccMax",      127);
+    args.paramMin    = getOptFloat      (*obj, "paramMin", std::numeric_limits<float>::quiet_NaN());
+    args.paramMax    = getOptFloat      (*obj, "paramMax", std::numeric_limits<float>::quiet_NaN());
+    auto curveVar    = obj->getProperty("curve");
+    args.curve       = curveVar.isVoid()
+                           ? MidiMapper::Curve::Linear
+                           : MidiMapper::curveFromString(curveVar.toString());
+    args.threshold   = getOptIntClamped (*obj, "threshold", 1, 127, 64);
+
+    processor->getMidiMapper().startLearn(args);
+    emitMidiMappings();
+}
+
+void StellarrBridge::handleCancelMidiLearn()
+{
+    if (processor == nullptr) return;
+    processor->getMidiMapper().cancelLearn();
+    emitMidiMappings();
+}
+
+void StellarrBridge::handleSetMidiMonitorEnabled(const juce::var& json)
+{
+    if (processor == nullptr) return;
+    auto* obj = json.getDynamicObject();
+    if (obj == nullptr) return;
+    processor->getMidiMapper().setMonitorEnabled(static_cast<bool>(obj->getProperty("enabled")));
+}
+
+void StellarrBridge::handleInjectMidiCC(const juce::var& json)
+{
+    if (processor == nullptr) return;
+    auto* obj = json.getDynamicObject();
+    if (obj == nullptr) return;
+    int ch = static_cast<int>(obj->getProperty("channel")) + 1; // 0-indexed → 1-indexed
+    int cc = static_cast<int>(obj->getProperty("cc"));
+    int val = static_cast<int>(obj->getProperty("value"));
+    processor->getMidiMapper().injectMidi(juce::MidiMessage::controllerEvent(ch, cc, val));
 }

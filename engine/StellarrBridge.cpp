@@ -166,44 +166,6 @@ void StellarrBridge::handleEvent(const juce::String& eventName, const juce::var&
 // `processor != nullptr` guards that used to live in the if-clause now sit at
 // the top of each function. Phase 4 will move these into engine/bridge/*.cpp.
 
-void StellarrBridge::handleRenameBlock(const juce::var& json)
-{
-    if (processor == nullptr) return;
-    auto* obj = json.getDynamicObject();
-    if (obj == nullptr) return;
-
-    auto blockId = obj->getProperty("blockId").toString();
-    auto name = obj->getProperty("name").toString();
-    auto* block = findBlock(blockId);
-    if (block == nullptr) return;
-
-    block->setDisplayName(name);
-
-    auto* detail = new juce::DynamicObject();
-    detail->setProperty("blockId", blockId);
-    detail->setProperty("displayName", name);
-    emitToJs("blockRenamed", detail);
-}
-
-void StellarrBridge::handleSetBlockColor(const juce::var& json)
-{
-    if (processor == nullptr) return;
-    auto* obj = json.getDynamicObject();
-    if (obj == nullptr) return;
-
-    auto blockId = obj->getProperty("blockId").toString();
-    auto color = obj->getProperty("color").toString();
-    auto* block = findBlock(blockId);
-    if (block == nullptr) return;
-
-    block->setBlockColor(color);
-
-    auto* detail = new juce::DynamicObject();
-    detail->setProperty("blockId", blockId);
-    detail->setProperty("blockColor", color);
-    emitToJs("blockColorChanged", detail);
-}
-
 void StellarrBridge::handleToggleTestTone(const juce::var& json)
 {
     if (processor == nullptr) return;
@@ -333,26 +295,6 @@ void StellarrBridge::handleSetBlockLevel(const juce::var& json)
         [](stellarr::Block* b, const juce::var& v) { b->setLevelDb(static_cast<float>(v)); },
         "blockLevelChanged",
         [](stellarr::Block* b) { return juce::var(static_cast<double>(b->getLevelDb())); });
-}
-
-void StellarrBridge::handleToggleBlockBypass(const juce::var& json)
-{
-    if (processor == nullptr) return;
-    auto* obj = json.getDynamicObject();
-    if (obj == nullptr) return;
-
-    auto blockId = obj->getProperty("blockId").toString();
-    auto* block = findBlock(blockId);
-    if (block == nullptr) return;
-
-    bool newState = !block->isBypassed();
-    block->setBypassed(newState);
-    markDirtyAndEmit(blockId, block);
-
-    auto* detail = new juce::DynamicObject();
-    detail->setProperty("blockId", blockId);
-    detail->setProperty("bypassed", newState);
-    emitToJs("blockBypassChanged", detail);
 }
 
 void StellarrBridge::handleSetBlockBypassMode(const juce::var& json)

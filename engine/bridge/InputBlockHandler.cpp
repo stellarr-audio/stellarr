@@ -26,7 +26,7 @@ void StellarrBridge::handleToggleTestTone(const juce::var& json)
             auto* detail = new juce::DynamicObject();
             detail->setProperty("blockId", blockId);
             detail->setProperty("enabled", enabled);
-            emitToJs("testToneChanged", detail);
+            emit("testToneChanged", detail);
         }
     }
 }
@@ -54,7 +54,7 @@ void StellarrBridge::handleGetTestToneSamples()
 
     auto* detail = new juce::DynamicObject();
     detail->setProperty("samples", sorted);
-    emitToJs("testToneSamplesUpdated", detail);
+    emit("testToneSamplesUpdated", detail);
 }
 
 void StellarrBridge::handleSetTestToneSample(const juce::var& json)
@@ -87,7 +87,7 @@ void StellarrBridge::handleSetTestToneSample(const juce::var& json)
             detail->setProperty("blockId", blockId);
             detail->setProperty("sample", inputBlock->isUsingSample()
                 ? inputBlock->getCurrentSampleName() : juce::String("Synth (Default)"));
-            emitToJs("testToneSampleChanged", detail);
+            emit("testToneSampleChanged", detail);
         }
     }
 }

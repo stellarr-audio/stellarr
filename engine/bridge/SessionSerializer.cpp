@@ -2,7 +2,10 @@
 #include "../blocks/InputBlock.h"
 #include "../blocks/OutputBlock.h"
 #include "SceneCapture.h"
+#include "internal/BlockLifecycle.h"
 #include <mutex>
+
+using namespace stellarr::bridge::internal;
 
 // -- Session serialization ----------------------------------------------------
 
@@ -212,7 +215,7 @@ bool StellarrBridge::restoreSession(juce::var session,
     // re-throwing is preferable to a permanently-wedged bridge.
     try
     {
-        emitToJsSync("presetLoadStarted", new juce::DynamicObject());
+        emitSync("presetLoadStarted", new juce::DynamicObject());
     }
     catch (...)
     {
@@ -334,7 +337,7 @@ void StellarrBridge::handleAsyncUpdate()
     // during finishRestore(). The UI's loading-state flag gates pointer
     // events on the preset surfaces — clearing it before the new graph
     // arrives lets the user click on stale UI for a few frames.
-    emitToJs("presetLoadFinished", new juce::DynamicObject());
+    emit("presetLoadFinished", new juce::DynamicObject());
 
     if (callback) callback(success);
 }
@@ -423,7 +426,7 @@ bool StellarrBridge::finishRestore()
                 blockNodeMap[blockId] = nodeId;
                 blockPositions[blockId] = {col, row};
 
-                connectIOBlock(type, nodeId, UK::none);
+                connectIOBlock(*processor, type, nodeId, UK::none);
 
                 // Install pre-loaded plugin instance (just a pointer swap, fast)
                 if (type == "plugin" || type == "vst")

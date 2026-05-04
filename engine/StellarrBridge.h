@@ -10,12 +10,13 @@
 #include <unordered_map>
 #include <vector>
 #include "Telemetry.h"
+#include "bridge/IBridgeEmitter.h"
 
 class StellarrProcessor;
 namespace stellarr { class Block; class PluginBlock; }
 namespace stellarr::update { class Shim; struct State; }
 
-class StellarrBridge : private juce::AsyncUpdater
+class StellarrBridge : public stellarr::bridge::IBridgeEmitter, private juce::AsyncUpdater
 {
 public:
     StellarrBridge();
@@ -61,7 +62,7 @@ public:
     const juce::File& getLastPresetFile() const { return lastPresetFile; }
     void setPresetDirectory(const juce::File& dir) { presetDirectory = dir; }
 
-    // Testing seam — intercept emitToJs calls before they hit the WebView.
+    // Testing seam — intercept emit calls before they hit the WebView.
     // Fired synchronously on the calling thread; useful for asserting event
     // sequences without spinning up a real browser.
     using EmitInterceptor = std::function<void(const juce::String&, const juce::var&)>;
@@ -138,8 +139,6 @@ private:
     // Grid dimensions (persisted with session)
     void handleSetGridSize(const juce::var& json);
     void emitGridState();
-    juce::AudioProcessorGraph::Node* getNodeForBlockId(const juce::String& blockId);
-
     void sendPluginList();
     void sendScanDirectories();
     void sendPresetList();
@@ -148,24 +147,16 @@ private:
     void setPresetFromFile(const juce::File& file);
     void persistPresetInfo();
 
-    // Shared helpers for block setup (used by addBlock, pasteBlock, restoreSession)
-    void connectIOBlock(const juce::String& type, juce::AudioProcessorGraph::NodeID nodeId,
-                        juce::AudioProcessorGraph::UpdateKind update = juce::AudioProcessorGraph::UpdateKind::sync);
-    void restoreBlockPlugin(juce::AudioProcessorGraph::NodeID nodeId,
-                            const juce::String& pluginId, const juce::String& savedPluginName);
-
-    void emitToJs(const juce::String& eventName, juce::DynamicObject* detail);
-    // Synchronous variant: caller must already be on the message thread. Used
-    // for events that need to reach JS BEFORE the message thread proceeds with
-    // a long-running operation (e.g. presetLoadStarted before plugin preload).
-    void emitToJsSync(const juce::String& eventName, juce::DynamicObject* detail);
+    // IBridgeEmitter overrides — declared private so existing intra-class
+    // call sites continue to resolve to these direct member calls today.
+    // Phase 7 commits 2-9 wrap each domain in a class taking IBridgeEmitter&
+    // through its context, at which point sub-handlers route via the public
+    // interface rather than reaching across friend access.
+    void emit(const juce::String& eventName, juce::DynamicObject* detail) override;
+    void emitSync(const juce::String& eventName, juce::DynamicObject* detail) override;
     void emitBlockStates(const juce::String& blockId, stellarr::PluginBlock* pluginBlock);
     void emitBlockParams(const juce::String& blockId, stellarr::Block* block);
     void clearAllDirtyStates();
-
-    // Block lookup helpers — return nullptr if not found
-    stellarr::Block* findBlock(const juce::String& blockId);
-    stellarr::PluginBlock* findPluginBlock(const juce::String& blockId);
 
     // Mark plugin block dirty and emit state update
     void markDirtyAndEmit(const juce::String& blockId, stellarr::Block* block);

@@ -5,8 +5,11 @@
 #include "../blocks/InputBlock.h"
 #include "../blocks/OutputBlock.h"
 #include "BridgeJson.h"
+#include "internal/BlockLookup.h"
 #include <cmath>
 #include <limits>
+
+using namespace stellarr::bridge::internal;
 
 void StellarrBridge::setupMidiMapper()
 {
@@ -42,7 +45,7 @@ void StellarrBridge::setupMidiMapper()
 
     mapper.onBlockBypass = [this](const juce::String& blockId, bool state) {
         if (pendingRestore.has_value()) return;
-        auto* block = findBlock(blockId);
+        auto* block = findBlock(blockNodeMap, *processor, blockId);
         if (block == nullptr) return;
 
         block->setBypassed(state);
@@ -51,12 +54,12 @@ void StellarrBridge::setupMidiMapper()
         auto* detail = new juce::DynamicObject();
         detail->setProperty("blockId", blockId);
         detail->setProperty("bypassed", state);
-        emitToJs("blockBypassChanged", detail);
+        emit("blockBypassChanged", detail);
     };
 
     mapper.onBlockMix = [this](const juce::String& blockId, float value) {
         if (pendingRestore.has_value()) return;
-        auto* block = findBlock(blockId);
+        auto* block = findBlock(blockNodeMap, *processor, blockId);
         if (block == nullptr) return;
 
         block->setMix(value);
@@ -65,12 +68,12 @@ void StellarrBridge::setupMidiMapper()
         auto* detail = new juce::DynamicObject();
         detail->setProperty("blockId", blockId);
         detail->setProperty("mix", static_cast<double>(value));
-        emitToJs("blockMixChanged", detail);
+        emit("blockMixChanged", detail);
     };
 
     mapper.onBlockBalance = [this](const juce::String& blockId, float value) {
         if (pendingRestore.has_value()) return;
-        auto* block = findBlock(blockId);
+        auto* block = findBlock(blockNodeMap, *processor, blockId);
         if (block == nullptr) return;
 
         block->setBalance(value);
@@ -79,12 +82,12 @@ void StellarrBridge::setupMidiMapper()
         auto* detail = new juce::DynamicObject();
         detail->setProperty("blockId", blockId);
         detail->setProperty("balance", static_cast<double>(value));
-        emitToJs("blockBalanceChanged", detail);
+        emit("blockBalanceChanged", detail);
     };
 
     mapper.onBlockLevel = [this](const juce::String& blockId, float levelDb) {
         if (pendingRestore.has_value()) return;
-        auto* block = findBlock(blockId);
+        auto* block = findBlock(blockNodeMap, *processor, blockId);
         if (block == nullptr) return;
 
         block->setLevelDb(levelDb);
@@ -93,7 +96,7 @@ void StellarrBridge::setupMidiMapper()
         auto* detail = new juce::DynamicObject();
         detail->setProperty("blockId", blockId);
         detail->setProperty("level", static_cast<double>(levelDb));
-        emitToJs("blockLevelChanged", detail);
+        emit("blockLevelChanged", detail);
     };
 
     mapper.onTunerToggle = [this](bool enabled) {
@@ -113,7 +116,7 @@ void StellarrBridge::setupMidiMapper()
 
     mapper.onBlockState = [this](const juce::String& blockId, int stateIndex) {
         if (pendingRestore.has_value()) return;
-        auto* pluginBlock = findPluginBlock(blockId);
+        auto* pluginBlock = findPluginBlock(blockNodeMap, *processor, blockId);
         if (pluginBlock == nullptr) return;
 
         // Skip when the requested state is already active. Controllers that
@@ -145,7 +148,7 @@ void StellarrBridge::setupMidiMapper()
         auto* detail = new juce::DynamicObject();
         detail->setProperty("channel", channel);
         detail->setProperty("cc", cc);
-        emitToJs("midiLearnComplete", detail);
+        emit("midiLearnComplete", detail);
         emitMidiMappings();
     };
 }
@@ -186,7 +189,7 @@ void StellarrBridge::emitMidiMappings()
 
     detail->setProperty("mappings", arr);
     detail->setProperty("learning", mapper.isLearning());
-    emitToJs("midiMappingsChanged", detail);
+    emit("midiMappingsChanged", detail);
 }
 
 // -- MIDI mapping handlers ----------------------------------------------------

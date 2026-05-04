@@ -96,7 +96,7 @@ void StellarrBridge::handleSaveSession()
 
         setPresetFromFile(file);
         clearAllDirtyStates();
-        emitToJs("sessionSaved", new juce::DynamicObject());
+        emit("sessionSaved", new juce::DynamicObject());
     });
 }
 
@@ -111,7 +111,7 @@ void StellarrBridge::handleSaveSessionQuiet()
         lastPresetFile.replaceWithText(jsonStr);
 
         clearAllDirtyStates();
-        emitToJs("sessionSaved", new juce::DynamicObject());
+        emit("sessionSaved", new juce::DynamicObject());
     }
     else
     {
@@ -284,7 +284,7 @@ void StellarrBridge::sendPresetList()
     detail->setProperty("directory", presetDirectory.getFullPathName());
     detail->setProperty("files", files);
     detail->setProperty("currentIndex", currentPresetIndex);
-    emitToJs("presetListUpdated", detail);
+    emit("presetListUpdated", detail);
 }
 
 // -- Grid dimensions ----------------------------------------------------------
@@ -294,7 +294,7 @@ void StellarrBridge::emitGridState()
     auto* detail = new juce::DynamicObject();
     detail->setProperty("columns", gridCols);
     detail->setProperty("rows", gridRows);
-    emitToJs("gridState", detail);
+    emit("gridState", detail);
 }
 
 void StellarrBridge::handleSetGridSize(const juce::var& json)

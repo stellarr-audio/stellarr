@@ -45,7 +45,7 @@ void StellarrBridge::sendUpdateState(const stellarr::update::State& state)
     detail->setProperty("releaseNotesUrl",  juce::String(state.releaseNotesUrl));
     detail->setProperty("downloadProgress", state.downloadProgress);
     detail->setProperty("error",            juce::String(state.error));
-    emitToJs("updateState", detail);
+    emit("updateState", detail);
 }
 
 void StellarrBridge::handleUpdateCheck()

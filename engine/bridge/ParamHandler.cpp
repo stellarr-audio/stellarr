@@ -2,6 +2,9 @@
 #include "../StellarrProcessor.h"
 #include "../blocks/Block.h"
 #include "../blocks/PluginBlock.h"
+#include "internal/BlockLookup.h"
+
+using namespace stellarr::bridge::internal;
 
 // -- Block parameter handlers -------------------------------------------------
 // These all follow the same pattern: parse blockId + value, find block, set
@@ -19,7 +22,7 @@ void StellarrBridge::handleSetBlockParam(const juce::var& json,
     if (obj == nullptr) return;
 
     auto blockId = obj->getProperty("blockId").toString();
-    auto* block = findBlock(blockId);
+    auto* block = findBlock(blockNodeMap, *processor, blockId);
     if (block == nullptr) return;
 
     setter(block, obj->getProperty(paramName));
@@ -28,7 +31,7 @@ void StellarrBridge::handleSetBlockParam(const juce::var& json,
     auto* detail = new juce::DynamicObject();
     detail->setProperty("blockId", blockId);
     detail->setProperty(paramName, getter(block));
-    emitToJs(eventName, detail);
+    emit(eventName, detail);
 }
 
 void StellarrBridge::handleSetBlockMix(const juce::var& json)
@@ -77,7 +80,7 @@ void StellarrBridge::handleBlockStateEvent(const juce::var& json, const juce::St
     if (obj == nullptr) return;
 
     auto blockId = obj->getProperty("blockId").toString();
-    auto* pluginBlock = findPluginBlock(blockId);
+    auto* pluginBlock = findPluginBlock(blockNodeMap, *processor, blockId);
     if (pluginBlock == nullptr) return;
 
     bool activeIndexChanged = false;
@@ -164,7 +167,7 @@ void StellarrBridge::emitBlockStates(const juce::String& blockId, stellarr::Plug
         dirtyArr.add(d);
     detail->setProperty("dirtyStates", dirtyArr);
 
-    emitToJs("blockStatesChanged", detail);
+    emit("blockStatesChanged", detail);
 }
 
 void StellarrBridge::emitBlockParams(const juce::String& blockId, stellarr::Block* block)
@@ -172,27 +175,27 @@ void StellarrBridge::emitBlockParams(const juce::String& blockId, stellarr::Bloc
     auto* mixDetail = new juce::DynamicObject();
     mixDetail->setProperty("blockId", blockId);
     mixDetail->setProperty("mix", static_cast<double>(block->getMix()));
-    emitToJs("blockMixChanged", mixDetail);
+    emit("blockMixChanged", mixDetail);
 
     auto* balDetail = new juce::DynamicObject();
     balDetail->setProperty("blockId", blockId);
     balDetail->setProperty("balance", static_cast<double>(block->getBalance()));
-    emitToJs("blockBalanceChanged", balDetail);
+    emit("blockBalanceChanged", balDetail);
 
     auto* lvlDetail = new juce::DynamicObject();
     lvlDetail->setProperty("blockId", blockId);
     lvlDetail->setProperty("level", static_cast<double>(block->getLevelDb()));
-    emitToJs("blockLevelChanged", lvlDetail);
+    emit("blockLevelChanged", lvlDetail);
 
     auto* bypDetail = new juce::DynamicObject();
     bypDetail->setProperty("blockId", blockId);
     bypDetail->setProperty("bypassed", block->isBypassed());
-    emitToJs("blockBypassChanged", bypDetail);
+    emit("blockBypassChanged", bypDetail);
 
     auto* modeDetail = new juce::DynamicObject();
     modeDetail->setProperty("blockId", blockId);
     modeDetail->setProperty("bypassMode", stellarr::bypassModeToString(block->getBypassMode()));
-    emitToJs("blockBypassModeChanged", modeDetail);
+    emit("blockBypassModeChanged", modeDetail);
 }
 
 void StellarrBridge::clearAllDirtyStates()

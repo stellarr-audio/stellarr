@@ -3,6 +3,10 @@
 #include "../blocks/InputBlock.h"
 #include "../blocks/OutputBlock.h"
 #include "../blocks/PluginBlock.h"
+#include "internal/BlockLookup.h"
+#include "internal/BlockLifecycle.h"
+
+using namespace stellarr::bridge::internal;
 
 void StellarrBridge::handleAddBlock(const juce::var& json)
 {
@@ -43,9 +47,9 @@ void StellarrBridge::handleAddBlock(const juce::var& json)
 
         if (type == "input" || type == "output")
         {
-            // connectIOBlock disconnects the default audioInput → audioOutput
+            // connectIOBlock disconnects the default audioInput -> audioOutput
             // bypass before wiring; no separate disconnect needed here.
-            connectIOBlock(type, nodeId, UK::none);
+            connectIOBlock(*processor, type, nodeId, UK::none);
         }
 
         // Splice: insert the new block into an existing connection
@@ -69,17 +73,17 @@ void StellarrBridge::handleAddBlock(const juce::var& json)
         auto* connDetail1 = new juce::DynamicObject();
         connDetail1->setProperty("sourceId", spliceSourceId);
         connDetail1->setProperty("destId", blockId);
-        emitToJs("connectionAdded", connDetail1);
+        emit("connectionAdded", connDetail1);
 
         auto* connDetail2 = new juce::DynamicObject();
         connDetail2->setProperty("sourceId", blockId);
         connDetail2->setProperty("destId", spliceDestId);
-        emitToJs("connectionAdded", connDetail2);
+        emit("connectionAdded", connDetail2);
 
         auto* connRemoved = new juce::DynamicObject();
         connRemoved->setProperty("sourceId", spliceSourceId);
         connRemoved->setProperty("destId", spliceDestId);
-        emitToJs("connectionRemoved", connRemoved);
+        emit("connectionRemoved", connRemoved);
     }
 
     auto* detail = new juce::DynamicObject();
@@ -89,7 +93,7 @@ void StellarrBridge::handleAddBlock(const juce::var& json)
     detail->setProperty("col", col);
     detail->setProperty("row", row);
     detail->setProperty("nodeId", static_cast<int>(nodeId.uid));
-    emitToJs("blockAdded", detail);
+    emit("blockAdded", detail);
 }
 
 void StellarrBridge::handleRemoveBlock(const juce::var& json)
@@ -116,7 +120,7 @@ void StellarrBridge::handleRemoveBlock(const juce::var& json)
 
     auto* detail = new juce::DynamicObject();
     detail->setProperty("blockId", blockId);
-    emitToJs("blockRemoved", detail);
+    emit("blockRemoved", detail);
 }
 
 void StellarrBridge::handleMoveBlock(const juce::var& json)
@@ -134,7 +138,7 @@ void StellarrBridge::handleMoveBlock(const juce::var& json)
     detail->setProperty("blockId", blockId);
     detail->setProperty("col", col);
     detail->setProperty("row", row);
-    emitToJs("blockMoved", detail);
+    emit("blockMoved", detail);
 }
 
 void StellarrBridge::handleAddConnection(const juce::var& json)
@@ -163,7 +167,7 @@ void StellarrBridge::handleAddConnection(const juce::var& json)
     auto* detail = new juce::DynamicObject();
     detail->setProperty("sourceId", sourceId);
     detail->setProperty("destId", destId);
-    emitToJs("connectionAdded", detail);
+    emit("connectionAdded", detail);
 }
 
 void StellarrBridge::handleRemoveConnection(const juce::var& json)
@@ -189,7 +193,7 @@ void StellarrBridge::handleRemoveConnection(const juce::var& json)
     auto* detail = new juce::DynamicObject();
     detail->setProperty("sourceId", sourceId);
     detail->setProperty("destId", destId);
-    emitToJs("connectionRemoved", detail);
+    emit("connectionRemoved", detail);
 }
 
 void StellarrBridge::handleSetBlockPlugin(const juce::var& json)
@@ -202,7 +206,7 @@ void StellarrBridge::handleSetBlockPlugin(const juce::var& json)
     auto blockId  = obj->getProperty("blockId").toString();
     auto pluginId = obj->getProperty("pluginId").toString();
 
-    auto* pluginBlock = findPluginBlock(blockId);
+    auto* pluginBlock = findPluginBlock(blockNodeMap, *processor, blockId);
     if (pluginBlock == nullptr) return;
 
     juce::String errorMessage;
@@ -228,7 +232,7 @@ void StellarrBridge::handleSetBlockPlugin(const juce::var& json)
     detail->setProperty("pluginFormat", pluginBlock->getPluginFormat());
     detail->setProperty("hasEditor", true);
     detail->setProperty("pluginMissing", false);
-    emitToJs("blockPluginSet", detail);
+    emit("blockPluginSet", detail);
 }
 
 void StellarrBridge::handleCopyBlock(const juce::var& json)
@@ -252,7 +256,7 @@ void StellarrBridge::handleCopyBlock(const juce::var& json)
 
     auto* detail = new juce::DynamicObject();
     detail->setProperty("type", stellarr::blockTypeToString(block->getBlockType()));
-    emitToJs("blockCopied", detail);
+    emit("blockCopied", detail);
 }
 
 void StellarrBridge::handlePasteBlock(const juce::var& json)
@@ -287,10 +291,10 @@ void StellarrBridge::handlePasteBlock(const juce::var& json)
     blockNodeMap[blockId] = nodeId;
     blockPositions[blockId] = {col, row};
 
-    connectIOBlock(type, nodeId);
+    connectIOBlock(*processor, type, nodeId);
 
     if (type == "plugin" || type == "vst")
-        restoreBlockPlugin(nodeId, clipObj->getProperty("pluginId").toString(),
+        restoreBlockPlugin(*processor, nodeId, clipObj->getProperty("pluginId").toString(),
                            clipObj->getProperty("pluginName").toString());
 
     // Full graph sync to ensure all block properties (mix, level, plugin info, etc.)
@@ -306,7 +310,7 @@ void StellarrBridge::handleOpenPluginEditor(const juce::var& json)
     if (obj == nullptr) return;
 
     auto blockId = obj->getProperty("blockId").toString();
-    auto* pluginBlock = findPluginBlock(blockId);
+    auto* pluginBlock = findPluginBlock(blockNodeMap, *processor, blockId);
     if (pluginBlock == nullptr || !pluginBlock->hasPlugin()) return;
 
     juce::MessageManager::callAsync([pluginBlock]()
@@ -325,7 +329,7 @@ void StellarrBridge::handleRenameBlock(const juce::var& json)
 
     auto blockId = obj->getProperty("blockId").toString();
     auto name = obj->getProperty("name").toString();
-    auto* block = findBlock(blockId);
+    auto* block = findBlock(blockNodeMap, *processor, blockId);
     if (block == nullptr) return;
 
     block->setDisplayName(name);
@@ -333,7 +337,7 @@ void StellarrBridge::handleRenameBlock(const juce::var& json)
     auto* detail = new juce::DynamicObject();
     detail->setProperty("blockId", blockId);
     detail->setProperty("displayName", name);
-    emitToJs("blockRenamed", detail);
+    emit("blockRenamed", detail);
 }
 
 void StellarrBridge::handleSetBlockColor(const juce::var& json)
@@ -344,7 +348,7 @@ void StellarrBridge::handleSetBlockColor(const juce::var& json)
 
     auto blockId = obj->getProperty("blockId").toString();
     auto color = obj->getProperty("color").toString();
-    auto* block = findBlock(blockId);
+    auto* block = findBlock(blockNodeMap, *processor, blockId);
     if (block == nullptr) return;
 
     block->setBlockColor(color);
@@ -352,7 +356,7 @@ void StellarrBridge::handleSetBlockColor(const juce::var& json)
     auto* detail = new juce::DynamicObject();
     detail->setProperty("blockId", blockId);
     detail->setProperty("blockColor", color);
-    emitToJs("blockColorChanged", detail);
+    emit("blockColorChanged", detail);
 }
 
 void StellarrBridge::handleToggleBlockBypass(const juce::var& json)
@@ -362,7 +366,7 @@ void StellarrBridge::handleToggleBlockBypass(const juce::var& json)
     if (obj == nullptr) return;
 
     auto blockId = obj->getProperty("blockId").toString();
-    auto* block = findBlock(blockId);
+    auto* block = findBlock(blockNodeMap, *processor, blockId);
     if (block == nullptr) return;
 
     bool newState = !block->isBypassed();
@@ -372,5 +376,5 @@ void StellarrBridge::handleToggleBlockBypass(const juce::var& json)
     auto* detail = new juce::DynamicObject();
     detail->setProperty("blockId", blockId);
     detail->setProperty("bypassed", newState);
-    emitToJs("blockBypassChanged", detail);
+    emit("blockBypassChanged", detail);
 }

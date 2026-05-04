@@ -1,5 +1,8 @@
 #include "../StellarrProcessor.h"
 #include "SceneCapture.h"
+#include "internal/BlockLookup.h"
+
+using namespace stellarr::bridge::internal;
 
 // -- Scene event handlers -----------------------------------------------------
 
@@ -20,7 +23,7 @@ void StellarrBridge::emitScenes()
     }
     detail->setProperty("scenes", arr);
     detail->setProperty("activeSceneIndex", activeSceneIndex);
-    emitToJs("scenesChanged", detail);
+    emit("scenesChanged", detail);
 }
 
 void StellarrBridge::handleAddScene()
@@ -135,7 +138,7 @@ void StellarrBridge::handleRecallScene(const juce::var& json)
 
     for (auto& [blockId, stateIdx] : scene.blockStateMap)
     {
-        auto* pb = findPluginBlock(blockId);
+        auto* pb = findPluginBlock(blockNodeMap, *processor, blockId);
         if (pb == nullptr) continue;
 
         int clampedIdx = std::min(stateIdx, pb->getNumStates() - 1);

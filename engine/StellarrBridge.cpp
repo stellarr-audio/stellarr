@@ -4,9 +4,13 @@
 #include "blocks/InputBlock.h"
 #include "blocks/OutputBlock.h"
 #include "blocks/PluginBlock.h"
+#include "bridge/internal/BlockLookup.h"
+#include "bridge/internal/BlockLifecycle.h"
 #include <cmath>
 #include <limits>
 #include <optional>
+
+using namespace stellarr::bridge::internal;
 
 StellarrBridge::StellarrBridge() = default;
 StellarrBridge::~StellarrBridge() = default;
@@ -167,74 +171,7 @@ void StellarrBridge::handleEvent(const juce::String& eventName, const juce::var&
 
 // -- Helpers ------------------------------------------------------------------
 
-void StellarrBridge::connectIOBlock(const juce::String& type,
-                                    juce::AudioProcessorGraph::NodeID nodeId,
-                                    juce::AudioProcessorGraph::UpdateKind update)
-{
-    // Non-IO types (plugin/vst) share this entry point via paste / restore
-    // paths but don't wire to the IO graph nodes — bail before touching the
-    // default bypass so a plugin-only restore or paste doesn't silently
-    // sever audio on a graph that still relies on the ctor's
-    // audioInput → audioOutput passthrough.
-    if (type != "input" && type != "output") return;
-
-    // Tear down the default audioInput → audioOutput bypass before wiring an
-    // IO block. StellarrProcessor's ctor adds that direct connection so a fresh
-    // app boot still passes audio; once a real input/output block is added,
-    // it must go — otherwise the dry signal leaks past the block chain (and
-    // outside any Block::level / Block::bypass logic). disconnectBlocks is a
-    // no-op if the connection is already gone, so it's safe to call from
-    // every IO-wiring path.
-    processor->disconnectBlocks(processor->getAudioInputNodeId(),
-                                processor->getAudioOutputNodeId(), update);
-
-    if (type == "input")
-    {
-        processor->connectBlocks(processor->getAudioInputNodeId(), nodeId, 2, update);
-        processor->getGraph().addConnection({
-            {processor->getMidiInputNodeId(), juce::AudioProcessorGraph::midiChannelIndex},
-            {nodeId, juce::AudioProcessorGraph::midiChannelIndex}
-        }, update);
-    }
-    else if (type == "output")
-    {
-        processor->connectBlocks(nodeId, processor->getAudioOutputNodeId(), 2, update);
-        processor->getGraph().addConnection({
-            {nodeId, juce::AudioProcessorGraph::midiChannelIndex},
-            {processor->getMidiOutputNodeId(), juce::AudioProcessorGraph::midiChannelIndex}
-        }, update);
-    }
-}
-
-void StellarrBridge::restoreBlockPlugin(juce::AudioProcessorGraph::NodeID nodeId,
-                                        const juce::String& pluginId,
-                                        const juce::String& savedPluginName)
-{
-    if (pluginId.isEmpty()) return;
-
-    auto* node = processor->getGraph().getNodeForId(nodeId);
-    if (auto* pluginBlock = dynamic_cast<stellarr::PluginBlock*>(node->getProcessor()))
-    {
-        juce::String errorMessage;
-        auto instance = processor->getPluginManager().createPluginInstance(
-            pluginId, processor->getSampleRate(),
-            processor->getBlockSize(), errorMessage);
-
-        if (instance != nullptr)
-        {
-            pluginBlock->setPlugin(std::move(instance), pluginId);
-            pluginBlock->restorePluginState();
-        }
-        else
-        {
-            pluginBlock->setPluginMissing(true);
-            pluginBlock->setMissingPluginName(
-                savedPluginName.isNotEmpty() ? savedPluginName : pluginId);
-        }
-    }
-}
-
-void StellarrBridge::emitToJs(const juce::String& eventName, juce::DynamicObject* detail)
+void StellarrBridge::emit(const juce::String& eventName, juce::DynamicObject* detail)
 {
     // Wrap the raw DynamicObject* once so the ReferenceCountedObjectPtr inside
     // `data` keeps it alive across both the interceptor call and the async
@@ -256,9 +193,9 @@ void StellarrBridge::emitToJs(const juce::String& eventName, juce::DynamicObject
     });
 }
 
-void StellarrBridge::emitToJsSync(const juce::String& eventName, juce::DynamicObject* detail)
+void StellarrBridge::emitSync(const juce::String& eventName, juce::DynamicObject* detail)
 {
-    // Same lifetime guard as emitToJs.
+    // Same lifetime guard as emit.
     auto data = juce::var(detail);
 
     if (emitInterceptor) emitInterceptor(eventName, data);
@@ -269,32 +206,6 @@ void StellarrBridge::emitToJsSync(const juce::String& eventName, juce::DynamicOb
 
     auto eventId = juce::Identifier(eventName);
     webView->emitEventIfBrowserIsVisible(eventId, data);
-}
-
-stellarr::Block* StellarrBridge::findBlock(const juce::String& blockId)
-{
-    if (processor == nullptr) return nullptr;
-
-    auto nodeIt = blockNodeMap.find(blockId);
-    if (nodeIt == blockNodeMap.end()) return nullptr;
-
-    auto* node = processor->getGraph().getNodeForId(nodeIt->second);
-    if (node == nullptr) return nullptr;
-
-    return dynamic_cast<stellarr::Block*>(node->getProcessor());
-}
-
-stellarr::PluginBlock* StellarrBridge::findPluginBlock(const juce::String& blockId)
-{
-    if (processor == nullptr) return nullptr;
-
-    auto nodeIt = blockNodeMap.find(blockId);
-    if (nodeIt == blockNodeMap.end()) return nullptr;
-
-    auto* node = processor->getGraph().getNodeForId(nodeIt->second);
-    if (node == nullptr) return nullptr;
-
-    return dynamic_cast<stellarr::PluginBlock*>(node->getProcessor());
 }
 
 void StellarrBridge::markDirtyAndEmit(const juce::String& blockId, stellarr::Block* /*block*/)
@@ -321,7 +232,7 @@ void StellarrBridge::sendStartupProgress(const juce::String& status, int progres
     auto* detail = new juce::DynamicObject();
     detail->setProperty("status", status);
     detail->setProperty("progress", progress);
-    emitToJs("startupProgress", detail);
+    emit("startupProgress", detail);
 }
 
 void StellarrBridge::handleBridgeReady()
@@ -335,7 +246,7 @@ void StellarrBridge::handleBridgeReady()
    #else
     cfg->setProperty("flavour", "prod");
    #endif
-    emitToJs("appConfig", cfg);
+    emit("appConfig", cfg);
 
     handleGetTelemetryEnabled();
     handleGetReferencePitch();
@@ -349,7 +260,7 @@ void StellarrBridge::handleBridgeReady()
 
         auto* detail = new juce::DynamicObject();
         detail->setProperty("window", lufsWindow);
-        emitToJs("lufsWindowState", detail);
+        emit("lufsWindowState", detail);
     }
 
     juce::MessageManager::callAsync([this]()
@@ -387,7 +298,7 @@ void StellarrBridge::handleBridgeReady()
                     sendPresetList();
 
                     sendStartupProgress("Ready", 100);
-                    emitToJs("startupComplete", new juce::DynamicObject());
+                    emit("startupComplete", new juce::DynamicObject());
                 };
 
                 if (appProperties != nullptr)
@@ -538,7 +449,7 @@ void StellarrBridge::sendGraphState()
     auto* state = new juce::DynamicObject();
     state->setProperty("blocks", blocksArray);
     state->setProperty("connections", connectionsArray);
-    emitToJs("graphState", state);
+    emit("graphState", state);
     emitScenes();
 }
 
@@ -608,7 +519,7 @@ void StellarrBridge::handleScreenshotSetup()
                         }
                     }
                     if (auto* o = configHandle.getDynamicObject())
-                        emitToJs("screenshotSetup", o);
+                        emit("screenshotSetup", o);
                 });
 
                 if (started) return; // emit is deferred to the callback
@@ -617,7 +528,7 @@ void StellarrBridge::handleScreenshotSetup()
     }
 
     // No async restore in flight — emit synchronously as before.
-    emitToJs("screenshotSetup", obj);
+    emit("screenshotSetup", obj);
 }
 
 void StellarrBridge::handleScreenshotReady()
@@ -638,7 +549,7 @@ void StellarrBridge::sendSystemStats(double cpuPercent, float outputPeakLinear)
     detail->setProperty("cpu", cpuPercent);
     detail->setProperty("outputLevelDb", static_cast<double>(peakDb));
     detail->setProperty("clipping", outputPeakLinear > 1.0f);
-    emitToJs("systemStats", detail);
+    emit("systemStats", detail);
 }
 
 void StellarrBridge::sendTunerData()
@@ -663,7 +574,7 @@ void StellarrBridge::sendTunerData()
                 detail->setProperty("cents", static_cast<double>(inputBlock->getTunerCents()));
                 detail->setProperty("frequency", static_cast<double>(inputBlock->getTunerFrequency()));
                 detail->setProperty("confidence", static_cast<double>(inputBlock->getTunerConfidence()));
-                emitToJs("tunerData", detail);
+                emit("tunerData", detail);
                 return;
             }
         }
@@ -690,7 +601,7 @@ void StellarrBridge::sendMidiMonitorData()
 
     auto* detail = new juce::DynamicObject();
     detail->setProperty("events", arr);
-    emitToJs("midiMonitorData", detail);
+    emit("midiMonitorData", detail);
 }
 
 void StellarrBridge::drainMidiEvents()
@@ -705,7 +616,7 @@ void StellarrBridge::handleScanPlugins()
 {
     if (processor == nullptr) return;
 
-    emitToJs("scanStarted", new juce::DynamicObject());
+    emit("scanStarted", new juce::DynamicObject());
 
     // Run scan on a background thread to avoid freezing the UI.
     // sendPluginList must run on the message thread (bridge emission).
@@ -773,7 +684,7 @@ void StellarrBridge::sendPluginList()
 
     auto* detail = new juce::DynamicObject();
     detail->setProperty("plugins", plugins);
-    emitToJs("pluginListUpdated", detail);
+    emit("pluginListUpdated", detail);
 }
 
 void StellarrBridge::sendScanDirectories()
@@ -791,7 +702,7 @@ void StellarrBridge::sendScanDirectories()
 
     auto* detail = new juce::DynamicObject();
     detail->setProperty("directories", dirs);
-    emitToJs("scanDirectoriesUpdated", detail);
+    emit("scanDirectoriesUpdated", detail);
 }
 
 // -- Telemetry ----------------------------------------------------------------
@@ -800,7 +711,7 @@ void StellarrBridge::handleGetTelemetryEnabled()
 {
     auto* detail = new juce::DynamicObject();
     detail->setProperty("enabled", stellarr::Telemetry::isEnabled(appProperties));
-    emitToJs("telemetryState", detail);
+    emit("telemetryState", detail);
 }
 
 void StellarrBridge::handleSetTelemetryEnabled(const juce::var& json)
@@ -813,7 +724,7 @@ void StellarrBridge::handleSetTelemetryEnabled(const juce::var& json)
 
     auto* detail = new juce::DynamicObject();
     detail->setProperty("enabled", enabled);
-    emitToJs("telemetryState", detail);
+    emit("telemetryState", detail);
 }
 
 // -- Tuner settings -----------------------------------------------------------
@@ -841,7 +752,7 @@ void StellarrBridge::handleGetReferencePitch()
 
     auto* detail = new juce::DynamicObject();
     detail->setProperty("hz", static_cast<double>(hz));
-    emitToJs("referencePitchState", detail);
+    emit("referencePitchState", detail);
 }
 
 void StellarrBridge::handleSetReferencePitch(const juce::var& json)
@@ -873,17 +784,10 @@ void StellarrBridge::handleSetReferencePitch(const juce::var& json)
 
     auto* detail = new juce::DynamicObject();
     detail->setProperty("hz", static_cast<double>(hz));
-    emitToJs("referencePitchState", detail);
+    emit("referencePitchState", detail);
 }
 
 // -- Loudness metering --------------------------------------------------------
-
-juce::AudioProcessorGraph::Node* StellarrBridge::getNodeForBlockId(const juce::String& blockId)
-{
-    auto it = blockNodeMap.find(blockId);
-    if (it == blockNodeMap.end()) return nullptr;
-    return processor->getGraph().getNodeForId(it->second);
-}
 
 void StellarrBridge::handleSetSelectedBlock(const juce::var& json)
 {
@@ -892,7 +796,7 @@ void StellarrBridge::handleSetSelectedBlock(const juce::var& json)
     // Disable measurement on previously selected block (unless it's the Output)
     if (selectedBlockId.isNotEmpty() && selectedBlockId != newId)
     {
-        if (auto* node = getNodeForBlockId(selectedBlockId))
+        if (auto* node = getNodeForBlockId(blockNodeMap, *processor, selectedBlockId))
         {
             if (auto* block = dynamic_cast<stellarr::Block*>(node->getProcessor()))
                 if (block->getBlockType() != stellarr::BlockType::output)
@@ -905,7 +809,7 @@ void StellarrBridge::handleSetSelectedBlock(const juce::var& json)
     // Enable measurement on the newly selected block
     if (selectedBlockId.isNotEmpty())
     {
-        if (auto* node = getNodeForBlockId(selectedBlockId))
+        if (auto* node = getNodeForBlockId(blockNodeMap, *processor, selectedBlockId))
             if (auto* block = dynamic_cast<stellarr::Block*>(node->getProcessor()))
                 block->setMeasureLoudness(true);
     }
@@ -916,7 +820,7 @@ void StellarrBridge::handleSetTargetLufs(const juce::var& json)
     auto blockId = json.getProperty("blockId", "").toString();
     auto value = json.getProperty("lufs", juce::var());
 
-    auto* node = getNodeForBlockId(blockId);
+    auto* node = getNodeForBlockId(blockNodeMap, *processor, blockId);
     if (node == nullptr) return;
 
     auto* output = dynamic_cast<stellarr::OutputBlock*>(node->getProcessor());
@@ -939,7 +843,7 @@ void StellarrBridge::handleSetLufsWindow(const juce::var& json)
 
     auto* detail = new juce::DynamicObject();
     detail->setProperty("window", lufsWindow);
-    emitToJs("lufsWindowState", detail);
+    emit("lufsWindowState", detail);
 }
 
 void StellarrBridge::sendBlockMetrics()
@@ -976,5 +880,5 @@ void StellarrBridge::sendBlockMetrics()
     auto* detail = new juce::DynamicObject();
     detail->setProperty("blocks", blocksArray);
     detail->setProperty("window", lufsWindow);
-    emitToJs("blockMetrics", detail);
+    emit("blockMetrics", detail);
 }

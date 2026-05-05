@@ -532,7 +532,7 @@ bool StellarrBridge::finishRestore()
 
     // Mappings were swapped atomically inside the suspended window; this
     // emit just informs the UI of the new mapping list.
-    emitMidiMappings();
+    midi->emitMidiMappings();
 
     // Restore grid dimensions (falls back to current defaults if absent)
     if (obj->hasProperty("grid"))

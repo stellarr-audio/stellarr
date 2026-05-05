@@ -12,6 +12,7 @@
 #include "Telemetry.h"
 #include "bridge/GraphHandler.h"
 #include "bridge/IBridgeEmitter.h"
+#include "bridge/MidiHandler.h"
 #include "bridge/ParamHandler.h"
 #include "bridge/UpdateHandler.h"
 
@@ -106,10 +107,6 @@ private:
     void handleDeletePreset(const juce::var& json);
     void handleGetPresetList();
 
-    // MIDI mapping
-    void setupMidiMapper();
-    void emitMidiMappings();
-
     // Scene management
     void handleAddScene();
     void handleRecallScene(const juce::var& json);
@@ -149,13 +146,6 @@ private:
     // Lifted inline handlers (Phase 3) — these are called from the dispatch
     // table in StellarrBridge.cpp. Phase 4 will move the bodies into the
     // matching engine/bridge/*.cpp files.
-    void handleAddMidiMapping(const juce::var& json);
-    void handleRemoveMidiMapping(const juce::var& json);
-    void handleClearMidiMappings();
-    void handleStartMidiLearn(const juce::var& json);
-    void handleCancelMidiLearn();
-    void handleSetMidiMonitorEnabled(const juce::var& json);
-    void handleInjectMidiCC(const juce::var& json);
     void handleToggleTestTone(const juce::var& json);
     void handleGetTestToneSamples();
     void handleSetTestToneSample(const juce::var& json);
@@ -295,4 +285,11 @@ private:
     // SessionSerializer) call into graph->handleAddBlock when seeding a
     // default input/output graph.
     std::optional<stellarr::bridge::GraphHandler> graph;
+
+    // MIDI mapping CRUD, learn, monitor, and the MidiMapper callback wiring.
+    // Constructed in setProcessor AFTER param + graph because its context
+    // callbacks route through them. Other free-function handlers (Preset,
+    // SessionSerializer) call midi->emitMidiMappings() to broadcast the
+    // current mapping list after pruning or restore.
+    std::optional<stellarr::bridge::MidiHandler> midi;
 };

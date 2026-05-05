@@ -51,7 +51,7 @@ void StellarrBridge::setProcessor(StellarrProcessor* proc)
                 }
 
                 processor->getMidiMapper().removeMappingsForBlockState(blockId, deletedIndex);
-                emitMidiMappings();
+                midi->emitMidiMappings();
             },
             // onActiveStateChanged: sync the active scene's blockStateMap so
             // the rewire-dot prediction in the scene dropdown reflects the
@@ -83,19 +83,91 @@ void StellarrBridge::setProcessor(StellarrProcessor* proc)
                 param->markDirtyAndEmit(blockId);
             },
             // emitMidiMappings / sendGraphState: thin trampolines into the
-            // bridge's own broadcast helpers, which still live on
-            // StellarrBridge while their domains await later Phase 7 commits.
-            [this]() { emitMidiMappings(); },
+            // matching broadcast helpers. emitMidiMappings now routes through
+            // MidiHandler; sendGraphState still lives on StellarrBridge while
+            // its domain awaits a later Phase 7 commit.
+            [this]() { midi->emitMidiMappings(); },
             [this]() { sendGraphState(); }
+        });
+
+        midi.emplace(stellarr::bridge::MidiHandlerContext {
+            *proc,
+            blockNodeMap,
+            *this,
+            // isRestoring: every MidiMapper callback that mutates per-preset
+            // state checks this and skips the mutation while a restore is in
+            // flight. Mirrors the pendingRestore gate at the top of
+            // handleEvent for WebView events.
+            [this]() { return pendingRestore.has_value(); },
+            // markBlockDirty: route bypass / mix / balance / level CC mutations
+            // through ParamHandler. Same invariant as graph's callback.
+            [this](const juce::String& blockId)
+            {
+                param->markDirtyAndEmit(blockId);
+            },
+            // emitBlockParams / emitBlockStates: forward to ParamHandler so a
+            // CC-driven state recall re-broadcasts the same payload set the
+            // UI-driven handleBlockStateEvent("recall") emits.
+            [this](const juce::String& blockId, stellarr::PluginBlock* pb)
+            {
+                param->emitBlockParams(blockId, pb);
+            },
+            [this](const juce::String& blockId, stellarr::PluginBlock* pb)
+            {
+                param->emitBlockStates(blockId, pb);
+            },
+            // mirrorActiveStateInScene: sync the active scene's blockStateMap
+            // so the rewire-dot prediction in the scene dropdown reflects the
+            // CC-driven state change, then re-emit scenes.
+            [this](const juce::String& blockId, int newActiveIndex)
+            {
+                if (activeSceneIndex >= 0
+                    && activeSceneIndex < static_cast<int>(scenes.size()))
+                {
+                    scenes[static_cast<size_t>(activeSceneIndex)].blockStateMap[blockId]
+                        = newActiveIndex;
+                    emitScenes();
+                }
+            },
+            // setTunerActiveOnAllBlocks: toggle tunerActive flag and propagate
+            // to every InputBlock (enable analysis) + OutputBlock (mute output)
+            // in the graph.
+            [this](bool enabled)
+            {
+                tunerActive = enabled;
+                for (auto& [blockId, nodeId] : blockNodeMap)
+                {
+                    if (auto* node = processor->getGraph().getNodeForId(nodeId))
+                    {
+                        if (auto* inputBlock = dynamic_cast<stellarr::InputBlock*>(node->getProcessor()))
+                            inputBlock->setTunerEnabled(enabled);
+                        if (auto* outputBlock = dynamic_cast<stellarr::OutputBlock*>(node->getProcessor()))
+                            outputBlock->setTunerMute(enabled);
+                    }
+                }
+            },
+            // loadPresetByIndex: drive the bridge's preset-switch flow from a
+            // CC mapping. handleLoadPresetByIndex is itself try-locked, so a
+            // competing call during an in-flight restore self-rejects.
+            [this](int index)
+            {
+                auto json = juce::JSON::parse("{\"index\":" + juce::String(index) + "}");
+                handleLoadPresetByIndex(json);
+            },
+            // recallSceneByIndex: drive scene recall from a CC mapping.
+            [this](int index)
+            {
+                auto json = juce::JSON::parse("{\"index\":" + juce::String(index) + "}");
+                handleRecallScene(json);
+            }
         });
     }
     else
     {
+        midi.reset();
         graph.reset();
         param.reset();
     }
-
-    setupMidiMapper();
 }
 
 void StellarrBridge::setAppProperties(juce::ApplicationProperties* props)
@@ -151,14 +223,14 @@ const StellarrBridge::EventTable& StellarrBridge::eventTable()
         m["renameBlock"]              = { [](StellarrBridge& b, const juce::var& j) { b.graph->handleRenameBlock(j); }, true };
         m["setBlockColor"]            = { [](StellarrBridge& b, const juce::var& j) { b.graph->handleSetBlockColor(j); }, true };
         // MIDI mappings ------------------------------------------------
-        m["addMidiMapping"]           = { [](StellarrBridge& b, const juce::var& j) { b.handleAddMidiMapping(j); }, true };
-        m["removeMidiMapping"]        = { [](StellarrBridge& b, const juce::var& j) { b.handleRemoveMidiMapping(j); }, true };
-        m["clearMidiMappings"]        = { [](StellarrBridge& b, const juce::var&)   { b.handleClearMidiMappings(); }, true };
-        m["getMidiMappings"]          = { [](StellarrBridge& b, const juce::var&)   { b.emitMidiMappings(); }, false };
-        m["startMidiLearn"]           = { [](StellarrBridge& b, const juce::var& j) { b.handleStartMidiLearn(j); }, true };
-        m["cancelMidiLearn"]          = { [](StellarrBridge& b, const juce::var&)   { b.handleCancelMidiLearn(); }, true };
-        m["setMidiMonitorEnabled"]    = { [](StellarrBridge& b, const juce::var& j) { b.handleSetMidiMonitorEnabled(j); }, false };
-        m["injectMidiCC"]             = { [](StellarrBridge& b, const juce::var& j) { b.handleInjectMidiCC(j); }, false };
+        m["addMidiMapping"]           = { [](StellarrBridge& b, const juce::var& j) { b.midi->handleAddMidiMapping(j); }, true };
+        m["removeMidiMapping"]        = { [](StellarrBridge& b, const juce::var& j) { b.midi->handleRemoveMidiMapping(j); }, true };
+        m["clearMidiMappings"]        = { [](StellarrBridge& b, const juce::var&)   { b.midi->handleClearMidiMappings(); }, true };
+        m["getMidiMappings"]          = { [](StellarrBridge& b, const juce::var&)   { b.midi->emitMidiMappings(); }, false };
+        m["startMidiLearn"]           = { [](StellarrBridge& b, const juce::var& j) { b.midi->handleStartMidiLearn(j); }, true };
+        m["cancelMidiLearn"]          = { [](StellarrBridge& b, const juce::var&)   { b.midi->handleCancelMidiLearn(); }, true };
+        m["setMidiMonitorEnabled"]    = { [](StellarrBridge& b, const juce::var& j) { b.midi->handleSetMidiMonitorEnabled(j); }, false };
+        m["injectMidiCC"]             = { [](StellarrBridge& b, const juce::var& j) { b.midi->handleInjectMidiCC(j); }, false };
         // Plugin management -------------------------------------------
         m["scanPlugins"]              = { [](StellarrBridge& b, const juce::var&)   { b.handleScanPlugins(); }, true };
         m["getScanDirectories"]       = { [](StellarrBridge& b, const juce::var&)   { b.handleGetScanDirectories(); }, false };

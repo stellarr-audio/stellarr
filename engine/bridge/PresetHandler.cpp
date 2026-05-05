@@ -64,7 +64,7 @@ void StellarrBridge::handleNewSession()
     if (processor != nullptr)
     {
         processor->getMidiMapper().loadPresetMappings(juce::var());
-        emitMidiMappings();
+        midi->emitMidiMappings();
     }
 
     persistPresetInfo();

@@ -1,4 +1,4 @@
-#include "../StellarrBridge.h"
+#include "SessionSerializer.h"
 #include "../StellarrProcessor.h"
 #include "../blocks/InputBlock.h"
 #include "../blocks/OutputBlock.h"
@@ -6,35 +6,38 @@
 #include "internal/BlockLifecycle.h"
 #include <mutex>
 
+namespace stellarr::bridge {
+
 using namespace stellarr::bridge::internal;
+
+SessionSerializer::SessionSerializer(SessionSerializerContext c) : ctx(c) {}
+SessionSerializer::~SessionSerializer() = default;
 
 // -- Session serialization ----------------------------------------------------
 
-juce::var StellarrBridge::serialiseSession() const
+juce::var SessionSerializer::serialiseSession() const
 {
-    if (processor == nullptr) return {};
-
     auto* session = new juce::DynamicObject();
     session->setProperty("version", 1);
 
     auto* gridObj = new juce::DynamicObject();
-    gridObj->setProperty("columns", preset->getGridCols());
-    gridObj->setProperty("rows", preset->getGridRows());
+    gridObj->setProperty("columns", ctx.getGridCols());
+    gridObj->setProperty("rows", ctx.getGridRows());
     session->setProperty("grid", juce::var(gridObj));
 
     // Blocks
     juce::Array<juce::var> blocksArray;
-    for (auto& [blockId, nodeId] : blockNodeMap)
+    for (auto& [blockId, nodeId] : ctx.blockNodeMap)
     {
-        if (auto* node = processor->getGraph().getNodeForId(nodeId))
+        if (auto* node = ctx.processor.getGraph().getNodeForId(nodeId))
         {
             if (auto* block = dynamic_cast<stellarr::Block*>(node->getProcessor()))
             {
                 auto blockJson = block->toJson();
                 if (auto* obj = blockJson.getDynamicObject())
                 {
-                    auto posIt = blockPositions.find(blockId);
-                    if (posIt != blockPositions.end())
+                    auto posIt = ctx.blockPositions.find(blockId);
+                    if (posIt != ctx.blockPositions.end())
                     {
                         obj->setProperty("col", posIt->second.first);
                         obj->setProperty("row", posIt->second.second);
@@ -49,10 +52,10 @@ juce::var StellarrBridge::serialiseSession() const
     // Connections
     juce::Array<juce::var> connectionsArray;
     std::map<juce::uint32, juce::String> nodeToBlock;
-    for (auto& [blockId, nodeId] : blockNodeMap)
+    for (auto& [blockId, nodeId] : ctx.blockNodeMap)
         nodeToBlock[nodeId.uid] = blockId;
 
-    for (auto& conn : processor->getGraph().getConnections())
+    for (auto& conn : ctx.processor.getGraph().getConnections())
     {
         if (conn.source.channelIndex != 0) continue;
         auto srcIt = nodeToBlock.find(conn.source.nodeID.uid);
@@ -69,11 +72,11 @@ juce::var StellarrBridge::serialiseSession() const
     // Update active scene before serialising. captureActiveScene mutates
     // scene state through SceneHandler — serialiseSession is `const` for
     // outside callers but mirroring the long-standing internal pattern.
-    const_cast<StellarrBridge*>(this)->scene->captureActiveScene();
+    ctx.captureActiveScene();
 
     // Scenes
     juce::Array<juce::var> scenesArray;
-    for (auto& s : scene->getScenes())
+    for (auto& s : ctx.getScenes())
     {
         auto* sceneObj = new juce::DynamicObject();
         sceneObj->setProperty("name", s.name);
@@ -88,24 +91,23 @@ juce::var StellarrBridge::serialiseSession() const
         scenesArray.add(juce::var(sceneObj));
     }
     session->setProperty("scenes", scenesArray);
-    session->setProperty("activeSceneIndex", scene->getActiveSceneIndex());
+    session->setProperty("activeSceneIndex", ctx.getActiveSceneIndex());
 
     // MIDI mappings (preset-level only — global mappings stored in app settings)
-    if (processor != nullptr)
-        session->setProperty("midiMappings", processor->getMidiMapper().presetMappingsToJson());
+    session->setProperty("midiMappings", ctx.processor.getMidiMapper().presetMappingsToJson());
 
     return juce::var(session);
 }
 
-void StellarrBridge::clearGraph()
+void SessionSerializer::clearGraph()
 {
     using UK = juce::AudioProcessorGraph::UpdateKind;
 
     // Close plugin editor windows first — removeBlock deletes the processor,
     // which would leave dangling window references.
-    for (auto& [blockId, nodeId] : blockNodeMap)
+    for (auto& [blockId, nodeId] : ctx.blockNodeMap)
     {
-        if (auto* node = processor->getGraph().getNodeForId(nodeId))
+        if (auto* node = ctx.processor.getGraph().getNodeForId(nodeId))
             if (auto* pluginBlock = dynamic_cast<stellarr::PluginBlock*>(node->getProcessor()))
                 pluginBlock->closePluginEditor();
     }
@@ -115,19 +117,17 @@ void StellarrBridge::clearGraph()
     // here would just churn the mapping list before the replacement.
 
     // Remove all blocks without rebuilding after each one.
-    auto ids = blockNodeMap;
+    auto ids = ctx.blockNodeMap;
     for (auto& [blockId, nodeId] : ids)
-        processor->removeBlock(nodeId, UK::none);
+        ctx.processor.removeBlock(nodeId, UK::none);
 
-    blockNodeMap.clear();
-    blockPositions.clear();
+    ctx.blockNodeMap.clear();
+    ctx.blockPositions.clear();
 }
 
-bool StellarrBridge::restoreSession(juce::var session,
-                                    std::function<void(bool)> onComplete)
+bool SessionSerializer::restoreSession(juce::var session,
+                                       std::function<void(bool)> onComplete)
 {
-    if (processor == nullptr) return false;
-
     auto* obj = session.getDynamicObject();
     if (obj == nullptr) return false;
 
@@ -216,7 +216,7 @@ bool StellarrBridge::restoreSession(juce::var session,
     // re-throwing is preferable to a permanently-wedged bridge.
     try
     {
-        emitSync("presetLoadStarted", new juce::DynamicObject());
+        ctx.emit.emitSync("presetLoadStarted", new juce::DynamicObject());
     }
     catch (...)
     {
@@ -234,7 +234,7 @@ bool StellarrBridge::restoreSession(juce::var session,
     return true;
 }
 
-void StellarrBridge::handleAsyncUpdate()
+void SessionSerializer::handleAsyncUpdate()
 {
     // Defensive: should always be set when a tick fires, but if something
     // cancelled out from under us (e.g. cleared during shutdown) just bail.
@@ -260,16 +260,16 @@ void StellarrBridge::handleAsyncUpdate()
             try
             {
                 juce::String errorMessage;
-                instance = processor->getPluginManager().createPluginInstance(
-                    pluginId, processor->getSampleRate(),
-                    processor->getBlockSize(), errorMessage);
+                instance = ctx.processor.getPluginManager().createPluginInstance(
+                    pluginId, ctx.processor.getSampleRate(),
+                    ctx.processor.getBlockSize(), errorMessage);
 
                 if (instance != nullptr)
                 {
-                    instance->setPlayConfigDetails(2, 2, processor->getSampleRate(),
-                                                   processor->getBlockSize());
-                    instance->prepareToPlay(processor->getSampleRate(),
-                                            processor->getBlockSize());
+                    instance->setPlayConfigDetails(2, 2, ctx.processor.getSampleRate(),
+                                                   ctx.processor.getBlockSize());
+                    instance->prepareToPlay(ctx.processor.getSampleRate(),
+                                            ctx.processor.getBlockSize());
                 }
             }
             catch (...)
@@ -312,7 +312,7 @@ void StellarrBridge::handleAsyncUpdate()
     // post-restore continuations fire even if presetLoadFinished or the
     // user callback throws (e.g. via the test emit interceptor).
     struct RestoreTeardown {
-        StellarrBridge* self;
+        SessionSerializer* self;
         ~RestoreTeardown()
         {
             // Reset pendingRestore FIRST so the unique_lock destructor releases
@@ -338,12 +338,12 @@ void StellarrBridge::handleAsyncUpdate()
     // during finishRestore(). The UI's loading-state flag gates pointer
     // events on the preset surfaces — clearing it before the new graph
     // arrives lets the user click on stale UI for a few frames.
-    emit("presetLoadFinished", new juce::DynamicObject());
+    ctx.emit.emit("presetLoadFinished", new juce::DynamicObject());
 
     if (callback) callback(success);
 }
 
-void StellarrBridge::runWhenRestoreIdle(std::function<void()> cb)
+void SessionSerializer::runWhenRestoreIdle(std::function<void()> cb)
 {
     if (!cb) return;
     if (!pendingRestore.has_value())
@@ -354,7 +354,7 @@ void StellarrBridge::runWhenRestoreIdle(std::function<void()> cb)
     postRestoreContinuations.push_back(std::move(cb));
 }
 
-bool StellarrBridge::finishRestore()
+bool SessionSerializer::finishRestore()
 {
     if (!pendingRestore.has_value()) return false;
     auto& pr = *pendingRestore;
@@ -373,7 +373,7 @@ bool StellarrBridge::finishRestore()
     // afterwards (scenes, grid, UI emits) runs with audio live again to keep
     // the gap minimal.
     {
-        processor->suspendProcessing(true);
+        ctx.processor.suspendProcessing(true);
         struct ResumeGuard {
             StellarrProcessor* p;
             bool rebuilt = false;
@@ -389,7 +389,7 @@ bool StellarrBridge::finishRestore()
                 }
                 p->suspendProcessing(false);
             }
-        } resumeGuard{processor, false};
+        } resumeGuard{&ctx.processor, false};
 
         clearGraph();
 
@@ -421,13 +421,13 @@ bool StellarrBridge::finishRestore()
                 block->resetToDefault();
 
                 auto blockId = savedId.isNotEmpty() ? savedId : block->getBlockId().toString();
-                auto nodeId = processor->addBlock(std::move(block), UK::none);
+                auto nodeId = ctx.processor.addBlock(std::move(block), UK::none);
                 if (nodeId.uid == 0) continue;
 
-                blockNodeMap[blockId] = nodeId;
-                blockPositions[blockId] = {col, row};
+                ctx.blockNodeMap[blockId] = nodeId;
+                ctx.blockPositions[blockId] = {col, row};
 
-                connectIOBlock(*processor, type, nodeId, UK::none);
+                connectIOBlock(ctx.processor, type, nodeId, UK::none);
 
                 // Install pre-loaded plugin instance (just a pointer swap, fast)
                 if (type == "plugin" || type == "vst")
@@ -436,7 +436,7 @@ bool StellarrBridge::finishRestore()
                     if (preloadIt != preloadIndex.end())
                     {
                         auto& pl = pr.preloads[preloadIt->second];
-                        if (auto* node = processor->getGraph().getNodeForId(nodeId))
+                        if (auto* node = ctx.processor.getGraph().getNodeForId(nodeId))
                         {
                             if (auto* pb = dynamic_cast<stellarr::PluginBlock*>(node->getProcessor()))
                             {
@@ -469,23 +469,23 @@ bool StellarrBridge::finishRestore()
                 auto sourceId = connObj->getProperty("sourceId").toString();
                 auto destId   = connObj->getProperty("destId").toString();
 
-                auto srcIt = blockNodeMap.find(sourceId);
-                auto dstIt = blockNodeMap.find(destId);
-                if (srcIt == blockNodeMap.end() || dstIt == blockNodeMap.end()) continue;
+                auto srcIt = ctx.blockNodeMap.find(sourceId);
+                auto dstIt = ctx.blockNodeMap.find(destId);
+                if (srcIt == ctx.blockNodeMap.end() || dstIt == ctx.blockNodeMap.end()) continue;
 
-                processor->connectBlocks(srcIt->second, dstIt->second, 2, UK::none);
+                ctx.processor.connectBlocks(srcIt->second, dstIt->second, 2, UK::none);
             }
         }
 
         // Single atomic rebuild — audio thread picks up the complete new graph in one swap
-        processor->rebuildGraph();
+        ctx.processor.rebuildGraph();
         resumeGuard.rebuilt = true;
 
         // Swap preset-level MIDI mappings inside the suspended window so the
         // audio thread never processes a block against the previous preset's
         // mappings — otherwise an inbound CC arriving in the gap could
         // mutate the wrong block.
-        processor->getMidiMapper().loadPresetMappings(
+        ctx.processor.getMidiMapper().loadPresetMappings(
             obj->hasProperty("midiMappings") ? obj->getProperty("midiMappings") : juce::var());
     }   // ResumeGuard fires here — audio is live again before the UI emits below.
 
@@ -527,17 +527,17 @@ bool StellarrBridge::finishRestore()
     {
         Scene defaultScene;
         defaultScene.name = "Scene 1";
-        captureIntoScene(defaultScene, blockNodeMap, processor->getGraph());
+        captureIntoScene(defaultScene, ctx.blockNodeMap, ctx.processor.getGraph());
         restoredScenes.push_back(defaultScene);
         restoredActive = 0;
     }
 
-    scene->setScenes(std::move(restoredScenes));
-    scene->setActiveSceneIndex(restoredActive);
+    ctx.setScenes(std::move(restoredScenes));
+    ctx.setActiveSceneIndex(restoredActive);
 
     // Mappings were swapped atomically inside the suspended window; this
     // emit just informs the UI of the new mapping list.
-    midi->emitMidiMappings();
+    ctx.emitMidiMappings();
 
     // Restore grid dimensions (falls back to current defaults if absent)
     if (obj->hasProperty("grid"))
@@ -547,13 +547,15 @@ bool StellarrBridge::finishRestore()
             auto cols = gridObj->getProperty("columns");
             auto rows = gridObj->getProperty("rows");
             if (cols.isInt() || cols.isInt64() || cols.isDouble())
-                preset->setGridCols(static_cast<int>(cols));
+                ctx.setGridCols(static_cast<int>(cols));
             if (rows.isInt() || rows.isInt64() || rows.isDouble())
-                preset->setGridRows(static_cast<int>(rows));
+                ctx.setGridRows(static_cast<int>(rows));
         }
     }
 
-    sendGraphState();
-    preset->emitGridState();
+    ctx.sendGraphState();
+    ctx.emitGridState();
     return true;
 }
+
+} // namespace stellarr::bridge

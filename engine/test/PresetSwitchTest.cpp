@@ -12,7 +12,11 @@ class PresetSwitchTestAccess
 {
 public:
     static const auto& getBlockNodeMap(StellarrBridge& b) { return b.blockNodeMap; }
-    static std::mutex& getRestoreMutex(StellarrBridge& b) { return b.restoreMutex; }
+    // Reaches the restoreMutex via SessionSerializer (Phase 7 / Commit 9).
+    // This class is friended on stellarr::bridge::SessionSerializer so the
+    // test thread can hold the mutex from the outside to assert competing
+    // restoreSession calls drop on try_lock.
+    static std::mutex& getRestoreMutex(StellarrBridge& b) { return b.sessionSerializer->restoreMutex; }
     static void loadPresetByIndex(StellarrBridge& b, const juce::var& j) { b.preset->handleLoadPresetByIndex(j); }
     static const juce::StringArray& getPresetFiles(StellarrBridge& b) { return b.preset->getPresetFiles(); }
     static void refreshPresetList(StellarrBridge& b) { b.preset->handleGetPresetList(); }

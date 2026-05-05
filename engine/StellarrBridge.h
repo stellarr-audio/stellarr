@@ -1,14 +1,11 @@
 #pragma once
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <juce_gui_extra/juce_gui_extra.h>
-#include <atomic>
 #include <functional>
 #include <map>
 #include <memory>
-#include <mutex>
 #include <optional>
 #include <unordered_map>
-#include <vector>
 #include "Telemetry.h"
 #include "bridge/GraphHandler.h"
 #include "bridge/IBridgeEmitter.h"
@@ -17,12 +14,13 @@
 #include "bridge/ParamHandler.h"
 #include "bridge/PresetHandler.h"
 #include "bridge/SceneHandler.h"
+#include "bridge/SessionSerializer.h"
 #include "bridge/UpdateHandler.h"
 
 class StellarrProcessor;
 namespace stellarr { class Block; class PluginBlock; }
 
-class StellarrBridge : public stellarr::bridge::IBridgeEmitter, private juce::AsyncUpdater
+class StellarrBridge : public stellarr::bridge::IBridgeEmitter
 {
 public:
     StellarrBridge();
@@ -38,21 +36,14 @@ public:
     // alias just keeps the historical StellarrBridge::Scene name working.
     using Scene = stellarr::bridge::Scene;
 
+    // Thin wrappers around SessionSerializer. Public so tests + the startup
+    // last-session restore path keep their existing call sites. The
+    // implementations forward to sessionSerializer->... — see
+    // engine/bridge/SessionSerializer.{h,cpp} for the state machine.
     juce::var serialiseSession() const;
-    // Begins an async cooperative preset load. Returns true if the load was
-    // STARTED (lock acquired, session well-formed); returns false on early
-    // rejection (malformed session or restoreMutex contention) — no events,
-    // no callback, in that case.
-    //
-    // When true is returned, plugin instances are loaded one per
-    // message-loop tick (via juce::AsyncUpdater) so the UI stays responsive.
-    // The optional onComplete callback fires later on the message thread
-    // with success=true if Phase 1+2 completed cleanly, or success=false if
-    // anything threw mid-way. presetLoadStarted is emitted synchronously
-    // before this call returns; presetLoadFinished is emitted just before
-    // onComplete fires.
     bool restoreSession(juce::var session,
                         std::function<void(bool success)> onComplete = nullptr);
+
     void sendSystemStats(double cpuPercent, float outputPeakLinear);
     void sendBlockMetrics();
     void drainMidiEvents();
@@ -113,8 +104,6 @@ private:
     void sendPluginList();
     void sendScanDirectories();
 
-    void clearGraph();
-
     // IBridgeEmitter overrides — declared private so existing intra-class
     // call sites continue to resolve to these direct member calls today.
     // Phase 7 commits 2-9 wrap each domain in a class taking IBridgeEmitter&
@@ -150,72 +139,6 @@ private:
 
     juce::String selectedBlockId;
     juce::String lufsWindow { "shortTerm" }; // "shortTerm" or "momentary"
-
-    // Guards restoreSession against concurrent / re-entrant invocations.
-    // Acquired via std::try_to_lock — competing callers drop their request
-    // rather than queue, so a rapid burst of preset swaps cannot pile up
-    // graph rebuilds and crash the audio thread.
-    std::mutex restoreMutex;
-
-    // Atomic mirror of "a restore is currently in flight". Read BEFORE the
-    // mutex try_lock so we can short-circuit same-thread reentrancy (e.g.
-    // drainMidiEvents → onPresetChange → handleLoadPresetByIndex →
-    // restoreSession arriving on the message thread between AsyncUpdater
-    // ticks). std::mutex::try_lock from the owning thread is undefined
-    // behaviour, so we cannot rely on the mutex alone for that case.
-    // Set true after the mutex is acquired in restoreSession; cleared
-    // before pendingRestore.reset() in the completion path.
-    std::atomic<bool> restoreInProgress { false };
-
-    // Async cooperative preset-load state machine ----------------------------
-
-    // One pre-loaded plugin instance for a block in the incoming session.
-    struct PluginPreload {
-        juce::String blockId;
-        juce::String pluginId;
-        juce::String pluginName;
-        std::unique_ptr<juce::AudioPluginInstance> instance;
-    };
-
-    // Per-load state owned only while a restore is in flight. The unique_lock
-    // releases restoreMutex via destructor when this struct is reset, which
-    // guarantees the lock is freed on completion AND on exception (RAII).
-    struct PendingRestore {
-        std::unique_lock<std::mutex> lock;
-        juce::var session;
-        std::vector<PluginPreload> preloads;
-        size_t nextIndex = 0;
-        std::function<void(bool)> onComplete;
-        // Cached parse — blocks array and plugin block list. We compute the
-        // ordered list of plugin blocks once at start so handleAsyncUpdate()
-        // can index it directly without re-iterating the JSON each tick.
-        std::vector<juce::var> pluginBlocks;
-    };
-
-    std::optional<PendingRestore> pendingRestore;
-
-    // Continuations queued while another restore was in flight. Fired (in
-    // order) on the message thread once pendingRestore is reset. Used by
-    // callers (e.g. handleScreenshotSetup) that need to wait for a current
-    // load to drain before performing their next step.
-    std::vector<std::function<void()>> postRestoreContinuations;
-public:
-    // Schedule `cb` to run after the currently-in-flight restoreSession
-    // completes. If no restore is in flight, `cb` runs synchronously before
-    // this returns. Must be called on the message thread.
-    void runWhenRestoreIdle(std::function<void()> cb);
-private:
-
-    // juce::AsyncUpdater override — called on the message thread for each
-    // cooperative tick of an in-flight preset load.
-    void handleAsyncUpdate() override;
-
-    // Phase 2 — runs in the final tick once all plugin instances have been
-    // pre-loaded. Performs the suspend/clear/install/rebuild sequence.
-    // Returns true on success, false on caught exception. Does NOT emit
-    // presetLoadFinished or fire the completion callback — caller (always
-    // handleAsyncUpdate) does that after release.
-    bool finishRestore();
 
     EmitInterceptor emitInterceptor;
 
@@ -268,7 +191,20 @@ private:
     // currentPresetIndex / lastPresetFile / gridCols / gridRows (Phase 7 /
     // Commit 8). appProperties remains on StellarrBridge — PresetHandler
     // captures a reference to that pointer slot via its context. Constructed
-    // last in setProcessor; SessionSerializer + the bridge start-up flow read
-    // grid + preset bookkeeping via preset->getGridCols() etc.
+    // before sessionSerializer in setProcessor; SessionSerializer + the bridge
+    // start-up flow read grid + preset bookkeeping via preset->getGridCols()
+    // etc.
     std::optional<stellarr::bridge::PresetHandler> preset;
+
+    // Async cooperative preset-restore state machine + session serialise /
+    // clearGraph (Phase 7 / Commit 9). Owns restoreMutex, restoreInProgress,
+    // pendingRestore, postRestoreContinuations, and inherits
+    // juce::AsyncUpdater for the per-tick plugin pre-load drain. Constructed
+    // last in setProcessor — its context captures references / `[this]`
+    // closures into every other handler, so it must die first on teardown.
+    // External call sites (handleEvent's drop-during-restore gate,
+    // handleScreenshotSetup, the startup last-session restore, and the
+    // public restoreSession / serialiseSession wrappers) reach the state
+    // machine via sessionSerializer->...
+    std::optional<stellarr::bridge::SessionSerializer> sessionSerializer;
 };

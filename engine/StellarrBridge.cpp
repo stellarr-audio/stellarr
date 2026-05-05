@@ -14,6 +14,26 @@ using namespace stellarr::bridge::internal;
 StellarrBridge::StellarrBridge() = default;
 StellarrBridge::~StellarrBridge() = default;
 
+// -- Public state machine wrappers -------------------------------------------
+// Thin trampolines into SessionSerializer. The ::has_value() guards keep these
+// safe to call before setProcessor (e.g. during shutdown teardown). When
+// sessionSerializer is empty: serialiseSession returns an empty var,
+// restoreSession reports started=false. Both match the behaviour of the
+// old "if (processor == nullptr) return ..." guards.
+
+juce::var StellarrBridge::serialiseSession() const
+{
+    if (!sessionSerializer.has_value()) return {};
+    return sessionSerializer->serialiseSession();
+}
+
+bool StellarrBridge::restoreSession(juce::var session,
+                                    std::function<void(bool)> onComplete)
+{
+    if (!sessionSerializer.has_value()) return false;
+    return sessionSerializer->restoreSession(std::move(session), std::move(onComplete));
+}
+
 void StellarrBridge::setProcessor(StellarrProcessor* proc)
 {
     processor = proc;
@@ -81,9 +101,13 @@ void StellarrBridge::setProcessor(StellarrProcessor* proc)
             *this,
             // isRestoring: every MidiMapper callback that mutates per-preset
             // state checks this and skips the mutation while a restore is in
-            // flight. Mirrors the pendingRestore gate at the top of
-            // handleEvent for WebView events.
-            [this]() { return pendingRestore.has_value(); },
+            // flight. Mirrors the drop-during-restore gate at the top of
+            // handleEvent for WebView events. Routes through SessionSerializer
+            // (Commit 9) — sessionSerializer is emplaced AFTER midi in this
+            // same branch, so the optional may not yet hold a value when this
+            // lambda is constructed; the runtime invocation always happens
+            // after setProcessor returns.
+            [this]() { return sessionSerializer.has_value() && sessionSerializer->isRestoring(); },
             // markBlockDirty: route bypass / mix / balance / level CC mutations
             // through ParamHandler. Same invariant as graph's callback.
             [this](const juce::String& blockId)
@@ -159,15 +183,16 @@ void StellarrBridge::setProcessor(StellarrProcessor* proc)
             blockPositions,
             appProperties,
             *this,
-            // clearGraph / serialiseSession / restoreSession / sendGraphState
-            // still live on StellarrBridge until the SessionSerializer
-            // extraction (Commit 9). Wrap each as a thin trampoline so
-            // PresetHandler is unaware of where the implementation lives.
-            [this]() { clearGraph(); },
-            [this]() -> juce::var { return serialiseSession(); },
+            // clearGraph / serialiseSession / restoreSession now live on
+            // SessionSerializer (Commit 9). Trampoline through it; the
+            // sub-handler is emplaced AFTER preset in this branch, so the
+            // lambdas dereference at call time, not at construction.
+            // sendGraphState is still a member of StellarrBridge.
+            [this]() { sessionSerializer->clearGraph(); },
+            [this]() -> juce::var { return sessionSerializer->serialiseSession(); },
             [this](juce::var session, std::function<void(bool)> onComplete) -> bool
             {
-                return restoreSession(std::move(session), std::move(onComplete));
+                return sessionSerializer->restoreSession(std::move(session), std::move(onComplete));
             },
             [this]() { sendGraphState(); },
             // graphAddBlock: PresetHandler::handleNewSession seeds an empty
@@ -189,12 +214,41 @@ void StellarrBridge::setProcessor(StellarrProcessor* proc)
             // MIDI mapping list after handleNewSession resets it.
             [this]() { midi->emitMidiMappings(); }
         });
+
+        sessionSerializer.emplace(stellarr::bridge::SessionSerializerContext {
+            *proc,
+            blockNodeMap,
+            blockPositions,
+            *this,
+            // Scene state — owned by SceneHandler since Commit 6.
+            [this]() { return scene->getScenes(); },
+            [this]() { return scene->getActiveSceneIndex(); },
+            [this]() { scene->captureActiveScene(); },
+            [this](std::vector<stellarr::bridge::Scene> s)
+            {
+                scene->setScenes(std::move(s));
+            },
+            [this](int idx) { scene->setActiveSceneIndex(idx); },
+            // Grid state — owned by PresetHandler since Commit 8.
+            [this]() { return preset->getGridCols(); },
+            [this]() { return preset->getGridRows(); },
+            [this](int c) { preset->setGridCols(c); },
+            [this](int r) { preset->setGridRows(r); },
+            // Cross-handler post-restore broadcasts. sendGraphState still
+            // lives on StellarrBridge; emitGridState lives on PresetHandler;
+            // emitMidiMappings lives on MidiHandler.
+            [this]() { sendGraphState(); },
+            [this]() { preset->emitGridState(); },
+            [this]() { midi->emitMidiMappings(); }
+        });
     }
     else
     {
-        // Reverse construction order on teardown. PresetHandler was
-        // constructed last; reset it first so its preset / grid state is
-        // released before the rest of the bridge unwinds.
+        // Reverse construction order on teardown. SessionSerializer was
+        // constructed last; reset it first so any in-flight pendingRestore
+        // is destroyed (releases restoreMutex) before the rest of the
+        // bridge unwinds and its lambda captures dangle.
+        sessionSerializer.reset();
         preset.reset();
         input.reset();
         scene.reset();
@@ -338,7 +392,8 @@ void StellarrBridge::handleEvent(const juce::String& eventName, const juce::var&
     // would silently lose them on the next async tick. Read-only events and
     // the lock-guarded preset-load events (loadPresetByIndex, loadSession —
     // both reject themselves via restoreSession's try_lock) pass through.
-    if (pendingRestore.has_value() && it->second.dropDuringRestore)
+    if (sessionSerializer.has_value() && sessionSerializer->isRestoring()
+        && it->second.dropDuringRestore)
     {
         DBG("StellarrBridge: dropping '" << eventName << "' while preset restore is in flight");
         return;
@@ -632,9 +687,9 @@ void StellarrBridge::handleScreenshotSetup()
     // screenshot setup until that load completes — otherwise the capture
     // script's fixed timers can race the still-rebuilding graph. Leave the
     // config file in place so the deferred call can re-read it.
-    if (pendingRestore.has_value())
+    if (sessionSerializer.has_value() && sessionSerializer->isRestoring())
     {
-        runWhenRestoreIdle([this]() { handleScreenshotSetup(); });
+        sessionSerializer->runWhenRestoreIdle([this]() { handleScreenshotSetup(); });
         return;
     }
 

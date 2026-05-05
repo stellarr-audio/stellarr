@@ -3,10 +3,8 @@
 #include <juce_gui_extra/juce_gui_extra.h>
 #include <functional>
 #include <map>
-#include <memory>
 #include <optional>
 #include <unordered_map>
-#include "Telemetry.h"
 #include "bridge/GraphHandler.h"
 #include "bridge/IBridgeEmitter.h"
 #include "bridge/InputBlockHandler.h"

@@ -2,8 +2,6 @@
 #include <functional>
 #include <juce_core/juce_core.h>
 #include <juce_data_structures/juce_data_structures.h>
-#include <map>
-#include <utility>
 #include <vector>
 #include "BridgeTypes.h"
 #include "IBridgeEmitter.h"
@@ -32,8 +30,7 @@ namespace stellarr::bridge
     struct PresetHandlerContext
     {
         StellarrProcessor& processor;
-        BlockNodeMap& blockNodeMap;
-        std::map<juce::String, std::pair<int, int>>& blockPositions;
+        const BlockNodeMap& blockNodeMap;
         // Reference to the pointer slot on StellarrBridge so a late-arriving
         // setAppProperties() is observed without re-emplacing the handler.
         juce::ApplicationProperties*& appProperties;

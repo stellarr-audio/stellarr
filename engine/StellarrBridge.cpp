@@ -1,5 +1,6 @@
 #include "StellarrBridge.h"
 #include "StellarrProcessor.h"
+#include "Telemetry.h"
 #include "blocks/InputBlock.h"
 #include "blocks/OutputBlock.h"
 #include "blocks/PluginBlock.h"
@@ -180,7 +181,6 @@ void StellarrBridge::setProcessor(StellarrProcessor* proc)
         preset.emplace(stellarr::bridge::PresetHandlerContext {
             *proc,
             blockNodeMap,
-            blockPositions,
             appProperties,
             *this,
             // clearGraph / serialiseSession / restoreSession now live on
@@ -516,7 +516,7 @@ void StellarrBridge::handleBridgeReady()
                     }
 
                     sendGraphState();
-                    if (preset.has_value()) preset->sendPresetList();
+                    preset->sendPresetList();
 
                     sendStartupProgress("Ready", 100);
                     emit("startupComplete", new juce::DynamicObject());
@@ -533,7 +533,7 @@ void StellarrBridge::handleBridgeReady()
 
                     auto savedDir = settings->getValue("lastPresetDirectory", "");
                     auto savedIndex = settings->getIntValue("lastPresetIndex", -1);
-                    if (savedDir.isNotEmpty() && preset.has_value())
+                    if (savedDir.isNotEmpty())
                     {
                         preset->setPresetDirectory(juce::File(savedDir));
                         preset->handleGetPresetList();
@@ -553,7 +553,7 @@ void StellarrBridge::handleBridgeReady()
                                 bool started = restoreSession(session,
                                     [this, file, finishStartup](bool ok)
                                     {
-                                        if (ok && preset.has_value())
+                                        if (ok)
                                         {
                                             preset->setLastPresetFile(file);
                                             preset->setPresetDirectory(file.getParentDirectory());
@@ -672,7 +672,7 @@ void StellarrBridge::sendGraphState()
     state->setProperty("blocks", blocksArray);
     state->setProperty("connections", connectionsArray);
     emit("graphState", state);
-    if (scene.has_value()) scene->emitScenes();
+    scene->emitScenes();
 }
 
 // -- Screenshot automation ----------------------------------------------------

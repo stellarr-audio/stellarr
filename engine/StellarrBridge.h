@@ -14,6 +14,7 @@
 #include "bridge/IBridgeEmitter.h"
 #include "bridge/MidiHandler.h"
 #include "bridge/ParamHandler.h"
+#include "bridge/SceneHandler.h"
 #include "bridge/UpdateHandler.h"
 
 class StellarrProcessor;
@@ -30,11 +31,10 @@ public:
     juce::WebBrowserComponent::Options configureOptions(juce::WebBrowserComponent::Options options);
     void setWebView(juce::WebBrowserComponent* browser);
 
-    struct Scene {
-        juce::String name;
-        std::map<juce::String, int> blockStateMap;
-        std::map<juce::String, bool> blockBypassMap;
-    };
+    // Backward-compatibility alias for tests + any in-flight reference. The
+    // Scene struct itself is owned by stellarr::bridge::SceneHandler — this
+    // alias just keeps the historical StellarrBridge::Scene name working.
+    using Scene = stellarr::bridge::Scene;
 
     juce::var serialiseSession() const;
     // Begins an async cooperative preset load. Returns true if the load was
@@ -107,14 +107,6 @@ private:
     void handleDeletePreset(const juce::var& json);
     void handleGetPresetList();
 
-    // Scene management
-    void handleAddScene();
-    void handleRecallScene(const juce::var& json);
-    void handleSaveScene(const juce::var& json);
-    void handleRenameScene(const juce::var& json);
-    void handleDeleteScene(const juce::var& json);
-    void emitScenes();
-
     // Screenshot automation
     void handleScreenshotSetup();
     void handleScreenshotReady();
@@ -181,10 +173,6 @@ private:
     juce::File lastPresetFile;
     std::function<void()> onUiReady;
     bool tunerActive = false;
-
-    std::vector<Scene> scenes;
-    int activeSceneIndex = -1;
-    static constexpr int maxScenes = 16;
 
     juce::String selectedBlockId;
     juce::String lufsWindow { "shortTerm" }; // "shortTerm" or "momentary"
@@ -292,4 +280,12 @@ private:
     // SessionSerializer) call midi->emitMidiMappings() to broadcast the
     // current mapping list after pruning or restore.
     std::optional<stellarr::bridge::MidiHandler> midi;
+
+    // Scene CRUD + the cross-handler scene state (scenes vector,
+    // activeSceneIndex). Constructed in setProcessor AFTER param + midi
+    // because their context callbacks now route scene mutations through
+    // scene->mirrorActiveStateInScene / shiftStateMappingsAfterDelete /
+    // tryRecallSceneByIndex. SessionSerializer + PresetHandler reach scene
+    // state via scene->getScenes() / setScenes() / captureActiveScene().
+    std::optional<stellarr::bridge::SceneHandler> scene;
 };

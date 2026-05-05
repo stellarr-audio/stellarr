@@ -1,3 +1,4 @@
+#include "../StellarrBridge.h"
 #include "../StellarrProcessor.h"
 #include "../blocks/InputBlock.h"
 #include "../blocks/OutputBlock.h"
@@ -65,29 +66,29 @@ juce::var StellarrBridge::serialiseSession() const
     }
     session->setProperty("connections", connectionsArray);
 
-    // Update active scene before serialising
-    if (activeSceneIndex >= 0 && activeSceneIndex < static_cast<int>(scenes.size()))
-        captureIntoScene(const_cast<StellarrBridge*>(this)->scenes[static_cast<size_t>(activeSceneIndex)],
-                                   blockNodeMap, processor->getGraph());
+    // Update active scene before serialising. captureActiveScene mutates
+    // scene state through SceneHandler — serialiseSession is `const` for
+    // outside callers but mirroring the long-standing internal pattern.
+    const_cast<StellarrBridge*>(this)->scene->captureActiveScene();
 
     // Scenes
     juce::Array<juce::var> scenesArray;
-    for (auto& scene : scenes)
+    for (auto& s : scene->getScenes())
     {
         auto* sceneObj = new juce::DynamicObject();
-        sceneObj->setProperty("name", scene.name);
+        sceneObj->setProperty("name", s.name);
         auto* mapObj = new juce::DynamicObject();
-        for (auto& [bid, si] : scene.blockStateMap)
+        for (auto& [bid, si] : s.blockStateMap)
             mapObj->setProperty(bid, si);
         sceneObj->setProperty("blockStateMap", juce::var(mapObj));
         auto* bypassObj = new juce::DynamicObject();
-        for (auto& [bid, bp] : scene.blockBypassMap)
+        for (auto& [bid, bp] : s.blockBypassMap)
             bypassObj->setProperty(bid, bp);
         sceneObj->setProperty("blockBypassMap", juce::var(bypassObj));
         scenesArray.add(juce::var(sceneObj));
     }
     session->setProperty("scenes", scenesArray);
-    session->setProperty("activeSceneIndex", activeSceneIndex);
+    session->setProperty("activeSceneIndex", scene->getActiveSceneIndex());
 
     // MIDI mappings (preset-level only — global mappings stored in app settings)
     if (processor != nullptr)
@@ -488,9 +489,10 @@ bool StellarrBridge::finishRestore()
             obj->hasProperty("midiMappings") ? obj->getProperty("midiMappings") : juce::var());
     }   // ResumeGuard fires here — audio is live again before the UI emits below.
 
-    // Restore scenes
-    scenes.clear();
-    activeSceneIndex = -1;
+    // Restore scenes. SceneHandler owns the scenes vector + active index;
+    // build a fresh list locally and hand it over via setScenes / setActiveSceneIndex.
+    std::vector<Scene> restoredScenes;
+    int restoredActive = -1;
     auto scenesVar = obj->getProperty("scenes");
     if (auto* scenesArr = scenesVar.getArray())
     {
@@ -498,37 +500,40 @@ bool StellarrBridge::finishRestore()
         {
             if (auto* so = sv.getDynamicObject())
             {
-                Scene scene;
-                scene.name = so->getProperty("name").toString();
+                Scene s;
+                s.name = so->getProperty("name").toString();
                 auto mapVar = so->getProperty("blockStateMap");
                 if (auto* mapObj = mapVar.getDynamicObject())
                 {
                     for (auto& prop : mapObj->getProperties())
-                        scene.blockStateMap[prop.name.toString()] = static_cast<int>(prop.value);
+                        s.blockStateMap[prop.name.toString()] = static_cast<int>(prop.value);
                 }
                 auto bypassVar = so->getProperty("blockBypassMap");
                 if (auto* bypassObj = bypassVar.getDynamicObject())
                 {
                     for (auto& prop : bypassObj->getProperties())
-                        scene.blockBypassMap[prop.name.toString()] = static_cast<bool>(prop.value);
+                        s.blockBypassMap[prop.name.toString()] = static_cast<bool>(prop.value);
                 }
-                scenes.push_back(scene);
+                restoredScenes.push_back(s);
             }
         }
-        activeSceneIndex = static_cast<int>(obj->getProperty("activeSceneIndex"));
-        if (activeSceneIndex >= static_cast<int>(scenes.size()))
-            activeSceneIndex = scenes.empty() ? -1 : 0;
+        restoredActive = static_cast<int>(obj->getProperty("activeSceneIndex"));
+        if (restoredActive >= static_cast<int>(restoredScenes.size()))
+            restoredActive = restoredScenes.empty() ? -1 : 0;
     }
 
     // Ensure at least one scene exists
-    if (scenes.empty())
+    if (restoredScenes.empty())
     {
         Scene defaultScene;
         defaultScene.name = "Scene 1";
         captureIntoScene(defaultScene, blockNodeMap, processor->getGraph());
-        scenes.push_back(defaultScene);
-        activeSceneIndex = 0;
+        restoredScenes.push_back(defaultScene);
+        restoredActive = 0;
     }
+
+    scene->setScenes(std::move(restoredScenes));
+    scene->setActiveSceneIndex(restoredActive);
 
     // Mappings were swapped atomically inside the suspended window; this
     // emit just informs the UI of the new mapping list.

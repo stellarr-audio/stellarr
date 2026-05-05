@@ -1,3 +1,4 @@
+#include "../StellarrBridge.h"
 #include "../StellarrProcessor.h"
 #include "SceneCapture.h"
 
@@ -53,12 +54,12 @@ void StellarrBridge::handleNewSession()
 
     lastPresetFile = juce::File{};
     currentPresetIndex = -1;
-    scenes.clear();
+
     Scene defaultScene;
     defaultScene.name = "Scene 1";
     captureIntoScene(defaultScene, blockNodeMap, processor->getGraph());
-    scenes.push_back(defaultScene);
-    activeSceneIndex = 0;
+    scene->setScenes({ defaultScene });
+    scene->setActiveSceneIndex(0);
 
     // Clear preset-level MIDI mappings
     if (processor != nullptr)

@@ -39,16 +39,7 @@ void StellarrBridge::setProcessor(StellarrProcessor* proc)
                                 : nullptr;
                 const int newCount = pb != nullptr ? pb->getNumStates() : 0;
 
-                for (auto& s : scenes)
-                {
-                    auto sIt = s.blockStateMap.find(blockId);
-                    if (sIt == s.blockStateMap.end()) continue;
-
-                    if (sIt->second == deletedIndex)
-                        sIt->second = std::min(sIt->second, newCount - 1);
-                    else if (sIt->second > deletedIndex)
-                        --sIt->second;
-                }
+                scene->shiftStateMappingsAfterDelete(blockId, deletedIndex, newCount);
 
                 processor->getMidiMapper().removeMappingsForBlockState(blockId, deletedIndex);
                 midi->emitMidiMappings();
@@ -58,13 +49,7 @@ void StellarrBridge::setProcessor(StellarrProcessor* proc)
             // new state, then re-emit scenes.
             [this](const juce::String& blockId, int newActiveIndex)
             {
-                if (activeSceneIndex >= 0
-                    && activeSceneIndex < static_cast<int>(scenes.size()))
-                {
-                    scenes[static_cast<size_t>(activeSceneIndex)].blockStateMap[blockId]
-                        = newActiveIndex;
-                    emitScenes();
-                }
+                scene->mirrorActiveStateInScene(blockId, newActiveIndex);
             }
         });
 
@@ -121,13 +106,7 @@ void StellarrBridge::setProcessor(StellarrProcessor* proc)
             // CC-driven state change, then re-emit scenes.
             [this](const juce::String& blockId, int newActiveIndex)
             {
-                if (activeSceneIndex >= 0
-                    && activeSceneIndex < static_cast<int>(scenes.size()))
-                {
-                    scenes[static_cast<size_t>(activeSceneIndex)].blockStateMap[blockId]
-                        = newActiveIndex;
-                    emitScenes();
-                }
+                scene->mirrorActiveStateInScene(blockId, newActiveIndex);
             },
             // setTunerActiveOnAllBlocks: toggle tunerActive flag and propagate
             // to every InputBlock (enable analysis) + OutputBlock (mute output)
@@ -157,13 +136,34 @@ void StellarrBridge::setProcessor(StellarrProcessor* proc)
             // recallSceneByIndex: drive scene recall from a CC mapping.
             [this](int index)
             {
-                auto json = juce::JSON::parse("{\"index\":" + juce::String(index) + "}");
-                handleRecallScene(json);
+                scene->tryRecallSceneByIndex(index);
+            }
+        });
+
+        scene.emplace(stellarr::bridge::SceneHandlerContext {
+            *proc,
+            blockNodeMap,
+            *this,
+            // emitBlockParams / emitBlockStates: forward to ParamHandler so
+            // post-recall snapshots use the same payload set the UI-driven
+            // handleBlockStateEvent("recall") emits. param has been emplaced
+            // earlier in this branch; safe to dereference unconditionally.
+            [this](const juce::String& blockId, stellarr::PluginBlock* pb)
+            {
+                param->emitBlockParams(blockId, pb);
+            },
+            [this](const juce::String& blockId, stellarr::PluginBlock* pb)
+            {
+                param->emitBlockStates(blockId, pb);
             }
         });
     }
     else
     {
+        // Reverse construction order on teardown. SceneHandler was constructed
+        // last; reset it first so its captured callbacks (param->..., midi->...)
+        // unbind before the targeted handlers go away.
+        scene.reset();
         midi.reset();
         graph.reset();
         param.reset();
@@ -254,11 +254,11 @@ const StellarrBridge::EventTable& StellarrBridge::eventTable()
         m["getPresetList"]            = { [](StellarrBridge& b, const juce::var&)   { b.handleGetPresetList(); }, false };
         m["setGridSize"]              = { [](StellarrBridge& b, const juce::var& j) { b.handleSetGridSize(j); }, true };
         // Scenes -------------------------------------------------------
-        m["addScene"]                 = { [](StellarrBridge& b, const juce::var&)   { b.handleAddScene(); }, true };
-        m["recallScene"]              = { [](StellarrBridge& b, const juce::var& j) { b.handleRecallScene(j); }, true };
-        m["saveScene"]                = { [](StellarrBridge& b, const juce::var& j) { b.handleSaveScene(j); }, true };
-        m["renameScene"]              = { [](StellarrBridge& b, const juce::var& j) { b.handleRenameScene(j); }, true };
-        m["deleteScene"]              = { [](StellarrBridge& b, const juce::var& j) { b.handleDeleteScene(j); }, true };
+        m["addScene"]                 = { [](StellarrBridge& b, const juce::var&)   { b.scene->handleAddScene(); }, true };
+        m["recallScene"]              = { [](StellarrBridge& b, const juce::var& j) { b.scene->handleRecallScene(j); }, true };
+        m["saveScene"]                = { [](StellarrBridge& b, const juce::var& j) { b.scene->handleSaveScene(j); }, true };
+        m["renameScene"]              = { [](StellarrBridge& b, const juce::var& j) { b.scene->handleRenameScene(j); }, true };
+        m["deleteScene"]              = { [](StellarrBridge& b, const juce::var& j) { b.scene->handleDeleteScene(j); }, true };
         // Input block controls ----------------------------------------
         m["toggleTestTone"]           = { [](StellarrBridge& b, const juce::var& j) { b.handleToggleTestTone(j); }, true };
         m["getTestToneSamples"]       = { [](StellarrBridge& b, const juce::var&)   { b.handleGetTestToneSamples(); }, false };
@@ -582,7 +582,7 @@ void StellarrBridge::sendGraphState()
     state->setProperty("blocks", blocksArray);
     state->setProperty("connections", connectionsArray);
     emit("graphState", state);
-    emitScenes();
+    if (scene.has_value()) scene->emitScenes();
 }
 
 // -- Screenshot automation ----------------------------------------------------
@@ -643,11 +643,11 @@ void StellarrBridge::handleScreenshotSetup()
                     if (ok)
                     {
                         sendGraphState();
-                        if (sceneIndex.has_value())
+                        if (sceneIndex.has_value() && scene.has_value())
                         {
                             auto sceneJson = juce::JSON::parse(
                                 "{\"index\":" + juce::String(*sceneIndex) + "}");
-                            handleRecallScene(sceneJson);
+                            scene->handleRecallScene(sceneJson);
                         }
                     }
                     if (auto* o = configHandle.getDynamicObject())

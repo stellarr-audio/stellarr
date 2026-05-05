@@ -15,6 +15,7 @@
 #include "bridge/InputBlockHandler.h"
 #include "bridge/MidiHandler.h"
 #include "bridge/ParamHandler.h"
+#include "bridge/PresetHandler.h"
 #include "bridge/SceneHandler.h"
 #include "bridge/UpdateHandler.h"
 
@@ -60,11 +61,14 @@ public:
     bool isTunerActive() const { return input ? input->isTunerActive() : false; }
     void setOnUiReady(std::function<void()> callback) { onUiReady = std::move(callback); }
 
-    // Test accessors
-    const juce::StringArray& getPresetFiles() const { return presetFiles; }
-    int getCurrentPresetIndex() const { return currentPresetIndex; }
-    const juce::File& getLastPresetFile() const { return lastPresetFile; }
-    void setPresetDirectory(const juce::File& dir) { presetDirectory = dir; }
+    // Test accessors — delegate to PresetHandler which now owns the
+    // preset-tracking state. preset is emplaced iff processor != nullptr;
+    // tests always set the processor before reading these so the optional
+    // is always populated at the point of access.
+    const juce::StringArray& getPresetFiles() const { return preset->getPresetFiles(); }
+    int getCurrentPresetIndex() const { return preset->getCurrentPresetIndex(); }
+    const juce::File& getLastPresetFile() const { return preset->getLastPresetFile(); }
+    void setPresetDirectory(const juce::File& dir) { preset->setPresetDirectory(dir); }
 
     // Testing seam — intercept emit calls before they hit the WebView.
     // Fired synchronously on the calling thread; useful for asserting event
@@ -97,17 +101,6 @@ private:
     void handleGetReferencePitch();
     void handleSetReferencePitch(const juce::var& json);
 
-    // Preset management
-    void handleNewSession();
-    void handleSaveSession();
-    void handleSaveSessionQuiet();
-    void handleLoadSession();
-    void handlePickPresetDirectory();
-    void handleLoadPresetByIndex(const juce::var& json);
-    void handleRenamePreset(const juce::var& json);
-    void handleDeletePreset(const juce::var& json);
-    void handleGetPresetList();
-
     // Screenshot automation
     void handleScreenshotSetup();
     void handleScreenshotReady();
@@ -117,16 +110,10 @@ private:
     void handleSetTargetLufs(const juce::var& json);
     void handleSetLufsWindow(const juce::var& json);
 
-    // Grid dimensions (persisted with session)
-    void handleSetGridSize(const juce::var& json);
-    void emitGridState();
     void sendPluginList();
     void sendScanDirectories();
-    void sendPresetList();
 
     void clearGraph();
-    void setPresetFromFile(const juce::File& file);
-    void persistPresetInfo();
 
     // IBridgeEmitter overrides — declared private so existing intra-class
     // call sites continue to resolve to these direct member calls today.
@@ -159,19 +146,10 @@ private:
     std::map<juce::String, std::pair<int, int>> blockPositions;
     juce::var clipboardJson;
 
-    // Preset directory and browsing
-    juce::File presetDirectory;
-    juce::StringArray presetFiles;
-    int currentPresetIndex = -1;
-    juce::File lastPresetFile;
     std::function<void()> onUiReady;
 
     juce::String selectedBlockId;
     juce::String lufsWindow { "shortTerm" }; // "shortTerm" or "momentary"
-
-    // Grid size — persisted with the session. Defaults match the UI.
-    int gridCols = 12;
-    int gridRows = 5;
 
     // Guards restoreSession against concurrent / re-entrant invocations.
     // Acquired via std::try_to_lock — competing callers drop their request
@@ -285,4 +263,12 @@ private:
     // tunerActive flag. Constructed in setProcessor AFTER scene. Cross-handler
     // reads go via input->isTunerActive() (forwarded by isTunerActive()).
     std::optional<stellarr::bridge::InputBlockHandler> input;
+
+    // Preset / session CRUD + grid sizing. Owns presetDirectory / presetFiles /
+    // currentPresetIndex / lastPresetFile / gridCols / gridRows (Phase 7 /
+    // Commit 8). appProperties remains on StellarrBridge — PresetHandler
+    // captures a reference to that pointer slot via its context. Constructed
+    // last in setProcessor; SessionSerializer + the bridge start-up flow read
+    // grid + preset bookkeeping via preset->getGridCols() etc.
+    std::optional<stellarr::bridge::PresetHandler> preset;
 };

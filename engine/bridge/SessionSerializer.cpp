@@ -18,8 +18,8 @@ juce::var StellarrBridge::serialiseSession() const
     session->setProperty("version", 1);
 
     auto* gridObj = new juce::DynamicObject();
-    gridObj->setProperty("columns", gridCols);
-    gridObj->setProperty("rows", gridRows);
+    gridObj->setProperty("columns", preset->getGridCols());
+    gridObj->setProperty("rows", preset->getGridRows());
     session->setProperty("grid", juce::var(gridObj));
 
     // Blocks
@@ -547,13 +547,13 @@ bool StellarrBridge::finishRestore()
             auto cols = gridObj->getProperty("columns");
             auto rows = gridObj->getProperty("rows");
             if (cols.isInt() || cols.isInt64() || cols.isDouble())
-                gridCols = static_cast<int>(cols);
+                preset->setGridCols(static_cast<int>(cols));
             if (rows.isInt() || rows.isInt64() || rows.isDouble())
-                gridRows = static_cast<int>(rows);
+                preset->setGridRows(static_cast<int>(rows));
         }
     }
 
     sendGraphState();
-    emitGridState();
+    preset->emitGridState();
     return true;
 }

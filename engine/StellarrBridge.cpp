@@ -120,7 +120,7 @@ void StellarrBridge::setProcessor(StellarrProcessor* proc)
             [this](int index)
             {
                 auto json = juce::JSON::parse("{\"index\":" + juce::String(index) + "}");
-                handleLoadPresetByIndex(json);
+                preset->handleLoadPresetByIndex(json);
             },
             // recallSceneByIndex: drive scene recall from a CC mapping.
             [this](int index)
@@ -152,12 +152,50 @@ void StellarrBridge::setProcessor(StellarrProcessor* proc)
             blockNodeMap,
             *this
         });
+
+        preset.emplace(stellarr::bridge::PresetHandlerContext {
+            *proc,
+            blockNodeMap,
+            blockPositions,
+            appProperties,
+            *this,
+            // clearGraph / serialiseSession / restoreSession / sendGraphState
+            // still live on StellarrBridge until the SessionSerializer
+            // extraction (Commit 9). Wrap each as a thin trampoline so
+            // PresetHandler is unaware of where the implementation lives.
+            [this]() { clearGraph(); },
+            [this]() -> juce::var { return serialiseSession(); },
+            [this](juce::var session, std::function<void(bool)> onComplete) -> bool
+            {
+                return restoreSession(std::move(session), std::move(onComplete));
+            },
+            [this]() { sendGraphState(); },
+            // graphAddBlock: PresetHandler::handleNewSession seeds an empty
+            // input/output graph through GraphHandler. graph has been
+            // emplaced earlier in this branch; safe to dereference
+            // unconditionally.
+            [this](const juce::var& j) { graph->handleAddBlock(j); },
+            // setScenes / setActiveSceneIndex: hand a freshly-captured
+            // default scene to SceneHandler when starting a new session.
+            [this](std::vector<stellarr::bridge::Scene> s)
+            {
+                scene->setScenes(std::move(s));
+            },
+            [this](int idx) { scene->setActiveSceneIndex(idx); },
+            // clearAllDirtyStates: clear the dirty-state set after a save so
+            // the dirty-dot UI matches the on-disk session.
+            [this]() { param->clearAllDirtyStates(); },
+            // emitMidiMappings: re-broadcast the (now empty) preset-level
+            // MIDI mapping list after handleNewSession resets it.
+            [this]() { midi->emitMidiMappings(); }
+        });
     }
     else
     {
-        // Reverse construction order on teardown. InputBlockHandler was
-        // constructed last; reset it first so its tunerActive state is cleared
-        // before the rest of the bridge unwinds.
+        // Reverse construction order on teardown. PresetHandler was
+        // constructed last; reset it first so its preset / grid state is
+        // released before the rest of the bridge unwinds.
+        preset.reset();
         input.reset();
         scene.reset();
         midi.reset();
@@ -239,16 +277,16 @@ const StellarrBridge::EventTable& StellarrBridge::eventTable()
         m["getReferencePitch"]        = { [](StellarrBridge& b, const juce::var&)   { b.handleGetReferencePitch(); }, false };
         m["setReferencePitch"]        = { [](StellarrBridge& b, const juce::var& j) { b.handleSetReferencePitch(j); }, false };
         // Presets ------------------------------------------------------
-        m["newSession"]               = { [](StellarrBridge& b, const juce::var&)   { b.handleNewSession(); }, true };
-        m["saveSession"]              = { [](StellarrBridge& b, const juce::var&)   { b.handleSaveSession(); }, true };
-        m["saveSessionQuiet"]         = { [](StellarrBridge& b, const juce::var&)   { b.handleSaveSessionQuiet(); }, true };
-        m["loadSession"]              = { [](StellarrBridge& b, const juce::var&)   { b.handleLoadSession(); }, false };
-        m["pickPresetDirectory"]      = { [](StellarrBridge& b, const juce::var&)   { b.handlePickPresetDirectory(); }, true };
-        m["loadPresetByIndex"]        = { [](StellarrBridge& b, const juce::var& j) { b.handleLoadPresetByIndex(j); }, false };
-        m["renamePreset"]             = { [](StellarrBridge& b, const juce::var& j) { b.handleRenamePreset(j); }, true };
-        m["deletePreset"]             = { [](StellarrBridge& b, const juce::var& j) { b.handleDeletePreset(j); }, true };
-        m["getPresetList"]            = { [](StellarrBridge& b, const juce::var&)   { b.handleGetPresetList(); }, false };
-        m["setGridSize"]              = { [](StellarrBridge& b, const juce::var& j) { b.handleSetGridSize(j); }, true };
+        m["newSession"]               = { [](StellarrBridge& b, const juce::var&)   { b.preset->handleNewSession(); }, true };
+        m["saveSession"]              = { [](StellarrBridge& b, const juce::var&)   { b.preset->handleSaveSession(); }, true };
+        m["saveSessionQuiet"]         = { [](StellarrBridge& b, const juce::var&)   { b.preset->handleSaveSessionQuiet(); }, true };
+        m["loadSession"]              = { [](StellarrBridge& b, const juce::var&)   { b.preset->handleLoadSession(); }, false };
+        m["pickPresetDirectory"]      = { [](StellarrBridge& b, const juce::var&)   { b.preset->handlePickPresetDirectory(); }, true };
+        m["loadPresetByIndex"]        = { [](StellarrBridge& b, const juce::var& j) { b.preset->handleLoadPresetByIndex(j); }, false };
+        m["renamePreset"]             = { [](StellarrBridge& b, const juce::var& j) { b.preset->handleRenamePreset(j); }, true };
+        m["deletePreset"]             = { [](StellarrBridge& b, const juce::var& j) { b.preset->handleDeletePreset(j); }, true };
+        m["getPresetList"]            = { [](StellarrBridge& b, const juce::var&)   { b.preset->handleGetPresetList(); }, false };
+        m["setGridSize"]              = { [](StellarrBridge& b, const juce::var& j) { b.preset->handleSetGridSize(j); }, true };
         // Scenes -------------------------------------------------------
         m["addScene"]                 = { [](StellarrBridge& b, const juce::var&)   { b.scene->handleAddScene(); }, true };
         m["recallScene"]              = { [](StellarrBridge& b, const juce::var& j) { b.scene->handleRecallScene(j); }, true };
@@ -423,7 +461,7 @@ void StellarrBridge::handleBridgeReady()
                     }
 
                     sendGraphState();
-                    sendPresetList();
+                    if (preset.has_value()) preset->sendPresetList();
 
                     sendStartupProgress("Ready", 100);
                     emit("startupComplete", new juce::DynamicObject());
@@ -440,11 +478,11 @@ void StellarrBridge::handleBridgeReady()
 
                     auto savedDir = settings->getValue("lastPresetDirectory", "");
                     auto savedIndex = settings->getIntValue("lastPresetIndex", -1);
-                    if (savedDir.isNotEmpty())
+                    if (savedDir.isNotEmpty() && preset.has_value())
                     {
-                        presetDirectory = juce::File(savedDir);
-                        handleGetPresetList();
-                        currentPresetIndex = savedIndex;
+                        preset->setPresetDirectory(juce::File(savedDir));
+                        preset->handleGetPresetList();
+                        preset->setCurrentPresetIndex(savedIndex);
                     }
 
                     auto savedFile = settings->getValue("lastPresetFile", "");
@@ -460,17 +498,18 @@ void StellarrBridge::handleBridgeReady()
                                 bool started = restoreSession(session,
                                     [this, file, finishStartup](bool ok)
                                     {
-                                        if (ok)
+                                        if (ok && preset.has_value())
                                         {
-                                            lastPresetFile = file;
-                                            presetDirectory = file.getParentDirectory();
-                                            handleGetPresetList();
+                                            preset->setLastPresetFile(file);
+                                            preset->setPresetDirectory(file.getParentDirectory());
+                                            preset->handleGetPresetList();
 
-                                            for (int i = 0; i < presetFiles.size(); ++i)
+                                            const auto& files = preset->getPresetFiles();
+                                            for (int i = 0; i < files.size(); ++i)
                                             {
-                                                if (presetFiles[i] == file.getFileName())
+                                                if (files[i] == file.getFileName())
                                                 {
-                                                    currentPresetIndex = i;
+                                                    preset->setCurrentPresetIndex(i);
                                                     break;
                                                 }
                                             }

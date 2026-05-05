@@ -6,9 +6,9 @@
 class CopyPasteTestAccess
 {
 public:
-    static void addBlock(StellarrBridge& b, const juce::var& j) { b.handleAddBlock(j); }
-    static void copyBlock(StellarrBridge& b, const juce::var& j) { b.handleCopyBlock(j); }
-    static void pasteBlock(StellarrBridge& b, const juce::var& j) { b.handlePasteBlock(j); }
+    static void addBlock(StellarrBridge& b, const juce::var& j) { b.graph->handleAddBlock(j); }
+    static void copyBlock(StellarrBridge& b, const juce::var& j) { b.graph->handleCopyBlock(j); }
+    static void pasteBlock(StellarrBridge& b, const juce::var& j) { b.graph->handlePasteBlock(j); }
     static const juce::var& getClipboard(StellarrBridge& b) { return b.clipboardJson; }
     static const auto& getBlockNodeMap(StellarrBridge& b) { return b.blockNodeMap; }
     static const auto& getBlockPositions(StellarrBridge& b) { return b.blockPositions; }

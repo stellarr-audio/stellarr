@@ -67,9 +67,31 @@ void StellarrBridge::setProcessor(StellarrProcessor* proc)
                 }
             }
         });
+
+        graph.emplace(stellarr::bridge::GraphHandlerContext {
+            *proc,
+            blockNodeMap,
+            blockPositions,
+            clipboardJson,
+            *this,
+            // markBlockDirty: route bypass-toggle dirty notifications through
+            // ParamHandler. Safe to dereference param unconditionally — both
+            // handlers are constructed in this same branch and the invariant
+            // (param.has_value() iff processor != nullptr) holds.
+            [this](const juce::String& blockId)
+            {
+                param->markDirtyAndEmit(blockId);
+            },
+            // emitMidiMappings / sendGraphState: thin trampolines into the
+            // bridge's own broadcast helpers, which still live on
+            // StellarrBridge while their domains await later Phase 7 commits.
+            [this]() { emitMidiMappings(); },
+            [this]() { sendGraphState(); }
+        });
     }
     else
     {
+        graph.reset();
         param.reset();
     }
 
@@ -117,17 +139,17 @@ const StellarrBridge::EventTable& StellarrBridge::eventTable()
         m["update/install"]           = { [](StellarrBridge& b, const juce::var&)   { b.update.handleInstall(); }, false };
         m["update/open-release-notes"]= { [](StellarrBridge& b, const juce::var& j) { b.update.handleOpenReleaseNotes(j); }, false };
         // Graph --------------------------------------------------------
-        m["addBlock"]                 = { [](StellarrBridge& b, const juce::var& j) { b.handleAddBlock(j); }, true };
-        m["removeBlock"]              = { [](StellarrBridge& b, const juce::var& j) { b.handleRemoveBlock(j); }, true };
-        m["moveBlock"]                = { [](StellarrBridge& b, const juce::var& j) { b.handleMoveBlock(j); }, true };
-        m["addConnection"]            = { [](StellarrBridge& b, const juce::var& j) { b.handleAddConnection(j); }, true };
-        m["removeConnection"]         = { [](StellarrBridge& b, const juce::var& j) { b.handleRemoveConnection(j); }, true };
-        m["setBlockPlugin"]           = { [](StellarrBridge& b, const juce::var& j) { b.handleSetBlockPlugin(j); }, true };
-        m["openPluginEditor"]         = { [](StellarrBridge& b, const juce::var& j) { b.handleOpenPluginEditor(j); }, false };
-        m["copyBlock"]                = { [](StellarrBridge& b, const juce::var& j) { b.handleCopyBlock(j); }, true };
-        m["pasteBlock"]               = { [](StellarrBridge& b, const juce::var& j) { b.handlePasteBlock(j); }, true };
-        m["renameBlock"]              = { [](StellarrBridge& b, const juce::var& j) { b.handleRenameBlock(j); }, true };
-        m["setBlockColor"]            = { [](StellarrBridge& b, const juce::var& j) { b.handleSetBlockColor(j); }, true };
+        m["addBlock"]                 = { [](StellarrBridge& b, const juce::var& j) { b.graph->handleAddBlock(j); }, true };
+        m["removeBlock"]              = { [](StellarrBridge& b, const juce::var& j) { b.graph->handleRemoveBlock(j); }, true };
+        m["moveBlock"]                = { [](StellarrBridge& b, const juce::var& j) { b.graph->handleMoveBlock(j); }, true };
+        m["addConnection"]            = { [](StellarrBridge& b, const juce::var& j) { b.graph->handleAddConnection(j); }, true };
+        m["removeConnection"]         = { [](StellarrBridge& b, const juce::var& j) { b.graph->handleRemoveConnection(j); }, true };
+        m["setBlockPlugin"]           = { [](StellarrBridge& b, const juce::var& j) { b.graph->handleSetBlockPlugin(j); }, true };
+        m["openPluginEditor"]         = { [](StellarrBridge& b, const juce::var& j) { b.graph->handleOpenPluginEditor(j); }, false };
+        m["copyBlock"]                = { [](StellarrBridge& b, const juce::var& j) { b.graph->handleCopyBlock(j); }, true };
+        m["pasteBlock"]               = { [](StellarrBridge& b, const juce::var& j) { b.graph->handlePasteBlock(j); }, true };
+        m["renameBlock"]              = { [](StellarrBridge& b, const juce::var& j) { b.graph->handleRenameBlock(j); }, true };
+        m["setBlockColor"]            = { [](StellarrBridge& b, const juce::var& j) { b.graph->handleSetBlockColor(j); }, true };
         // MIDI mappings ------------------------------------------------
         m["addMidiMapping"]           = { [](StellarrBridge& b, const juce::var& j) { b.handleAddMidiMapping(j); }, true };
         m["removeMidiMapping"]        = { [](StellarrBridge& b, const juce::var& j) { b.handleRemoveMidiMapping(j); }, true };
@@ -174,7 +196,7 @@ const StellarrBridge::EventTable& StellarrBridge::eventTable()
         m["setBlockMix"]              = { [](StellarrBridge& b, const juce::var& j) { b.param->handleSetBlockMix(j); }, true };
         m["setBlockBalance"]          = { [](StellarrBridge& b, const juce::var& j) { b.param->handleSetBlockBalance(j); }, true };
         m["setBlockLevel"]            = { [](StellarrBridge& b, const juce::var& j) { b.param->handleSetBlockLevel(j); }, true };
-        m["toggleBlockBypass"]        = { [](StellarrBridge& b, const juce::var& j) { b.handleToggleBlockBypass(j); }, true };
+        m["toggleBlockBypass"]        = { [](StellarrBridge& b, const juce::var& j) { b.graph->handleToggleBlockBypass(j); }, true };
         m["setBlockBypassMode"]       = { [](StellarrBridge& b, const juce::var& j) { b.param->handleSetBlockBypassMode(j); }, true };
         // Block states -------------------------------------------------
         m["saveBlockState"]           = { [](StellarrBridge& b, const juce::var& j) { b.param->handleBlockStateEvent(j, "save"); }, true };
@@ -328,8 +350,8 @@ void StellarrBridge::handleBridgeReady()
                     {
                         auto inputJson = juce::JSON::parse(R"({"type":"input","col":0,"row":2})");
                         auto outputJson = juce::JSON::parse(R"({"type":"output","col":11,"row":2})");
-                        handleAddBlock(inputJson);
-                        handleAddBlock(outputJson);
+                        graph->handleAddBlock(inputJson);
+                        graph->handleAddBlock(outputJson);
                     }
 
                     sendGraphState();

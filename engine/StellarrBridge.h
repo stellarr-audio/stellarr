@@ -10,6 +10,7 @@
 #include <unordered_map>
 #include <vector>
 #include "Telemetry.h"
+#include "bridge/GraphHandler.h"
 #include "bridge/IBridgeEmitter.h"
 #include "bridge/ParamHandler.h"
 #include "bridge/UpdateHandler.h"
@@ -80,17 +81,6 @@ private:
     void sendWelcome();
     void sendGraphState();
 
-    // Graph event handlers
-    void handleAddBlock(const juce::var& json);
-    void handleRemoveBlock(const juce::var& json);
-    void handleMoveBlock(const juce::var& json);
-    void handleAddConnection(const juce::var& json);
-    void handleRemoveConnection(const juce::var& json);
-    void handleSetBlockPlugin(const juce::var& json);
-    void handleOpenPluginEditor(const juce::var& json);
-    void handleCopyBlock(const juce::var& json);
-    void handlePasteBlock(const juce::var& json);
-
     // Plugin management event handlers
     void handleScanPlugins();
     void handleGetScanDirectories();
@@ -159,8 +149,6 @@ private:
     // Lifted inline handlers (Phase 3) — these are called from the dispatch
     // table in StellarrBridge.cpp. Phase 4 will move the bodies into the
     // matching engine/bridge/*.cpp files.
-    void handleRenameBlock(const juce::var& json);
-    void handleSetBlockColor(const juce::var& json);
     void handleAddMidiMapping(const juce::var& json);
     void handleRemoveMidiMapping(const juce::var& json);
     void handleClearMidiMappings();
@@ -172,7 +160,6 @@ private:
     void handleGetTestToneSamples();
     void handleSetTestToneSample(const juce::var& json);
     void handleSetTunerEnabled(const juce::var& json);
-    void handleToggleBlockBypass(const juce::var& json);
 
     // Dispatch table for handleEvent. Defined as a private nested type +
     // private static accessor so the table's lambdas have access to the
@@ -299,7 +286,13 @@ private:
     stellarr::bridge::UpdateHandler update { stellarr::bridge::UpdateHandlerContext { *this } };
 
     // Block parameter / state / emit helpers. Constructed in setProcessor.
-    // Other free-function handlers (Scene / Midi / Graph / Preset) reach the
-    // public emit helpers via param->... while their wrap commits are pending.
+    // Other free-function handlers (Scene / Midi / Preset) reach the public
+    // emit helpers via param->... while their wrap commits are pending.
     std::optional<stellarr::bridge::ParamHandler> param;
+
+    // Block + connection CRUD, clipboard, plugin editor, block metadata.
+    // Constructed in setProcessor. Other free-function handlers (Preset,
+    // SessionSerializer) call into graph->handleAddBlock when seeding a
+    // default input/output graph.
+    std::optional<stellarr::bridge::GraphHandler> graph;
 };

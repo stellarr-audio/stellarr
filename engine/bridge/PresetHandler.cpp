@@ -48,8 +48,8 @@ void StellarrBridge::handleNewSession()
 
     auto inputJson = juce::JSON::parse(R"({"type":"input","col":0,"row":2})");
     auto outputJson = juce::JSON::parse(R"({"type":"output","col":11,"row":2})");
-    handleAddBlock(inputJson);
-    handleAddBlock(outputJson);
+    graph->handleAddBlock(inputJson);
+    graph->handleAddBlock(outputJson);
 
     lastPresetFile = juce::File{};
     currentPresetIndex = -1;

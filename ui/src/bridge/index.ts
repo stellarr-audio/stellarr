@@ -10,6 +10,7 @@ import type {
   MidiCurve,
   MidiMonitorEvent,
 } from '../store';
+import { EventNames, type InboundEventName, type OutboundEventName } from './eventNames';
 
 export type UpdateStatus =
   | 'idle' | 'checking' | 'available' | 'no-update'
@@ -76,7 +77,7 @@ export function requestAddBlock(
   spliceDestId?: string,
 ): void {
   sendEvent(
-    'addBlock',
+    EventNames.BlockAdd,
     JSON.stringify({
       type,
       col,
@@ -87,149 +88,149 @@ export function requestAddBlock(
 }
 
 export function requestRemoveBlock(blockId: string): void {
-  sendEvent('removeBlock', JSON.stringify({ blockId }));
+  sendEvent(EventNames.BlockRemove, JSON.stringify({ blockId }));
 }
 
 export function requestMoveBlock(blockId: string, col: number, row: number): void {
-  sendEvent('moveBlock', JSON.stringify({ blockId, col, row }));
+  sendEvent(EventNames.BlockMove, JSON.stringify({ blockId, col, row }));
 }
 
 export function requestAddConnection(sourceId: string, destId: string): void {
-  sendEvent('addConnection', JSON.stringify({ sourceId, destId }));
+  sendEvent(EventNames.ConnectionAdd, JSON.stringify({ sourceId, destId }));
 }
 
 export function requestRemoveConnection(sourceId: string, destId: string): void {
-  sendEvent('removeConnection', JSON.stringify({ sourceId, destId }));
+  sendEvent(EventNames.ConnectionRemove, JSON.stringify({ sourceId, destId }));
 }
 
 export function requestSetBlockMix(blockId: string, mix: number): void {
-  sendEvent('setBlockMix', JSON.stringify({ blockId, mix }));
+  sendEvent(EventNames.BlockSetMix, JSON.stringify({ blockId, mix }));
 }
 
 export function requestSetBlockLevel(blockId: string, level: number): void {
-  sendEvent('setBlockLevel', JSON.stringify({ blockId, level }));
+  sendEvent(EventNames.BlockSetLevel, JSON.stringify({ blockId, level }));
 }
 
 export function requestSetBlockBalance(blockId: string, balance: number): void {
-  sendEvent('setBlockBalance', JSON.stringify({ blockId, balance }));
+  sendEvent(EventNames.BlockSetBalance, JSON.stringify({ blockId, balance }));
 }
 
 export function requestToggleBlockBypass(blockId: string): void {
-  sendEvent('toggleBlockBypass', JSON.stringify({ blockId }));
+  sendEvent(EventNames.BlockToggleBypass, JSON.stringify({ blockId }));
 }
 
 export function requestSetBlockBypassMode(blockId: string, bypassMode: string): void {
-  sendEvent('setBlockBypassMode', JSON.stringify({ blockId, bypassMode }));
+  sendEvent(EventNames.BlockSetBypassMode, JSON.stringify({ blockId, bypassMode }));
 }
 
 export function requestGetTestToneSamples(): void {
-  sendEvent('getTestToneSamples', '');
+  sendEvent(EventNames.InputGetTestToneSamples, '');
 }
 
 export function requestSetTestToneSample(blockId: string, sample: string): void {
-  sendEvent('setTestToneSample', JSON.stringify({ blockId, sample }));
+  sendEvent(EventNames.InputSetTestToneSample, JSON.stringify({ blockId, sample }));
 }
 
 export function requestToggleTestTone(blockId: string): void {
-  sendEvent('toggleTestTone', JSON.stringify({ blockId }));
+  sendEvent(EventNames.InputToggleTestTone, JSON.stringify({ blockId }));
 }
 
 export function requestSetBlockColor(blockId: string, color: string): void {
-  sendEvent('setBlockColor', JSON.stringify({ blockId, color }));
+  sendEvent(EventNames.BlockSetColor, JSON.stringify({ blockId, color }));
 }
 
 export function requestRenameBlock(blockId: string, name: string): void {
-  sendEvent('renameBlock', JSON.stringify({ blockId, name }));
+  sendEvent(EventNames.BlockRename, JSON.stringify({ blockId, name }));
 }
 
 export function requestCopyBlock(blockId: string): void {
-  sendEvent('copyBlock', JSON.stringify({ blockId }));
+  sendEvent(EventNames.BlockCopy, JSON.stringify({ blockId }));
 }
 
 export function requestPasteBlock(col: number, row: number): void {
-  sendEvent('pasteBlock', JSON.stringify({ col, row }));
+  sendEvent(EventNames.BlockPaste, JSON.stringify({ col, row }));
 }
 
 export function requestSetBlockPlugin(blockId: string, pluginId: string): void {
-  sendEvent('setBlockPlugin', JSON.stringify({ blockId, pluginId }));
+  sendEvent(EventNames.BlockSetPlugin, JSON.stringify({ blockId, pluginId }));
 }
 
 export function requestOpenPluginEditor(blockId: string): void {
-  sendEvent('openPluginEditor', JSON.stringify({ blockId }));
+  sendEvent(EventNames.BlockOpenEditor, JSON.stringify({ blockId }));
 }
 
 export function requestNewSession(): void {
-  sendEvent('newSession', '');
+  sendEvent(EventNames.SessionNew, '');
 }
 
 export function requestSaveSession(): void {
-  sendEvent('saveSession', '');
+  sendEvent(EventNames.SessionSave, '');
 }
 
 export function requestSaveSessionQuiet(): void {
-  sendEvent('saveSessionQuiet', '');
+  sendEvent(EventNames.SessionSaveQuiet, '');
 }
 
 export function requestSetGridSize(columns: number, rows: number): void {
-  sendEvent('setGridSize', JSON.stringify({ columns, rows }));
+  sendEvent(EventNames.GridSetSize, JSON.stringify({ columns, rows }));
 }
 
 export function requestLoadSession(): void {
-  sendEvent('loadSession', '');
+  sendEvent(EventNames.SessionLoad, '');
 }
 
 export function requestPickPresetDirectory(): void {
-  sendEvent('pickPresetDirectory', '');
+  sendEvent(EventNames.PresetPickDir, '');
 }
 
 export function requestLoadPresetByIndex(index: number): void {
-  sendEvent('loadPresetByIndex', JSON.stringify({ index }));
+  sendEvent(EventNames.PresetLoadByIndex, JSON.stringify({ index }));
 }
 
 export function requestRenamePreset(index: number, name: string): void {
-  sendEvent('renamePreset', JSON.stringify({ index, name }));
+  sendEvent(EventNames.PresetRename, JSON.stringify({ index, name }));
 }
 
 export function requestDeletePreset(index: number): void {
-  sendEvent('deletePreset', JSON.stringify({ index }));
+  sendEvent(EventNames.PresetDelete, JSON.stringify({ index }));
 }
 
 export function requestSaveBlockState(blockId: string): void {
-  sendEvent('saveBlockState', JSON.stringify({ blockId }));
+  sendEvent(EventNames.BlockStateSave, JSON.stringify({ blockId }));
 }
 
 export function requestAddBlockState(blockId: string): void {
-  sendEvent('addBlockState', JSON.stringify({ blockId }));
+  sendEvent(EventNames.BlockStateAdd, JSON.stringify({ blockId }));
 }
 
 export function requestRecallBlockState(blockId: string, index: number): void {
-  sendEvent('recallBlockState', JSON.stringify({ blockId, index }));
+  sendEvent(EventNames.BlockStateRecall, JSON.stringify({ blockId, index }));
 }
 
 export function requestDeleteBlockState(blockId: string, index: number): void {
-  sendEvent('deleteBlockState', JSON.stringify({ blockId, index }));
+  sendEvent(EventNames.BlockStateDelete, JSON.stringify({ blockId, index }));
 }
 
 // -- Scene commands -----------------------------------------------------------
 
 export function requestAddScene(): void {
-  sendEvent('addScene', '{}');
+  sendEvent(EventNames.SceneAdd, '{}');
 }
 
 export function requestRecallScene(index: number): void {
-  sendEvent('recallScene', JSON.stringify({ index }));
+  sendEvent(EventNames.SceneRecall, JSON.stringify({ index }));
 }
 
 export function requestSaveScene(index: number): void {
-  sendEvent('saveScene', JSON.stringify({ index }));
+  sendEvent(EventNames.SceneSave, JSON.stringify({ index }));
 }
 
 export function requestRenameScene(index: number, name: string): void {
-  sendEvent('renameScene', JSON.stringify({ index, name }));
+  sendEvent(EventNames.SceneRename, JSON.stringify({ index, name }));
 }
 
 export function requestDeleteScene(index: number): void {
-  sendEvent('deleteScene', JSON.stringify({ index }));
+  sendEvent(EventNames.SceneDelete, JSON.stringify({ index }));
 }
 
 // -- MIDI mapping commands ----------------------------------------------------
@@ -276,19 +277,19 @@ export function requestAddMidiMapping(args: AddMidiMappingArgs): void {
   if (args.threshold !== undefined && args.threshold !== 64) {
     payload.threshold = args.threshold;
   }
-  sendEvent('addMidiMapping', JSON.stringify(payload));
+  sendEvent(EventNames.MidiAddMapping, JSON.stringify(payload));
 }
 
 export function requestRemoveMidiMapping(index: number): void {
-  sendEvent('removeMidiMapping', JSON.stringify({ index }));
+  sendEvent(EventNames.MidiRemoveMapping, JSON.stringify({ index }));
 }
 
 export function requestClearMidiMappings(): void {
-  sendEvent('clearMidiMappings', '');
+  sendEvent(EventNames.MidiClearMappings, '');
 }
 
 export function requestGetMidiMappings(): void {
-  sendEvent('getMidiMappings', '');
+  sendEvent(EventNames.MidiGetMappings, '');
 }
 
 export interface StartMidiLearnArgs {
@@ -329,83 +330,94 @@ export function requestStartMidiLearn(args: StartMidiLearnArgs): void {
   if (args.threshold !== undefined && args.threshold !== 64) {
     payload.threshold = args.threshold;
   }
-  sendEvent('startMidiLearn', JSON.stringify(payload));
+  sendEvent(EventNames.MidiStartLearn, JSON.stringify(payload));
 }
 
 export function requestCancelMidiLearn(): void {
-  sendEvent('cancelMidiLearn', '');
+  sendEvent(EventNames.MidiCancelLearn, '');
 }
 
 export function requestSetMidiMonitorEnabled(enabled: boolean): void {
-  sendEvent('setMidiMonitorEnabled', JSON.stringify({ enabled }));
+  sendEvent(EventNames.MidiSetMonitorEnabled, JSON.stringify({ enabled }));
 }
 
 export function requestInjectMidiCC(channel: number, cc: number, value: number): void {
-  sendEvent('injectMidiCC', JSON.stringify({ channel, cc, value }));
+  sendEvent(EventNames.MidiInjectCC, JSON.stringify({ channel, cc, value }));
 }
 
 export function requestSetTunerEnabled(enabled: boolean): void {
-  sendEvent('setTunerEnabled', JSON.stringify({ enabled }));
+  sendEvent(EventNames.TunerSetEnabled, JSON.stringify({ enabled }));
 }
 
 export function requestGetReferencePitch(): void {
-  sendEvent('getReferencePitch', '');
+  sendEvent(EventNames.TunerGetReferencePitch, '');
 }
 
 export function requestSetReferencePitch(hz: number): void {
-  sendEvent('setReferencePitch', JSON.stringify({ hz }));
+  sendEvent(EventNames.TunerSetReferencePitch, JSON.stringify({ hz }));
 }
 
 export function requestScanPlugins(): void {
-  sendEvent('scanPlugins', '');
+  sendEvent(EventNames.PluginsScan, '');
 }
 
 export function requestGetTelemetryEnabled(): void {
-  sendEvent('getTelemetryEnabled', '');
+  sendEvent(EventNames.TelemetryGet, '');
 }
 
 export function requestSetTelemetryEnabled(enabled: boolean): void {
-  sendEvent('setTelemetryEnabled', JSON.stringify({ enabled }));
+  sendEvent(EventNames.TelemetrySet, JSON.stringify({ enabled }));
 }
 
 export function requestPickScanDirectory(): void {
-  sendEvent('pickScanDirectory', '');
+  sendEvent(EventNames.PluginsPickScanDir, '');
 }
 
 export function requestRemoveScanDirectory(path: string): void {
-  sendEvent('removeScanDirectory', JSON.stringify({ path }));
+  sendEvent(EventNames.PluginsRemoveScanDir, JSON.stringify({ path }));
 }
 
 // -- Software update commands -------------------------------------------------
 
-export const requestCheckForUpdates  = () => sendEvent('update/check', '');
-export const requestInstallUpdate    = () => sendEvent('update/install', '');
+export const requestCheckForUpdates  = () => sendEvent(EventNames.UpdateCheck, '');
+export const requestInstallUpdate    = () => sendEvent(EventNames.UpdateInstall, '');
 export const requestOpenReleaseNotes = (url: string) =>
-  sendEvent('update/open-release-notes', JSON.stringify({ url }));
+  sendEvent(EventNames.UpdateOpenReleaseNotes, JSON.stringify({ url }));
 
 // -- Loudness metering commands -----------------------------------------------
 
 export function requestSetSelectedBlock(blockId: string): void {
-  sendEvent('setSelectedBlock', JSON.stringify({ blockId }));
+  sendEvent(EventNames.LoudnessSetSelectedBlock, JSON.stringify({ blockId }));
 }
 
 export function requestSetTargetLufs(blockId: string, lufs: number | null): void {
-  sendEvent('setTargetLufs', JSON.stringify({ blockId, lufs }));
+  sendEvent(EventNames.LoudnessSetTarget, JSON.stringify({ blockId, lufs }));
 }
 
 export function requestSetLufsWindow(window: 'momentary' | 'shortTerm'): void {
-  sendEvent('setLufsWindow', JSON.stringify({ window }));
+  sendEvent(EventNames.LoudnessSetWindow, JSON.stringify({ window }));
 }
 
 // -- Core bridge -------------------------------------------------------------
 
-export function sendEvent(eventName: string, payload: string): void {
+export function sendEvent(eventName: InboundEventName, payload: string): void {
   if (!bridgeReady) {
     console.warn('[Bridge] Not connected — event not sent:', eventName);
     return;
   }
   callNativeFunction('sendToNative', eventName, payload);
   console.log(`[Bridge] TX ${eventName}:`, payload);
+}
+
+// Typed wrapper around juce.backend.addEventListener -- registering a
+// handler for an inbound-only name fails at compile time. Engine emits
+// flow through this helper exclusively.
+function onEngineEvent(
+  juce: NonNullable<Window['__JUCE__']>,
+  name: OutboundEventName,
+  handler: (detail: unknown) => void,
+): void {
+  juce.backend.addEventListener(name, handler);
 }
 
 export function initBridge(): void {
@@ -419,20 +431,20 @@ export function initBridge(): void {
   console.log('[Bridge] Initialising...');
 
   // Startup progress
-  juce.backend.addEventListener('startupProgress', (detail: unknown) => {
+  onEngineEvent(juce, EventNames.LifecycleStartupProgress, (detail: unknown) => {
     const d = asRecord(detail);
     useStore.getState().setLoadingStatus(String(d.status), Number(d.progress));
   });
 
-  juce.backend.addEventListener('startupComplete', () => {
+  onEngineEvent(juce, EventNames.LifecycleStartupComplete, () => {
     console.log('[Bridge] RX startupComplete');
     useStore.getState().setLoading(false);
     // Signal native to show WebView after React paints
-    requestAnimationFrame(() => sendEvent('uiReady', ''));
+    requestAnimationFrame(() => sendEvent(EventNames.LifecycleUiReady, ''));
   });
 
   // Screenshot automation
-  juce.backend.addEventListener('screenshotSetup', (detail: unknown) => {
+  onEngineEvent(juce, EventNames.LifecycleScreenshotSetup, (detail: unknown) => {
     const d = asRecord(detail);
 
     // Apply theme before navigation so first paint is in the correct mode.
@@ -480,27 +492,23 @@ export function initBridge(): void {
       }
 
       // Wait for render then signal ready
-      setTimeout(() => sendEvent('screenshotReady', ''), 500);
+      setTimeout(() => sendEvent(EventNames.LifecycleScreenshotReady, ''), 500);
     }, 1000);
   });
 
   // Welcome / connection
-  juce.backend.addEventListener('welcome', (detail: unknown) => {
+  onEngineEvent(juce, EventNames.LifecycleWelcome, (detail: unknown) => {
     console.log('[Bridge] RX welcome:', extractMessage(detail));
     useStore.getState().setConnected(true);
   });
 
-  juce.backend.addEventListener('pong', (detail: unknown) => {
-    console.log('[Bridge] RX pong:', extractMessage(detail));
-  });
-
-  juce.backend.addEventListener('testToneSamplesUpdated', (detail: unknown) => {
+  onEngineEvent(juce, EventNames.InputTestToneSamplesUpdated, (detail: unknown) => {
     const d = asRecord(detail);
     const samples = Array.isArray(d.samples) ? (d.samples as unknown[]).map(String) : [];
     useStore.getState().setTestToneSamples(samples);
   });
 
-  juce.backend.addEventListener('testToneSampleChanged', (detail: unknown) => {
+  onEngineEvent(juce, EventNames.InputTestToneSampleChanged, (detail: unknown) => {
     const d = asRecord(detail);
     const blockId = String(d.blockId);
     const sample = String(d.sample);
@@ -511,44 +519,44 @@ export function initBridge(): void {
     }));
   });
 
-  juce.backend.addEventListener('testToneChanged', (detail: unknown) => {
+  onEngineEvent(juce, EventNames.InputTestToneChanged, (detail: unknown) => {
     const d = asRecord(detail);
     console.log('[Bridge] RX testToneChanged:', d);
     useStore.getState().setBlockTestTone(String(d.blockId), Boolean(d.enabled));
   });
 
-  juce.backend.addEventListener('blockMixChanged', (detail: unknown) => {
+  onEngineEvent(juce, EventNames.BlockMixChanged, (detail: unknown) => {
     const d = asRecord(detail);
     useStore.getState().setBlockMix(String(d.blockId), Number(d.mix));
   });
 
-  juce.backend.addEventListener('blockLevelChanged', (detail: unknown) => {
+  onEngineEvent(juce, EventNames.BlockLevelChanged, (detail: unknown) => {
     const d = asRecord(detail);
     useStore.getState().setBlockLevel(String(d.blockId), Number(d.level));
   });
 
-  juce.backend.addEventListener('blockBalanceChanged', (detail: unknown) => {
+  onEngineEvent(juce, EventNames.BlockBalanceChanged, (detail: unknown) => {
     const d = asRecord(detail);
     useStore.getState().setBlockBalance(String(d.blockId), Number(d.balance));
   });
 
-  juce.backend.addEventListener('blockBypassChanged', (detail: unknown) => {
+  onEngineEvent(juce, EventNames.BlockBypassChanged, (detail: unknown) => {
     const d = asRecord(detail);
     useStore.getState().setBlockBypassed(String(d.blockId), Boolean(d.bypassed));
   });
 
-  juce.backend.addEventListener('blockBypassModeChanged', (detail: unknown) => {
+  onEngineEvent(juce, EventNames.BlockBypassModeChanged, (detail: unknown) => {
     const d = asRecord(detail);
     useStore.getState().setBlockBypassMode(String(d.blockId), String(d.bypassMode));
   });
 
   // Graph confirmations from C++
-  juce.backend.addEventListener('blockCopied', (detail: unknown) => {
+  onEngineEvent(juce, EventNames.BlockCopied, (detail: unknown) => {
     const d = asRecord(detail);
     useStore.getState().setClipboardBlockType(String(d.type));
   });
 
-  juce.backend.addEventListener('blockAdded', (detail: unknown) => {
+  onEngineEvent(juce, EventNames.BlockAdded, (detail: unknown) => {
     const d = asRecord(detail);
     console.log('[Bridge] RX blockAdded:', d);
     const blockId = String(d.id);
@@ -563,19 +571,19 @@ export function initBridge(): void {
     useStore.getState().selectBlock(blockId);
   });
 
-  juce.backend.addEventListener('blockRemoved', (detail: unknown) => {
+  onEngineEvent(juce, EventNames.BlockRemoved, (detail: unknown) => {
     const d = asRecord(detail);
     console.log('[Bridge] RX blockRemoved:', d);
     useStore.getState().removeBlock(String(d.blockId));
   });
 
-  juce.backend.addEventListener('blockMoved', (detail: unknown) => {
+  onEngineEvent(juce, EventNames.BlockMoved, (detail: unknown) => {
     const d = asRecord(detail);
     console.log('[Bridge] RX blockMoved:', d);
     useStore.getState().moveBlock(String(d.blockId), Number(d.col), Number(d.row));
   });
 
-  juce.backend.addEventListener('connectionAdded', (detail: unknown) => {
+  onEngineEvent(juce, EventNames.ConnectionAdded, (detail: unknown) => {
     const d = asRecord(detail);
     console.log('[Bridge] RX connectionAdded:', d);
     useStore.getState().addConnection({
@@ -584,23 +592,23 @@ export function initBridge(): void {
     });
   });
 
-  juce.backend.addEventListener('connectionRemoved', (detail: unknown) => {
+  onEngineEvent(juce, EventNames.ConnectionRemoved, (detail: unknown) => {
     const d = asRecord(detail);
     console.log('[Bridge] RX connectionRemoved:', d);
     useStore.getState().removeConnection(String(d.sourceId), String(d.destId));
   });
 
-  juce.backend.addEventListener('blockColorChanged', (detail: unknown) => {
+  onEngineEvent(juce, EventNames.BlockColorChanged, (detail: unknown) => {
     const d = asRecord(detail);
     useStore.getState().setBlockColor(String(d.blockId), String(d.blockColor));
   });
 
-  juce.backend.addEventListener('blockRenamed', (detail: unknown) => {
+  onEngineEvent(juce, EventNames.BlockRenamed, (detail: unknown) => {
     const d = asRecord(detail);
     useStore.getState().setBlockDisplayName(String(d.blockId), String(d.displayName));
   });
 
-  juce.backend.addEventListener('blockPluginSet', (detail: unknown) => {
+  onEngineEvent(juce, EventNames.BlockPluginSet, (detail: unknown) => {
     const d = asRecord(detail);
     console.log('[Bridge] RX blockPluginSet:', d);
     useStore
@@ -614,7 +622,7 @@ export function initBridge(): void {
       );
   });
 
-  juce.backend.addEventListener('graphState', (detail: unknown) => {
+  onEngineEvent(juce, EventNames.GraphState, (detail: unknown) => {
     const d = asRecord(detail);
     console.log('[Bridge] RX graphState');
     const blocks = (Array.isArray(d.blocks) ? d.blocks : []).map((b: unknown) => {
@@ -654,7 +662,7 @@ export function initBridge(): void {
     useStore.getState().syncGraph(blocks, connections);
   });
 
-  juce.backend.addEventListener('gridState', (detail: unknown) => {
+  onEngineEvent(juce, EventNames.GridState, (detail: unknown) => {
     const d = asRecord(detail);
     const columns = Number(d.columns);
     const rows = Number(d.rows);
@@ -663,11 +671,11 @@ export function initBridge(): void {
     }
   });
 
-  juce.backend.addEventListener('scanStarted', () => {
+  onEngineEvent(juce, EventNames.PluginsScanStarted, () => {
     useStore.getState().setScanning(true);
   });
 
-  juce.backend.addEventListener('pluginListUpdated', (detail: unknown) => {
+  onEngineEvent(juce, EventNames.PluginsListUpdated, (detail: unknown) => {
     const d = asRecord(detail);
     console.log('[Bridge] RX pluginListUpdated');
     const plugins = (Array.isArray(d.plugins) ? d.plugins : []).map((p: unknown) => {
@@ -682,7 +690,7 @@ export function initBridge(): void {
     useStore.getState().setAvailablePlugins(plugins);
   });
 
-  juce.backend.addEventListener('scanDirectoriesUpdated', (detail: unknown) => {
+  onEngineEvent(juce, EventNames.PluginsScanDirsUpdated, (detail: unknown) => {
     const d = asRecord(detail);
     console.log('[Bridge] RX scanDirectoriesUpdated');
     const dirs = (Array.isArray(d.directories) ? d.directories : []).map((dir: unknown) => {
@@ -695,22 +703,22 @@ export function initBridge(): void {
     useStore.getState().setScanDirectories(dirs);
   });
 
-  juce.backend.addEventListener('presetListUpdated', (detail: unknown) => {
+  onEngineEvent(juce, EventNames.PresetListUpdated, (detail: unknown) => {
     const d = asRecord(detail);
     console.log('[Bridge] RX presetListUpdated');
     const files = (Array.isArray(d.files) ? d.files : []).map(String);
     useStore.getState().setPresetList(String(d.directory), files, Number(d.currentIndex));
   });
 
-  juce.backend.addEventListener('presetLoadStarted', () => {
+  onEngineEvent(juce, EventNames.PresetLoadStarted, () => {
     useStore.getState().setIsLoadingPreset(true);
   });
 
-  juce.backend.addEventListener('presetLoadFinished', () => {
+  onEngineEvent(juce, EventNames.PresetLoadFinished, () => {
     useStore.getState().setIsLoadingPreset(false);
   });
 
-  juce.backend.addEventListener('blockStatesChanged', (detail: unknown) => {
+  onEngineEvent(juce, EventNames.BlockStateChanged, (detail: unknown) => {
     const d = asRecord(detail);
     const dirty = Array.isArray(d.dirtyStates) ? (d.dirtyStates as unknown[]).map(Number) : [];
     useStore
@@ -718,7 +726,7 @@ export function initBridge(): void {
       .setBlockStates(String(d.blockId), Number(d.numStates), Number(d.activeStateIndex), dirty);
   });
 
-  juce.backend.addEventListener('scenesChanged', (detail: unknown) => {
+  onEngineEvent(juce, EventNames.ScenesChanged, (detail: unknown) => {
     const d = asRecord(detail);
     const scenes = (Array.isArray(d.scenes) ? d.scenes : []).map((s: unknown) => {
       const r = asRecord(s);
@@ -730,7 +738,7 @@ export function initBridge(): void {
     useStore.getState().setScenes(scenes, Number(d.activeSceneIndex));
   });
 
-  juce.backend.addEventListener('midiMappingsChanged', (detail: unknown) => {
+  onEngineEvent(juce, EventNames.MidiMappingsChanged, (detail: unknown) => {
     const d = asRecord(detail);
     const mappings = (Array.isArray(d.mappings) ? d.mappings : []).map((m: unknown) => {
       const r = asRecord(m);
@@ -753,7 +761,7 @@ export function initBridge(): void {
     useStore.getState().setMidiMappings(mappings, Boolean(d.learning));
   });
 
-  juce.backend.addEventListener('midiMonitorData', (detail: unknown) => {
+  onEngineEvent(juce, EventNames.MidiMonitorData, (detail: unknown) => {
     const d = asRecord(detail);
     const events = (Array.isArray(d.events) ? d.events : []).map((e: unknown) => {
       const r = asRecord(e);
@@ -771,11 +779,11 @@ export function initBridge(): void {
     }
   });
 
-  juce.backend.addEventListener('midiLearnComplete', () => {
+  onEngineEvent(juce, EventNames.MidiLearnComplete, () => {
     // mappingsChanged will follow with the updated list
   });
 
-  juce.backend.addEventListener('tunerData', (detail: unknown) => {
+  onEngineEvent(juce, EventNames.TunerData, (detail: unknown) => {
     const d = asRecord(detail);
     useStore
       .getState()
@@ -788,22 +796,22 @@ export function initBridge(): void {
       );
   });
 
-  juce.backend.addEventListener('systemStats', (detail: unknown) => {
+  onEngineEvent(juce, EventNames.SystemStats, (detail: unknown) => {
     const d = asRecord(detail);
     useStore.getState().setCpuPercent(Number(d.cpu));
   });
 
-  juce.backend.addEventListener('sessionSaved', () => {
+  onEngineEvent(juce, EventNames.SessionSaved, () => {
     useStore.getState().setJustSaved(true);
     setTimeout(() => useStore.getState().setJustSaved(false), 1200);
   });
 
-  juce.backend.addEventListener('referencePitchState', (detail: unknown) => {
+  onEngineEvent(juce, EventNames.TunerReferencePitchState, (detail: unknown) => {
     const d = asRecord(detail);
     useStore.getState().setReferencePitch(Number(d.hz));
   });
 
-  juce.backend.addEventListener('telemetryState', (detail: unknown) => {
+  onEngineEvent(juce, EventNames.TelemetryState, (detail: unknown) => {
     const d = asRecord(detail);
     const enabled = Boolean(d.enabled);
     const wasEnabled = useStore.getState().telemetryEnabled;
@@ -824,7 +832,7 @@ export function initBridge(): void {
     }
   });
 
-  juce.backend.addEventListener('blockMetrics', (detail: unknown) => {
+  onEngineEvent(juce, EventNames.LoudnessBlockMetrics, (detail: unknown) => {
     const d = asRecord(detail);
     const rawBlocks = Array.isArray(d.blocks) ? d.blocks : [];
     const samples = rawBlocks.map((b: unknown) => {
@@ -843,7 +851,7 @@ export function initBridge(): void {
     if (selectedSample) useStore.getState().pushLoudnessSample(selectedSample.lufs);
   });
 
-  juce.backend.addEventListener('lufsWindowState', (detail: unknown) => {
+  onEngineEvent(juce, EventNames.LoudnessWindowState, (detail: unknown) => {
     const d = asRecord(detail);
     const window = String(d.window);
     if (window === 'momentary' || window === 'shortTerm') {
@@ -851,7 +859,7 @@ export function initBridge(): void {
     }
   });
 
-  juce.backend.addEventListener('appConfig', (detail: unknown) => {
+  onEngineEvent(juce, EventNames.SystemAppConfig, (detail: unknown) => {
     const d = asRecord(detail);
     const flavour = String(d.flavour);
     if (flavour === 'prod' || flavour === 'dev') {
@@ -859,7 +867,7 @@ export function initBridge(): void {
     }
   });
 
-  juce.backend.addEventListener('updateState', (detail: unknown) => {
+  onEngineEvent(juce, EventNames.UpdateState, (detail: unknown) => {
     const d = asRecord(detail);
     const status = String(d.status) as UpdateStatus;
     if (!['idle', 'checking', 'available', 'no-update', 'downloading', 'ready', 'error'].includes(status)) return;
@@ -875,6 +883,6 @@ export function initBridge(): void {
   });
 
   bridgeReady = true;
-  callNativeFunction('sendToNative', 'bridgeReady', '');
+  callNativeFunction('sendToNative', EventNames.LifecycleBridgeReady, '');
   console.log('[Bridge] TX bridgeReady');
 }

@@ -22,7 +22,6 @@ export const EventNames = {
   LifecycleStartupProgress: 'lifecycle/startupProgress',         // outbound
   LifecycleStartupComplete: 'lifecycle/startupComplete',         // outbound
   LifecycleScreenshotSetup: 'lifecycle/screenshotSetup',         // outbound
-  LifecyclePong: 'lifecycle/pong',                               // outbound (TS-only listener today)
 
   // ---- Block (inbound) ----
   BlockAdd: 'block/add',
@@ -164,3 +163,156 @@ export const EventNames = {
 } as const;
 
 export type EventName = (typeof EventNames)[keyof typeof EventNames];
+
+// Events the UI sends to the engine (UI -> engine direction). Used as
+// the parameter type of sendEvent so a typo or wrong-direction usage
+// fails at compile time. LifecycleBridgeReady and LifecycleScreenshotReady
+// are bidirectional handshakes -- they also appear in OutboundEventName
+// so listener registration for them stays valid.
+export type InboundEventName =
+  | typeof EventNames.LifecycleBridgeReady
+  | typeof EventNames.LifecycleUiReady
+  | typeof EventNames.LifecycleScreenshotReady
+  // Block (imperative actions)
+  | typeof EventNames.BlockAdd
+  | typeof EventNames.BlockRemove
+  | typeof EventNames.BlockMove
+  | typeof EventNames.BlockRename
+  | typeof EventNames.BlockSetColor
+  | typeof EventNames.BlockSetPlugin
+  | typeof EventNames.BlockOpenEditor
+  | typeof EventNames.BlockCopy
+  | typeof EventNames.BlockPaste
+  | typeof EventNames.BlockSetMix
+  | typeof EventNames.BlockSetBalance
+  | typeof EventNames.BlockSetLevel
+  | typeof EventNames.BlockToggleBypass
+  | typeof EventNames.BlockSetBypassMode
+  // Connection (imperative)
+  | typeof EventNames.ConnectionAdd
+  | typeof EventNames.ConnectionRemove
+  // BlockState (imperative)
+  | typeof EventNames.BlockStateSave
+  | typeof EventNames.BlockStateAdd
+  | typeof EventNames.BlockStateRecall
+  | typeof EventNames.BlockStateDelete
+  // Grid (imperative)
+  | typeof EventNames.GridSetSize
+  // Scene (imperative)
+  | typeof EventNames.SceneAdd
+  | typeof EventNames.SceneRecall
+  | typeof EventNames.SceneSave
+  | typeof EventNames.SceneRename
+  | typeof EventNames.SceneDelete
+  // Session (imperative)
+  | typeof EventNames.SessionNew
+  | typeof EventNames.SessionSave
+  | typeof EventNames.SessionSaveQuiet
+  | typeof EventNames.SessionLoad
+  // Preset (imperative)
+  | typeof EventNames.PresetPickDir
+  | typeof EventNames.PresetLoadByIndex
+  | typeof EventNames.PresetRename
+  | typeof EventNames.PresetDelete
+  | typeof EventNames.PresetGetList
+  // MIDI (imperative)
+  | typeof EventNames.MidiAddMapping
+  | typeof EventNames.MidiRemoveMapping
+  | typeof EventNames.MidiClearMappings
+  | typeof EventNames.MidiGetMappings
+  | typeof EventNames.MidiStartLearn
+  | typeof EventNames.MidiCancelLearn
+  | typeof EventNames.MidiSetMonitorEnabled
+  | typeof EventNames.MidiInjectCC
+  // Plugins (imperative)
+  | typeof EventNames.PluginsScan
+  | typeof EventNames.PluginsGetScanDirs
+  | typeof EventNames.PluginsPickScanDir
+  | typeof EventNames.PluginsRemoveScanDir
+  // Telemetry (imperative)
+  | typeof EventNames.TelemetryGet
+  | typeof EventNames.TelemetrySet
+  // Tuner (imperative)
+  | typeof EventNames.TunerSetEnabled
+  | typeof EventNames.TunerGetReferencePitch
+  | typeof EventNames.TunerSetReferencePitch
+  // Input block (imperative)
+  | typeof EventNames.InputToggleTestTone
+  | typeof EventNames.InputGetTestToneSamples
+  | typeof EventNames.InputSetTestToneSample
+  // Loudness (imperative)
+  | typeof EventNames.LoudnessSetSelectedBlock
+  | typeof EventNames.LoudnessSetTarget
+  | typeof EventNames.LoudnessSetWindow
+  // Update (imperative; verbatim names predate the rename)
+  | typeof EventNames.UpdateCheck
+  | typeof EventNames.UpdateInstall
+  | typeof EventNames.UpdateOpenReleaseNotes;
+
+// Events the engine emits to the UI (engine -> UI direction). Used as
+// the listener key type so registering a handler for an inbound-only
+// name fails at compile time. LifecycleBridgeReady and
+// LifecycleScreenshotReady appear here too because they are
+// bidirectional handshakes.
+export type OutboundEventName =
+  | typeof EventNames.LifecycleBridgeReady
+  | typeof EventNames.LifecycleScreenshotReady
+  | typeof EventNames.LifecycleWelcome
+  | typeof EventNames.LifecycleStartupProgress
+  | typeof EventNames.LifecycleStartupComplete
+  | typeof EventNames.LifecycleScreenshotSetup
+  // Block (past-tense)
+  | typeof EventNames.BlockAdded
+  | typeof EventNames.BlockRemoved
+  | typeof EventNames.BlockMoved
+  | typeof EventNames.BlockRenamed
+  | typeof EventNames.BlockColorChanged
+  | typeof EventNames.BlockPluginSet
+  | typeof EventNames.BlockCopied
+  | typeof EventNames.BlockMixChanged
+  | typeof EventNames.BlockBalanceChanged
+  | typeof EventNames.BlockLevelChanged
+  | typeof EventNames.BlockBypassChanged
+  | typeof EventNames.BlockBypassModeChanged
+  // Connection (past-tense)
+  | typeof EventNames.ConnectionAdded
+  | typeof EventNames.ConnectionRemoved
+  // BlockState (past-tense)
+  | typeof EventNames.BlockStateChanged
+  // Graph (descriptive)
+  | typeof EventNames.GraphState
+  // Grid (descriptive)
+  | typeof EventNames.GridState
+  // Scene (past-tense)
+  | typeof EventNames.ScenesChanged
+  // Session (past-tense)
+  | typeof EventNames.SessionSaved
+  // Preset (descriptive / past-tense)
+  | typeof EventNames.PresetListUpdated
+  | typeof EventNames.PresetLoadStarted
+  | typeof EventNames.PresetLoadFinished
+  // MIDI (past-tense / descriptive)
+  | typeof EventNames.MidiMappingsChanged
+  | typeof EventNames.MidiLearnComplete
+  | typeof EventNames.MidiMonitorData
+  // Plugins (past-tense / descriptive)
+  | typeof EventNames.PluginsScanStarted
+  | typeof EventNames.PluginsListUpdated
+  | typeof EventNames.PluginsScanDirsUpdated
+  // Telemetry (descriptive)
+  | typeof EventNames.TelemetryState
+  // Tuner (descriptive)
+  | typeof EventNames.TunerData
+  | typeof EventNames.TunerReferencePitchState
+  // Input block (past-tense)
+  | typeof EventNames.InputTestToneChanged
+  | typeof EventNames.InputTestToneSamplesUpdated
+  | typeof EventNames.InputTestToneSampleChanged
+  // Loudness (descriptive)
+  | typeof EventNames.LoudnessWindowState
+  | typeof EventNames.LoudnessBlockMetrics
+  // System (descriptive)
+  | typeof EventNames.SystemStats
+  | typeof EventNames.SystemAppConfig
+  // Update (descriptive)
+  | typeof EventNames.UpdateState;

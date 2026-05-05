@@ -11,6 +11,7 @@
 #include <vector>
 #include "Telemetry.h"
 #include "bridge/IBridgeEmitter.h"
+#include "bridge/ParamHandler.h"
 #include "bridge/UpdateHandler.h"
 
 class StellarrProcessor;
@@ -154,22 +155,6 @@ private:
     // interface rather than reaching across friend access.
     void emit(const juce::String& eventName, juce::DynamicObject* detail) override;
     void emitSync(const juce::String& eventName, juce::DynamicObject* detail) override;
-    void emitBlockStates(const juce::String& blockId, stellarr::PluginBlock* pluginBlock);
-    void emitBlockParams(const juce::String& blockId, stellarr::Block* block);
-    void clearAllDirtyStates();
-
-    // Mark plugin block dirty and emit state update
-    void markDirtyAndEmit(const juce::String& blockId, stellarr::Block* block);
-
-    // Generic parameter handler (DRY)
-    void handleSetBlockParam(const juce::var& json,
-                              const juce::String& paramName,
-                              std::function<void(stellarr::Block*, const juce::var&)> setter,
-                              const juce::String& eventName,
-                              std::function<juce::var(stellarr::Block*)> getter);
-
-    // Generic block state handler
-    void handleBlockStateEvent(const juce::var& json, const juce::String& action);
 
     // Lifted inline handlers (Phase 3) — these are called from the dispatch
     // table in StellarrBridge.cpp. Phase 4 will move the bodies into the
@@ -187,11 +172,7 @@ private:
     void handleGetTestToneSamples();
     void handleSetTestToneSample(const juce::var& json);
     void handleSetTunerEnabled(const juce::var& json);
-    void handleSetBlockMix(const juce::var& json);
-    void handleSetBlockBalance(const juce::var& json);
-    void handleSetBlockLevel(const juce::var& json);
     void handleToggleBlockBypass(const juce::var& json);
-    void handleSetBlockBypassMode(const juce::var& json);
 
     // Dispatch table for handleEvent. Defined as a private nested type +
     // private static accessor so the table's lambdas have access to the
@@ -207,9 +188,6 @@ private:
     };
     using EventTable = std::unordered_map<juce::String, EventEntry>;
     static const EventTable& eventTable();
-
-    // Software updates (Sparkle)
-    stellarr::bridge::UpdateHandler update { stellarr::bridge::UpdateHandlerContext { *this } };
 
     juce::WebBrowserComponent* webView = nullptr;
     StellarrProcessor* processor = nullptr;
@@ -305,4 +283,23 @@ private:
     bool finishRestore();
 
     EmitInterceptor emitInterceptor;
+
+    // -- Sub-handlers ---------------------------------------------------------
+    // Declared LAST so reverse-destruction order destroys them FIRST, before
+    // any of the bridge state their contexts hold references / `[this]`
+    // captures into. Lambda captures (e.g. ParamHandlerContext callbacks) are
+    // released safely without dangling-reference risk during teardown.
+    //
+    // Invariant: param.has_value() iff processor != nullptr. Constructed and
+    // reset by setProcessor(). All call sites assume this — no per-call guard
+    // needed because the dispatch table only fires after bridgeReady, which
+    // arrives strictly after setProcessor() in normal app startup.
+
+    // Software updates (Sparkle).
+    stellarr::bridge::UpdateHandler update { stellarr::bridge::UpdateHandlerContext { *this } };
+
+    // Block parameter / state / emit helpers. Constructed in setProcessor.
+    // Other free-function handlers (Scene / Midi / Graph / Preset) reach the
+    // public emit helpers via param->... while their wrap commits are pending.
+    std::optional<stellarr::bridge::ParamHandler> param;
 };

@@ -153,8 +153,8 @@ void StellarrBridge::handleRecallScene(const juce::var& json)
             if (bypassIt != scene.blockBypassMap.end())
                 pb->setBypassed(bypassIt->second);
 
-            emitBlockStates(blockId, pb);
-            emitBlockParams(blockId, pb);
+            param->emitBlockStates(blockId, pb);
+            param->emitBlockParams(blockId, pb);
         }
     }
 

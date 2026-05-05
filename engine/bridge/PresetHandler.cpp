@@ -95,7 +95,7 @@ void StellarrBridge::handleSaveSession()
         file.replaceWithText(jsonStr);
 
         setPresetFromFile(file);
-        clearAllDirtyStates();
+        param->clearAllDirtyStates();
         emit("sessionSaved", new juce::DynamicObject());
     });
 }
@@ -110,7 +110,7 @@ void StellarrBridge::handleSaveSessionQuiet()
         auto jsonStr = juce::JSON::toString(session);
         lastPresetFile.replaceWithText(jsonStr);
 
-        clearAllDirtyStates();
+        param->clearAllDirtyStates();
         emit("sessionSaved", new juce::DynamicObject());
     }
     else

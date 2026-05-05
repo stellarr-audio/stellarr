@@ -17,6 +17,62 @@ StellarrBridge::~StellarrBridge() = default;
 void StellarrBridge::setProcessor(StellarrProcessor* proc)
 {
     processor = proc;
+
+    if (proc != nullptr)
+    {
+        param.emplace(stellarr::bridge::ParamHandlerContext {
+            *proc,
+            blockNodeMap,
+            *this,
+            // onBlockStateDeleted: shift per-scene + MIDI mapping bookkeeping
+            // when a block state is removed. Mirrors the index shift that
+            // PluginBlock::deleteState() already applied to its own active
+            // index.
+            [this](const juce::String& blockId, int deletedIndex)
+            {
+                if (processor == nullptr) return;
+
+                auto* node = blockNodeMap.count(blockId)
+                    ? processor->getGraph().getNodeForId(blockNodeMap.at(blockId))
+                    : nullptr;
+                auto* pb = node ? dynamic_cast<stellarr::PluginBlock*>(node->getProcessor())
+                                : nullptr;
+                const int newCount = pb != nullptr ? pb->getNumStates() : 0;
+
+                for (auto& s : scenes)
+                {
+                    auto sIt = s.blockStateMap.find(blockId);
+                    if (sIt == s.blockStateMap.end()) continue;
+
+                    if (sIt->second == deletedIndex)
+                        sIt->second = std::min(sIt->second, newCount - 1);
+                    else if (sIt->second > deletedIndex)
+                        --sIt->second;
+                }
+
+                processor->getMidiMapper().removeMappingsForBlockState(blockId, deletedIndex);
+                emitMidiMappings();
+            },
+            // onActiveStateChanged: sync the active scene's blockStateMap so
+            // the rewire-dot prediction in the scene dropdown reflects the
+            // new state, then re-emit scenes.
+            [this](const juce::String& blockId, int newActiveIndex)
+            {
+                if (activeSceneIndex >= 0
+                    && activeSceneIndex < static_cast<int>(scenes.size()))
+                {
+                    scenes[static_cast<size_t>(activeSceneIndex)].blockStateMap[blockId]
+                        = newActiveIndex;
+                    emitScenes();
+                }
+            }
+        });
+    }
+    else
+    {
+        param.reset();
+    }
+
     setupMidiMapper();
 }
 
@@ -115,16 +171,16 @@ const StellarrBridge::EventTable& StellarrBridge::eventTable()
         m["setTestToneSample"]        = { [](StellarrBridge& b, const juce::var& j) { b.handleSetTestToneSample(j); }, true };
         m["setTunerEnabled"]          = { [](StellarrBridge& b, const juce::var& j) { b.handleSetTunerEnabled(j); }, true };
         // Block parameters --------------------------------------------
-        m["setBlockMix"]              = { [](StellarrBridge& b, const juce::var& j) { b.handleSetBlockMix(j); }, true };
-        m["setBlockBalance"]          = { [](StellarrBridge& b, const juce::var& j) { b.handleSetBlockBalance(j); }, true };
-        m["setBlockLevel"]            = { [](StellarrBridge& b, const juce::var& j) { b.handleSetBlockLevel(j); }, true };
+        m["setBlockMix"]              = { [](StellarrBridge& b, const juce::var& j) { b.param->handleSetBlockMix(j); }, true };
+        m["setBlockBalance"]          = { [](StellarrBridge& b, const juce::var& j) { b.param->handleSetBlockBalance(j); }, true };
+        m["setBlockLevel"]            = { [](StellarrBridge& b, const juce::var& j) { b.param->handleSetBlockLevel(j); }, true };
         m["toggleBlockBypass"]        = { [](StellarrBridge& b, const juce::var& j) { b.handleToggleBlockBypass(j); }, true };
-        m["setBlockBypassMode"]       = { [](StellarrBridge& b, const juce::var& j) { b.handleSetBlockBypassMode(j); }, true };
+        m["setBlockBypassMode"]       = { [](StellarrBridge& b, const juce::var& j) { b.param->handleSetBlockBypassMode(j); }, true };
         // Block states -------------------------------------------------
-        m["saveBlockState"]           = { [](StellarrBridge& b, const juce::var& j) { b.handleBlockStateEvent(j, "save"); }, true };
-        m["addBlockState"]            = { [](StellarrBridge& b, const juce::var& j) { b.handleBlockStateEvent(j, "add"); }, true };
-        m["recallBlockState"]         = { [](StellarrBridge& b, const juce::var& j) { b.handleBlockStateEvent(j, "recall"); }, true };
-        m["deleteBlockState"]         = { [](StellarrBridge& b, const juce::var& j) { b.handleBlockStateEvent(j, "delete"); }, true };
+        m["saveBlockState"]           = { [](StellarrBridge& b, const juce::var& j) { b.param->handleBlockStateEvent(j, "save"); }, true };
+        m["addBlockState"]            = { [](StellarrBridge& b, const juce::var& j) { b.param->handleBlockStateEvent(j, "add"); }, true };
+        m["recallBlockState"]         = { [](StellarrBridge& b, const juce::var& j) { b.param->handleBlockStateEvent(j, "recall"); }, true };
+        m["deleteBlockState"]         = { [](StellarrBridge& b, const juce::var& j) { b.param->handleBlockStateEvent(j, "delete"); }, true };
         // Loudness metering -------------------------------------------
         m["setSelectedBlock"]         = { [](StellarrBridge& b, const juce::var& j) { b.handleSetSelectedBlock(j); }, false };
         m["setTargetLufs"]            = { [](StellarrBridge& b, const juce::var& j) { b.handleSetTargetLufs(j); }, true };
@@ -205,23 +261,6 @@ void StellarrBridge::emitSync(const juce::String& eventName, juce::DynamicObject
 
     auto eventId = juce::Identifier(eventName);
     webView->emitEventIfBrowserIsVisible(eventId, data);
-}
-
-void StellarrBridge::markDirtyAndEmit(const juce::String& blockId, stellarr::Block* /*block*/)
-{
-    if (processor == nullptr) return;
-
-    auto nodeIt = blockNodeMap.find(blockId);
-    if (nodeIt == blockNodeMap.end()) return;
-
-    if (auto* node = processor->getGraph().getNodeForId(nodeIt->second))
-    {
-        if (auto* pb = dynamic_cast<stellarr::PluginBlock*>(node->getProcessor()))
-        {
-            pb->markDirty();
-            emitBlockStates(blockId, pb);
-        }
-    }
 }
 
 // -- Startup and state broadcast ----------------------------------------------

@@ -49,7 +49,7 @@ void StellarrBridge::setupMidiMapper()
         if (block == nullptr) return;
 
         block->setBypassed(state);
-        markDirtyAndEmit(blockId, block);
+        param->markDirtyAndEmit(blockId);
 
         auto* detail = new juce::DynamicObject();
         detail->setProperty("blockId", blockId);
@@ -63,7 +63,7 @@ void StellarrBridge::setupMidiMapper()
         if (block == nullptr) return;
 
         block->setMix(value);
-        markDirtyAndEmit(blockId, block);
+        param->markDirtyAndEmit(blockId);
 
         auto* detail = new juce::DynamicObject();
         detail->setProperty("blockId", blockId);
@@ -77,7 +77,7 @@ void StellarrBridge::setupMidiMapper()
         if (block == nullptr) return;
 
         block->setBalance(value);
-        markDirtyAndEmit(blockId, block);
+        param->markDirtyAndEmit(blockId);
 
         auto* detail = new juce::DynamicObject();
         detail->setProperty("blockId", blockId);
@@ -91,7 +91,7 @@ void StellarrBridge::setupMidiMapper()
         if (block == nullptr) return;
 
         block->setLevelDb(levelDb);
-        markDirtyAndEmit(blockId, block);
+        param->markDirtyAndEmit(blockId);
 
         auto* detail = new juce::DynamicObject();
         detail->setProperty("blockId", blockId);
@@ -127,8 +127,8 @@ void StellarrBridge::setupMidiMapper()
 
         if (pluginBlock->recallState(stateIndex))
         {
-            emitBlockParams(blockId, pluginBlock);
-            emitBlockStates(blockId, pluginBlock);
+            param->emitBlockParams(blockId, pluginBlock);
+            param->emitBlockStates(blockId, pluginBlock);
 
             // Mirror handleBlockStateEvent("recall"): sync the active scene's
             // blockStateMap so the rewire-dot prediction in the scene dropdown

@@ -371,7 +371,7 @@ void StellarrBridge::handleToggleBlockBypass(const juce::var& json)
 
     bool newState = !block->isBypassed();
     block->setBypassed(newState);
-    markDirtyAndEmit(blockId, block);
+    param->markDirtyAndEmit(blockId);
 
     auto* detail = new juce::DynamicObject();
     detail->setProperty("blockId", blockId);

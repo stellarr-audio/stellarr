@@ -1,8 +1,11 @@
-#include "../StellarrBridge.h"
+#include "UpdateHandler.h"
 #include "../UpdaterShim.h"
+#include <juce_core/juce_core.h>
 
 // Software update bridge handlers. These are thin translators between the
 // UI's update/* events and the Sparkle-backed shim.
+
+namespace stellarr::bridge {
 
 namespace {
 
@@ -24,18 +27,21 @@ juce::String statusToString(stellarr::update::Status s)
 
 } // namespace
 
-void StellarrBridge::ensureUpdateShim()
-{
-    if (updateShim != nullptr) return;
+UpdateHandler::UpdateHandler(UpdateHandlerContext c) : ctx(c) {}
+UpdateHandler::~UpdateHandler() = default;
 
-    updateShim = std::make_unique<stellarr::update::Shim>();
-    updateShim->setOnStateChanged([this](const stellarr::update::State& s)
+void UpdateHandler::ensureShim()
+{
+    if (shim != nullptr) return;
+
+    shim = std::make_unique<stellarr::update::Shim>();
+    shim->setOnStateChanged([this](const stellarr::update::State& s)
     {
-        sendUpdateState(s);
+        sendState(s);
     });
 }
 
-void StellarrBridge::sendUpdateState(const stellarr::update::State& state)
+void UpdateHandler::sendState(const stellarr::update::State& state)
 {
     auto* detail = new juce::DynamicObject();
     detail->setProperty("status",           statusToString(state.status));
@@ -45,28 +51,30 @@ void StellarrBridge::sendUpdateState(const stellarr::update::State& state)
     detail->setProperty("releaseNotesUrl",  juce::String(state.releaseNotesUrl));
     detail->setProperty("downloadProgress", state.downloadProgress);
     detail->setProperty("error",            juce::String(state.error));
-    emitToJs("updateState", detail);
+    ctx.emit.emit("updateState", detail);
 }
 
-void StellarrBridge::handleUpdateCheck()
+void UpdateHandler::handleCheck()
 {
-    ensureUpdateShim();
-    updateShim->checkForUpdates();
+    ensureShim();
+    shim->checkForUpdates();
 }
 
-void StellarrBridge::handleUpdateInstall()
+void UpdateHandler::handleInstall()
 {
-    ensureUpdateShim();
-    updateShim->installUpdate();
+    ensureShim();
+    shim->installUpdate();
 }
 
-void StellarrBridge::handleUpdateOpenReleaseNotes(const juce::var& json)
+void UpdateHandler::handleOpenReleaseNotes(const juce::var& json)
 {
-    ensureUpdateShim();
+    ensureShim();
 
     juce::String url;
     if (auto* obj = json.getDynamicObject())
         url = obj->getProperty("url").toString();
 
-    updateShim->openReleaseNotes(url.toStdString());
+    shim->openReleaseNotes(url.toStdString());
 }
+
+} // namespace stellarr::bridge

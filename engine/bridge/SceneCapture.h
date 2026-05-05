@@ -1,8 +1,8 @@
 #pragma once
-#include "../StellarrBridge.h"
 #include "../blocks/PluginBlock.h"
+#include "Scene.h"
 
-inline void captureIntoScene(StellarrBridge::Scene& scene,
+inline void captureIntoScene(stellarr::bridge::Scene& scene,
                              const std::map<juce::String, juce::AudioProcessorGraph::NodeID>& blockNodeMap,
                              juce::AudioProcessorGraph& graph)
 {

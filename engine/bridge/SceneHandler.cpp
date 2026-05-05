@@ -1,9 +1,18 @@
+#include "SceneHandler.h"
 #include "../StellarrProcessor.h"
 #include "SceneCapture.h"
+#include "internal/BlockLookup.h"
+#include <algorithm>
+
+namespace stellarr::bridge {
+
+using namespace stellarr::bridge::internal;
+
+SceneHandler::SceneHandler(SceneHandlerContext c) : ctx(c) {}
 
 // -- Scene event handlers -----------------------------------------------------
 
-void StellarrBridge::emitScenes()
+void SceneHandler::emitScenes()
 {
     auto* detail = new juce::DynamicObject();
 
@@ -20,19 +29,19 @@ void StellarrBridge::emitScenes()
     }
     detail->setProperty("scenes", arr);
     detail->setProperty("activeSceneIndex", activeSceneIndex);
-    emitToJs("scenesChanged", detail);
+    ctx.emit.emit("scenesChanged", detail);
 }
 
-void StellarrBridge::handleAddScene()
+void SceneHandler::handleAddScene()
 {
-    if (processor == nullptr || static_cast<int>(scenes.size()) >= maxScenes) return;
+    if (static_cast<int>(scenes.size()) >= maxScenes) return;
 
     if (activeSceneIndex >= 0 && activeSceneIndex < static_cast<int>(scenes.size()))
-        captureIntoScene(scenes[static_cast<size_t>(activeSceneIndex)], blockNodeMap, processor->getGraph());
+        captureIntoScene(scenes[static_cast<size_t>(activeSceneIndex)], ctx.blockNodeMap, ctx.processor.getGraph());
 
     Scene scene;
     scene.name = "Scene " + juce::String(static_cast<int>(scenes.size()) + 1);
-    captureIntoScene(scene, blockNodeMap, processor->getGraph());
+    captureIntoScene(scene, ctx.blockNodeMap, ctx.processor.getGraph());
 
     scenes.push_back(scene);
     activeSceneIndex = static_cast<int>(scenes.size()) - 1;
@@ -54,9 +63,9 @@ void StellarrBridge::handleAddScene()
 // Without clamping here, scenes with stale out-of-range indices left over
 // from a previous deletion would incorrectly trip the rewire path even
 // though they recall to the same State as their sibling scenes.
-static bool sceneRewireRequired(const StellarrBridge::Scene& outgoing,
-                                const StellarrBridge::Scene& incoming,
-                                const std::map<juce::String, juce::AudioProcessorGraph::NodeID>& blockNodeMap,
+static bool sceneRewireRequired(const Scene& outgoing,
+                                const Scene& incoming,
+                                const BlockNodeMap& blockNodeMap,
                                 juce::AudioProcessorGraph& graph)
 {
     auto effective = [&blockNodeMap, &graph](const juce::String& blockId, int rawIdx) -> int
@@ -86,14 +95,15 @@ static bool sceneRewireRequired(const StellarrBridge::Scene& outgoing,
     return false;
 }
 
-void StellarrBridge::handleRecallScene(const juce::var& json)
+void SceneHandler::handleRecallScene(const juce::var& json)
 {
-    if (processor == nullptr) return;
     auto* obj = json.getDynamicObject();
     if (obj == nullptr) return;
 
     auto index = static_cast<int>(obj->getProperty("index"));
     if (index < 0 || index >= static_cast<int>(scenes.size())) return;
+
+    auto& graph = ctx.processor.getGraph();
 
     // Decide whether this swap requires plugin binary rewiring or only
     // Stellarr-level field updates. With no active scene, treat as rewire so
@@ -103,8 +113,8 @@ void StellarrBridge::handleRecallScene(const juce::var& json)
         ? true
         : sceneRewireRequired(scenes[static_cast<size_t>(activeSceneIndex)],
                               scenes[static_cast<size_t>(index)],
-                              blockNodeMap,
-                              processor->getGraph());
+                              ctx.blockNodeMap,
+                              graph);
 
     if (willRewire)
     {
@@ -113,9 +123,9 @@ void StellarrBridge::handleRecallScene(const juce::var& json)
         // pushes. Only worth doing on the rewire path — captureCurrentState()
         // calls plugin->getStateInformation() per block, which is exactly what
         // the fast path is built to avoid.
-        for (auto& [blockId, nodeId] : blockNodeMap)
+        for (auto& [blockId, nodeId] : ctx.blockNodeMap)
         {
-            if (auto* node = processor->getGraph().getNodeForId(nodeId))
+            if (auto* node = graph.getNodeForId(nodeId))
                 if (auto* pb = dynamic_cast<stellarr::PluginBlock*>(node->getProcessor()))
                     pb->saveCurrentState();
         }
@@ -128,14 +138,14 @@ void StellarrBridge::handleRecallScene(const juce::var& json)
     // while A was active because A's stored blockBypassMap is reapplied
     // verbatim on return.
     if (activeSceneIndex >= 0 && activeSceneIndex < static_cast<int>(scenes.size()))
-        captureIntoScene(scenes[static_cast<size_t>(activeSceneIndex)], blockNodeMap, processor->getGraph());
+        captureIntoScene(scenes[static_cast<size_t>(activeSceneIndex)], ctx.blockNodeMap, graph);
 
     activeSceneIndex = index;
     auto& scene = scenes[static_cast<size_t>(index)];
 
     for (auto& [blockId, stateIdx] : scene.blockStateMap)
     {
-        auto* pb = findPluginBlock(blockId);
+        auto* pb = findPluginBlock(ctx.blockNodeMap, ctx.processor, blockId);
         if (pb == nullptr) continue;
 
         int clampedIdx = std::min(stateIdx, pb->getNumStates() - 1);
@@ -150,28 +160,27 @@ void StellarrBridge::handleRecallScene(const juce::var& json)
             if (bypassIt != scene.blockBypassMap.end())
                 pb->setBypassed(bypassIt->second);
 
-            emitBlockStates(blockId, pb);
-            emitBlockParams(blockId, pb);
+            ctx.emitBlockStates(blockId, pb);
+            ctx.emitBlockParams(blockId, pb);
         }
     }
 
     emitScenes();
 }
 
-void StellarrBridge::handleSaveScene(const juce::var& json)
+void SceneHandler::handleSaveScene(const juce::var& json)
 {
-    if (processor == nullptr) return;
     auto* obj = json.getDynamicObject();
     if (obj == nullptr) return;
 
     auto index = static_cast<int>(obj->getProperty("index"));
     if (index < 0 || index >= static_cast<int>(scenes.size())) return;
 
-    captureIntoScene(scenes[static_cast<size_t>(index)], blockNodeMap, processor->getGraph());
+    captureIntoScene(scenes[static_cast<size_t>(index)], ctx.blockNodeMap, ctx.processor.getGraph());
     emitScenes();
 }
 
-void StellarrBridge::handleRenameScene(const juce::var& json)
+void SceneHandler::handleRenameScene(const juce::var& json)
 {
     auto* obj = json.getDynamicObject();
     if (obj == nullptr) return;
@@ -184,7 +193,7 @@ void StellarrBridge::handleRenameScene(const juce::var& json)
     emitScenes();
 }
 
-void StellarrBridge::handleDeleteScene(const juce::var& json)
+void SceneHandler::handleDeleteScene(const juce::var& json)
 {
     auto* obj = json.getDynamicObject();
     if (obj == nullptr) return;
@@ -201,3 +210,50 @@ void StellarrBridge::handleDeleteScene(const juce::var& json)
 
     emitScenes();
 }
+
+// -- Cross-handler API --------------------------------------------------------
+
+void SceneHandler::mirrorActiveStateInScene(const juce::String& blockId, int newActiveIndex)
+{
+    if (activeSceneIndex < 0 || activeSceneIndex >= static_cast<int>(scenes.size()))
+        return;
+
+    scenes[static_cast<size_t>(activeSceneIndex)].blockStateMap[blockId] = newActiveIndex;
+    emitScenes();
+}
+
+void SceneHandler::shiftStateMappingsAfterDelete(const juce::String& blockId,
+                                                 int deletedIndex,
+                                                 int newCount)
+{
+    for (auto& s : scenes)
+    {
+        auto sIt = s.blockStateMap.find(blockId);
+        if (sIt == s.blockStateMap.end()) continue;
+
+        if (sIt->second == deletedIndex)
+            sIt->second = std::min(sIt->second, newCount - 1);
+        else if (sIt->second > deletedIndex)
+            --sIt->second;
+    }
+}
+
+bool SceneHandler::tryRecallSceneByIndex(int index)
+{
+    if (index < 0 || index >= static_cast<int>(scenes.size())) return false;
+
+    auto json = juce::JSON::parse("{\"index\":" + juce::String(index) + "}");
+    handleRecallScene(json);
+    return true;
+}
+
+void SceneHandler::captureActiveScene()
+{
+    if (activeSceneIndex < 0 || activeSceneIndex >= static_cast<int>(scenes.size()))
+        return;
+
+    captureIntoScene(scenes[static_cast<size_t>(activeSceneIndex)],
+                     ctx.blockNodeMap, ctx.processor.getGraph());
+}
+
+} // namespace stellarr::bridge

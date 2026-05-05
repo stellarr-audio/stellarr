@@ -1,37 +1,42 @@
-#include "../StellarrBridge.h"
+#include "ParamHandler.h"
 #include "../StellarrProcessor.h"
 #include "../blocks/Block.h"
 #include "../blocks/PluginBlock.h"
+#include "internal/BlockLookup.h"
+
+namespace stellarr::bridge {
+
+using namespace stellarr::bridge::internal;
+
+ParamHandler::ParamHandler(ParamHandlerContext c) : ctx(c) {}
 
 // -- Block parameter handlers -------------------------------------------------
 // These all follow the same pattern: parse blockId + value, find block, set
 // param, mark dirty if plugin block, emit change event.
 
-void StellarrBridge::handleSetBlockParam(const juce::var& json,
-                                          const juce::String& paramName,
-                                          std::function<void(stellarr::Block*, const juce::var&)> setter,
-                                          const juce::String& eventName,
-                                          std::function<juce::var(stellarr::Block*)> getter)
+void ParamHandler::handleSetBlockParam(const juce::var& json,
+                                       const juce::String& paramName,
+                                       std::function<void(stellarr::Block*, const juce::var&)> setter,
+                                       const juce::String& eventName,
+                                       std::function<juce::var(stellarr::Block*)> getter)
 {
-    if (processor == nullptr) return;
-
     auto* obj = json.getDynamicObject();
     if (obj == nullptr) return;
 
     auto blockId = obj->getProperty("blockId").toString();
-    auto* block = findBlock(blockId);
+    auto* block = findBlock(ctx.blockNodeMap, ctx.processor, blockId);
     if (block == nullptr) return;
 
     setter(block, obj->getProperty(paramName));
-    markDirtyAndEmit(blockId, block);
+    markDirtyAndEmit(blockId);
 
     auto* detail = new juce::DynamicObject();
     detail->setProperty("blockId", blockId);
     detail->setProperty(paramName, getter(block));
-    emitToJs(eventName, detail);
+    ctx.emit.emit(eventName, detail);
 }
 
-void StellarrBridge::handleSetBlockMix(const juce::var& json)
+void ParamHandler::handleSetBlockMix(const juce::var& json)
 {
     handleSetBlockParam(json, "mix",
         [](stellarr::Block* b, const juce::var& v) { b->setMix(static_cast<float>(v)); },
@@ -39,7 +44,7 @@ void StellarrBridge::handleSetBlockMix(const juce::var& json)
         [](stellarr::Block* b) { return juce::var(static_cast<double>(b->getMix())); });
 }
 
-void StellarrBridge::handleSetBlockBalance(const juce::var& json)
+void ParamHandler::handleSetBlockBalance(const juce::var& json)
 {
     handleSetBlockParam(json, "balance",
         [](stellarr::Block* b, const juce::var& v) { b->setBalance(static_cast<float>(v)); },
@@ -47,7 +52,7 @@ void StellarrBridge::handleSetBlockBalance(const juce::var& json)
         [](stellarr::Block* b) { return juce::var(static_cast<double>(b->getBalance())); });
 }
 
-void StellarrBridge::handleSetBlockLevel(const juce::var& json)
+void ParamHandler::handleSetBlockLevel(const juce::var& json)
 {
     handleSetBlockParam(json, "level",
         [](stellarr::Block* b, const juce::var& v) { b->setLevelDb(static_cast<float>(v)); },
@@ -55,7 +60,7 @@ void StellarrBridge::handleSetBlockLevel(const juce::var& json)
         [](stellarr::Block* b) { return juce::var(static_cast<double>(b->getLevelDb())); });
 }
 
-void StellarrBridge::handleSetBlockBypassMode(const juce::var& json)
+void ParamHandler::handleSetBlockBypassMode(const juce::var& json)
 {
     handleSetBlockParam(json, "bypassMode",
         [](stellarr::Block* b, const juce::var& v) {
@@ -69,15 +74,13 @@ void StellarrBridge::handleSetBlockBypassMode(const juce::var& json)
 
 // -- Block state handlers (save/add/recall/delete) ----------------------------
 
-void StellarrBridge::handleBlockStateEvent(const juce::var& json, const juce::String& action)
+void ParamHandler::handleBlockStateEvent(const juce::var& json, const juce::String& action)
 {
-    if (processor == nullptr) return;
-
     auto* obj = json.getDynamicObject();
     if (obj == nullptr) return;
 
     auto blockId = obj->getProperty("blockId").toString();
-    auto* pluginBlock = findPluginBlock(blockId);
+    auto* pluginBlock = findPluginBlock(ctx.blockNodeMap, ctx.processor, blockId);
     if (pluginBlock == nullptr) return;
 
     bool activeIndexChanged = false;
@@ -111,26 +114,11 @@ void StellarrBridge::handleBlockStateEvent(const juce::var& json, const juce::St
             // Deleting state at `index` shifts all higher indices down by one.
             // PluginBlock::deleteState() shifts its own activeStateIndex; mirror
             // the same on every scene's stored map so inactive scenes do not
-            // keep stale references to removed/shifted state slots. Without
-            // this, the rewire predictor sees raw mismatches that resolve to
-            // the same effective state after clamping.
-            const int newCount = pluginBlock->getNumStates();
-            for (auto& s : scenes)
-            {
-                auto sIt = s.blockStateMap.find(blockId);
-                if (sIt == s.blockStateMap.end()) continue;
-
-                if (sIt->second == index)
-                    sIt->second = std::min(sIt->second, newCount - 1);
-                else if (sIt->second > index)
-                    --sIt->second;
-            }
-
-            // Mirror the index shift on MIDI mappings: drop any blockState mapping
-            // for this (blockId, deleted index) and decrement targetIndex on
-            // blockState mappings whose targetIndex was greater.
-            processor->getMidiMapper().removeMappingsForBlockState(blockId, index);
-            emitMidiMappings();
+            // keep stale references to removed/shifted state slots, and on any
+            // MIDI blockState mappings. Both kinds of bookkeeping live on
+            // StellarrBridge, so route via the context callback.
+            if (ctx.onBlockStateDeleted)
+                ctx.onBlockStateDeleted(blockId, index);
         }
     }
 
@@ -140,19 +128,13 @@ void StellarrBridge::handleBlockStateEvent(const juce::var& json, const juce::St
     // UI. When a manual block state change shifts the active State index, sync
     // it into the active scene and re-emit so the dropdown's dots reflect
     // current rewire behaviour.
-    if (activeIndexChanged
-        && activeSceneIndex >= 0
-        && activeSceneIndex < static_cast<int>(scenes.size()))
-    {
-        scenes[static_cast<size_t>(activeSceneIndex)].blockStateMap[blockId]
-            = pluginBlock->getActiveStateIndex();
-        emitScenes();
-    }
+    if (activeIndexChanged && ctx.onActiveStateChanged)
+        ctx.onActiveStateChanged(blockId, pluginBlock->getActiveStateIndex());
 }
 
 // -- Emit helpers -------------------------------------------------------------
 
-void StellarrBridge::emitBlockStates(const juce::String& blockId, stellarr::PluginBlock* pluginBlock)
+void ParamHandler::emitBlockStates(const juce::String& blockId, stellarr::PluginBlock* pluginBlock)
 {
     auto* detail = new juce::DynamicObject();
     detail->setProperty("blockId", blockId);
@@ -164,42 +146,42 @@ void StellarrBridge::emitBlockStates(const juce::String& blockId, stellarr::Plug
         dirtyArr.add(d);
     detail->setProperty("dirtyStates", dirtyArr);
 
-    emitToJs("blockStatesChanged", detail);
+    ctx.emit.emit("blockStatesChanged", detail);
 }
 
-void StellarrBridge::emitBlockParams(const juce::String& blockId, stellarr::Block* block)
+void ParamHandler::emitBlockParams(const juce::String& blockId, stellarr::Block* block)
 {
     auto* mixDetail = new juce::DynamicObject();
     mixDetail->setProperty("blockId", blockId);
     mixDetail->setProperty("mix", static_cast<double>(block->getMix()));
-    emitToJs("blockMixChanged", mixDetail);
+    ctx.emit.emit("blockMixChanged", mixDetail);
 
     auto* balDetail = new juce::DynamicObject();
     balDetail->setProperty("blockId", blockId);
     balDetail->setProperty("balance", static_cast<double>(block->getBalance()));
-    emitToJs("blockBalanceChanged", balDetail);
+    ctx.emit.emit("blockBalanceChanged", balDetail);
 
     auto* lvlDetail = new juce::DynamicObject();
     lvlDetail->setProperty("blockId", blockId);
     lvlDetail->setProperty("level", static_cast<double>(block->getLevelDb()));
-    emitToJs("blockLevelChanged", lvlDetail);
+    ctx.emit.emit("blockLevelChanged", lvlDetail);
 
     auto* bypDetail = new juce::DynamicObject();
     bypDetail->setProperty("blockId", blockId);
     bypDetail->setProperty("bypassed", block->isBypassed());
-    emitToJs("blockBypassChanged", bypDetail);
+    ctx.emit.emit("blockBypassChanged", bypDetail);
 
     auto* modeDetail = new juce::DynamicObject();
     modeDetail->setProperty("blockId", blockId);
     modeDetail->setProperty("bypassMode", stellarr::bypassModeToString(block->getBypassMode()));
-    emitToJs("blockBypassModeChanged", modeDetail);
+    ctx.emit.emit("blockBypassModeChanged", modeDetail);
 }
 
-void StellarrBridge::clearAllDirtyStates()
+void ParamHandler::clearAllDirtyStates()
 {
-    for (auto& [blockId, nodeId] : blockNodeMap)
+    for (auto& [blockId, nodeId] : ctx.blockNodeMap)
     {
-        if (auto* node = processor->getGraph().getNodeForId(nodeId))
+        if (auto* node = ctx.processor.getGraph().getNodeForId(nodeId))
         {
             if (auto* pluginBlock = dynamic_cast<stellarr::PluginBlock*>(node->getProcessor()))
             {
@@ -209,3 +191,20 @@ void StellarrBridge::clearAllDirtyStates()
         }
     }
 }
+
+void ParamHandler::markDirtyAndEmit(const juce::String& blockId)
+{
+    auto nodeIt = ctx.blockNodeMap.find(blockId);
+    if (nodeIt == ctx.blockNodeMap.end()) return;
+
+    if (auto* node = ctx.processor.getGraph().getNodeForId(nodeIt->second))
+    {
+        if (auto* pb = dynamic_cast<stellarr::PluginBlock*>(node->getProcessor()))
+        {
+            pb->markDirty();
+            emitBlockStates(blockId, pb);
+        }
+    }
+}
+
+} // namespace stellarr::bridge

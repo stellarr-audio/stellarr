@@ -1,18 +1,29 @@
-#include "../StellarrBridge.h"
+#include "MidiHandler.h"
 #include "../StellarrProcessor.h"
 #include "../blocks/Block.h"
 #include "../blocks/PluginBlock.h"
-#include "../blocks/InputBlock.h"
-#include "../blocks/OutputBlock.h"
 #include "BridgeJson.h"
+#include "internal/BlockLookup.h"
 #include <cmath>
 #include <limits>
 
-void StellarrBridge::setupMidiMapper()
-{
-    if (processor == nullptr) return;
+namespace stellarr::bridge {
 
-    auto& mapper = processor->getMidiMapper();
+using namespace stellarr::bridge::internal;
+
+MidiHandler::MidiHandler(MidiHandlerContext c) : ctx(c)
+{
+    registerMapperCallbacks();
+}
+
+MidiHandler::~MidiHandler()
+{
+    clearMapperCallbacks();
+}
+
+void MidiHandler::registerMapperCallbacks()
+{
+    auto& mapper = ctx.processor.getMidiMapper();
 
     // All callbacks below run on the message thread (drained from
     // mapper.drainOutboundEvents() called by the editor's timer). The audio
@@ -26,94 +37,82 @@ void StellarrBridge::setupMidiMapper()
     // pendingRestore gate at the top of handleEvent for WebView events.
 
     mapper.onPresetChange = [this](int index) {
-        // handleLoadPresetByIndex is itself protected by restoreSession's
-        // try_lock — a competing call during an in-flight restore is dropped
-        // there. Still, dedupe and bookkeeping are skipped on rejection, so
-        // the call is harmless either way.
-        auto json = juce::JSON::parse("{\"index\":" + juce::String(index) + "}");
-        handleLoadPresetByIndex(json);
+        // loadPresetByIndex is itself protected by restoreSession's try_lock —
+        // a competing call during an in-flight restore is dropped there.
+        // Still, dedupe and bookkeeping are skipped on rejection, so the call
+        // is harmless either way.
+        ctx.loadPresetByIndex(index);
     };
 
     mapper.onSceneSwitch = [this](int index) {
-        if (pendingRestore.has_value()) return;
-        auto json = juce::JSON::parse("{\"index\":" + juce::String(index) + "}");
-        handleRecallScene(json);
+        if (ctx.isRestoring()) return;
+        ctx.recallSceneByIndex(index);
     };
 
     mapper.onBlockBypass = [this](const juce::String& blockId, bool state) {
-        if (pendingRestore.has_value()) return;
-        auto* block = findBlock(blockId);
+        if (ctx.isRestoring()) return;
+        auto* block = findBlock(ctx.blockNodeMap, ctx.processor, blockId);
         if (block == nullptr) return;
 
         block->setBypassed(state);
-        markDirtyAndEmit(blockId, block);
+        ctx.markBlockDirty(blockId);
 
         auto* detail = new juce::DynamicObject();
         detail->setProperty("blockId", blockId);
         detail->setProperty("bypassed", state);
-        emitToJs("blockBypassChanged", detail);
+        ctx.emit.emit("blockBypassChanged", detail);
     };
 
     mapper.onBlockMix = [this](const juce::String& blockId, float value) {
-        if (pendingRestore.has_value()) return;
-        auto* block = findBlock(blockId);
+        if (ctx.isRestoring()) return;
+        auto* block = findBlock(ctx.blockNodeMap, ctx.processor, blockId);
         if (block == nullptr) return;
 
         block->setMix(value);
-        markDirtyAndEmit(blockId, block);
+        ctx.markBlockDirty(blockId);
 
         auto* detail = new juce::DynamicObject();
         detail->setProperty("blockId", blockId);
         detail->setProperty("mix", static_cast<double>(value));
-        emitToJs("blockMixChanged", detail);
+        ctx.emit.emit("blockMixChanged", detail);
     };
 
     mapper.onBlockBalance = [this](const juce::String& blockId, float value) {
-        if (pendingRestore.has_value()) return;
-        auto* block = findBlock(blockId);
+        if (ctx.isRestoring()) return;
+        auto* block = findBlock(ctx.blockNodeMap, ctx.processor, blockId);
         if (block == nullptr) return;
 
         block->setBalance(value);
-        markDirtyAndEmit(blockId, block);
+        ctx.markBlockDirty(blockId);
 
         auto* detail = new juce::DynamicObject();
         detail->setProperty("blockId", blockId);
         detail->setProperty("balance", static_cast<double>(value));
-        emitToJs("blockBalanceChanged", detail);
+        ctx.emit.emit("blockBalanceChanged", detail);
     };
 
     mapper.onBlockLevel = [this](const juce::String& blockId, float levelDb) {
-        if (pendingRestore.has_value()) return;
-        auto* block = findBlock(blockId);
+        if (ctx.isRestoring()) return;
+        auto* block = findBlock(ctx.blockNodeMap, ctx.processor, blockId);
         if (block == nullptr) return;
 
         block->setLevelDb(levelDb);
-        markDirtyAndEmit(blockId, block);
+        ctx.markBlockDirty(blockId);
 
         auto* detail = new juce::DynamicObject();
         detail->setProperty("blockId", blockId);
         detail->setProperty("level", static_cast<double>(levelDb));
-        emitToJs("blockLevelChanged", detail);
+        ctx.emit.emit("blockLevelChanged", detail);
     };
 
     mapper.onTunerToggle = [this](bool enabled) {
-        if (pendingRestore.has_value()) return;
-        tunerActive = enabled;
-        for (auto& [blockId, nodeId] : blockNodeMap)
-        {
-            if (auto* node = processor->getGraph().getNodeForId(nodeId))
-            {
-                if (auto* inputBlock = dynamic_cast<stellarr::InputBlock*>(node->getProcessor()))
-                    inputBlock->setTunerEnabled(enabled);
-                if (auto* outputBlock = dynamic_cast<stellarr::OutputBlock*>(node->getProcessor()))
-                    outputBlock->setTunerMute(enabled);
-            }
-        }
+        if (ctx.isRestoring()) return;
+        ctx.setTunerActiveOnAllBlocks(enabled);
     };
 
     mapper.onBlockState = [this](const juce::String& blockId, int stateIndex) {
-        if (pendingRestore.has_value()) return;
-        auto* pluginBlock = findPluginBlock(blockId);
+        if (ctx.isRestoring()) return;
+        auto* pluginBlock = findPluginBlock(ctx.blockNodeMap, ctx.processor, blockId);
         if (pluginBlock == nullptr) return;
 
         // Skip when the requested state is already active. Controllers that
@@ -124,20 +123,14 @@ void StellarrBridge::setupMidiMapper()
 
         if (pluginBlock->recallState(stateIndex))
         {
-            emitBlockParams(blockId, pluginBlock);
-            emitBlockStates(blockId, pluginBlock);
+            ctx.emitBlockParams(blockId, pluginBlock);
+            ctx.emitBlockStates(blockId, pluginBlock);
 
             // Mirror handleBlockStateEvent("recall"): sync the active scene's
             // blockStateMap so the rewire-dot prediction in the scene dropdown
             // reflects the new state. Without this, MIDI-driven state changes
             // diverge silently from the visible scene indicator.
-            if (activeSceneIndex >= 0
-                && activeSceneIndex < static_cast<int>(scenes.size()))
-            {
-                scenes[static_cast<size_t>(activeSceneIndex)].blockStateMap[blockId]
-                    = pluginBlock->getActiveStateIndex();
-                emitScenes();
-            }
+            ctx.mirrorActiveStateInScene(blockId, pluginBlock->getActiveStateIndex());
         }
     };
 
@@ -145,16 +138,34 @@ void StellarrBridge::setupMidiMapper()
         auto* detail = new juce::DynamicObject();
         detail->setProperty("channel", channel);
         detail->setProperty("cc", cc);
-        emitToJs("midiLearnComplete", detail);
+        ctx.emit.emit("midiLearnComplete", detail);
         emitMidiMappings();
     };
 }
 
-void StellarrBridge::emitMidiMappings()
+void MidiHandler::clearMapperCallbacks()
 {
-    if (processor == nullptr) return;
+    // Sever the std::function captures before this handler dies. MidiMapper
+    // holds copies of these lambdas (which capture `this` of MidiHandler);
+    // if a queued outbound event drained after destruction, calling the stale
+    // copy would dereference a dangling MidiHandler. Resetting the mapper's
+    // callback slots back to default-constructed std::function makes the
+    // post-destruction drain a no-op.
+    auto& mapper = ctx.processor.getMidiMapper();
+    mapper.onPresetChange   = {};
+    mapper.onSceneSwitch    = {};
+    mapper.onBlockBypass    = {};
+    mapper.onBlockMix       = {};
+    mapper.onBlockBalance   = {};
+    mapper.onBlockLevel     = {};
+    mapper.onTunerToggle    = {};
+    mapper.onBlockState     = {};
+    mapper.onLearnComplete  = {};
+}
 
-    auto& mapper = processor->getMidiMapper();
+void MidiHandler::emitMidiMappings()
+{
+    auto& mapper = ctx.processor.getMidiMapper();
     auto* detail = new juce::DynamicObject();
 
     juce::Array<juce::var> arr;
@@ -186,14 +197,13 @@ void StellarrBridge::emitMidiMappings()
 
     detail->setProperty("mappings", arr);
     detail->setProperty("learning", mapper.isLearning());
-    emitToJs("midiMappingsChanged", detail);
+    ctx.emit.emit("midiMappingsChanged", detail);
 }
 
 // -- MIDI mapping handlers ----------------------------------------------------
 
-void StellarrBridge::handleAddMidiMapping(const juce::var& json)
+void MidiHandler::handleAddMidiMapping(const juce::var& json)
 {
-    if (processor == nullptr) return;
     auto* obj = json.getDynamicObject();
     if (obj == nullptr) return;
 
@@ -211,30 +221,27 @@ void StellarrBridge::handleAddMidiMapping(const juce::var& json)
     m.curve       = MidiMapper::curveFromString(getOptString(*obj, "curve", "linear"));
     m.threshold   = getOptIntClamped (*obj, "threshold", 1, 127, 64);
 
-    processor->getMidiMapper().addMapping(m);
+    ctx.processor.getMidiMapper().addMapping(m);
     emitMidiMappings();
 }
 
-void StellarrBridge::handleRemoveMidiMapping(const juce::var& json)
+void MidiHandler::handleRemoveMidiMapping(const juce::var& json)
 {
-    if (processor == nullptr) return;
     auto* obj = json.getDynamicObject();
     if (obj == nullptr) return;
 
-    processor->getMidiMapper().removeMapping(static_cast<int>(obj->getProperty("index")));
+    ctx.processor.getMidiMapper().removeMapping(static_cast<int>(obj->getProperty("index")));
     emitMidiMappings();
 }
 
-void StellarrBridge::handleClearMidiMappings()
+void MidiHandler::handleClearMidiMappings()
 {
-    if (processor == nullptr) return;
-    processor->getMidiMapper().clearAll();
+    ctx.processor.getMidiMapper().clearAll();
     emitMidiMappings();
 }
 
-void StellarrBridge::handleStartMidiLearn(const juce::var& json)
+void MidiHandler::handleStartMidiLearn(const juce::var& json)
 {
-    if (processor == nullptr) return;
     auto* obj = json.getDynamicObject();
     if (obj == nullptr) return;
 
@@ -250,32 +257,31 @@ void StellarrBridge::handleStartMidiLearn(const juce::var& json)
     args.curve       = MidiMapper::curveFromString(getOptString(*obj, "curve", "linear"));
     args.threshold   = getOptIntClamped (*obj, "threshold", 1, 127, 64);
 
-    processor->getMidiMapper().startLearn(args);
+    ctx.processor.getMidiMapper().startLearn(args);
     emitMidiMappings();
 }
 
-void StellarrBridge::handleCancelMidiLearn()
+void MidiHandler::handleCancelMidiLearn()
 {
-    if (processor == nullptr) return;
-    processor->getMidiMapper().cancelLearn();
+    ctx.processor.getMidiMapper().cancelLearn();
     emitMidiMappings();
 }
 
-void StellarrBridge::handleSetMidiMonitorEnabled(const juce::var& json)
+void MidiHandler::handleSetMidiMonitorEnabled(const juce::var& json)
 {
-    if (processor == nullptr) return;
     auto* obj = json.getDynamicObject();
     if (obj == nullptr) return;
-    processor->getMidiMapper().setMonitorEnabled(static_cast<bool>(obj->getProperty("enabled")));
+    ctx.processor.getMidiMapper().setMonitorEnabled(static_cast<bool>(obj->getProperty("enabled")));
 }
 
-void StellarrBridge::handleInjectMidiCC(const juce::var& json)
+void MidiHandler::handleInjectMidiCC(const juce::var& json)
 {
-    if (processor == nullptr) return;
     auto* obj = json.getDynamicObject();
     if (obj == nullptr) return;
-    int ch = static_cast<int>(obj->getProperty("channel")) + 1; // 0-indexed → 1-indexed
-    int cc = static_cast<int>(obj->getProperty("cc"));
+    int ch  = static_cast<int>(obj->getProperty("channel")) + 1; // 0-indexed -> 1-indexed
+    int cc  = static_cast<int>(obj->getProperty("cc"));
     int val = static_cast<int>(obj->getProperty("value"));
-    processor->getMidiMapper().injectMidi(juce::MidiMessage::controllerEvent(ch, cc, val));
+    ctx.processor.getMidiMapper().injectMidi(juce::MidiMessage::controllerEvent(ch, cc, val));
 }
+
+} // namespace stellarr::bridge

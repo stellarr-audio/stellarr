@@ -6,14 +6,19 @@ Open-source guitar signal processing standalone app. JUCE (C++) audio engine wit
 
 ## Development Approach
 
-- Follow existing code patterns, naming conventions, and project structure
-- Ask for clarification when requirements are ambiguous rather than making assumptions
-- Plan before implementing significant changes — explain approach and wait for approval
-- Prioritise simple, maintainable solutions over complex ones
-- Respect existing testing patterns and coverage levels
-- Highlight any potential breaking changes or dependencies
-- Focus on the immediate task rather than broad refactoring
-- **Default execution mode for plans is subagent-driven** (`superpowers:subagent-driven-development`): once a spec + plan are approved, dispatch a fresh subagent per task with review between tasks. Don't ask which mode to use unless the user opts out for a specific task
+## Architecture philosophy
+
+Default to the long-term, architecturally correct approach. Do not offer "quick fix vs proper fix" tradeoffs unless explicitly asked. Assume full scope of change is acceptable. Correctness, maintainability, and performance take priority over minimal diff size.
+
+- Follow existing code patterns, naming conventions, and project structure unless the task
+  involves improving them
+- Ask for clarification when requirements are ambiguous rather than assuming
+- For significant changes: explain the approach and wait for approval before implementing
+- Highlight breaking changes and cross-cutting dependencies before starting
+- Respect existing test coverage; extend it where changes warrant
+- **Default execution mode is subagent-driven** (`superpowers:subagent-driven-development`):
+  once a spec and plan are approved, dispatch a fresh subagent per task with review between
+  tasks. Don't ask which mode to use unless opted out for a specific task
 
 ## Communication Standards
 

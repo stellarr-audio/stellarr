@@ -12,9 +12,14 @@ class PresetSwitchTestAccess
 {
 public:
     static const auto& getBlockNodeMap(StellarrBridge& b) { return b.blockNodeMap; }
-    static std::mutex& getRestoreMutex(StellarrBridge& b) { return b.restoreMutex; }
-    static void loadPresetByIndex(StellarrBridge& b, const juce::var& j) { b.handleLoadPresetByIndex(j); }
-    static juce::StringArray& getPresetFiles(StellarrBridge& b) { return b.presetFiles; }
+    // Reaches the restoreMutex via SessionSerializer (Phase 7 / Commit 9).
+    // This class is friended on stellarr::bridge::SessionSerializer so the
+    // test thread can hold the mutex from the outside to assert competing
+    // restoreSession calls drop on try_lock.
+    static std::mutex& getRestoreMutex(StellarrBridge& b) { return b.sessionSerializer->restoreMutex; }
+    static void loadPresetByIndex(StellarrBridge& b, const juce::var& j) { b.preset->handleLoadPresetByIndex(j); }
+    static const juce::StringArray& getPresetFiles(StellarrBridge& b) { return b.preset->getPresetFiles(); }
+    static void refreshPresetList(StellarrBridge& b) { b.preset->handleGetPresetList(); }
 };
 
 // Pump the JUCE message loop until `done` returns true or the timeout fires.
@@ -533,10 +538,10 @@ static bool testRestoreSessionRejectionPreservesCallerBookkeeping()
     fileB.replaceWithText(kSessionWithPluginBlock);
 
     bridge.setPresetDirectory(dir);
-    auto& files = PresetSwitchTestAccess::getPresetFiles(bridge);
-    files.clear();
-    files.add("Preset_A.stellarr");
-    files.add("Preset_B.stellarr");
+    // Populate the in-memory file list from the directory we just staged so
+    // handleLoadPresetByIndex sees both presets.
+    PresetSwitchTestAccess::refreshPresetList(bridge);
+    [[maybe_unused]] const auto& files = PresetSwitchTestAccess::getPresetFiles(bridge);
 
     // Load preset A so currentPresetIndex is established. handleLoadPresetByIndex
     // schedules the restore via AsyncUpdater — pump the loop until the

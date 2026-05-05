@@ -1,9 +1,14 @@
+#include "PresetHandler.h"
 #include "../StellarrProcessor.h"
 #include "SceneCapture.h"
 
+namespace stellarr::bridge {
+
+PresetHandler::PresetHandler(PresetHandlerContext c) : ctx(c) {}
+
 // -- Preset management --------------------------------------------------------
 
-void StellarrBridge::setPresetFromFile(const juce::File& file)
+void PresetHandler::setPresetFromFile(const juce::File& file)
 {
     lastPresetFile = file;
     presetDirectory = file.getParentDirectory();
@@ -23,49 +28,43 @@ void StellarrBridge::setPresetFromFile(const juce::File& file)
     persistPresetInfo();
 }
 
-void StellarrBridge::persistPresetInfo()
+void PresetHandler::persistPresetInfo()
 {
-    if (appProperties == nullptr) return;
+    if (ctx.appProperties == nullptr) return;
 
-    auto* settings = appProperties->getUserSettings();
+    auto* settings = ctx.appProperties->getUserSettings();
     settings->setValue("lastPresetDirectory", presetDirectory.getFullPathName());
     settings->setValue("lastPresetIndex", currentPresetIndex);
     settings->setValue("lastPresetFile", lastPresetFile.getFullPathName());
 
     // Persist global MIDI mappings (preset change, tuner toggle)
-    if (processor != nullptr)
-    {
-        auto globalJson = juce::JSON::toString(processor->getMidiMapper().globalMappingsToJson());
-        settings->setValue("globalMidiMappings", globalJson);
-    }
+    auto globalJson = juce::JSON::toString(ctx.processor.getMidiMapper().globalMappingsToJson());
+    settings->setValue("globalMidiMappings", globalJson);
 
-    appProperties->saveIfNeeded();
+    ctx.appProperties->saveIfNeeded();
 }
 
-void StellarrBridge::handleNewSession()
+void PresetHandler::handleNewSession()
 {
-    clearGraph();
+    ctx.clearGraph();
 
     auto inputJson = juce::JSON::parse(R"({"type":"input","col":0,"row":2})");
     auto outputJson = juce::JSON::parse(R"({"type":"output","col":11,"row":2})");
-    handleAddBlock(inputJson);
-    handleAddBlock(outputJson);
+    ctx.graphAddBlock(inputJson);
+    ctx.graphAddBlock(outputJson);
 
     lastPresetFile = juce::File{};
     currentPresetIndex = -1;
-    scenes.clear();
+
     Scene defaultScene;
     defaultScene.name = "Scene 1";
-    captureIntoScene(defaultScene, blockNodeMap, processor->getGraph());
-    scenes.push_back(defaultScene);
-    activeSceneIndex = 0;
+    captureIntoScene(defaultScene, ctx.blockNodeMap, ctx.processor.getGraph());
+    ctx.setScenes({ defaultScene });
+    ctx.setActiveSceneIndex(0);
 
     // Clear preset-level MIDI mappings
-    if (processor != nullptr)
-    {
-        processor->getMidiMapper().loadPresetMappings(juce::var());
-        emitMidiMappings();
-    }
+    ctx.processor.getMidiMapper().loadPresetMappings(juce::var());
+    ctx.emitMidiMappings();
 
     persistPresetInfo();
 
@@ -74,15 +73,13 @@ void StellarrBridge::handleNewSession()
     gridCols = 12;
     gridRows = 5;
 
-    sendGraphState();
+    ctx.sendGraphState();
     emitGridState();
     sendPresetList();
 }
 
-void StellarrBridge::handleSaveSession()
+void PresetHandler::handleSaveSession()
 {
-    if (processor == nullptr) return;
-
     juce::MessageManager::callAsync([this]()
     {
         juce::FileChooser chooser("Save Preset", presetDirectory, "*.stellarr");
@@ -90,28 +87,26 @@ void StellarrBridge::handleSaveSession()
         if (!chooser.browseForFileToSave(true)) return;
 
         auto file = chooser.getResult().withFileExtension("stellarr");
-        auto session = serialiseSession();
+        auto session = ctx.serialiseSession();
         auto jsonStr = juce::JSON::toString(session);
         file.replaceWithText(jsonStr);
 
         setPresetFromFile(file);
-        clearAllDirtyStates();
-        emitToJs("sessionSaved", new juce::DynamicObject());
+        ctx.clearAllDirtyStates();
+        ctx.emit.emit("sessionSaved", new juce::DynamicObject());
     });
 }
 
-void StellarrBridge::handleSaveSessionQuiet()
+void PresetHandler::handleSaveSessionQuiet()
 {
-    if (processor == nullptr) return;
-
     if (lastPresetFile.existsAsFile())
     {
-        auto session = serialiseSession();
+        auto session = ctx.serialiseSession();
         auto jsonStr = juce::JSON::toString(session);
         lastPresetFile.replaceWithText(jsonStr);
 
-        clearAllDirtyStates();
-        emitToJs("sessionSaved", new juce::DynamicObject());
+        ctx.clearAllDirtyStates();
+        ctx.emit.emit("sessionSaved", new juce::DynamicObject());
     }
     else
     {
@@ -119,10 +114,8 @@ void StellarrBridge::handleSaveSessionQuiet()
     }
 }
 
-void StellarrBridge::handleLoadSession()
+void PresetHandler::handleLoadSession()
 {
-    if (processor == nullptr) return;
-
     juce::MessageManager::callAsync([this]()
     {
         juce::FileChooser chooser("Load Preset", presetDirectory, "*.stellarr");
@@ -132,7 +125,7 @@ void StellarrBridge::handleLoadSession()
         auto file = chooser.getResult();
         auto jsonStr = file.loadFileAsString();
         auto session = juce::JSON::parse(jsonStr);
-        restoreSession(session, [this, file](bool ok)
+        ctx.restoreSession(session, [this, file](bool ok)
         {
             if (!ok) return;
             setPresetFromFile(file);
@@ -140,7 +133,7 @@ void StellarrBridge::handleLoadSession()
     });
 }
 
-void StellarrBridge::handlePickPresetDirectory()
+void PresetHandler::handlePickPresetDirectory()
 {
     juce::MessageManager::callAsync([this]()
     {
@@ -156,7 +149,7 @@ void StellarrBridge::handlePickPresetDirectory()
     });
 }
 
-void StellarrBridge::handleRenamePreset(const juce::var& json)
+void PresetHandler::handleRenamePreset(const juce::var& json)
 {
     auto* obj = json.getDynamicObject();
     if (obj == nullptr) return;
@@ -194,7 +187,7 @@ void StellarrBridge::handleRenamePreset(const juce::var& json)
     }
 }
 
-void StellarrBridge::handleDeletePreset(const juce::var& json)
+void PresetHandler::handleDeletePreset(const juce::var& json)
 {
     auto* obj = json.getDynamicObject();
     if (obj == nullptr) return;
@@ -229,7 +222,7 @@ void StellarrBridge::handleDeletePreset(const juce::var& json)
     }
 }
 
-void StellarrBridge::handleGetPresetList()
+void PresetHandler::handleGetPresetList()
 {
     presetFiles.clear();
 
@@ -245,7 +238,7 @@ void StellarrBridge::handleGetPresetList()
     }
 }
 
-void StellarrBridge::handleLoadPresetByIndex(const juce::var& json)
+void PresetHandler::handleLoadPresetByIndex(const juce::var& json)
 {
     auto* obj = json.getDynamicObject();
     if (obj == nullptr) return;
@@ -266,7 +259,7 @@ void StellarrBridge::handleLoadPresetByIndex(const juce::var& json)
     // restoreSession is rejected (lock held by a concurrent request, or
     // malformed session) or fails inside Phase 1/2, keep the previous active
     // preset so a subsequent quiet save persists the right file.
-    restoreSession(session, [this, index, file](bool ok)
+    ctx.restoreSession(session, [this, index, file](bool ok)
     {
         if (!ok) return;
         currentPresetIndex = index;
@@ -274,7 +267,7 @@ void StellarrBridge::handleLoadPresetByIndex(const juce::var& json)
     });
 }
 
-void StellarrBridge::sendPresetList()
+void PresetHandler::sendPresetList()
 {
     juce::Array<juce::var> files;
     for (auto& f : presetFiles)
@@ -284,20 +277,20 @@ void StellarrBridge::sendPresetList()
     detail->setProperty("directory", presetDirectory.getFullPathName());
     detail->setProperty("files", files);
     detail->setProperty("currentIndex", currentPresetIndex);
-    emitToJs("presetListUpdated", detail);
+    ctx.emit.emit("presetListUpdated", detail);
 }
 
 // -- Grid dimensions ----------------------------------------------------------
 
-void StellarrBridge::emitGridState()
+void PresetHandler::emitGridState()
 {
     auto* detail = new juce::DynamicObject();
     detail->setProperty("columns", gridCols);
     detail->setProperty("rows", gridRows);
-    emitToJs("gridState", detail);
+    ctx.emit.emit("gridState", detail);
 }
 
-void StellarrBridge::handleSetGridSize(const juce::var& json)
+void PresetHandler::handleSetGridSize(const juce::var& json)
 {
     auto* obj = json.getDynamicObject();
     if (obj == nullptr) return;
@@ -314,3 +307,5 @@ void StellarrBridge::handleSetGridSize(const juce::var& json)
     // edits persist.
     handleSaveSessionQuiet();
 }
+
+} // namespace stellarr::bridge

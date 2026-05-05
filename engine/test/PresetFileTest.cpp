@@ -5,10 +5,10 @@
 class PresetFileTestAccess
 {
 public:
-    static void getPresetList(StellarrBridge& b) { b.handleGetPresetList(); }
-    static void renamePreset(StellarrBridge& b, const juce::var& j) { b.handleRenamePreset(j); }
-    static void deletePreset(StellarrBridge& b, const juce::var& j) { b.handleDeletePreset(j); }
-    static void loadPresetByIndex(StellarrBridge& b, const juce::var& j) { b.handleLoadPresetByIndex(j); }
+    static void getPresetList(StellarrBridge& b) { b.preset->handleGetPresetList(); }
+    static void renamePreset(StellarrBridge& b, const juce::var& j) { b.preset->handleRenamePreset(j); }
+    static void deletePreset(StellarrBridge& b, const juce::var& j) { b.preset->handleDeletePreset(j); }
+    static void loadPresetByIndex(StellarrBridge& b, const juce::var& j) { b.preset->handleLoadPresetByIndex(j); }
 };
 
 // handleLoadPresetByIndex now schedules its restore via juce::AsyncUpdater.
@@ -69,7 +69,10 @@ static bool testRenamePreset()
     printf("Test: rename preset renames file on disk... ");
 
     auto dir = createTempPresetDir(3); // A, B, C
+    StellarrProcessor proc;
+    proc.prepareToPlay(kSampleRate, kBlockSize);
     StellarrBridge bridge;
+    bridge.setProcessor(&proc);
     bridge.setPresetDirectory(dir);
     PresetFileTestAccess::getPresetList(bridge);
 
@@ -166,7 +169,10 @@ static bool testRenameToExistingName()
     printf("Test: rename to existing name is rejected... ");
 
     auto dir = createTempPresetDir(2); // A, B
+    StellarrProcessor proc;
+    proc.prepareToPlay(kSampleRate, kBlockSize);
     StellarrBridge bridge;
+    bridge.setProcessor(&proc);
     bridge.setPresetDirectory(dir);
     PresetFileTestAccess::getPresetList(bridge);
 
@@ -193,7 +199,10 @@ static bool testRenameEmptyName()
     printf("Test: rename with empty name is rejected... ");
 
     auto dir = createTempPresetDir(1);
+    StellarrProcessor proc;
+    proc.prepareToPlay(kSampleRate, kBlockSize);
     StellarrBridge bridge;
+    bridge.setProcessor(&proc);
     bridge.setPresetDirectory(dir);
     PresetFileTestAccess::getPresetList(bridge);
 
@@ -220,7 +229,10 @@ static bool testDeletePreset()
     printf("Test: delete preset removes file from disk... ");
 
     auto dir = createTempPresetDir(3); // A, B, C
+    StellarrProcessor proc;
+    proc.prepareToPlay(kSampleRate, kBlockSize);
     StellarrBridge bridge;
+    bridge.setProcessor(&proc);
     bridge.setPresetDirectory(dir);
     PresetFileTestAccess::getPresetList(bridge);
 
@@ -350,7 +362,10 @@ static bool testDeleteInvalidIndex()
     printf("Test: delete with invalid index is a no-op... ");
 
     auto dir = createTempPresetDir(2);
+    StellarrProcessor proc;
+    proc.prepareToPlay(kSampleRate, kBlockSize);
     StellarrBridge bridge;
+    bridge.setProcessor(&proc);
     bridge.setPresetDirectory(dir);
     PresetFileTestAccess::getPresetList(bridge);
 

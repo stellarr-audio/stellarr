@@ -128,11 +128,13 @@ target_sources(Stellarr
         engine/StellarrBridge.cpp
         engine/bridge/GraphHandler.cpp
         engine/bridge/InputBlockHandler.cpp
+        engine/bridge/internal/BlockLifecycle.cpp
+        engine/bridge/internal/BlockLookup.cpp
+        engine/bridge/MidiHandler.cpp
         engine/bridge/ParamHandler.cpp
+        engine/bridge/PresetHandler.cpp
         engine/bridge/SceneHandler.cpp
         engine/bridge/SessionSerializer.cpp
-        engine/bridge/PresetHandler.cpp
-        engine/bridge/MidiHandler.cpp
         engine/bridge/UpdateHandler.cpp
         engine/blocks/Block.cpp
         engine/blocks/PluginBlock.cpp
@@ -264,4 +266,7 @@ if(BUILD_TESTING)
     add_stellarr_test(PresetSwitchTest   engine/test/PresetSwitchTest.cpp)
     add_stellarr_test(TelemetryTest      engine/test/TelemetryTest.cpp)
     add_stellarr_test(LoudnessMeterTest  engine/test/LoudnessMeterTest.cpp)
+    add_stellarr_test(InputBlockHandlerTest  engine/test/InputBlockHandlerTest.cpp)
+    add_stellarr_test(ParamHandlerTest   engine/test/ParamHandlerTest.cpp)
+    add_stellarr_test(GraphHandlerTest   engine/test/GraphHandlerTest.cpp)
 endif()

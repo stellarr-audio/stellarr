@@ -4,12 +4,14 @@
 #include "blocks/InputBlock.h"
 #include "blocks/OutputBlock.h"
 #include "blocks/PluginBlock.h"
+#include "bridge/EventNames.h"
 #include "bridge/internal/BlockLookup.h"
 #include <cmath>
 #include <limits>
 #include <optional>
 
 using namespace stellarr::bridge::internal;
+namespace events = stellarr::bridge::events;
 
 StellarrBridge::StellarrBridge() = default;
 StellarrBridge::~StellarrBridge() = default;
@@ -283,82 +285,82 @@ const StellarrBridge::EventTable& StellarrBridge::eventTable()
     {
         EventTable m;
         // Lifecycle ----------------------------------------------------
-        m["bridgeReady"]              = { [](StellarrBridge& b, const juce::var&)   { b.handleBridgeReady(); }, false };
-        m["uiReady"]                  = { [](StellarrBridge& b, const juce::var&)   { if (b.onUiReady) b.onUiReady(); b.handleScreenshotSetup(); }, false };
-        m["screenshotReady"]          = { [](StellarrBridge& b, const juce::var&)   { b.handleScreenshotReady(); }, false };
+        m[events::LifecycleBridgeReady]      = { [](StellarrBridge& b, const juce::var&)   { b.handleBridgeReady(); }, false };
+        m[events::LifecycleUiReady]          = { [](StellarrBridge& b, const juce::var&)   { if (b.onUiReady) b.onUiReady(); b.handleScreenshotSetup(); }, false };
+        m[events::LifecycleScreenshotReady]  = { [](StellarrBridge& b, const juce::var&)   { b.handleScreenshotReady(); }, false };
         // Software updates (Sparkle) ----------------------------------
-        m["update/check"]             = { [](StellarrBridge& b, const juce::var&)   { b.update.handleCheck(); }, false };
-        m["update/install"]           = { [](StellarrBridge& b, const juce::var&)   { b.update.handleInstall(); }, false };
-        m["update/open-release-notes"]= { [](StellarrBridge& b, const juce::var& j) { b.update.handleOpenReleaseNotes(j); }, false };
+        m[events::UpdateCheck]               = { [](StellarrBridge& b, const juce::var&)   { b.update.handleCheck(); }, false };
+        m[events::UpdateInstall]             = { [](StellarrBridge& b, const juce::var&)   { b.update.handleInstall(); }, false };
+        m[events::UpdateOpenReleaseNotes]    = { [](StellarrBridge& b, const juce::var& j) { b.update.handleOpenReleaseNotes(j); }, false };
         // Graph --------------------------------------------------------
-        m["addBlock"]                 = { [](StellarrBridge& b, const juce::var& j) { b.graph->handleAddBlock(j); }, true };
-        m["removeBlock"]              = { [](StellarrBridge& b, const juce::var& j) { b.graph->handleRemoveBlock(j); }, true };
-        m["moveBlock"]                = { [](StellarrBridge& b, const juce::var& j) { b.graph->handleMoveBlock(j); }, true };
-        m["addConnection"]            = { [](StellarrBridge& b, const juce::var& j) { b.graph->handleAddConnection(j); }, true };
-        m["removeConnection"]         = { [](StellarrBridge& b, const juce::var& j) { b.graph->handleRemoveConnection(j); }, true };
-        m["setBlockPlugin"]           = { [](StellarrBridge& b, const juce::var& j) { b.graph->handleSetBlockPlugin(j); }, true };
-        m["openPluginEditor"]         = { [](StellarrBridge& b, const juce::var& j) { b.graph->handleOpenPluginEditor(j); }, false };
-        m["copyBlock"]                = { [](StellarrBridge& b, const juce::var& j) { b.graph->handleCopyBlock(j); }, true };
-        m["pasteBlock"]               = { [](StellarrBridge& b, const juce::var& j) { b.graph->handlePasteBlock(j); }, true };
-        m["renameBlock"]              = { [](StellarrBridge& b, const juce::var& j) { b.graph->handleRenameBlock(j); }, true };
-        m["setBlockColor"]            = { [](StellarrBridge& b, const juce::var& j) { b.graph->handleSetBlockColor(j); }, true };
+        m[events::BlockAdd]                  = { [](StellarrBridge& b, const juce::var& j) { b.graph->handleAddBlock(j); }, true };
+        m[events::BlockRemove]               = { [](StellarrBridge& b, const juce::var& j) { b.graph->handleRemoveBlock(j); }, true };
+        m[events::BlockMove]                 = { [](StellarrBridge& b, const juce::var& j) { b.graph->handleMoveBlock(j); }, true };
+        m[events::ConnectionAdd]             = { [](StellarrBridge& b, const juce::var& j) { b.graph->handleAddConnection(j); }, true };
+        m[events::ConnectionRemove]          = { [](StellarrBridge& b, const juce::var& j) { b.graph->handleRemoveConnection(j); }, true };
+        m[events::BlockSetPlugin]            = { [](StellarrBridge& b, const juce::var& j) { b.graph->handleSetBlockPlugin(j); }, true };
+        m[events::BlockOpenEditor]           = { [](StellarrBridge& b, const juce::var& j) { b.graph->handleOpenPluginEditor(j); }, false };
+        m[events::BlockCopy]                 = { [](StellarrBridge& b, const juce::var& j) { b.graph->handleCopyBlock(j); }, true };
+        m[events::BlockPaste]                = { [](StellarrBridge& b, const juce::var& j) { b.graph->handlePasteBlock(j); }, true };
+        m[events::BlockRename]               = { [](StellarrBridge& b, const juce::var& j) { b.graph->handleRenameBlock(j); }, true };
+        m[events::BlockSetColor]             = { [](StellarrBridge& b, const juce::var& j) { b.graph->handleSetBlockColor(j); }, true };
         // MIDI mappings ------------------------------------------------
-        m["addMidiMapping"]           = { [](StellarrBridge& b, const juce::var& j) { b.midi->handleAddMidiMapping(j); }, true };
-        m["removeMidiMapping"]        = { [](StellarrBridge& b, const juce::var& j) { b.midi->handleRemoveMidiMapping(j); }, true };
-        m["clearMidiMappings"]        = { [](StellarrBridge& b, const juce::var&)   { b.midi->handleClearMidiMappings(); }, true };
-        m["getMidiMappings"]          = { [](StellarrBridge& b, const juce::var&)   { b.midi->emitMidiMappings(); }, false };
-        m["startMidiLearn"]           = { [](StellarrBridge& b, const juce::var& j) { b.midi->handleStartMidiLearn(j); }, true };
-        m["cancelMidiLearn"]          = { [](StellarrBridge& b, const juce::var&)   { b.midi->handleCancelMidiLearn(); }, true };
-        m["setMidiMonitorEnabled"]    = { [](StellarrBridge& b, const juce::var& j) { b.midi->handleSetMidiMonitorEnabled(j); }, false };
-        m["injectMidiCC"]             = { [](StellarrBridge& b, const juce::var& j) { b.midi->handleInjectMidiCC(j); }, false };
+        m[events::MidiAddMapping]            = { [](StellarrBridge& b, const juce::var& j) { b.midi->handleAddMidiMapping(j); }, true };
+        m[events::MidiRemoveMapping]         = { [](StellarrBridge& b, const juce::var& j) { b.midi->handleRemoveMidiMapping(j); }, true };
+        m[events::MidiClearMappings]         = { [](StellarrBridge& b, const juce::var&)   { b.midi->handleClearMidiMappings(); }, true };
+        m[events::MidiGetMappings]           = { [](StellarrBridge& b, const juce::var&)   { b.midi->emitMidiMappings(); }, false };
+        m[events::MidiStartLearn]            = { [](StellarrBridge& b, const juce::var& j) { b.midi->handleStartMidiLearn(j); }, true };
+        m[events::MidiCancelLearn]           = { [](StellarrBridge& b, const juce::var&)   { b.midi->handleCancelMidiLearn(); }, true };
+        m[events::MidiSetMonitorEnabled]     = { [](StellarrBridge& b, const juce::var& j) { b.midi->handleSetMidiMonitorEnabled(j); }, false };
+        m[events::MidiInjectCC]              = { [](StellarrBridge& b, const juce::var& j) { b.midi->handleInjectMidiCC(j); }, false };
         // Plugin management -------------------------------------------
-        m["scanPlugins"]              = { [](StellarrBridge& b, const juce::var&)   { b.handleScanPlugins(); }, true };
-        m["getScanDirectories"]       = { [](StellarrBridge& b, const juce::var&)   { b.handleGetScanDirectories(); }, false };
-        m["pickScanDirectory"]        = { [](StellarrBridge& b, const juce::var&)   { b.handlePickScanDirectory(); }, true };
-        m["removeScanDirectory"]      = { [](StellarrBridge& b, const juce::var& j) { b.handleRemoveScanDirectory(j); }, true };
+        m[events::PluginsScan]               = { [](StellarrBridge& b, const juce::var&)   { b.handleScanPlugins(); }, true };
+        m[events::PluginsGetScanDirs]        = { [](StellarrBridge& b, const juce::var&)   { b.handleGetScanDirectories(); }, false };
+        m[events::PluginsPickScanDir]        = { [](StellarrBridge& b, const juce::var&)   { b.handlePickScanDirectory(); }, true };
+        m[events::PluginsRemoveScanDir]      = { [](StellarrBridge& b, const juce::var& j) { b.handleRemoveScanDirectory(j); }, true };
         // Telemetry ----------------------------------------------------
-        m["getTelemetryEnabled"]      = { [](StellarrBridge& b, const juce::var&)   { b.handleGetTelemetryEnabled(); }, false };
-        m["setTelemetryEnabled"]      = { [](StellarrBridge& b, const juce::var& j) { b.handleSetTelemetryEnabled(j); }, false };
+        m[events::TelemetryGet]              = { [](StellarrBridge& b, const juce::var&)   { b.handleGetTelemetryEnabled(); }, false };
+        m[events::TelemetrySet]              = { [](StellarrBridge& b, const juce::var& j) { b.handleSetTelemetryEnabled(j); }, false };
         // Tuner settings ----------------------------------------------
-        m["getReferencePitch"]        = { [](StellarrBridge& b, const juce::var&)   { b.handleGetReferencePitch(); }, false };
-        m["setReferencePitch"]        = { [](StellarrBridge& b, const juce::var& j) { b.handleSetReferencePitch(j); }, false };
+        m[events::TunerGetReferencePitch]    = { [](StellarrBridge& b, const juce::var&)   { b.handleGetReferencePitch(); }, false };
+        m[events::TunerSetReferencePitch]    = { [](StellarrBridge& b, const juce::var& j) { b.handleSetReferencePitch(j); }, false };
         // Presets ------------------------------------------------------
-        m["newSession"]               = { [](StellarrBridge& b, const juce::var&)   { b.preset->handleNewSession(); }, true };
-        m["saveSession"]              = { [](StellarrBridge& b, const juce::var&)   { b.preset->handleSaveSession(); }, true };
-        m["saveSessionQuiet"]         = { [](StellarrBridge& b, const juce::var&)   { b.preset->handleSaveSessionQuiet(); }, true };
-        m["loadSession"]              = { [](StellarrBridge& b, const juce::var&)   { b.preset->handleLoadSession(); }, false };
-        m["pickPresetDirectory"]      = { [](StellarrBridge& b, const juce::var&)   { b.preset->handlePickPresetDirectory(); }, true };
-        m["loadPresetByIndex"]        = { [](StellarrBridge& b, const juce::var& j) { b.preset->handleLoadPresetByIndex(j); }, false };
-        m["renamePreset"]             = { [](StellarrBridge& b, const juce::var& j) { b.preset->handleRenamePreset(j); }, true };
-        m["deletePreset"]             = { [](StellarrBridge& b, const juce::var& j) { b.preset->handleDeletePreset(j); }, true };
-        m["getPresetList"]            = { [](StellarrBridge& b, const juce::var&)   { b.preset->handleGetPresetList(); }, false };
-        m["setGridSize"]              = { [](StellarrBridge& b, const juce::var& j) { b.preset->handleSetGridSize(j); }, true };
+        m[events::SessionNew]                = { [](StellarrBridge& b, const juce::var&)   { b.preset->handleNewSession(); }, true };
+        m[events::SessionSave]               = { [](StellarrBridge& b, const juce::var&)   { b.preset->handleSaveSession(); }, true };
+        m[events::SessionSaveQuiet]          = { [](StellarrBridge& b, const juce::var&)   { b.preset->handleSaveSessionQuiet(); }, true };
+        m[events::SessionLoad]               = { [](StellarrBridge& b, const juce::var&)   { b.preset->handleLoadSession(); }, false };
+        m[events::PresetPickDir]             = { [](StellarrBridge& b, const juce::var&)   { b.preset->handlePickPresetDirectory(); }, true };
+        m[events::PresetLoadByIndex]         = { [](StellarrBridge& b, const juce::var& j) { b.preset->handleLoadPresetByIndex(j); }, false };
+        m[events::PresetRename]              = { [](StellarrBridge& b, const juce::var& j) { b.preset->handleRenamePreset(j); }, true };
+        m[events::PresetDelete]              = { [](StellarrBridge& b, const juce::var& j) { b.preset->handleDeletePreset(j); }, true };
+        m[events::PresetGetList]             = { [](StellarrBridge& b, const juce::var&)   { b.preset->handleGetPresetList(); }, false };
+        m[events::GridSetSize]               = { [](StellarrBridge& b, const juce::var& j) { b.preset->handleSetGridSize(j); }, true };
         // Scenes -------------------------------------------------------
-        m["addScene"]                 = { [](StellarrBridge& b, const juce::var&)   { b.scene->handleAddScene(); }, true };
-        m["recallScene"]              = { [](StellarrBridge& b, const juce::var& j) { b.scene->handleRecallScene(j); }, true };
-        m["saveScene"]                = { [](StellarrBridge& b, const juce::var& j) { b.scene->handleSaveScene(j); }, true };
-        m["renameScene"]              = { [](StellarrBridge& b, const juce::var& j) { b.scene->handleRenameScene(j); }, true };
-        m["deleteScene"]              = { [](StellarrBridge& b, const juce::var& j) { b.scene->handleDeleteScene(j); }, true };
+        m[events::SceneAdd]                  = { [](StellarrBridge& b, const juce::var&)   { b.scene->handleAddScene(); }, true };
+        m[events::SceneRecall]               = { [](StellarrBridge& b, const juce::var& j) { b.scene->handleRecallScene(j); }, true };
+        m[events::SceneSave]                 = { [](StellarrBridge& b, const juce::var& j) { b.scene->handleSaveScene(j); }, true };
+        m[events::SceneRename]               = { [](StellarrBridge& b, const juce::var& j) { b.scene->handleRenameScene(j); }, true };
+        m[events::SceneDelete]               = { [](StellarrBridge& b, const juce::var& j) { b.scene->handleDeleteScene(j); }, true };
         // Input block controls ----------------------------------------
-        m["toggleTestTone"]           = { [](StellarrBridge& b, const juce::var& j) { b.input->handleToggleTestTone(j); }, true };
-        m["getTestToneSamples"]       = { [](StellarrBridge& b, const juce::var&)   { b.input->handleGetTestToneSamples(); }, false };
-        m["setTestToneSample"]        = { [](StellarrBridge& b, const juce::var& j) { b.input->handleSetTestToneSample(j); }, true };
-        m["setTunerEnabled"]          = { [](StellarrBridge& b, const juce::var& j) { b.input->handleSetTunerEnabled(j); }, true };
+        m[events::InputToggleTestTone]       = { [](StellarrBridge& b, const juce::var& j) { b.input->handleToggleTestTone(j); }, true };
+        m[events::InputGetTestToneSamples]   = { [](StellarrBridge& b, const juce::var&)   { b.input->handleGetTestToneSamples(); }, false };
+        m[events::InputSetTestToneSample]    = { [](StellarrBridge& b, const juce::var& j) { b.input->handleSetTestToneSample(j); }, true };
+        m[events::TunerSetEnabled]           = { [](StellarrBridge& b, const juce::var& j) { b.input->handleSetTunerEnabled(j); }, true };
         // Block parameters --------------------------------------------
-        m["setBlockMix"]              = { [](StellarrBridge& b, const juce::var& j) { b.param->handleSetBlockMix(j); }, true };
-        m["setBlockBalance"]          = { [](StellarrBridge& b, const juce::var& j) { b.param->handleSetBlockBalance(j); }, true };
-        m["setBlockLevel"]            = { [](StellarrBridge& b, const juce::var& j) { b.param->handleSetBlockLevel(j); }, true };
-        m["toggleBlockBypass"]        = { [](StellarrBridge& b, const juce::var& j) { b.graph->handleToggleBlockBypass(j); }, true };
-        m["setBlockBypassMode"]       = { [](StellarrBridge& b, const juce::var& j) { b.param->handleSetBlockBypassMode(j); }, true };
+        m[events::BlockSetMix]               = { [](StellarrBridge& b, const juce::var& j) { b.param->handleSetBlockMix(j); }, true };
+        m[events::BlockSetBalance]           = { [](StellarrBridge& b, const juce::var& j) { b.param->handleSetBlockBalance(j); }, true };
+        m[events::BlockSetLevel]             = { [](StellarrBridge& b, const juce::var& j) { b.param->handleSetBlockLevel(j); }, true };
+        m[events::BlockToggleBypass]         = { [](StellarrBridge& b, const juce::var& j) { b.graph->handleToggleBlockBypass(j); }, true };
+        m[events::BlockSetBypassMode]        = { [](StellarrBridge& b, const juce::var& j) { b.param->handleSetBlockBypassMode(j); }, true };
         // Block states -------------------------------------------------
-        m["saveBlockState"]           = { [](StellarrBridge& b, const juce::var& j) { b.param->handleBlockStateEvent(j, "save"); }, true };
-        m["addBlockState"]            = { [](StellarrBridge& b, const juce::var& j) { b.param->handleBlockStateEvent(j, "add"); }, true };
-        m["recallBlockState"]         = { [](StellarrBridge& b, const juce::var& j) { b.param->handleBlockStateEvent(j, "recall"); }, true };
-        m["deleteBlockState"]         = { [](StellarrBridge& b, const juce::var& j) { b.param->handleBlockStateEvent(j, "delete"); }, true };
+        m[events::BlockStateSave]            = { [](StellarrBridge& b, const juce::var& j) { b.param->handleBlockStateEvent(j, "save"); }, true };
+        m[events::BlockStateAdd]             = { [](StellarrBridge& b, const juce::var& j) { b.param->handleBlockStateEvent(j, "add"); }, true };
+        m[events::BlockStateRecall]          = { [](StellarrBridge& b, const juce::var& j) { b.param->handleBlockStateEvent(j, "recall"); }, true };
+        m[events::BlockStateDelete]          = { [](StellarrBridge& b, const juce::var& j) { b.param->handleBlockStateEvent(j, "delete"); }, true };
         // Loudness metering -------------------------------------------
-        m["setSelectedBlock"]         = { [](StellarrBridge& b, const juce::var& j) { b.handleSetSelectedBlock(j); }, false };
-        m["setTargetLufs"]            = { [](StellarrBridge& b, const juce::var& j) { b.handleSetTargetLufs(j); }, true };
-        m["setLufsWindow"]            = { [](StellarrBridge& b, const juce::var& j) { b.handleSetLufsWindow(j); }, false };
+        m[events::LoudnessSetSelectedBlock]  = { [](StellarrBridge& b, const juce::var& j) { b.handleSetSelectedBlock(j); }, false };
+        m[events::LoudnessSetTarget]         = { [](StellarrBridge& b, const juce::var& j) { b.handleSetTargetLufs(j); }, true };
+        m[events::LoudnessSetWindow]         = { [](StellarrBridge& b, const juce::var& j) { b.handleSetLufsWindow(j); }, false };
         return m;
     }();
     return t;
@@ -445,7 +447,7 @@ void StellarrBridge::sendStartupProgress(const juce::String& status, int progres
     auto* detail = new juce::DynamicObject();
     detail->setProperty("status", status);
     detail->setProperty("progress", progress);
-    emit("startupProgress", detail);
+    emit(events::LifecycleStartupProgress, detail);
 }
 
 void StellarrBridge::handleBridgeReady()
@@ -459,7 +461,7 @@ void StellarrBridge::handleBridgeReady()
    #else
     cfg->setProperty("flavour", "prod");
    #endif
-    emit("appConfig", cfg);
+    emit(events::SystemAppConfig, cfg);
 
     handleGetTelemetryEnabled();
     handleGetReferencePitch();
@@ -473,7 +475,7 @@ void StellarrBridge::handleBridgeReady()
 
         auto* detail = new juce::DynamicObject();
         detail->setProperty("window", lufsWindow);
-        emit("lufsWindowState", detail);
+        emit(events::LoudnessWindowState, detail);
     }
 
     juce::MessageManager::callAsync([this]()
@@ -511,7 +513,7 @@ void StellarrBridge::handleBridgeReady()
                     preset->sendPresetList();
 
                     sendStartupProgress("Ready", 100);
-                    emit("startupComplete", new juce::DynamicObject());
+                    emit(events::LifecycleStartupComplete, new juce::DynamicObject());
                 };
 
                 if (appProperties != nullptr)
@@ -583,7 +585,7 @@ void StellarrBridge::sendWelcome()
 
     auto* detail = new juce::DynamicObject();
     detail->setProperty("message", "Stellarr C++ engine is running");
-    webView->emitEventIfBrowserIsVisible("welcome", juce::var(detail));
+    webView->emitEventIfBrowserIsVisible(events::LifecycleWelcome, juce::var(detail));
 }
 
 void StellarrBridge::sendGraphState()
@@ -663,7 +665,7 @@ void StellarrBridge::sendGraphState()
     auto* state = new juce::DynamicObject();
     state->setProperty("blocks", blocksArray);
     state->setProperty("connections", connectionsArray);
-    emit("graphState", state);
+    emit(events::GraphState, state);
     scene->emitScenes();
 }
 
@@ -733,7 +735,7 @@ void StellarrBridge::handleScreenshotSetup()
                         }
                     }
                     if (auto* o = configHandle.getDynamicObject())
-                        emit("screenshotSetup", o);
+                        emit(events::LifecycleScreenshotSetup, o);
                 });
 
                 if (started) return; // emit is deferred to the callback
@@ -742,7 +744,7 @@ void StellarrBridge::handleScreenshotSetup()
     }
 
     // No async restore in flight — emit synchronously as before.
-    emit("screenshotSetup", obj);
+    emit(events::LifecycleScreenshotSetup, obj);
 }
 
 void StellarrBridge::handleScreenshotReady()
@@ -763,7 +765,7 @@ void StellarrBridge::sendSystemStats(double cpuPercent, float outputPeakLinear)
     detail->setProperty("cpu", cpuPercent);
     detail->setProperty("outputLevelDb", static_cast<double>(peakDb));
     detail->setProperty("clipping", outputPeakLinear > 1.0f);
-    emit("systemStats", detail);
+    emit(events::SystemStats, detail);
 }
 
 void StellarrBridge::sendTunerData()
@@ -788,7 +790,7 @@ void StellarrBridge::sendTunerData()
                 detail->setProperty("cents", static_cast<double>(inputBlock->getTunerCents()));
                 detail->setProperty("frequency", static_cast<double>(inputBlock->getTunerFrequency()));
                 detail->setProperty("confidence", static_cast<double>(inputBlock->getTunerConfidence()));
-                emit("tunerData", detail);
+                emit(events::TunerData, detail);
                 return;
             }
         }
@@ -815,7 +817,7 @@ void StellarrBridge::sendMidiMonitorData()
 
     auto* detail = new juce::DynamicObject();
     detail->setProperty("events", arr);
-    emit("midiMonitorData", detail);
+    emit(events::MidiMonitorData, detail);
 }
 
 void StellarrBridge::drainMidiEvents()
@@ -830,7 +832,7 @@ void StellarrBridge::handleScanPlugins()
 {
     if (processor == nullptr) return;
 
-    emit("scanStarted", new juce::DynamicObject());
+    emit(events::PluginsScanStarted, new juce::DynamicObject());
 
     // Run scan on a background thread to avoid freezing the UI.
     // sendPluginList must run on the message thread (bridge emission).
@@ -898,7 +900,7 @@ void StellarrBridge::sendPluginList()
 
     auto* detail = new juce::DynamicObject();
     detail->setProperty("plugins", plugins);
-    emit("pluginListUpdated", detail);
+    emit(events::PluginsListUpdated, detail);
 }
 
 void StellarrBridge::sendScanDirectories()
@@ -916,7 +918,7 @@ void StellarrBridge::sendScanDirectories()
 
     auto* detail = new juce::DynamicObject();
     detail->setProperty("directories", dirs);
-    emit("scanDirectoriesUpdated", detail);
+    emit(events::PluginsScanDirsUpdated, detail);
 }
 
 // -- Telemetry ----------------------------------------------------------------
@@ -925,7 +927,7 @@ void StellarrBridge::handleGetTelemetryEnabled()
 {
     auto* detail = new juce::DynamicObject();
     detail->setProperty("enabled", stellarr::Telemetry::isEnabled(appProperties));
-    emit("telemetryState", detail);
+    emit(events::TelemetryState, detail);
 }
 
 void StellarrBridge::handleSetTelemetryEnabled(const juce::var& json)
@@ -938,7 +940,7 @@ void StellarrBridge::handleSetTelemetryEnabled(const juce::var& json)
 
     auto* detail = new juce::DynamicObject();
     detail->setProperty("enabled", enabled);
-    emit("telemetryState", detail);
+    emit(events::TelemetryState, detail);
 }
 
 // -- Tuner settings -----------------------------------------------------------
@@ -966,7 +968,7 @@ void StellarrBridge::handleGetReferencePitch()
 
     auto* detail = new juce::DynamicObject();
     detail->setProperty("hz", static_cast<double>(hz));
-    emit("referencePitchState", detail);
+    emit(events::TunerReferencePitchState, detail);
 }
 
 void StellarrBridge::handleSetReferencePitch(const juce::var& json)
@@ -998,7 +1000,7 @@ void StellarrBridge::handleSetReferencePitch(const juce::var& json)
 
     auto* detail = new juce::DynamicObject();
     detail->setProperty("hz", static_cast<double>(hz));
-    emit("referencePitchState", detail);
+    emit(events::TunerReferencePitchState, detail);
 }
 
 // -- Loudness metering --------------------------------------------------------
@@ -1057,7 +1059,7 @@ void StellarrBridge::handleSetLufsWindow(const juce::var& json)
 
     auto* detail = new juce::DynamicObject();
     detail->setProperty("window", lufsWindow);
-    emit("lufsWindowState", detail);
+    emit(events::LoudnessWindowState, detail);
 }
 
 void StellarrBridge::sendBlockMetrics()
@@ -1094,5 +1096,5 @@ void StellarrBridge::sendBlockMetrics()
     auto* detail = new juce::DynamicObject();
     detail->setProperty("blocks", blocksArray);
     detail->setProperty("window", lufsWindow);
-    emit("blockMetrics", detail);
+    emit(events::LoudnessBlockMetrics, detail);
 }

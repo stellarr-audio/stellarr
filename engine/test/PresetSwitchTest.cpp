@@ -2,11 +2,14 @@
 #include "blocks/GainBlock.h"
 #include "blocks/PluginBlock.h"
 #include "../StellarrBridge.h"
+#include "../bridge/EventNames.h"
 #include <atomic>
 #include <functional>
 #include <mutex>
 #include <thread>
 #include <vector>
+
+namespace events = stellarr::bridge::events;
 
 class PresetSwitchTestAccess
 {
@@ -393,21 +396,21 @@ static bool testRestoreSessionEmitsStartedFinished()
     StellarrBridge bridge;
     bridge.setProcessor(&proc);
 
-    std::vector<juce::String> events;
-    bridge.setEmitInterceptor([&events](const juce::String& name, const juce::var&)
+    std::vector<juce::String> recordedEvents;
+    bridge.setEmitInterceptor([&recordedEvents](const juce::String& name, const juce::var&)
     {
-        events.push_back(name);
+        recordedEvents.push_back(name);
     });
 
     restoreSessionSync(bridge, juce::JSON::parse(kSessionPassthrough));
 
     int startedAt = -1;
     int finishedAt = -1;
-    for (int i = 0; i < static_cast<int>(events.size()); ++i)
+    for (int i = 0; i < static_cast<int>(recordedEvents.size()); ++i)
     {
-        if (events[static_cast<size_t>(i)] == "presetLoadStarted" && startedAt < 0)
+        if (recordedEvents[static_cast<size_t>(i)] == events::PresetLoadStarted && startedAt < 0)
             startedAt = i;
-        else if (events[static_cast<size_t>(i)] == "presetLoadFinished")
+        else if (recordedEvents[static_cast<size_t>(i)] == events::PresetLoadFinished)
             finishedAt = i;
     }
 
@@ -439,15 +442,15 @@ static bool testRestoreSessionEmitsFinishedOnException()
     StellarrBridge bridge;
     bridge.setProcessor(&proc);
 
-    std::vector<juce::String> events;
+    std::vector<juce::String> recordedEvents;
     // Throw from a non-bracket emit so it surfaces inside finishRestore on
     // the async update tick. The body's catch wraps that in success=false
     // and still emits presetLoadFinished.
     bool hasThrown = false;
-    bridge.setEmitInterceptor([&events, &hasThrown](const juce::String& name, const juce::var&)
+    bridge.setEmitInterceptor([&recordedEvents, &hasThrown](const juce::String& name, const juce::var&)
     {
-        events.push_back(name);
-        if (!hasThrown && name != "presetLoadStarted" && name != "presetLoadFinished")
+        recordedEvents.push_back(name);
+        if (!hasThrown && name != events::PresetLoadStarted && name != events::PresetLoadFinished)
         {
             hasThrown = true;
             throw std::runtime_error("test-injected failure during restoreSession body");
@@ -493,10 +496,10 @@ static bool testRestoreSessionEmitsFinishedOnException()
 
     bool sawStarted = false;
     bool sawFinished = false;
-    for (auto& name : events)
+    for (auto& name : recordedEvents)
     {
-        if (name == "presetLoadStarted") sawStarted = true;
-        else if (name == "presetLoadFinished") sawFinished = true;
+        if (name == events::PresetLoadStarted) sawStarted = true;
+        else if (name == events::PresetLoadFinished) sawFinished = true;
     }
 
     if (!sawStarted || !sawFinished)

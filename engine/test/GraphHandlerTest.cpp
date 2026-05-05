@@ -4,8 +4,11 @@
 #include <utility>
 #include "../StellarrProcessor.h"
 #include "../bridge/BridgeTypes.h"
+#include "../bridge/EventNames.h"
 #include "../bridge/GraphHandler.h"
 #include "support/MockBridgeEmitter.h"
+
+namespace events = stellarr::bridge::events;
 
 // Per-handler isolation tests for GraphHandler. A StellarrProcessor is
 // constructed directly; the BlockNodeMap, blockPositions and clipboard
@@ -61,7 +64,7 @@ static bool testHandleAddBlockEmitsBlockAdded()
     auto json = juce::JSON::parse(R"({"type":"plugin","col":3,"row":2})");
     handler.handleAddBlock(json);
 
-    if (!emitter.wasEmitted("blockAdded"))
+    if (!emitter.wasEmitted(events::BlockAdded))
     {
         fprintf(stderr, "  expected blockAdded event\n");
         printf("FAIL\n");
@@ -88,7 +91,7 @@ static bool testHandleAddBlockEmitsBlockAdded()
         return false;
     }
 
-    auto* rec = emitter.firstOf("blockAdded");
+    auto* rec = emitter.firstOf(events::BlockAdded);
     if (rec == nullptr || rec->getDetail() == nullptr)
     {
         printf("FAIL (missing recorded event)\n");
@@ -115,7 +118,7 @@ static bool testHandleAddBlockUnknownTypeIsNoop()
     auto json = juce::JSON::parse(R"({"type":"bogus","col":0,"row":0})");
     handler.handleAddBlock(json);
 
-    if (emitter.wasEmitted("blockAdded"))
+    if (emitter.wasEmitted(events::BlockAdded))
     {
         fprintf(stderr, "  blockAdded should not have fired\n");
         printf("FAIL\n");
@@ -154,7 +157,7 @@ static bool testHandleRemoveBlockEmitsBlockRemoved()
     obj->setProperty("blockId", blockId);
     handler.handleRemoveBlock(juce::var(obj));
 
-    if (!emitter.wasEmitted("blockRemoved"))
+    if (!emitter.wasEmitted(events::BlockRemoved))
     {
         fprintf(stderr, "  expected blockRemoved event\n");
         printf("FAIL\n");
@@ -195,7 +198,7 @@ static bool testHandleMoveBlockUpdatesPositionsAndEmits()
     obj->setProperty("row", 4);
     handler.handleMoveBlock(juce::var(obj));
 
-    if (!emitter.wasEmitted("blockMoved"))
+    if (!emitter.wasEmitted(events::BlockMoved))
     {
         fprintf(stderr, "  expected blockMoved event\n");
         printf("FAIL\n");

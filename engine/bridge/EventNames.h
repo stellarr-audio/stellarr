@@ -26,7 +26,6 @@ namespace stellarr::bridge::events
     inline constexpr const char* LifecycleStartupProgress   = "lifecycle/startupProgress";   // outbound
     inline constexpr const char* LifecycleStartupComplete   = "lifecycle/startupComplete";   // outbound
     inline constexpr const char* LifecycleScreenshotSetup   = "lifecycle/screenshotSetup";   // outbound
-    inline constexpr const char* LifecyclePong              = "lifecycle/pong";              // outbound (TS-only listener today)
 
     // ---- Block (inbound) ------------------------------------------------
     inline constexpr const char* BlockAdd                   = "block/add";

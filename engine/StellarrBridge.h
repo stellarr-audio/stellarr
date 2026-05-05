@@ -11,10 +11,10 @@
 #include <vector>
 #include "Telemetry.h"
 #include "bridge/IBridgeEmitter.h"
+#include "bridge/UpdateHandler.h"
 
 class StellarrProcessor;
 namespace stellarr { class Block; class PluginBlock; }
-namespace stellarr::update { class Shim; struct State; }
 
 class StellarrBridge : public stellarr::bridge::IBridgeEmitter, private juce::AsyncUpdater
 {
@@ -209,13 +209,7 @@ private:
     static const EventTable& eventTable();
 
     // Software updates (Sparkle)
-    void ensureUpdateShim();
-    void handleUpdateCheck();
-    void handleUpdateInstall();
-    void handleUpdateOpenReleaseNotes(const juce::var& json);
-    void sendUpdateState(const stellarr::update::State& state);
-
-    std::unique_ptr<stellarr::update::Shim> updateShim;
+    stellarr::bridge::UpdateHandler update { stellarr::bridge::UpdateHandlerContext { *this } };
 
     juce::WebBrowserComponent* webView = nullptr;
     StellarrProcessor* processor = nullptr;

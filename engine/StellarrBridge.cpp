@@ -1,6 +1,5 @@
 #include "StellarrBridge.h"
 #include "StellarrProcessor.h"
-#include "UpdaterShim.h"
 #include "blocks/InputBlock.h"
 #include "blocks/OutputBlock.h"
 #include "blocks/PluginBlock.h"
@@ -58,9 +57,9 @@ const StellarrBridge::EventTable& StellarrBridge::eventTable()
         m["uiReady"]                  = { [](StellarrBridge& b, const juce::var&)   { if (b.onUiReady) b.onUiReady(); b.handleScreenshotSetup(); }, false };
         m["screenshotReady"]          = { [](StellarrBridge& b, const juce::var&)   { b.handleScreenshotReady(); }, false };
         // Software updates (Sparkle) ----------------------------------
-        m["update/check"]             = { [](StellarrBridge& b, const juce::var&)   { b.handleUpdateCheck(); }, false };
-        m["update/install"]           = { [](StellarrBridge& b, const juce::var&)   { b.handleUpdateInstall(); }, false };
-        m["update/open-release-notes"]= { [](StellarrBridge& b, const juce::var& j) { b.handleUpdateOpenReleaseNotes(j); }, false };
+        m["update/check"]             = { [](StellarrBridge& b, const juce::var&)   { b.update.handleCheck(); }, false };
+        m["update/install"]           = { [](StellarrBridge& b, const juce::var&)   { b.update.handleInstall(); }, false };
+        m["update/open-release-notes"]= { [](StellarrBridge& b, const juce::var& j) { b.update.handleOpenReleaseNotes(j); }, false };
         // Graph --------------------------------------------------------
         m["addBlock"]                 = { [](StellarrBridge& b, const juce::var& j) { b.handleAddBlock(j); }, true };
         m["removeBlock"]              = { [](StellarrBridge& b, const juce::var& j) { b.handleRemoveBlock(j); }, true };

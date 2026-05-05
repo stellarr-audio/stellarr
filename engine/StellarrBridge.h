@@ -16,7 +16,6 @@
 #include "bridge/UpdateHandler.h"
 
 class StellarrProcessor;
-namespace stellarr { class Block; class PluginBlock; }
 
 class StellarrBridge : public stellarr::bridge::IBridgeEmitter
 {
@@ -34,11 +33,10 @@ public:
     // alias just keeps the historical StellarrBridge::Scene name working.
     using Scene = stellarr::bridge::Scene;
 
-    // Thin wrappers around SessionSerializer. Public so tests + the startup
-    // last-session restore path keep their existing call sites. The
-    // implementations forward to sessionSerializer->... — see
-    // engine/bridge/SessionSerializer.{h,cpp} for the state machine.
-    juce::var serialiseSession() const;
+    // Thin wrapper around SessionSerializer::restoreSession. Public so the
+    // startup last-session restore path + tests keep their existing call
+    // sites. See engine/bridge/SessionSerializer.{h,cpp} for the state
+    // machine.
     bool restoreSession(juce::var session,
                         std::function<void(bool success)> onComplete = nullptr);
 

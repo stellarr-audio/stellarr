@@ -2,7 +2,6 @@
 #include <memory>
 #include "IBridgeEmitter.h"
 
-namespace juce { class var; }
 namespace stellarr::update { class Shim; struct State; }
 
 namespace stellarr::bridge

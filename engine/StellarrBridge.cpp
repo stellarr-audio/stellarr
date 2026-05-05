@@ -5,7 +5,6 @@
 #include "blocks/OutputBlock.h"
 #include "blocks/PluginBlock.h"
 #include "bridge/internal/BlockLookup.h"
-#include "bridge/internal/BlockLifecycle.h"
 #include <cmath>
 #include <limits>
 #include <optional>
@@ -16,17 +15,10 @@ StellarrBridge::StellarrBridge() = default;
 StellarrBridge::~StellarrBridge() = default;
 
 // -- Public state machine wrappers -------------------------------------------
-// Thin trampolines into SessionSerializer. The ::has_value() guards keep these
-// safe to call before setProcessor (e.g. during shutdown teardown). When
-// sessionSerializer is empty: serialiseSession returns an empty var,
-// restoreSession reports started=false. Both match the behaviour of the
-// old "if (processor == nullptr) return ..." guards.
-
-juce::var StellarrBridge::serialiseSession() const
-{
-    if (!sessionSerializer.has_value()) return {};
-    return sessionSerializer->serialiseSession();
-}
+// Thin trampoline into SessionSerializer::restoreSession. The has_value()
+// guard keeps this safe to call before setProcessor (e.g. during shutdown
+// teardown) — matches the behaviour of the old "if (processor == nullptr)
+// return false" guard.
 
 bool StellarrBridge::restoreSession(juce::var session,
                                     std::function<void(bool)> onComplete)

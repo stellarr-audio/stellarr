@@ -3,6 +3,7 @@
 #include "../blocks/InputBlock.h"
 #include "../blocks/OutputBlock.h"
 #include "../blocks/PluginBlock.h"
+#include "EventNames.h"
 #include "internal/BlockLookup.h"
 #include "internal/BlockLifecycle.h"
 
@@ -75,17 +76,17 @@ void GraphHandler::handleAddBlock(const juce::var& json)
         auto* connDetail1 = new juce::DynamicObject();
         connDetail1->setProperty("sourceId", spliceSourceId);
         connDetail1->setProperty("destId", blockId);
-        ctx.emit.emit("connectionAdded", connDetail1);
+        ctx.emit.emit(events::ConnectionAdded, connDetail1);
 
         auto* connDetail2 = new juce::DynamicObject();
         connDetail2->setProperty("sourceId", blockId);
         connDetail2->setProperty("destId", spliceDestId);
-        ctx.emit.emit("connectionAdded", connDetail2);
+        ctx.emit.emit(events::ConnectionAdded, connDetail2);
 
         auto* connRemoved = new juce::DynamicObject();
         connRemoved->setProperty("sourceId", spliceSourceId);
         connRemoved->setProperty("destId", spliceDestId);
-        ctx.emit.emit("connectionRemoved", connRemoved);
+        ctx.emit.emit(events::ConnectionRemoved, connRemoved);
     }
 
     auto* detail = new juce::DynamicObject();
@@ -95,7 +96,7 @@ void GraphHandler::handleAddBlock(const juce::var& json)
     detail->setProperty("col", col);
     detail->setProperty("row", row);
     detail->setProperty("nodeId", static_cast<int>(nodeId.uid));
-    ctx.emit.emit("blockAdded", detail);
+    ctx.emit.emit(events::BlockAdded, detail);
 }
 
 void GraphHandler::handleRemoveBlock(const juce::var& json)
@@ -120,7 +121,7 @@ void GraphHandler::handleRemoveBlock(const juce::var& json)
 
     auto* detail = new juce::DynamicObject();
     detail->setProperty("blockId", blockId);
-    ctx.emit.emit("blockRemoved", detail);
+    ctx.emit.emit(events::BlockRemoved, detail);
 }
 
 void GraphHandler::handleMoveBlock(const juce::var& json)
@@ -138,7 +139,7 @@ void GraphHandler::handleMoveBlock(const juce::var& json)
     detail->setProperty("blockId", blockId);
     detail->setProperty("col", col);
     detail->setProperty("row", row);
-    ctx.emit.emit("blockMoved", detail);
+    ctx.emit.emit(events::BlockMoved, detail);
 }
 
 void GraphHandler::handleAddConnection(const juce::var& json)
@@ -165,7 +166,7 @@ void GraphHandler::handleAddConnection(const juce::var& json)
     auto* detail = new juce::DynamicObject();
     detail->setProperty("sourceId", sourceId);
     detail->setProperty("destId", destId);
-    ctx.emit.emit("connectionAdded", detail);
+    ctx.emit.emit(events::ConnectionAdded, detail);
 }
 
 void GraphHandler::handleRemoveConnection(const juce::var& json)
@@ -189,7 +190,7 @@ void GraphHandler::handleRemoveConnection(const juce::var& json)
     auto* detail = new juce::DynamicObject();
     detail->setProperty("sourceId", sourceId);
     detail->setProperty("destId", destId);
-    ctx.emit.emit("connectionRemoved", detail);
+    ctx.emit.emit(events::ConnectionRemoved, detail);
 }
 
 void GraphHandler::handleSetBlockPlugin(const juce::var& json)
@@ -226,7 +227,7 @@ void GraphHandler::handleSetBlockPlugin(const juce::var& json)
     detail->setProperty("pluginFormat", pluginBlock->getPluginFormat());
     detail->setProperty("hasEditor", true);
     detail->setProperty("pluginMissing", false);
-    ctx.emit.emit("blockPluginSet", detail);
+    ctx.emit.emit(events::BlockPluginSet, detail);
 }
 
 void GraphHandler::handleCopyBlock(const juce::var& json)
@@ -248,7 +249,7 @@ void GraphHandler::handleCopyBlock(const juce::var& json)
 
     auto* detail = new juce::DynamicObject();
     detail->setProperty("type", stellarr::blockTypeToString(block->getBlockType()));
-    ctx.emit.emit("blockCopied", detail);
+    ctx.emit.emit(events::BlockCopied, detail);
 }
 
 void GraphHandler::handlePasteBlock(const juce::var& json)
@@ -325,7 +326,7 @@ void GraphHandler::handleRenameBlock(const juce::var& json)
     auto* detail = new juce::DynamicObject();
     detail->setProperty("blockId", blockId);
     detail->setProperty("displayName", name);
-    ctx.emit.emit("blockRenamed", detail);
+    ctx.emit.emit(events::BlockRenamed, detail);
 }
 
 void GraphHandler::handleSetBlockColor(const juce::var& json)
@@ -343,7 +344,7 @@ void GraphHandler::handleSetBlockColor(const juce::var& json)
     auto* detail = new juce::DynamicObject();
     detail->setProperty("blockId", blockId);
     detail->setProperty("blockColor", color);
-    ctx.emit.emit("blockColorChanged", detail);
+    ctx.emit.emit(events::BlockColorChanged, detail);
 }
 
 void GraphHandler::handleToggleBlockBypass(const juce::var& json)
@@ -362,7 +363,7 @@ void GraphHandler::handleToggleBlockBypass(const juce::var& json)
     auto* detail = new juce::DynamicObject();
     detail->setProperty("blockId", blockId);
     detail->setProperty("bypassed", newState);
-    ctx.emit.emit("blockBypassChanged", detail);
+    ctx.emit.emit(events::BlockBypassChanged, detail);
 }
 
 } // namespace stellarr::bridge

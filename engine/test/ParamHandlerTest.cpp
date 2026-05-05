@@ -4,8 +4,11 @@
 #include "../blocks/Block.h"
 #include "../blocks/PluginBlock.h"
 #include "../bridge/BridgeTypes.h"
+#include "../bridge/EventNames.h"
 #include "../bridge/ParamHandler.h"
 #include "support/MockBridgeEmitter.h"
+
+namespace events = stellarr::bridge::events;
 
 // Per-handler isolation tests for ParamHandler. These construct a
 // StellarrProcessor, add a real PluginBlock via its API, build a
@@ -68,7 +71,7 @@ static bool testHandleSetBlockMixUpdatesAndEmits()
     obj->setProperty("mix", 0.5);
     handler.handleSetBlockMix(juce::var(obj));
 
-    if (!emitter.wasEmitted("blockMixChanged"))
+    if (!emitter.wasEmitted(events::BlockMixChanged))
     {
         fprintf(stderr, "  expected blockMixChanged emit\n");
         printf("FAIL\n");
@@ -87,7 +90,7 @@ static bool testHandleSetBlockMixUpdatesAndEmits()
     }
 
     // The emitted event payload should carry the new mix value.
-    auto* rec = emitter.firstOf("blockMixChanged");
+    auto* rec = emitter.firstOf(events::BlockMixChanged);
     if (rec == nullptr || rec->getDetail() == nullptr)
     {
         printf("FAIL (missing recorded event)\n");
@@ -118,7 +121,7 @@ static bool testHandleSetBlockBypassModeUpdatesAndEmits()
     obj->setProperty("bypassMode", "muteIn");
     handler.handleSetBlockBypassMode(juce::var(obj));
 
-    if (!emitter.wasEmitted("blockBypassModeChanged"))
+    if (!emitter.wasEmitted(events::BlockBypassModeChanged))
     {
         fprintf(stderr, "  expected blockBypassModeChanged emit\n");
         printf("FAIL\n");
@@ -134,7 +137,7 @@ static bool testHandleSetBlockBypassModeUpdatesAndEmits()
         return false;
     }
 
-    auto* rec = emitter.firstOf("blockBypassModeChanged");
+    auto* rec = emitter.firstOf(events::BlockBypassModeChanged);
     if (rec == nullptr || rec->getDetail() == nullptr)
     {
         printf("FAIL (missing recorded event)\n");
@@ -163,7 +166,7 @@ static bool testHandleSetBlockMixUnknownBlockIsNoop()
     obj->setProperty("mix", 0.42);
     handler.handleSetBlockMix(juce::var(obj));
 
-    if (emitter.wasEmitted("blockMixChanged"))
+    if (emitter.wasEmitted(events::BlockMixChanged))
     {
         fprintf(stderr, "  no blockMixChanged should have been emitted\n");
         printf("FAIL\n");

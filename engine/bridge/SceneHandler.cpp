@@ -1,5 +1,6 @@
 #include "SceneHandler.h"
 #include "../StellarrProcessor.h"
+#include "EventNames.h"
 #include "SceneCapture.h"
 #include "internal/BlockLookup.h"
 #include <algorithm>
@@ -29,7 +30,7 @@ void SceneHandler::emitScenes()
     }
     detail->setProperty("scenes", arr);
     detail->setProperty("activeSceneIndex", activeSceneIndex);
-    ctx.emit.emit("scenesChanged", detail);
+    ctx.emit.emit(events::ScenesChanged, detail);
 }
 
 void SceneHandler::handleAddScene()

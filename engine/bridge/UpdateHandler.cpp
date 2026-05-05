@@ -1,5 +1,6 @@
 #include "UpdateHandler.h"
 #include "../UpdaterShim.h"
+#include "EventNames.h"
 #include <juce_core/juce_core.h>
 
 // Software update bridge handlers. These are thin translators between the
@@ -51,7 +52,7 @@ void UpdateHandler::sendState(const stellarr::update::State& state)
     detail->setProperty("releaseNotesUrl",  juce::String(state.releaseNotesUrl));
     detail->setProperty("downloadProgress", state.downloadProgress);
     detail->setProperty("error",            juce::String(state.error));
-    ctx.emit.emit("updateState", detail);
+    ctx.emit.emit(events::UpdateState, detail);
 }
 
 void UpdateHandler::handleCheck()

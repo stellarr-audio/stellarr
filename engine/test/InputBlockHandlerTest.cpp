@@ -4,8 +4,11 @@
 #include "../blocks/InputBlock.h"
 #include "../blocks/OutputBlock.h"
 #include "../bridge/BridgeTypes.h"
+#include "../bridge/EventNames.h"
 #include "../bridge/InputBlockHandler.h"
 #include "support/MockBridgeEmitter.h"
+
+namespace events = stellarr::bridge::events;
 
 // Per-handler isolation tests for InputBlockHandler. The handler's
 // tuner-related paths are inert (no filesystem, no network, no GUI), so
@@ -151,7 +154,7 @@ static bool testHandleToggleTestToneEmits()
     obj->setProperty("blockId", fx.inputBlockId);
     handler.handleToggleTestTone(juce::var(obj));
 
-    if (!emitter.wasEmitted("testToneChanged"))
+    if (!emitter.wasEmitted(events::InputTestToneChanged))
     {
         fprintf(stderr, "  expected testToneChanged emit\n");
         printf("FAIL\n");
@@ -166,7 +169,7 @@ static bool testHandleToggleTestToneEmits()
         return false;
     }
 
-    auto* rec = emitter.firstOf("testToneChanged");
+    auto* rec = emitter.firstOf(events::InputTestToneChanged);
     if (rec == nullptr || rec->getDetail() == nullptr
         || !static_cast<bool>(rec->getDetail()->getProperty("enabled")))
     {

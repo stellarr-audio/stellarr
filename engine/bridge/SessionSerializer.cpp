@@ -2,6 +2,7 @@
 #include "../StellarrProcessor.h"
 #include "../blocks/InputBlock.h"
 #include "../blocks/OutputBlock.h"
+#include "EventNames.h"
 #include "SceneCapture.h"
 #include "internal/BlockLifecycle.h"
 #include <mutex>
@@ -216,7 +217,7 @@ bool SessionSerializer::restoreSession(juce::var session,
     // re-throwing is preferable to a permanently-wedged bridge.
     try
     {
-        ctx.emit.emitSync("presetLoadStarted", new juce::DynamicObject());
+        ctx.emit.emitSync(events::PresetLoadStarted, new juce::DynamicObject());
     }
     catch (...)
     {
@@ -338,7 +339,7 @@ void SessionSerializer::handleAsyncUpdate()
     // during finishRestore(). The UI's loading-state flag gates pointer
     // events on the preset surfaces — clearing it before the new graph
     // arrives lets the user click on stale UI for a few frames.
-    ctx.emit.emit("presetLoadFinished", new juce::DynamicObject());
+    ctx.emit.emit(events::PresetLoadFinished, new juce::DynamicObject());
 
     if (callback) callback(success);
 }

@@ -3,6 +3,7 @@
 #include "../StellarrPlatform.h"
 #include "../blocks/InputBlock.h"
 #include "../blocks/OutputBlock.h"
+#include "EventNames.h"
 
 namespace stellarr::bridge {
 
@@ -29,7 +30,7 @@ void InputBlockHandler::handleToggleTestTone(const juce::var& json)
             auto* detail = new juce::DynamicObject();
             detail->setProperty("blockId", blockId);
             detail->setProperty("enabled", enabled);
-            ctx.emit.emit("testToneChanged", detail);
+            ctx.emit.emit(events::InputTestToneChanged, detail);
         }
     }
 }
@@ -57,7 +58,7 @@ void InputBlockHandler::handleGetTestToneSamples()
 
     auto* detail = new juce::DynamicObject();
     detail->setProperty("samples", sorted);
-    ctx.emit.emit("testToneSamplesUpdated", detail);
+    ctx.emit.emit(events::InputTestToneSamplesUpdated, detail);
 }
 
 void InputBlockHandler::handleSetTestToneSample(const juce::var& json)
@@ -89,7 +90,7 @@ void InputBlockHandler::handleSetTestToneSample(const juce::var& json)
             detail->setProperty("blockId", blockId);
             detail->setProperty("sample", inputBlock->isUsingSample()
                 ? inputBlock->getCurrentSampleName() : juce::String("Synth (Default)"));
-            ctx.emit.emit("testToneSampleChanged", detail);
+            ctx.emit.emit(events::InputTestToneSampleChanged, detail);
         }
     }
 }

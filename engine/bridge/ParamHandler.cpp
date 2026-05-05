@@ -2,6 +2,7 @@
 #include "../StellarrProcessor.h"
 #include "../blocks/Block.h"
 #include "../blocks/PluginBlock.h"
+#include "EventNames.h"
 #include "internal/BlockLookup.h"
 
 namespace stellarr::bridge {
@@ -40,7 +41,7 @@ void ParamHandler::handleSetBlockMix(const juce::var& json)
 {
     handleSetBlockParam(json, "mix",
         [](stellarr::Block* b, const juce::var& v) { b->setMix(static_cast<float>(v)); },
-        "blockMixChanged",
+        events::BlockMixChanged,
         [](stellarr::Block* b) { return juce::var(static_cast<double>(b->getMix())); });
 }
 
@@ -48,7 +49,7 @@ void ParamHandler::handleSetBlockBalance(const juce::var& json)
 {
     handleSetBlockParam(json, "balance",
         [](stellarr::Block* b, const juce::var& v) { b->setBalance(static_cast<float>(v)); },
-        "blockBalanceChanged",
+        events::BlockBalanceChanged,
         [](stellarr::Block* b) { return juce::var(static_cast<double>(b->getBalance())); });
 }
 
@@ -56,7 +57,7 @@ void ParamHandler::handleSetBlockLevel(const juce::var& json)
 {
     handleSetBlockParam(json, "level",
         [](stellarr::Block* b, const juce::var& v) { b->setLevelDb(static_cast<float>(v)); },
-        "blockLevelChanged",
+        events::BlockLevelChanged,
         [](stellarr::Block* b) { return juce::var(static_cast<double>(b->getLevelDb())); });
 }
 
@@ -66,7 +67,7 @@ void ParamHandler::handleSetBlockBypassMode(const juce::var& json)
         [](stellarr::Block* b, const juce::var& v) {
             b->setBypassMode(stellarr::bypassModeFromString(v.toString()));
         },
-        "blockBypassModeChanged",
+        events::BlockBypassModeChanged,
         [](stellarr::Block* b) {
             return juce::var(stellarr::bypassModeToString(b->getBypassMode()));
         });
@@ -146,7 +147,7 @@ void ParamHandler::emitBlockStates(const juce::String& blockId, stellarr::Plugin
         dirtyArr.add(d);
     detail->setProperty("dirtyStates", dirtyArr);
 
-    ctx.emit.emit("blockStatesChanged", detail);
+    ctx.emit.emit(events::BlockStateChanged, detail);
 }
 
 void ParamHandler::emitBlockParams(const juce::String& blockId, stellarr::Block* block)
@@ -154,27 +155,27 @@ void ParamHandler::emitBlockParams(const juce::String& blockId, stellarr::Block*
     auto* mixDetail = new juce::DynamicObject();
     mixDetail->setProperty("blockId", blockId);
     mixDetail->setProperty("mix", static_cast<double>(block->getMix()));
-    ctx.emit.emit("blockMixChanged", mixDetail);
+    ctx.emit.emit(events::BlockMixChanged, mixDetail);
 
     auto* balDetail = new juce::DynamicObject();
     balDetail->setProperty("blockId", blockId);
     balDetail->setProperty("balance", static_cast<double>(block->getBalance()));
-    ctx.emit.emit("blockBalanceChanged", balDetail);
+    ctx.emit.emit(events::BlockBalanceChanged, balDetail);
 
     auto* lvlDetail = new juce::DynamicObject();
     lvlDetail->setProperty("blockId", blockId);
     lvlDetail->setProperty("level", static_cast<double>(block->getLevelDb()));
-    ctx.emit.emit("blockLevelChanged", lvlDetail);
+    ctx.emit.emit(events::BlockLevelChanged, lvlDetail);
 
     auto* bypDetail = new juce::DynamicObject();
     bypDetail->setProperty("blockId", blockId);
     bypDetail->setProperty("bypassed", block->isBypassed());
-    ctx.emit.emit("blockBypassChanged", bypDetail);
+    ctx.emit.emit(events::BlockBypassChanged, bypDetail);
 
     auto* modeDetail = new juce::DynamicObject();
     modeDetail->setProperty("blockId", blockId);
     modeDetail->setProperty("bypassMode", stellarr::bypassModeToString(block->getBypassMode()));
-    ctx.emit.emit("blockBypassModeChanged", modeDetail);
+    ctx.emit.emit(events::BlockBypassModeChanged, modeDetail);
 }
 
 void ParamHandler::clearAllDirtyStates()

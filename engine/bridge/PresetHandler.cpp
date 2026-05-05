@@ -1,5 +1,6 @@
 #include "PresetHandler.h"
 #include "../StellarrProcessor.h"
+#include "EventNames.h"
 #include "SceneCapture.h"
 
 namespace stellarr::bridge {
@@ -93,7 +94,7 @@ void PresetHandler::handleSaveSession()
 
         setPresetFromFile(file);
         ctx.clearAllDirtyStates();
-        ctx.emit.emit("sessionSaved", new juce::DynamicObject());
+        ctx.emit.emit(events::SessionSaved, new juce::DynamicObject());
     });
 }
 
@@ -106,7 +107,7 @@ void PresetHandler::handleSaveSessionQuiet()
         lastPresetFile.replaceWithText(jsonStr);
 
         ctx.clearAllDirtyStates();
-        ctx.emit.emit("sessionSaved", new juce::DynamicObject());
+        ctx.emit.emit(events::SessionSaved, new juce::DynamicObject());
     }
     else
     {
@@ -277,7 +278,7 @@ void PresetHandler::sendPresetList()
     detail->setProperty("directory", presetDirectory.getFullPathName());
     detail->setProperty("files", files);
     detail->setProperty("currentIndex", currentPresetIndex);
-    ctx.emit.emit("presetListUpdated", detail);
+    ctx.emit.emit(events::PresetListUpdated, detail);
 }
 
 // -- Grid dimensions ----------------------------------------------------------
@@ -287,7 +288,7 @@ void PresetHandler::emitGridState()
     auto* detail = new juce::DynamicObject();
     detail->setProperty("columns", gridCols);
     detail->setProperty("rows", gridRows);
-    ctx.emit.emit("gridState", detail);
+    ctx.emit.emit(events::GridState, detail);
 }
 
 void PresetHandler::handleSetGridSize(const juce::var& json)

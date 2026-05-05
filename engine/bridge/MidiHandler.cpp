@@ -3,6 +3,7 @@
 #include "../blocks/Block.h"
 #include "../blocks/PluginBlock.h"
 #include "BridgeJson.h"
+#include "EventNames.h"
 #include "internal/BlockLookup.h"
 #include <cmath>
 #include <limits>
@@ -60,7 +61,7 @@ void MidiHandler::registerMapperCallbacks()
         auto* detail = new juce::DynamicObject();
         detail->setProperty("blockId", blockId);
         detail->setProperty("bypassed", state);
-        ctx.emit.emit("blockBypassChanged", detail);
+        ctx.emit.emit(events::BlockBypassChanged, detail);
     };
 
     mapper.onBlockMix = [this](const juce::String& blockId, float value) {
@@ -74,7 +75,7 @@ void MidiHandler::registerMapperCallbacks()
         auto* detail = new juce::DynamicObject();
         detail->setProperty("blockId", blockId);
         detail->setProperty("mix", static_cast<double>(value));
-        ctx.emit.emit("blockMixChanged", detail);
+        ctx.emit.emit(events::BlockMixChanged, detail);
     };
 
     mapper.onBlockBalance = [this](const juce::String& blockId, float value) {
@@ -88,7 +89,7 @@ void MidiHandler::registerMapperCallbacks()
         auto* detail = new juce::DynamicObject();
         detail->setProperty("blockId", blockId);
         detail->setProperty("balance", static_cast<double>(value));
-        ctx.emit.emit("blockBalanceChanged", detail);
+        ctx.emit.emit(events::BlockBalanceChanged, detail);
     };
 
     mapper.onBlockLevel = [this](const juce::String& blockId, float levelDb) {
@@ -102,7 +103,7 @@ void MidiHandler::registerMapperCallbacks()
         auto* detail = new juce::DynamicObject();
         detail->setProperty("blockId", blockId);
         detail->setProperty("level", static_cast<double>(levelDb));
-        ctx.emit.emit("blockLevelChanged", detail);
+        ctx.emit.emit(events::BlockLevelChanged, detail);
     };
 
     mapper.onTunerToggle = [this](bool enabled) {
@@ -138,7 +139,7 @@ void MidiHandler::registerMapperCallbacks()
         auto* detail = new juce::DynamicObject();
         detail->setProperty("channel", channel);
         detail->setProperty("cc", cc);
-        ctx.emit.emit("midiLearnComplete", detail);
+        ctx.emit.emit(events::MidiLearnComplete, detail);
         emitMidiMappings();
     };
 }
@@ -197,7 +198,7 @@ void MidiHandler::emitMidiMappings()
 
     detail->setProperty("mappings", arr);
     detail->setProperty("learning", mapper.isLearning());
-    ctx.emit.emit("midiMappingsChanged", detail);
+    ctx.emit.emit(events::MidiMappingsChanged, detail);
 }
 
 // -- MIDI mapping handlers ----------------------------------------------------

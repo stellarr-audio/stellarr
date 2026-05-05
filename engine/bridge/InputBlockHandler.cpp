@@ -1,22 +1,25 @@
-#include "../StellarrBridge.h"
+#include "InputBlockHandler.h"
 #include "../StellarrProcessor.h"
 #include "../StellarrPlatform.h"
 #include "../blocks/InputBlock.h"
 #include "../blocks/OutputBlock.h"
 
+namespace stellarr::bridge {
+
+InputBlockHandler::InputBlockHandler(InputBlockHandlerContext c) : ctx(c) {}
+
 // -- Test tone + tuner handlers ----------------------------------------------
 
-void StellarrBridge::handleToggleTestTone(const juce::var& json)
+void InputBlockHandler::handleToggleTestTone(const juce::var& json)
 {
-    if (processor == nullptr) return;
     auto* obj = json.getDynamicObject();
     if (obj == nullptr) return;
 
     auto blockId = obj->getProperty("blockId").toString();
-    auto nodeIt = blockNodeMap.find(blockId);
-    if (nodeIt == blockNodeMap.end()) return;
+    auto nodeIt = ctx.blockNodeMap.find(blockId);
+    if (nodeIt == ctx.blockNodeMap.end()) return;
 
-    if (auto* node = processor->getGraph().getNodeForId(nodeIt->second))
+    if (auto* node = ctx.processor.getGraph().getNodeForId(nodeIt->second))
     {
         if (auto* inputBlock = dynamic_cast<stellarr::InputBlock*>(node->getProcessor()))
         {
@@ -26,12 +29,12 @@ void StellarrBridge::handleToggleTestTone(const juce::var& json)
             auto* detail = new juce::DynamicObject();
             detail->setProperty("blockId", blockId);
             detail->setProperty("enabled", enabled);
-            emit("testToneChanged", detail);
+            ctx.emit.emit("testToneChanged", detail);
         }
     }
 }
 
-void StellarrBridge::handleGetTestToneSamples()
+void InputBlockHandler::handleGetTestToneSamples()
 {
     auto samplesDir = stellarrGetBundleResource("samples");
     juce::Array<juce::var> files;
@@ -54,21 +57,20 @@ void StellarrBridge::handleGetTestToneSamples()
 
     auto* detail = new juce::DynamicObject();
     detail->setProperty("samples", sorted);
-    emit("testToneSamplesUpdated", detail);
+    ctx.emit.emit("testToneSamplesUpdated", detail);
 }
 
-void StellarrBridge::handleSetTestToneSample(const juce::var& json)
+void InputBlockHandler::handleSetTestToneSample(const juce::var& json)
 {
-    if (processor == nullptr) return;
     auto* obj = json.getDynamicObject();
     if (obj == nullptr) return;
 
     auto blockId = obj->getProperty("blockId").toString();
     auto sampleName = obj->getProperty("sample").toString();
-    auto nodeIt = blockNodeMap.find(blockId);
-    if (nodeIt == blockNodeMap.end()) return;
+    auto nodeIt = ctx.blockNodeMap.find(blockId);
+    if (nodeIt == ctx.blockNodeMap.end()) return;
 
-    if (auto* node = processor->getGraph().getNodeForId(nodeIt->second))
+    if (auto* node = ctx.processor.getGraph().getNodeForId(nodeIt->second))
     {
         if (auto* inputBlock = dynamic_cast<stellarr::InputBlock*>(node->getProcessor()))
         {
@@ -87,23 +89,27 @@ void StellarrBridge::handleSetTestToneSample(const juce::var& json)
             detail->setProperty("blockId", blockId);
             detail->setProperty("sample", inputBlock->isUsingSample()
                 ? inputBlock->getCurrentSampleName() : juce::String("Synth (Default)"));
-            emit("testToneSampleChanged", detail);
+            ctx.emit.emit("testToneSampleChanged", detail);
         }
     }
 }
 
-void StellarrBridge::handleSetTunerEnabled(const juce::var& json)
+void InputBlockHandler::handleSetTunerEnabled(const juce::var& json)
 {
-    if (processor == nullptr) return;
     auto* obj = json.getDynamicObject();
     if (obj == nullptr) return;
 
     bool enabled = static_cast<bool>(obj->getProperty("enabled"));
+    setTunerEnabledOnAllBlocks(enabled);
+}
+
+void InputBlockHandler::setTunerEnabledOnAllBlocks(bool enabled)
+{
     tunerActive = enabled;
 
-    for (auto& [blockId, nodeId] : blockNodeMap)
+    for (auto& [blockId, nodeId] : ctx.blockNodeMap)
     {
-        if (auto* node = processor->getGraph().getNodeForId(nodeId))
+        if (auto* node = ctx.processor.getGraph().getNodeForId(nodeId))
         {
             if (auto* inputBlock = dynamic_cast<stellarr::InputBlock*>(node->getProcessor()))
                 inputBlock->setTunerEnabled(enabled);
@@ -112,3 +118,5 @@ void StellarrBridge::handleSetTunerEnabled(const juce::var& json)
         }
     }
 }
+
+} // namespace stellarr::bridge

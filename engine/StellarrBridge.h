@@ -12,6 +12,7 @@
 #include "Telemetry.h"
 #include "bridge/GraphHandler.h"
 #include "bridge/IBridgeEmitter.h"
+#include "bridge/InputBlockHandler.h"
 #include "bridge/MidiHandler.h"
 #include "bridge/ParamHandler.h"
 #include "bridge/SceneHandler.h"
@@ -56,7 +57,7 @@ public:
     void drainMidiEvents();
     void sendTunerData();
     void sendMidiMonitorData();
-    bool isTunerActive() const { return tunerActive; }
+    bool isTunerActive() const { return input ? input->isTunerActive() : false; }
     void setOnUiReady(std::function<void()> callback) { onUiReady = std::move(callback); }
 
     // Test accessors
@@ -135,14 +136,6 @@ private:
     void emit(const juce::String& eventName, juce::DynamicObject* detail) override;
     void emitSync(const juce::String& eventName, juce::DynamicObject* detail) override;
 
-    // Lifted inline handlers (Phase 3) — these are called from the dispatch
-    // table in StellarrBridge.cpp. Phase 4 will move the bodies into the
-    // matching engine/bridge/*.cpp files.
-    void handleToggleTestTone(const juce::var& json);
-    void handleGetTestToneSamples();
-    void handleSetTestToneSample(const juce::var& json);
-    void handleSetTunerEnabled(const juce::var& json);
-
     // Dispatch table for handleEvent. Defined as a private nested type +
     // private static accessor so the table's lambdas have access to the
     // private handle* member functions without needing friend declarations.
@@ -172,7 +165,6 @@ private:
     int currentPresetIndex = -1;
     juce::File lastPresetFile;
     std::function<void()> onUiReady;
-    bool tunerActive = false;
 
     juce::String selectedBlockId;
     juce::String lufsWindow { "shortTerm" }; // "shortTerm" or "momentary"
@@ -288,4 +280,9 @@ private:
     // tryRecallSceneByIndex. SessionSerializer + PresetHandler reach scene
     // state via scene->getScenes() / setScenes() / captureActiveScene().
     std::optional<stellarr::bridge::SceneHandler> scene;
+
+    // Test-tone toggle/sample-pick + tuner enable/disable. Owns the
+    // tunerActive flag. Constructed in setProcessor AFTER scene. Cross-handler
+    // reads go via input->isTunerActive() (forwarded by isTunerActive()).
+    std::optional<stellarr::bridge::InputBlockHandler> input;
 };

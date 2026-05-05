@@ -108,22 +108,11 @@ void StellarrBridge::setProcessor(StellarrProcessor* proc)
             {
                 scene->mirrorActiveStateInScene(blockId, newActiveIndex);
             },
-            // setTunerActiveOnAllBlocks: toggle tunerActive flag and propagate
-            // to every InputBlock (enable analysis) + OutputBlock (mute output)
-            // in the graph.
+            // setTunerActiveOnAllBlocks: delegate to InputBlockHandler which
+            // owns the tunerActive flag and the per-block propagation loop.
             [this](bool enabled)
             {
-                tunerActive = enabled;
-                for (auto& [blockId, nodeId] : blockNodeMap)
-                {
-                    if (auto* node = processor->getGraph().getNodeForId(nodeId))
-                    {
-                        if (auto* inputBlock = dynamic_cast<stellarr::InputBlock*>(node->getProcessor()))
-                            inputBlock->setTunerEnabled(enabled);
-                        if (auto* outputBlock = dynamic_cast<stellarr::OutputBlock*>(node->getProcessor()))
-                            outputBlock->setTunerMute(enabled);
-                    }
-                }
+                input->setTunerEnabledOnAllBlocks(enabled);
             },
             // loadPresetByIndex: drive the bridge's preset-switch flow from a
             // CC mapping. handleLoadPresetByIndex is itself try-locked, so a
@@ -157,12 +146,19 @@ void StellarrBridge::setProcessor(StellarrProcessor* proc)
                 param->emitBlockStates(blockId, pb);
             }
         });
+
+        input.emplace(stellarr::bridge::InputBlockHandlerContext {
+            *proc,
+            blockNodeMap,
+            *this
+        });
     }
     else
     {
-        // Reverse construction order on teardown. SceneHandler was constructed
-        // last; reset it first so its captured callbacks (param->..., midi->...)
-        // unbind before the targeted handlers go away.
+        // Reverse construction order on teardown. InputBlockHandler was
+        // constructed last; reset it first so its tunerActive state is cleared
+        // before the rest of the bridge unwinds.
+        input.reset();
         scene.reset();
         midi.reset();
         graph.reset();
@@ -260,10 +256,10 @@ const StellarrBridge::EventTable& StellarrBridge::eventTable()
         m["renameScene"]              = { [](StellarrBridge& b, const juce::var& j) { b.scene->handleRenameScene(j); }, true };
         m["deleteScene"]              = { [](StellarrBridge& b, const juce::var& j) { b.scene->handleDeleteScene(j); }, true };
         // Input block controls ----------------------------------------
-        m["toggleTestTone"]           = { [](StellarrBridge& b, const juce::var& j) { b.handleToggleTestTone(j); }, true };
-        m["getTestToneSamples"]       = { [](StellarrBridge& b, const juce::var&)   { b.handleGetTestToneSamples(); }, false };
-        m["setTestToneSample"]        = { [](StellarrBridge& b, const juce::var& j) { b.handleSetTestToneSample(j); }, true };
-        m["setTunerEnabled"]          = { [](StellarrBridge& b, const juce::var& j) { b.handleSetTunerEnabled(j); }, true };
+        m["toggleTestTone"]           = { [](StellarrBridge& b, const juce::var& j) { b.input->handleToggleTestTone(j); }, true };
+        m["getTestToneSamples"]       = { [](StellarrBridge& b, const juce::var&)   { b.input->handleGetTestToneSamples(); }, false };
+        m["setTestToneSample"]        = { [](StellarrBridge& b, const juce::var& j) { b.input->handleSetTestToneSample(j); }, true };
+        m["setTunerEnabled"]          = { [](StellarrBridge& b, const juce::var& j) { b.input->handleSetTunerEnabled(j); }, true };
         // Block parameters --------------------------------------------
         m["setBlockMix"]              = { [](StellarrBridge& b, const juce::var& j) { b.param->handleSetBlockMix(j); }, true };
         m["setBlockBalance"]          = { [](StellarrBridge& b, const juce::var& j) { b.param->handleSetBlockBalance(j); }, true };

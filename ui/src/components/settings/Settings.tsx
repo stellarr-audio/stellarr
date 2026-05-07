@@ -6,6 +6,7 @@ import {
   requestPickScanDirectory,
   requestRemoveScanDirectory,
   requestSetTelemetryEnabled,
+  requestSetDeveloperMode,
 } from '../../bridge';
 import { Button } from '../common/Button';
 import { IconButton } from '../common/IconButton';
@@ -23,6 +24,7 @@ export function Settings() {
   );
   const scanning = useStore((s) => s.scanning);
   const telemetryEnabled = useStore((s) => s.telemetryEnabled);
+  const developerModeEnabled = useStore((s) => s.developerModeEnabled);
   const flavour = useStore((s) => s.flavour);
 
   return (
@@ -108,6 +110,28 @@ export function Settings() {
                 sharp
                 onToggle={() => requestSetTelemetryEnabled(!telemetryEnabled)}
                 title="Toggle crash reporting"
+              />
+            }
+          />
+        </Section>
+
+        <Section title="Advanced">
+          <Row
+            info={
+              <>
+                <span className={styles.privacyLabel}>Developer mode</span>
+                <span className={styles.privacyDescription}>
+                  Reveals development utilities like the InputBlock test tone. Most users
+                  should leave this off — these tools exist for builders and bug reports.
+                </span>
+              </>
+            }
+            actions={
+              <ToggleSwitch
+                enabled={developerModeEnabled}
+                sharp
+                onToggle={() => requestSetDeveloperMode(!developerModeEnabled)}
+                title="Toggle developer mode"
               />
             }
           />

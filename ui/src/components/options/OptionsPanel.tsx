@@ -36,6 +36,7 @@ export function OptionsPanel() {
   const selectBlock = useStore((s) => s.selectBlock);
   const storedPos = useStore((s) => s.floatingPanelPos);
   const setFloatingPanelPos = useStore((s) => s.setFloatingPanelPos);
+  const devModeEnabled = useStore((s) => s.developerModeEnabled);
 
   const block = selectedBlockId ? blocks.find((b) => b.id === selectedBlockId) : null;
 
@@ -128,8 +129,8 @@ export function OptionsPanel() {
         {/* Signal — Level slider + loudness history. Same for every block. */}
         <SignalSection block={block} />
 
-        {/* Input block — test tone picker */}
-        {block.type === 'input' && (
+        {/* Input block — test tone picker (developer mode only) */}
+        {block.type === 'input' && devModeEnabled && (
           <>
             <div className={styles.divider} />
             <TestToneSamplePicker blockId={block.id} playing={block.testTone ?? false} />

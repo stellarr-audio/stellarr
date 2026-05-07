@@ -124,6 +124,12 @@ namespace stellarr::bridge::events
     inline constexpr const char* PluginsListUpdated         = "plugins/listUpdated";         // outbound
     inline constexpr const char* PluginsScanDirsUpdated     = "plugins/scanDirsUpdated";     // outbound (was scanDirectoriesUpdated)
 
+    // ---- Settings (inbound + outbound) ----------------------------------
+    // Cross-cutting user preferences persisted in ApplicationProperties.
+    inline constexpr const char* SettingsGetDeveloperMode   = "settings/getDeveloperMode";   // inbound
+    inline constexpr const char* SettingsSetDeveloperMode   = "settings/setDeveloperMode";   // inbound
+    inline constexpr const char* SettingsDeveloperModeState = "settings/developerModeState"; // outbound
+
     // ---- Telemetry (inbound + outbound) ---------------------------------
     inline constexpr const char* TelemetryGet               = "telemetry/get";               // inbound
     inline constexpr const char* TelemetrySet               = "telemetry/set";               // inbound

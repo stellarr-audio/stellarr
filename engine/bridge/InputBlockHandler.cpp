@@ -13,6 +13,8 @@ InputBlockHandler::InputBlockHandler(InputBlockHandlerContext c) : ctx(c) {}
 
 void InputBlockHandler::handleToggleTestTone(const juce::var& json)
 {
+    if (ctx.isDeveloperModeEnabled && ! ctx.isDeveloperModeEnabled()) return;
+
     auto* obj = json.getDynamicObject();
     if (obj == nullptr) return;
 
@@ -63,6 +65,8 @@ void InputBlockHandler::handleGetTestToneSamples()
 
 void InputBlockHandler::handleSetTestToneSample(const juce::var& json)
 {
+    if (ctx.isDeveloperModeEnabled && ! ctx.isDeveloperModeEnabled()) return;
+
     auto* obj = json.getDynamicObject();
     if (obj == nullptr) return;
 
@@ -116,6 +120,28 @@ void InputBlockHandler::setTunerEnabledOnAllBlocks(bool enabled)
                 inputBlock->setTunerEnabled(enabled);
             if (auto* outputBlock = dynamic_cast<stellarr::OutputBlock*>(node->getProcessor()))
                 outputBlock->setTunerMute(enabled);
+        }
+    }
+}
+
+void InputBlockHandler::stopAllTestTones()
+{
+    for (auto& [blockId, nodeId] : ctx.blockNodeMap)
+    {
+        auto* node = ctx.processor.getGraph().getNodeForId(nodeId);
+        if (node == nullptr) continue;
+
+        auto* inputBlock = dynamic_cast<stellarr::InputBlock*>(node->getProcessor());
+        if (inputBlock == nullptr) continue;
+
+        if (inputBlock->isTestToneEnabled())
+        {
+            inputBlock->setTestToneEnabled(false);
+
+            auto* detail = new juce::DynamicObject();
+            detail->setProperty("blockId", blockId);
+            detail->setProperty("enabled", false);
+            ctx.emit.emit(events::InputTestToneChanged, detail);
         }
     }
 }

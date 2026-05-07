@@ -65,20 +65,11 @@ public:
     void setReferencePitch(float hz) { referencePitch.store(hz, std::memory_order_relaxed); }
     float getReferencePitch() const { return referencePitch.load(std::memory_order_relaxed); }
 
-    juce::var toJson() const override
-    {
-        auto json = Block::toJson();
-        if (auto* obj = json.getDynamicObject())
-            obj->setProperty("testTone", isTestToneEnabled());
-        return json;
-    }
-
-    void fromJson(const juce::var& json) override
-    {
-        Block::fromJson(json);
-        if (auto* obj = json.getDynamicObject())
-            setTestToneEnabled(static_cast<bool>(obj->getProperty("testTone")));
-    }
+    // Test tone state is intentionally NOT persisted in toJson / fromJson.
+    // Test tone is a transient dev utility (gated by developer mode); a saved
+    // session that captured it as ON would resume the tone after restore even
+    // when developer mode is OFF — leaving an audible tone with no UI control
+    // to stop it. Restored InputBlocks always start with test tone disabled.
 
 private:
     void analyzeTunerBuffer(const juce::AudioBuffer<float>& buffer);

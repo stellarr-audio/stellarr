@@ -169,7 +169,16 @@ void StellarrBridge::setProcessor(StellarrProcessor* proc)
         input.emplace(stellarr::bridge::InputBlockHandlerContext {
             *proc,
             blockNodeMap,
-            *this
+            *this,
+            // isDeveloperModeEnabled: gates test-tone commands at the engine
+            // boundary so non-picker call paths (screenshot lifecycle actions,
+            // future MIDI bindings, anything else firing input/toggleTestTone
+            // or input/setTestToneSample directly) still respect the
+            // developer-mode preference.
+            [this]() {
+                return appProperties != nullptr
+                    && appProperties->getUserSettings()->getBoolValue("developerModeEnabled", false);
+            }
         });
 
         preset.emplace(stellarr::bridge::PresetHandlerContext {
@@ -206,7 +215,10 @@ void StellarrBridge::setProcessor(StellarrProcessor* proc)
             [this]() { param->clearAllDirtyStates(); },
             // emitMidiMappings: re-broadcast the (now empty) preset-level
             // MIDI mapping list after handleNewSession resets it.
-            [this]() { midi->emitMidiMappings(); }
+            [this]() { midi->emitMidiMappings(); },
+            // stopAllTestTones: stop any active test tone when developer mode
+            // is disabled so tones do not play silently with no UI to stop them.
+            [this]() { input->stopAllTestTones(); }
         });
 
         sessionSerializer.emplace(stellarr::bridge::SessionSerializerContext {
@@ -318,6 +330,12 @@ const StellarrBridge::EventTable& StellarrBridge::eventTable()
         m[events::PluginsGetScanDirs]        = { [](StellarrBridge& b, const juce::var&)   { b.handleGetScanDirectories(); }, false };
         m[events::PluginsPickScanDir]        = { [](StellarrBridge& b, const juce::var&)   { b.handlePickScanDirectory(); }, true };
         m[events::PluginsRemoveScanDir]      = { [](StellarrBridge& b, const juce::var& j) { b.handleRemoveScanDirectory(j); }, true };
+        // Settings -----------------------------------------------------
+        // developerModeEnabled is a UI-only preference; it never mutates the
+        // graph / scenes / MIDI mappings, so dropDuringRestore=false matches
+        // the other read-only preference handlers (telemetry, tuner pitch).
+        m[events::SettingsGetDeveloperMode]  = { [](StellarrBridge& b, const juce::var&)   { b.preset->handleGetDeveloperMode(); }, false };
+        m[events::SettingsSetDeveloperMode]  = { [](StellarrBridge& b, const juce::var& j) { b.preset->handleSetDeveloperMode(j); }, false };
         // Telemetry ----------------------------------------------------
         m[events::TelemetryGet]              = { [](StellarrBridge& b, const juce::var&)   { b.handleGetTelemetryEnabled(); }, false };
         m[events::TelemetrySet]              = { [](StellarrBridge& b, const juce::var& j) { b.handleSetTelemetryEnabled(j); }, false };
@@ -465,6 +483,7 @@ void StellarrBridge::handleBridgeReady()
 
     handleGetTelemetryEnabled();
     handleGetReferencePitch();
+    if (preset.has_value()) preset->handleGetDeveloperMode();
 
     // Restore LUFS window from settings
     if (appProperties != nullptr)

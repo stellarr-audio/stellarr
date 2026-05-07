@@ -56,6 +56,10 @@ namespace stellarr::bridge
         std::function<void(int)>                                    setActiveSceneIndex;
         std::function<void()>                                       clearAllDirtyStates;
         std::function<void()>                                       emitMidiMappings;
+
+        // Stop any active test tones on all InputBlocks. Called when developer
+        // mode is disabled so tones do not play silently with no UI to stop them.
+        std::function<void()>                                       stopAllTestTones;
     };
 
     // Bridge handlers for preset / session CRUD plus grid sizing. Owns the
@@ -79,6 +83,12 @@ namespace stellarr::bridge
         void handleDeletePreset(const juce::var& json);
         void handleGetPresetList();
         void handleSetGridSize(const juce::var& json);
+
+        // Developer-mode preference. Lives under PresetHandler because it
+        // already owns access to ApplicationProperties and the persistence
+        // pattern is identical to the other preset/session bookkeeping.
+        void handleGetDeveloperMode();
+        void handleSetDeveloperMode(const juce::var& json);
 
         // Cross-handler API. emitGridState + sendPresetList are called by the
         // bridge start-up flow + SessionSerializer::finishRestore;

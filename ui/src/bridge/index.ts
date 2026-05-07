@@ -369,6 +369,10 @@ export function requestSetTelemetryEnabled(enabled: boolean): void {
   sendEvent(EventNames.TelemetrySet, JSON.stringify({ enabled }));
 }
 
+export function requestSetDeveloperMode(enabled: boolean): void {
+  sendEvent(EventNames.SettingsSetDeveloperMode, JSON.stringify({ enabled }));
+}
+
 export function requestPickScanDirectory(): void {
   sendEvent(EventNames.PluginsPickScanDir, '');
 }
@@ -809,6 +813,11 @@ export function initBridge(): void {
   onEngineEvent(juce, EventNames.TunerReferencePitchState, (detail: unknown) => {
     const d = asRecord(detail);
     useStore.getState().setReferencePitch(Number(d.hz));
+  });
+
+  onEngineEvent(juce, EventNames.SettingsDeveloperModeState, (detail: unknown) => {
+    const d = asRecord(detail);
+    useStore.getState().setDeveloperModeEnabled(Boolean(d.enabled));
   });
 
   onEngineEvent(juce, EventNames.TelemetryState, (detail: unknown) => {

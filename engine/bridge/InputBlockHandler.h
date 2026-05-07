@@ -1,4 +1,5 @@
 #pragma once
+#include <functional>
 #include <juce_core/juce_core.h>
 #include "BridgeTypes.h"
 #include "IBridgeEmitter.h"
@@ -16,6 +17,12 @@ namespace stellarr::bridge
         StellarrProcessor& processor;
         const BlockNodeMap& blockNodeMap;
         IBridgeEmitter& emit;
+
+        // Returns whether developer mode is currently enabled. Test-tone
+        // commands (toggle / sample pick) are gated behind this so call paths
+        // that bypass the visible picker (e.g. screenshot lifecycle actions)
+        // still respect the dev-mode preference.
+        std::function<bool()> isDeveloperModeEnabled;
     };
 
     // Bridge handlers for test-tone toggle/sample-pick and tuner enable/disable.
@@ -36,6 +43,11 @@ namespace stellarr::bridge
         // handleSetTunerEnabled and by MidiHandler when a tuner-toggle CC
         // arrives.
         void setTunerEnabledOnAllBlocks(bool enabled);
+
+        // Stop any active test tone on every InputBlock. Called by PresetHandler
+        // when developer mode is disabled so tones do not play silently with no
+        // UI control to stop them.
+        void stopAllTestTones();
 
         bool isTunerActive() const { return tunerActive; }
 

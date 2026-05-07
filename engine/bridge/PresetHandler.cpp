@@ -309,4 +309,37 @@ void PresetHandler::handleSetGridSize(const juce::var& json)
     handleSaveSessionQuiet();
 }
 
+// -- Developer mode -----------------------------------------------------------
+
+void PresetHandler::handleGetDeveloperMode()
+{
+    if (ctx.appProperties == nullptr) return;
+
+    auto enabled = ctx.appProperties->getUserSettings()
+                       ->getBoolValue("developerModeEnabled", false);
+
+    auto* detail = new juce::DynamicObject();
+    detail->setProperty("enabled", enabled);
+    ctx.emit.emit(events::SettingsDeveloperModeState, detail);
+}
+
+void PresetHandler::handleSetDeveloperMode(const juce::var& json)
+{
+    if (ctx.appProperties == nullptr) return;
+
+    auto* obj = json.getDynamicObject();
+    if (obj == nullptr) return;
+
+    bool enabled = static_cast<bool>(obj->getProperty("enabled"));
+    ctx.appProperties->getUserSettings()->setValue("developerModeEnabled", enabled);
+    ctx.appProperties->saveIfNeeded();
+
+    if (! enabled)
+        ctx.stopAllTestTones();
+
+    auto* detail = new juce::DynamicObject();
+    detail->setProperty("enabled", enabled);
+    ctx.emit.emit(events::SettingsDeveloperModeState, detail);
+}
+
 } // namespace stellarr::bridge

@@ -120,6 +120,12 @@ export const EventNames = {
   PluginsListUpdated: 'plugins/listUpdated',                     // outbound
   PluginsScanDirsUpdated: 'plugins/scanDirsUpdated',             // outbound
 
+  // ---- Settings ----
+  // Cross-cutting user preferences persisted in ApplicationProperties.
+  SettingsGetDeveloperMode: 'settings/getDeveloperMode',         // inbound
+  SettingsSetDeveloperMode: 'settings/setDeveloperMode',         // inbound
+  SettingsDeveloperModeState: 'settings/developerModeState',     // outbound
+
   // ---- Telemetry ----
   TelemetryGet: 'telemetry/get',                                 // inbound
   TelemetrySet: 'telemetry/set',                                 // inbound
@@ -229,6 +235,9 @@ export type InboundEventName =
   | typeof EventNames.PluginsGetScanDirs
   | typeof EventNames.PluginsPickScanDir
   | typeof EventNames.PluginsRemoveScanDir
+  // Settings (imperative)
+  | typeof EventNames.SettingsGetDeveloperMode
+  | typeof EventNames.SettingsSetDeveloperMode
   // Telemetry (imperative)
   | typeof EventNames.TelemetryGet
   | typeof EventNames.TelemetrySet
@@ -299,6 +308,8 @@ export type OutboundEventName =
   | typeof EventNames.PluginsScanStarted
   | typeof EventNames.PluginsListUpdated
   | typeof EventNames.PluginsScanDirsUpdated
+  // Settings (descriptive)
+  | typeof EventNames.SettingsDeveloperModeState
   // Telemetry (descriptive)
   | typeof EventNames.TelemetryState
   // Tuner (descriptive)

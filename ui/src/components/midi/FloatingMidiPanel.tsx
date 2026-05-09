@@ -16,23 +16,35 @@ export function FloatingMidiPanel() {
 
   const panelRef = useRef<HTMLDivElement | null>(null);
 
-  // Clamp stored position when the parent area resizes. Reserves
-  // PANEL_EDGE_GUTTER on every side so the panel never kisses the edge.
-  useEffect(() => {
-    if (!storedPos) return undefined;
-    const onResize = () => {
-      const parent = panelRef.current?.parentElement;
-      const panelEl = panelRef.current;
-      if (!parent || !panelEl) return;
-      const maxX = parent.clientWidth - panelEl.offsetWidth - PANEL_EDGE_GUTTER;
-      const maxY = parent.clientHeight - panelEl.offsetHeight - PANEL_EDGE_GUTTER;
-      const nx = Math.max(PANEL_EDGE_GUTTER, Math.min(storedPos.x, Math.max(PANEL_EDGE_GUTTER, maxX)));
-      const ny = Math.max(PANEL_EDGE_GUTTER, Math.min(storedPos.y, Math.max(PANEL_EDGE_GUTTER, maxY)));
-      if (nx !== storedPos.x || ny !== storedPos.y) setPos({ x: nx, y: ny });
-    };
-    window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
+  // Clamp stored position so the panel can never sit outside the
+  // visible parent (e.g. when the saved position came from a larger
+  // window or a different layout). Reserves PANEL_EDGE_GUTTER on every
+  // side. Runs on open AND on subsequent window resizes — without the
+  // on-open clamp, a smaller WebView between sessions could leave the
+  // panel completely offscreen with no titlebar to drag it back.
+  const clampStoredPos = useCallback(() => {
+    if (!storedPos) return;
+    const parent = panelRef.current?.parentElement;
+    const panelEl = panelRef.current;
+    if (!parent || !panelEl) return;
+    const maxX = parent.clientWidth - panelEl.offsetWidth - PANEL_EDGE_GUTTER;
+    const maxY = parent.clientHeight - panelEl.offsetHeight - PANEL_EDGE_GUTTER;
+    const nx = Math.max(PANEL_EDGE_GUTTER, Math.min(storedPos.x, Math.max(PANEL_EDGE_GUTTER, maxX)));
+    const ny = Math.max(PANEL_EDGE_GUTTER, Math.min(storedPos.y, Math.max(PANEL_EDGE_GUTTER, maxY)));
+    if (nx !== storedPos.x || ny !== storedPos.y) setPos({ x: nx, y: ny });
   }, [storedPos, setPos]);
+
+  useEffect(() => {
+    if (!open || !storedPos) return undefined;
+    // RAF to ensure the panel has rendered + measured itself before we
+    // read offsetWidth / offsetHeight on first open.
+    const id = requestAnimationFrame(clampStoredPos);
+    window.addEventListener('resize', clampStoredPos);
+    return () => {
+      cancelAnimationFrame(id);
+      window.removeEventListener('resize', clampStoredPos);
+    };
+  }, [open, storedPos, clampStoredPos]);
 
   const getBounds = useCallback(() => {
     const parent = panelRef.current?.parentElement;

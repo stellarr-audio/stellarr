@@ -145,6 +145,13 @@ interface StellarrState {
   cellZoom: 'S' | 'M' | 'L';
   setCellZoom: (z: 'S' | 'M' | 'L') => void;
   cycleCellZoom: (direction: -1 | 1) => void;
+  // Floating MIDI panel — open/closed state is NOT persisted.
+  midiPanelOpen: boolean;
+  toggleMidiPanel: () => void;
+  setMidiPanelOpen: (open: boolean) => void;
+  // Panel position — null means use default placement. Persisted in localStorage.
+  midiPanelPosition: { x: number; y: number } | null;
+  setMidiPanelPosition: (pos: { x: number; y: number }) => void;
   flavour: 'prod' | 'dev';
   presetDirectory: string;
   presetFiles: string[];
@@ -286,6 +293,20 @@ export const readCellZoom = (): 'S' | 'M' | 'L' => {
   return 'M';
 };
 
+export const readMidiPanelPosition = (): { x: number; y: number } | null => {
+  try {
+    const raw = localStorage.getItem('stellarr.midiPanel.position');
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (typeof parsed?.x === 'number' && typeof parsed?.y === 'number') {
+      return { x: parsed.x, y: parsed.y };
+    }
+  } catch {
+    // Bad JSON or localStorage inaccessible; fall through to null.
+  }
+  return null;
+};
+
 export const useStore = create<StellarrState>((set, get) => ({
   loading: true,
   loadingStatus: 'Initialising...',
@@ -308,6 +329,8 @@ export const useStore = create<StellarrState>((set, get) => ({
   telemetryEnabled: false,
   developerModeEnabled: false,
   cellZoom: readCellZoom(),
+  midiPanelOpen: false,
+  midiPanelPosition: readMidiPanelPosition(),
   flavour: 'prod',
   presetDirectory: '',
   presetFiles: [],
@@ -394,6 +417,22 @@ export const useStore = create<StellarrState>((set, get) => ({
       // ignore — see readCellZoom comment.
     }
     set({ cellZoom: next });
+  },
+
+  toggleMidiPanel: () => set((s) => ({ midiPanelOpen: !s.midiPanelOpen })),
+
+  setMidiPanelOpen: (open) => {
+    if (open === get().midiPanelOpen) return;
+    set({ midiPanelOpen: open });
+  },
+
+  setMidiPanelPosition: (pos) => {
+    try {
+      localStorage.setItem('stellarr.midiPanel.position', JSON.stringify(pos));
+    } catch {
+      // ignore — see readMidiPanelPosition comment.
+    }
+    set({ midiPanelPosition: pos });
   },
 
   setFlavour: (flavour) => set({ flavour }),

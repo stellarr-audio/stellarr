@@ -47,6 +47,10 @@ The **Preset** and **Scene** dropdowns each have a **Link icon** button on their
 
 When a mapping is active, the Link icon fills with the brand accent to indicate it is assigned.
 
+### From the Tuner Tab
+
+The **Tuner** title has its own **Link icon** that opens the MIDI assign dialog in binary mode. Assign a CC and a threshold, and the tuner activates when the CC value crosses the threshold. Sending the toggle also switches the active view to the Tuner tab automatically, so a foot switch press surfaces the tuner without you reaching for the trackpad. Releasing (CC value below threshold) returns you to the Grid tab.
+
 ### What Can Be Mapped
 
 | Target | Description | CC Behaviour |
@@ -58,7 +62,7 @@ When a mapping is active, the Link icon fills with the brand accent to indicate 
 | Block State | Recall a state on a single block | CC >= 64 fires; CC < 64 ignored |
 | Scene Switch | Recall a scene | CC value = scene index |
 | Preset Change | Switch presets | Program Change value = preset index |
-| Tuner Toggle | Enable/disable tuner | CC >= 64 = on, < 64 = off |
+| Tuner Toggle | Enable/disable tuner -- automatically switches to the Tuner tab when on | CC >= 64 = on, < 64 = off |
 
 ### Per-State MIDI Mapping
 

@@ -137,6 +137,7 @@ export const EventNames = {
   TunerSetReferencePitch: 'tuner/setReferencePitch',             // inbound
   TunerData: 'tuner/data',                                       // outbound
   TunerReferencePitchState: 'tuner/referencePitchState',         // outbound
+  TunerActiveState: 'tuner/activeState',                         // outbound
 
   // ---- Input block ----
   InputToggleTestTone: 'input/toggleTestTone',                   // inbound
@@ -315,6 +316,7 @@ export type OutboundEventName =
   // Tuner (descriptive)
   | typeof EventNames.TunerData
   | typeof EventNames.TunerReferencePitchState
+  | typeof EventNames.TunerActiveState
   // Input block (past-tense)
   | typeof EventNames.InputTestToneChanged
   | typeof EventNames.InputTestToneSamplesUpdated

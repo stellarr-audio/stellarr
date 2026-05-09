@@ -141,6 +141,10 @@ interface StellarrState {
   scanning: boolean;
   telemetryEnabled: boolean;
   developerModeEnabled: boolean;
+  // Cell zoom — global UI scale for Grid cells. Persisted in localStorage.
+  cellZoom: 'S' | 'M' | 'L';
+  setCellZoom: (z: 'S' | 'M' | 'L') => void;
+  cycleCellZoom: (direction: -1 | 1) => void;
   flavour: 'prod' | 'dev';
   presetDirectory: string;
   presetFiles: string[];
@@ -270,6 +274,18 @@ interface StellarrState {
   setSoftwareUpdate: (s: UpdateStatePayload) => void;
 }
 
+const ZOOM_ORDER: ['S', 'M', 'L'] = ['S', 'M', 'L'];
+
+export const readCellZoom = (): 'S' | 'M' | 'L' => {
+  try {
+    const v = localStorage.getItem('stellarr.cellZoom');
+    if (v === 'S' || v === 'M' || v === 'L') return v;
+  } catch {
+    // localStorage may be inaccessible (SSR, private mode); fall through.
+  }
+  return 'M';
+};
+
 export const useStore = create<StellarrState>((set, get) => ({
   loading: true,
   loadingStatus: 'Initialising...',
@@ -291,6 +307,7 @@ export const useStore = create<StellarrState>((set, get) => ({
   scanning: false,
   telemetryEnabled: false,
   developerModeEnabled: false,
+  cellZoom: readCellZoom(),
   flavour: 'prod',
   presetDirectory: '',
   presetFiles: [],
@@ -355,6 +372,30 @@ export const useStore = create<StellarrState>((set, get) => ({
   setScanning: (scanning) => set({ scanning }),
   setTelemetryEnabled: (enabled) => set({ telemetryEnabled: enabled }),
   setDeveloperModeEnabled: (enabled) => set({ developerModeEnabled: enabled }),
+
+  setCellZoom: (z) => {
+    if (z === get().cellZoom) return;
+    try {
+      localStorage.setItem('stellarr.cellZoom', z);
+    } catch {
+      // ignore — see readCellZoom comment.
+    }
+    set({ cellZoom: z });
+  },
+
+  cycleCellZoom: (direction) => {
+    const current = get().cellZoom;
+    const idx = ZOOM_ORDER.indexOf(current);
+    const next = ZOOM_ORDER[Math.max(0, Math.min(ZOOM_ORDER.length - 1, idx + direction))];
+    if (next === current) return;
+    try {
+      localStorage.setItem('stellarr.cellZoom', next);
+    } catch {
+      // ignore — see readCellZoom comment.
+    }
+    set({ cellZoom: next });
+  },
+
   setFlavour: (flavour) => set({ flavour }),
 
   setBlockPlugin: (blockId, pluginId, pluginName, pluginFormat, hasEditor) =>

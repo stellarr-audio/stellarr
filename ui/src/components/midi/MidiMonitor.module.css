@@ -120,6 +120,13 @@
   gap: 0.5rem;
 }
 
+/* Equal-width prefix labels (CC# / Ch / Val / Prog) for visual harmony,
+   matching the Min/Max pattern in ContinuousShaping. */
+.prefix {
+  width: 3rem;
+  justify-content: center;
+}
+
 .senderFields {
   display: flex;
   flex-direction: column;

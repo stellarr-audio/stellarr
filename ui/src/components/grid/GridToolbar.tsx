@@ -1,5 +1,5 @@
 import { TbZoomIn, TbZoomOut } from 'react-icons/tb';
-import { RiRemoteControlLine } from 'react-icons/ri';
+import { PiTrafficSignal } from 'react-icons/pi';
 import { useStore } from '../../store';
 import { IconButton } from '../common/IconButton';
 import styles from './GridToolbar.module.css';
@@ -16,7 +16,7 @@ export function GridToolbar() {
       {developerModeEnabled && (
         <IconButton
           inGroup
-          icon={<RiRemoteControlLine size={16} />}
+          icon={<PiTrafficSignal size={16} />}
           title={midiPanelOpen ? 'Close MIDI test panel' : 'Open MIDI test panel'}
           onClick={toggleMidiPanel}
           active={midiPanelOpen}

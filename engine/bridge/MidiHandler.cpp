@@ -293,4 +293,13 @@ void MidiHandler::handleInjectMidiCC(const juce::var& json)
     ctx.processor.getMidiMapper().injectMidi(juce::MidiMessage::controllerEvent(ch, cc, val));
 }
 
+void MidiHandler::handleInjectMidiPC(const juce::var& json)
+{
+    auto* obj = json.getDynamicObject();
+    if (obj == nullptr) return;
+    int ch      = static_cast<int>(obj->getProperty("channel")) + 1; // 0-indexed -> 1-indexed
+    int program = static_cast<int>(obj->getProperty("program"));
+    ctx.processor.getMidiMapper().injectMidi(juce::MidiMessage::programChange(ch, program));
+}
+
 } // namespace stellarr::bridge

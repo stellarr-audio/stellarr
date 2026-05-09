@@ -972,6 +972,48 @@ static bool testInjectMidi()
     return true;
 }
 
+static bool testInjectMidiPC()
+{
+    printf("Test: injected MIDI Program Change appears in process buffer... ");
+
+    MidiMapper mapper;
+    mapper.setMonitorEnabled(true);
+
+    // Inject a Program Change
+    mapper.injectMidi(juce::MidiMessage::programChange(1, 7));
+
+    // Process an empty buffer — injected event should appear
+    juce::MidiBuffer buf;
+    mapper.processMidi(buf);
+    mapper.drainOutboundEvents();
+
+    auto events = mapper.drainMonitorEvents();
+
+    if (events.empty())
+    {
+        fprintf(stderr, "  no events captured\n");
+        printf("FAIL\n");
+        return false;
+    }
+
+    bool foundInjected = false;
+    for (auto& e : events)
+    {
+        if (e.type == "PC" && e.data1 == 7)
+            foundInjected = true;
+    }
+
+    if (!foundInjected)
+    {
+        fprintf(stderr, "  injected PC=7 not found\n");
+        printf("FAIL\n");
+        return false;
+    }
+
+    printf("PASS\n");
+    return true;
+}
+
 static bool testMonitorDrainClears()
 {
     printf("Test: drainMonitorEvents clears buffer... ");
@@ -1698,6 +1740,7 @@ int main()
     if (!testMonitorCapturesEvents())   ++failures;
     if (!testMonitorDisabledNoCapture()) ++failures;
     if (!testInjectMidi())              ++failures;
+    if (!testInjectMidiPC())            ++failures;
     if (!testMonitorDrainClears())      ++failures;
 
     // Edge Cases

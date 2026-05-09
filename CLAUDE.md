@@ -303,8 +303,8 @@ Used for the Options panel and any modal dialog (e.g. `MidiAssignDialog`). Every
 ### Icons
 
 - Library: [`react-icons`](https://react-icons.github.io/react-icons/)
-- Active sets: Tabler (`react-icons/tb`), Lucide (`react-icons/lu`), Ionicons 5 (`react-icons/io5`), Remix (`react-icons/ri`).
-- Tabler is the default for new icons where multiple sets have an equivalent. The other sets are in use only because a specific glyph wasn't available in Tabler at sufficient quality (e.g. `RiRemoteControlLine` for the Grid toolbar's MIDI test panel toggle, `LuSparkles` as the GridOverlay preset/scene separator, `IoCloseSharp` for hover-only block close affordance).
+- Active sets: Tabler (`react-icons/tb`), Lucide (`react-icons/lu`), Ionicons 5 (`react-icons/io5`), Phosphor (`react-icons/pi`).
+- Tabler is the default for new icons where multiple sets have an equivalent. The other sets are in use only because a specific glyph wasn't available in Tabler at sufficient quality (e.g. `PiTrafficSignal` for the Grid toolbar's MIDI test panel toggle, `LuSparkles` as the GridOverlay preset/scene separator, `IoCloseSharp` for hover-only block close affordance).
 - Before introducing a fifth set, audit existing imports and exhaust the four current sets first.
 
 ### Theme

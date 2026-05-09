@@ -107,6 +107,7 @@ export const EventNames = {
   MidiCancelLearn: 'midi/cancelLearn',                           // inbound
   MidiSetMonitorEnabled: 'midi/setMonitorEnabled',               // inbound
   MidiInjectCC: 'midi/injectCC',                                 // inbound
+  MidiInjectPC: 'midi/injectPC',                                 // inbound
   MidiMappingsChanged: 'midi/mappingsChanged',                   // outbound
   MidiLearnComplete: 'midi/learnComplete',                       // outbound
   MidiMonitorData: 'midi/monitorData',                           // outbound
@@ -231,6 +232,7 @@ export type InboundEventName =
   | typeof EventNames.MidiCancelLearn
   | typeof EventNames.MidiSetMonitorEnabled
   | typeof EventNames.MidiInjectCC
+  | typeof EventNames.MidiInjectPC
   // Plugins (imperative)
   | typeof EventNames.PluginsScan
   | typeof EventNames.PluginsGetScanDirs

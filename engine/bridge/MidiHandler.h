@@ -97,6 +97,7 @@ namespace stellarr::bridge
         void handleCancelMidiLearn();
         void handleSetMidiMonitorEnabled(const juce::var& json);
         void handleInjectMidiCC(const juce::var& json);
+        void handleInjectMidiPC(const juce::var& json);
 
     private:
         void registerMapperCallbacks();

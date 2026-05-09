@@ -1,10 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
 import { useStore } from '../../store';
-import { requestInjectMidiCC } from '../../bridge';
+import { requestInjectMidiCC, requestInjectMidiPC } from '../../bridge';
 import { Button } from '../common/Button';
 import { Input } from '../common/Input';
 import { InputGroup, InputGroupLabel } from '../common/InputGroup';
+import { Tablist, Tab } from '../common/Tablist';
 import styles from './MidiMonitor.module.css';
+
+type SenderMode = 'cc' | 'pc';
 
 export function MidiMonitor() {
   return (
@@ -70,9 +73,28 @@ export function MidiMonitorContent({ boundedLog = false }: { boundedLog?: boolea
       <div className={styles.divider} />
 
       <div className={styles.senderSection}>
-        <span className={styles.sectionTitle}>Send CC</span>
-        <CcSender />
+        <Sender />
       </div>
+    </>
+  );
+}
+
+function Sender() {
+  const [mode, setMode] = useState<SenderMode>('cc');
+  return (
+    <>
+      <span className={styles.sectionTitle}>Send</span>
+      <Tablist
+        value={mode}
+        onChange={(id) => setMode(id as SenderMode)}
+        aria-label="MIDI message type"
+        stretch
+        accent="secondary"
+      >
+        <Tab id="cc">CC</Tab>
+        <Tab id="pc">PC</Tab>
+      </Tablist>
+      {mode === 'cc' ? <CcSender /> : <PcSender />}
     </>
   );
 }
@@ -87,7 +109,7 @@ function CcSender() {
   return (
     <div className={styles.senderFields}>
       <InputGroup>
-        <InputGroupLabel>CC#</InputGroupLabel>
+        <InputGroupLabel className={styles.prefix}>CC#</InputGroupLabel>
         <Input
           inGroup
           type="number"
@@ -99,7 +121,7 @@ function CcSender() {
       </InputGroup>
 
       <InputGroup>
-        <InputGroupLabel>Ch</InputGroupLabel>
+        <InputGroupLabel className={styles.prefix}>Ch</InputGroupLabel>
         <Input
           inGroup
           type="number"
@@ -113,7 +135,7 @@ function CcSender() {
       </InputGroup>
 
       <InputGroup>
-        <InputGroupLabel>Val</InputGroupLabel>
+        <InputGroupLabel className={styles.prefix}>Val</InputGroupLabel>
         <Input
           inGroup
           type="number"
@@ -121,6 +143,49 @@ function CcSender() {
           max={127}
           value={value}
           onChange={(e) => setValue(Math.max(0, Math.min(127, parseInt(e.target.value) || 0)))}
+        />
+      </InputGroup>
+
+      <Button onClick={send} className={styles.sendBtn}>
+        Send
+      </Button>
+    </div>
+  );
+}
+
+function PcSender() {
+  const [channel, setChannel] = useState(0);
+  const [program, setProgram] = useState(0);
+
+  const send = () => requestInjectMidiPC(channel, program);
+
+  return (
+    <div className={styles.senderFields}>
+      <InputGroup>
+        <InputGroupLabel className={styles.prefix}>Prog</InputGroupLabel>
+        <Input
+          inGroup
+          type="number"
+          min={0}
+          max={127}
+          value={program}
+          onChange={(e) =>
+            setProgram(Math.max(0, Math.min(127, parseInt(e.target.value) || 0)))
+          }
+        />
+      </InputGroup>
+
+      <InputGroup>
+        <InputGroupLabel className={styles.prefix}>Ch</InputGroupLabel>
+        <Input
+          inGroup
+          type="number"
+          min={1}
+          max={16}
+          value={channel + 1}
+          onChange={(e) =>
+            setChannel(Math.max(0, Math.min(15, (parseInt(e.target.value) || 1) - 1)))
+          }
         />
       </InputGroup>
 

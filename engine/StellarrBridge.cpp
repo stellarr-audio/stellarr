@@ -325,6 +325,7 @@ const StellarrBridge::EventTable& StellarrBridge::eventTable()
         m[events::MidiCancelLearn]           = { [](StellarrBridge& b, const juce::var&)   { b.midi->handleCancelMidiLearn(); }, true };
         m[events::MidiSetMonitorEnabled]     = { [](StellarrBridge& b, const juce::var& j) { b.midi->handleSetMidiMonitorEnabled(j); }, false };
         m[events::MidiInjectCC]              = { [](StellarrBridge& b, const juce::var& j) { b.midi->handleInjectMidiCC(j); }, false };
+        m[events::MidiInjectPC]              = { [](StellarrBridge& b, const juce::var& j) { b.midi->handleInjectMidiPC(j); }, false };
         // Plugin management -------------------------------------------
         m[events::PluginsScan]               = { [](StellarrBridge& b, const juce::var&)   { b.handleScanPlugins(); }, true };
         m[events::PluginsGetScanDirs]        = { [](StellarrBridge& b, const juce::var&)   { b.handleGetScanDirectories(); }, false };

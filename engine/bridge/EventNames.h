@@ -111,6 +111,7 @@ namespace stellarr::bridge::events
     inline constexpr const char* MidiCancelLearn            = "midi/cancelLearn";            // inbound
     inline constexpr const char* MidiSetMonitorEnabled      = "midi/setMonitorEnabled";      // inbound
     inline constexpr const char* MidiInjectCC               = "midi/injectCC";               // inbound
+    inline constexpr const char* MidiInjectPC               = "midi/injectPC";               // inbound
     inline constexpr const char* MidiMappingsChanged        = "midi/mappingsChanged";        // outbound
     inline constexpr const char* MidiLearnComplete          = "midi/learnComplete";          // outbound
     inline constexpr const char* MidiMonitorData            = "midi/monitorData";            // outbound

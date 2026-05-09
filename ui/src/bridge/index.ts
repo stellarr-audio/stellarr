@@ -345,6 +345,10 @@ export function requestInjectMidiCC(channel: number, cc: number, value: number):
   sendEvent(EventNames.MidiInjectCC, JSON.stringify({ channel, cc, value }));
 }
 
+export function requestInjectMidiPC(channel: number, program: number): void {
+  sendEvent(EventNames.MidiInjectPC, JSON.stringify({ channel, program }));
+}
+
 export function requestSetTunerEnabled(enabled: boolean): void {
   sendEvent(EventNames.TunerSetEnabled, JSON.stringify({ enabled }));
 }

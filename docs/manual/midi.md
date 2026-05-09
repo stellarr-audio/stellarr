@@ -148,16 +148,26 @@ The right sidebar on the MIDI page shows a live log of all incoming MIDI events:
 
 The monitor auto-activates when you open the MIDI tab and deactivates when you leave.
 
-## CC Sender
+## MIDI Sender
 
-Below the monitor is a **Send CC** panel for testing your mappings without hardware:
+Below the monitor is a **Send** panel for testing your mappings without hardware. Toggle between **CC** and **PC** modes via the tabs.
+
+**CC mode** -- inject a Control Change message:
 
 1. Set the **CC#** (0--127).
 2. Set the **Ch** (1--16).
-3. Set the **Value** (0--127).
+3. Set the **Val** (0--127).
 4. Click **Send**.
 
-The CC is injected into Stellarr's audio processing as if it came from a real MIDI device. The corresponding mapping's activity diamond will flash, and the parameter will change.
+**PC mode** -- inject a Program Change message:
+
+1. Set the **Prog** number (0--127).
+2. Set the **Ch** (1--16).
+3. Click **Send**.
+
+Both modes inject into Stellarr's audio processing as if from a real MIDI device. CC sends flash the matching mapping's activity diamond and update the parameter; PC sends switch presets when the program number matches a preset's index in the active folder. (Scene switching is CC-based -- use CC mode for that.)
+
+The MIDI Sender is also available as a floating panel from the Grid toolbar (when developer mode is on) so you can test without leaving the Grid view.
 
 ## MIDI Device Selection
 

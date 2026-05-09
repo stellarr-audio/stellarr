@@ -1,15 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useStore, type GridBlock } from '../../store';
 import { colors } from '../common/colors';
-import {
-  CELL_SIZE,
-  GAP,
-  outputPortX,
-  inputPortX,
-  connectionY,
-  gridWidth,
-  gridHeight,
-} from './layout';
+import { useGridLayout } from './layout';
 import styles from './ConnectionLayer.module.css';
 
 interface Props {
@@ -32,12 +24,19 @@ function breaksSignal(b: Pick<GridBlock, 'bypassed' | 'bypassMode' | 'mix'>): bo
   return ALWAYS_BREAKING_MODES.has(mode);
 }
 
-function orthogonalPath(x1: number, y1: number, x2: number, y2: number): string {
+function orthogonalPath(
+  x1: number,
+  y1: number,
+  x2: number,
+  y2: number,
+  cellSize: number,
+  gap: number,
+): string {
   // Route through the gap space:
   // 1. Exit source going right into the gap
   // 2. Travel vertically to destination row
   // 3. Enter destination going right from the gap
-  const midX = x1 + GAP / 2;
+  const midX = x1 + gap / 2;
 
   if (Math.abs(y1 - y2) < 1) {
     // Same row — straight horizontal line
@@ -46,23 +45,24 @@ function orthogonalPath(x1: number, y1: number, x2: number, y2: number): string 
 
   if (x2 > x1) {
     // Destination is to the right — simple L-shape through gap
-    const bendX = x1 + GAP / 2;
+    const bendX = x1 + gap / 2;
     return `M ${x1} ${y1} L ${bendX} ${y1} L ${bendX} ${y2} L ${x2} ${y2}`;
   }
 
   // Destination is to the left or same column — route around via gap below/above
-  const offsetY = y2 > y1 ? CELL_SIZE / 2 + GAP / 2 : -(CELL_SIZE / 2 + GAP / 2);
+  const offsetY = y2 > y1 ? cellSize / 2 + gap / 2 : -(cellSize / 2 + gap / 2);
   return [
     `M ${x1} ${y1}`,
     `L ${midX} ${y1}`,
     `L ${midX} ${y1 + offsetY}`,
-    `L ${x2 - GAP / 2} ${y1 + offsetY}`,
-    `L ${x2 - GAP / 2} ${y2}`,
+    `L ${x2 - gap / 2} ${y1 + offsetY}`,
+    `L ${x2 - gap / 2} ${y2}`,
     `L ${x2} ${y2}`,
   ].join(' ');
 }
 
 export function ConnectionLayer({ onConnectionClick }: Props) {
+  const layout = useGridLayout();
   const blocks = useStore((s) => s.blocks);
   const connections = useStore((s) => s.connections);
   const grid = useStore((s) => s.grid);
@@ -244,8 +244,8 @@ export function ConnectionLayer({ onConnectionClick }: Props) {
     return { outputGroups: outGroups, inputGroups: inGroups };
   }, [connections, blocks]);
 
-  const gw = gridWidth(grid.columns);
-  const gh = gridHeight(grid.rows);
+  const gw = layout.gridWidth(grid.columns);
+  const gh = layout.gridHeight(grid.rows);
 
   return (
     <svg className={styles.svg} style={{ width: gw, height: gh }}>
@@ -259,10 +259,10 @@ export function ConnectionLayer({ onConnectionClick }: Props) {
         const outIdx = outGroup.findIndex((g) => g.connIdx === i);
         const inIdx = inGroup.findIndex((g) => g.connIdx === i);
 
-        const x1 = outputPortX(src.col);
-        const y1 = connectionY(src.row, outGroup.length, outIdx);
-        const x2 = inputPortX(dst.col);
-        const y2 = connectionY(dst.row, inGroup.length, inIdx);
+        const x1 = layout.outputPortX(src.col);
+        const y1 = layout.connectionY(src.row, outGroup.length, outIdx);
+        const x2 = layout.inputPortX(dst.col);
+        const y2 = layout.connectionY(dst.row, inGroup.length, inIdx);
 
         const isSelectedLive = liveConnections.has(i);
         const isComplete = completeConnections.has(i);
@@ -293,7 +293,7 @@ export function ConnectionLayer({ onConnectionClick }: Props) {
         // colour so it reads as "click to remove" rather than just thicker.
         const visibleStroke = isHovered ? colors.danger : stroke;
 
-        const d = orthogonalPath(x1, y1, x2, y2);
+        const d = orthogonalPath(x1, y1, x2, y2, layout.cellSize, layout.gap);
 
         return (
           <g key={i}>
@@ -328,8 +328,8 @@ export function ConnectionLayer({ onConnectionClick }: Props) {
         (() => {
           const blk = blockMap.get(dragging.blockId);
           if (!blk) return null;
-          const x1 = dragging.portType === 'output' ? outputPortX(blk.col) : inputPortX(blk.col);
-          const y1 = connectionY(blk.row, 1, 0);
+          const x1 = dragging.portType === 'output' ? layout.outputPortX(blk.col) : layout.inputPortX(blk.col);
+          const y1 = layout.connectionY(blk.row, 1, 0);
           return (
             <line
               x1={x1}

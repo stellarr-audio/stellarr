@@ -6,7 +6,7 @@ import type { GridBlock as GridBlockData } from '../../store';
 import { requestCopyBlock, requestRemoveBlock, requestOpenPluginEditor } from '../../bridge';
 import { useStore } from '../../store';
 import { colors } from '../common/colors';
-import { CELL_SIZE, cellLeft, cellTop } from './layout';
+import { useGridLayout } from './layout';
 import { TYPE_ABBREVIATIONS } from '../common/constants';
 import styles from './GridBlock.module.css';
 
@@ -81,6 +81,7 @@ function EdgeZone({
 }
 
 export function GridBlockComponent({ block, onEdgeContextMenu }: Props) {
+  const layout = useGridLayout();
   const selectedBlockId = useStore((s) => s.selectedBlockId);
   const selectBlock = useStore((s) => s.selectBlock);
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
@@ -119,10 +120,10 @@ export function GridBlockComponent({ block, onEdgeContextMenu }: Props) {
       data-grid-block
       className={styles.block}
       style={{
-        left: cellLeft(block.col),
-        top: cellTop(block.row),
-        width: CELL_SIZE,
-        height: CELL_SIZE,
+        left: layout.cellLeft(block.col),
+        top: layout.cellTop(block.row),
+        width: layout.cellSize,
+        height: layout.cellSize,
         border: borderStyle,
         background,
         opacity: isDragging ? 0.3 : 1,

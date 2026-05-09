@@ -25,7 +25,7 @@ import { GridBlockComponent } from './GridBlock';
 import { ConnectionLayer } from './ConnectionLayer';
 import { BlockMenu } from './BlockMenu';
 import { DroppableCell } from './DroppableCell';
-import { CELL_SIZE, gridWidth, gridHeight } from './layout';
+import { useGridLayout } from './layout';
 import { TYPE_ABBREVIATIONS } from '../common/constants';
 import { colors, blockPaletteByName } from '../common/colors';
 import styles from './Grid.module.css';
@@ -38,6 +38,7 @@ const typeColors: Record<string, string> = {
 
 // Lightweight preview shown in the DragOverlay portal during block drag
 function BlockGhost({ block }: { block: GridBlockData }) {
+  const layout = useGridLayout();
   const accentColor = block.pluginMissing
     ? colors.warning
     : block.blockColor || typeColors[block.type] || colors.secondary;
@@ -46,8 +47,8 @@ function BlockGhost({ block }: { block: GridBlockData }) {
     <div
       className={styles.dragGhost}
       style={{
-        width: CELL_SIZE,
-        height: CELL_SIZE,
+        width: layout.cellSize,
+        height: layout.cellSize,
         borderColor: accentColor,
       }}
     >
@@ -61,6 +62,7 @@ function BlockGhost({ block }: { block: GridBlockData }) {
 }
 
 export function Grid() {
+  const layout = useGridLayout();
   const grid = useStore((s) => s.grid);
   const blocks = useStore((s) => s.blocks);
   const connections = useStore((s) => s.connections);
@@ -265,8 +267,8 @@ export function Grid() {
 
   // -- Render -----------------------------------------------------------------
 
-  const gw = gridWidth(grid.columns);
-  const gh = gridHeight(grid.rows);
+  const gw = layout.gridWidth(grid.columns);
+  const gh = layout.gridHeight(grid.rows);
   const isDragging = activeBlock !== null;
 
   return (

@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { IoCloseSharp, IoAddSharp, IoLockClosedOutline } from 'react-icons/io5';
 import { useStore } from '../../store';
 import { requestMoveBlock, requestSetGridSize } from '../../bridge';
-import { CELL_SIZE, GAP, STEP, gridWidth, gridHeight } from './layout';
+import { useGridLayout } from './layout';
 import styles from './GridResizer.module.css';
 
 const MIN_COLS = 1;
@@ -28,6 +28,7 @@ interface Props {
  * preview line through the row/col that would be removed.
  */
 export function GridResizer({ children }: Props) {
+  const layout = useGridLayout();
   const grid = useStore((s) => s.grid);
   const blocks = useStore((s) => s.blocks);
   const setGridSize = useStore((s) => s.setGridSize);
@@ -47,8 +48,10 @@ export function GridResizer({ children }: Props) {
     return s;
   }, [blocks]);
 
-  const gw = gridWidth(grid.columns);
-  const gh = gridHeight(grid.rows);
+  const { cellSize, gap, step } = layout;
+
+  const gw = layout.gridWidth(grid.columns);
+  const gh = layout.gridHeight(grid.rows);
 
   const canAddCol = grid.columns < MAX_COLS;
   const canAddRow = grid.rows < MAX_ROWS;
@@ -105,20 +108,20 @@ export function GridResizer({ children }: Props) {
   let previewStyle: React.CSSProperties | null = null;
   let previewClass: string | null = null;
   if (hover?.kind === 'delete-col') {
-    const x = hover.index * STEP + CELL_SIZE / 2;
+    const x = hover.index * step + cellSize / 2;
     previewStyle = { left: x, top: -8, bottom: -8, width: 0 };
     previewClass = styles.previewColDanger;
   } else if (hover?.kind === 'delete-row') {
-    const y = hover.index * STEP + CELL_SIZE / 2;
+    const y = hover.index * step + cellSize / 2;
     previewStyle = { top: y, left: -8, right: -8, height: 0 };
     previewClass = styles.previewRowDanger;
   } else if (hover?.kind === 'add-col') {
     // Line aligns with the add-col chip's horizontal centre.
-    const x = grid.columns * STEP - GAP + addGap + pillSize / 2;
+    const x = grid.columns * step - gap + addGap + pillSize / 2;
     previewStyle = { left: x, top: -8, bottom: -8, width: 0 };
     previewClass = styles.previewColAdd;
   } else if (hover?.kind === 'add-row') {
-    const y = grid.rows * STEP - GAP + addGap + pillSize / 2;
+    const y = grid.rows * step - gap + addGap + pillSize / 2;
     previewStyle = { top: y, left: -8, right: -8, height: 0 };
     previewClass = styles.previewRowAdd;
   }
@@ -129,8 +132,8 @@ export function GridResizer({ children }: Props) {
   const rowChipLeft = 0;
   const gridOriginX = gutterSize;
   const gridOriginY = gutterSize;
-  const addColX = gridOriginX + grid.columns * STEP - GAP + addGap;
-  const addRowY = gridOriginY + grid.rows * STEP - GAP + addGap;
+  const addColX = gridOriginX + grid.columns * step - gap + addGap;
+  const addRowY = gridOriginY + grid.rows * step - gap + addGap;
 
   return (
     <div
@@ -144,7 +147,7 @@ export function GridResizer({ children }: Props) {
       {Array.from({ length: grid.columns }, (_, c) => {
         const locked = occupiedCols.has(c);
         const disabled = locked || grid.columns <= MIN_COLS;
-        const centreX = gridOriginX + c * STEP + CELL_SIZE / 2;
+        const centreX = gridOriginX + c * step + cellSize / 2;
         return (
           <div
             key={`col-${c}`}
@@ -200,7 +203,7 @@ export function GridResizer({ children }: Props) {
       {Array.from({ length: grid.rows }, (_, r) => {
         const locked = occupiedRows.has(r);
         const disabled = locked || grid.rows <= MIN_ROWS;
-        const centreY = gridOriginY + r * STEP + CELL_SIZE / 2;
+        const centreY = gridOriginY + r * step + cellSize / 2;
         return (
           <div
             key={`row-${r}`}

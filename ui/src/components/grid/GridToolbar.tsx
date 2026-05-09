@@ -14,23 +14,23 @@ export function GridToolbar() {
   return (
     <div className={styles.toolbar}>
       {developerModeEnabled && (
-        <>
-          <IconButton
-            icon={<RiRemoteControlLine size={16} />}
-            title={midiPanelOpen ? 'Close MIDI test panel' : 'Open MIDI test panel'}
-            onClick={toggleMidiPanel}
-            active={midiPanelOpen}
-          />
-          <span className={styles.divider} />
-        </>
+        <IconButton
+          inGroup
+          icon={<RiRemoteControlLine size={16} />}
+          title={midiPanelOpen ? 'Close MIDI test panel' : 'Open MIDI test panel'}
+          onClick={toggleMidiPanel}
+          active={midiPanelOpen}
+        />
       )}
       <IconButton
+        inGroup
         icon={<TbZoomOut size={16} />}
         title="Zoom out (smaller cells)"
         onClick={() => cycleCellZoom(-1)}
         disabled={cellZoom === 'S'}
       />
       <IconButton
+        inGroup
         icon={<TbZoomIn size={16} />}
         title="Zoom in (larger cells)"
         onClick={() => cycleCellZoom(+1)}

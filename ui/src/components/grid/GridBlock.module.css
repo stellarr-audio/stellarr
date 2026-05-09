@@ -28,7 +28,9 @@
 }
 
 .blockType {
-  font-size: 1.4rem;
+  /* Scales proportionally with cell zoom via --block-scale (set on
+     .grid). 16px floor keeps the abbreviation readable at S zoom. */
+  font-size: max(16px, calc(1.4rem * var(--block-scale, 1)));
   font-weight: 700;
   letter-spacing: 0.12em;
 }
@@ -43,7 +45,10 @@
 }
 
 .pluginName {
-  font-size: 0.72rem;
+  /* Scales proportionally with cell zoom via --block-scale (set on
+     .grid). 11px floor keeps the label readable at S zoom (WCAG-aligned
+     minimum for body text). */
+  font-size: max(11px, calc(0.72rem * var(--block-scale, 1)));
   font-weight: 700;
   color: var(--color-muted);
   letter-spacing: 0.06em;

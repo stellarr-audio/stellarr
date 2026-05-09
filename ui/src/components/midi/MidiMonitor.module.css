@@ -51,7 +51,7 @@
 
 .log {
   flex: 1;
-  overflow: auto;
+  overflow-y: scroll;
   background: var(--color-bg);
   border: 1px solid var(--color-border);
   border-radius: var(--radius);
@@ -60,6 +60,34 @@
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   color: var(--color-text);
   min-height: 120px;
+}
+
+/* Force a visible scrollbar — macOS WebView defaults to overlay
+   scrollbars that only appear during active scrolling, which makes the
+   log feel like it's lost overflow when full. */
+.log::-webkit-scrollbar {
+  width: 8px;
+}
+
+.log::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.log::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--color-muted) 35%, transparent);
+}
+
+.log::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--color-muted) 55%, transparent);
+}
+
+/* Bounded variant — used by the floating MIDI test panel so the log
+   stops growing once it hits a sensible cap, leaving the Send CC
+   controls anchored at the bottom of the panel. */
+.logBounded {
+  flex: 0 0 auto;
+  height: 200px;
+  min-height: 0;
 }
 
 .logEmpty {

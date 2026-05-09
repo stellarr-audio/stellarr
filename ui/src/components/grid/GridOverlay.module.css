@@ -1,23 +1,35 @@
-/* Now-playing strip: chrome band above the grid body. Preset on the left,
-   scene as a pill on the right. Lives outside the scrollable grid area so
-   the grid breathes. */
-/* Two invisible content columns meeting in the middle. Preset sits at the
-   inner edge of the left column (right-aligned), scene sits at the inner
-   edge of the right column (left-aligned). Gutter between = visual breath. */
+/* Now-playing titlebar: chrome band above the grid body. Splits 50/50 —
+   left = preset → scene breadcrumb, right = grid toolbar (zoom + dev MIDI).
+   Sits outside the scrollable grid area so it stays anchored on zoom. */
 .strip {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  column-gap: 2.5rem;
+  grid-template-columns: 1fr auto;
+  column-gap: 1.5rem;
   align-items: center;
-  padding: 0.7rem 1.25rem;
+  padding: 0.55rem 1.25rem;
   background: color-mix(in srgb, var(--color-primary) 4%, transparent);
   border-bottom: 1px solid var(--color-divider);
   flex-shrink: 0;
+  min-height: 64px;
+  box-sizing: border-box;
+}
+
+.left {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  overflow: hidden;
+  min-width: 0;
+}
+
+.right {
+  display: flex;
+  align-items: center;
+  justify-self: end;
 }
 
 .preset {
-  justify-self: end;
-  font-size: 2.625rem;
+  font-size: 1.95rem;
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -31,32 +43,27 @@
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
 }
 
-.scenePill {
-  justify-self: start;
+.sep {
   display: inline-flex;
   align-items: center;
-  gap: 0.6rem;
-  padding: 0.45rem 1.1rem;
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--color-secondary) 22%, transparent),
-    color-mix(in srgb, var(--color-secondary) 8%, transparent)
-  );
-  color: var(--color-secondary);
-  border-radius: 0;
-  font-size: 1.375rem;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-secondary) 30%, transparent);
+  color: var(--color-muted);
+  flex-shrink: 0;
 }
 
-.scenePill::before {
-  content: '';
-  width: 10px;
-  height: 10px;
-  border-radius: 0;
-  background: var(--color-secondary);
+.scene {
+  font-size: 1.95rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
 }

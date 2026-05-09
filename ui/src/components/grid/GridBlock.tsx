@@ -204,7 +204,7 @@ export function GridBlockComponent({ block, onEdgeContextMenu }: Props) {
           requestRemoveBlock(block.id);
         }}
       >
-        <IoCloseSharp size={16} />
+        <IoCloseSharp size={Math.max(14, Math.round(16 * layout.blockScale))} />
       </div>
     </div>
   );

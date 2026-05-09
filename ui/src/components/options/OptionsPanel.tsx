@@ -56,6 +56,8 @@ export function OptionsPanel() {
   }, [block, selectBlock]);
 
   // Clamp panel position inside the parent (Grid tab panel) on resize.
+  // Reserves PANEL_EDGE_GUTTER on every side so the panel never kisses
+  // the edge.
   useEffect(() => {
     if (!storedPos) return undefined;
     const onResize = () => {
@@ -63,10 +65,10 @@ export function OptionsPanel() {
       if (!parent) return;
       const panelEl = panelRef.current;
       if (!panelEl) return;
-      const maxX = parent.clientWidth - panelEl.offsetWidth;
-      const maxY = parent.clientHeight - panelEl.offsetHeight;
-      const nx = Math.max(0, Math.min(storedPos.x, Math.max(0, maxX)));
-      const ny = Math.max(0, Math.min(storedPos.y, Math.max(0, maxY)));
+      const maxX = parent.clientWidth - panelEl.offsetWidth - PANEL_EDGE_GUTTER;
+      const maxY = parent.clientHeight - panelEl.offsetHeight - PANEL_EDGE_GUTTER;
+      const nx = Math.max(PANEL_EDGE_GUTTER, Math.min(storedPos.x, Math.max(PANEL_EDGE_GUTTER, maxX)));
+      const ny = Math.max(PANEL_EDGE_GUTTER, Math.min(storedPos.y, Math.max(PANEL_EDGE_GUTTER, maxY)));
       if (nx !== storedPos.x || ny !== storedPos.y) {
         setFloatingPanelPos({ x: nx, y: ny });
       }
@@ -80,10 +82,16 @@ export function OptionsPanel() {
     const panelEl = panelRef.current;
     if (!parent || !panelEl) return { left: 0, top: 0, right: 0, bottom: 0 };
     return {
-      left: 0,
-      top: 0,
-      right: Math.max(0, parent.clientWidth - panelEl.offsetWidth),
-      bottom: Math.max(0, parent.clientHeight - panelEl.offsetHeight),
+      left: PANEL_EDGE_GUTTER,
+      top: PANEL_EDGE_GUTTER,
+      right: Math.max(
+        PANEL_EDGE_GUTTER,
+        parent.clientWidth - panelEl.offsetWidth - PANEL_EDGE_GUTTER,
+      ),
+      bottom: Math.max(
+        PANEL_EDGE_GUTTER,
+        parent.clientHeight - panelEl.offsetHeight - PANEL_EDGE_GUTTER,
+      ),
     };
   }, []);
 
@@ -122,7 +130,7 @@ export function OptionsPanel() {
     : { right: `${PANEL_EDGE_GUTTER}px`, top: `${PANEL_EDGE_GUTTER}px` };
 
   return (
-    <div ref={panelRef} data-options-panel className={styles.panel} style={inlineStyle}>
+    <div ref={panelRef} data-floating-panel className={styles.panel} style={inlineStyle}>
       <BlockHeader block={block} onClose={() => selectBlock(null)} bindDrag={bindDrag} />
 
       <div className={styles.content}>

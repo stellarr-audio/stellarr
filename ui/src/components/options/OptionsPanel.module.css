@@ -2,7 +2,7 @@
    Sharp-edged (no radius) as a first step of the broader sharp-edges shift. */
 .panel {
   position: absolute;
-  width: 300px;
+  width: 320px;
   box-sizing: border-box;
   background: var(--block-bg);
   border: 1px solid var(--color-border);

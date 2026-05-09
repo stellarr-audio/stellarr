@@ -6,6 +6,18 @@ Open-source guitar signal processing standalone app. JUCE (C++) audio engine wit
 
 ## Development Approach
 
+## UI / UX philosophy
+
+**Always think first about what is best for the END USER.** Before locking any UI / UX decision, audit it against this directive — not after a bug report. Convenience-driven shortcuts that worsen the user's experience are rejected; find the user-respecting alternative.
+
+- **Accessibility before convenience.** Readable text, sensible contrast, enforceable floor sizes that no setting can break. WCAG-aligned defaults (≥11px for body text, sufficient colour contrast). When proportional scaling can shrink elements below those floors, use `max(<floor>, …)` clamps so the floor cannot be defeated.
+- **Discoverability before density.** Place affordances where users naturally look — anchor controls to the workspace they affect, not to wherever was easiest to mount in code. A toolbar that controls the Grid view sits in the Grid view, not on a tab.
+- **Predictable behaviour and persistence.** Settings, zoom levels, panel positions, and theme choices persist across launches unless deliberately ephemeral (dev-only state). When something is intentionally ephemeral, document why.
+- **Default states reflect production usage.** Dev / debug / experimental surfaces hide by default. The first-launch experience is what a non-technical end-user expects to see.
+- **Surface intent in failure modes.** Disabled buttons say why they are disabled (tooltip / title). Empty states explain what to do. Errors point at recovery, not at the engine.
+
+When proposing or implementing a UI change, ask "is this best for the end user?" and reject the alternative until you can answer yes.
+
 ## Architecture philosophy
 
 Default to the long-term, architecturally correct approach. Do not offer "quick fix vs proper fix" tradeoffs unless explicitly asked. Assume full scope of change is acceptable. Correctness, maintainability, and performance take priority over minimal diff size.
@@ -215,9 +227,24 @@ macOS Apple Silicon, CMake 3.24+, Xcode CLI tools, Node.js 18+, npm. See `docs/C
 ### Typography
 
 - Typeface: Switzer (variable, 300–900) — already loaded globally
-- Scale: `--text-xs` (13px, weight 500) · `--text-base` (15px, weight 400) · `--text-base-strong-weight` (600) · `--text-display` (reserved)
-- Minimum: 13px — anywhere
-- `font-variant-numeric: tabular-nums` for any aligning digits (meters, parameter values, timings)
+- Chrome scale (panels, settings, dialogs, header, footer): `--text-xs` (13px, weight 500) · `--text-base` (15px, weight 400) · `--text-base-strong-weight` (600) · `--text-display` (reserved). Minimum 13px anywhere in chrome.
+- `font-variant-numeric: tabular-nums` for any aligning digits (meters, parameter values, timings).
+
+### Grid block scale + accessibility floors
+
+The Grid is a viz surface — block-internal typography scales proportionally with the active cell zoom and is **not** bound to the chrome 13/15 scale. Set the `--block-scale` CSS variable on the Grid root from `useGridLayout().blockScale` (= `cellSize / 88`, M baseline). Block CSS uses:
+
+```css
+font-size: max(<floor>, calc(<base> * var(--block-scale, 1)));
+```
+
+Floors enforce WCAG-aligned readability regardless of zoom — they cannot be defeated by zooming out:
+
+- `.blockType` (abbreviation tag like "IN" / "OUT" / "PLG"): floor `16px`
+- `.pluginName` (block plugin label): floor `11px`
+- Icons inside blocks: floor `14px` (apply via `Math.max(14, Math.round(<base> * blockScale))` in JS)
+
+Chrome typography (panels, settings, dialogs, header) is NOT scaled by zoom — only the Grid viz surface scales. When adding new block-internal typography, default to `var(--block-scale)` consumption with a sensible floor.
 
 ### Dimension tokens
 
@@ -276,8 +303,9 @@ Used for the Options panel and any modal dialog (e.g. `MidiAssignDialog`). Every
 ### Icons
 
 - Library: [`react-icons`](https://react-icons.github.io/react-icons/)
-- Active sets: Tabler (`react-icons/tb`) + Lucide (`react-icons/lu`)
-- Before introducing a third set, check existing imports. Prefer Tabler for new icons where both have an equivalent.
+- Active sets: Tabler (`react-icons/tb`), Lucide (`react-icons/lu`), Ionicons 5 (`react-icons/io5`), Remix (`react-icons/ri`).
+- Tabler is the default for new icons where multiple sets have an equivalent. The other sets are in use only because a specific glyph wasn't available in Tabler at sufficient quality (e.g. `RiRemoteControlLine` for the Grid toolbar's MIDI test panel toggle, `LuSparkles` as the GridOverlay preset/scene separator, `IoCloseSharp` for hover-only block close affordance).
+- Before introducing a fifth set, audit existing imports and exhaust the four current sets first.
 
 ### Theme
 

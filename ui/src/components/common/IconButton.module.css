@@ -53,3 +53,14 @@
   border-color: var(--color-primary);
   background: color-mix(in srgb, var(--color-primary) 8%, transparent);
 }
+
+/* Disabled — at-limit state for zoom buttons, etc. Suppresses hover so the
+   button no longer reads as interactive. */
+.button:disabled,
+.button:disabled:hover {
+  color: var(--color-muted);
+  border-color: var(--color-border);
+  background: transparent;
+  opacity: 0.4;
+  cursor: not-allowed;
+}

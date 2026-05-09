@@ -25,7 +25,6 @@ import { GridBlockComponent } from './GridBlock';
 import { ConnectionLayer } from './ConnectionLayer';
 import { BlockMenu } from './BlockMenu';
 import { DroppableCell } from './DroppableCell';
-import { GridToolbar } from './GridToolbar';
 import { useGridLayout } from './layout';
 import { TYPE_ABBREVIATIONS } from '../common/constants';
 import { colors, blockPaletteByName } from '../common/colors';
@@ -273,9 +272,7 @@ export function Grid() {
   const isDragging = activeBlock !== null;
 
   return (
-    <div className={styles.gridWrap}>
-      <GridToolbar />
-      <DndContext
+    <DndContext
         sensors={sensors}
         collisionDetection={pointerWithin}
         onDragStart={handleDragStart}
@@ -287,7 +284,15 @@ export function Grid() {
         onMouseUp={handleMouseUp}
         onMouseLeave={() => setHoveredCell(null)}
         className={styles.grid}
-        style={{ width: gw, height: gh }}
+        style={{
+          width: gw,
+          height: gh,
+          // CSS variable consumed by GridBlock.module.css to scale block
+          // typography proportionally with cell zoom. See the
+          // useGridLayout hook + CLAUDE.md "Grid block scale +
+          // accessibility floors" rule.
+          ['--block-scale' as string]: String(layout.blockScale),
+        }}
       >
         {/* Cell backgrounds (droppable targets) */}
         {Array.from({ length: grid.rows }, (_, row) =>
@@ -422,6 +427,5 @@ export function Grid() {
         {activeBlock ? <BlockGhost block={activeBlock} /> : null}
       </DragOverlay>
     </DndContext>
-    </div>
   );
 }

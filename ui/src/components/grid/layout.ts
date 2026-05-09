@@ -8,11 +8,24 @@ export const ZOOM_PRESETS = {
 
 export type CellZoomLevel = keyof typeof ZOOM_PRESETS;
 
+// Baseline cell size — the M preset. blockScale below is computed
+// proportionally against this so M = 1.0, S < 1, L > 1. Keep in sync with
+// ZOOM_PRESETS.M.cellSize.
+const BASELINE_CELL_SIZE = 88;
+
 export interface GridLayout {
   cellSize: number;
   gap: number;
   // Distance between successive cells along either axis (cellSize + gap).
   step: number;
+  // Proportional scale relative to the M baseline (cellSize / 88). Drives
+  // CSS variable --block-scale on the Grid root so block-internal
+  // typography + icons grow/shrink with the cell. Block CSS uses
+  //   font-size: max(<floor>, calc(<base> * var(--block-scale)))
+  // to enforce WCAG-aligned readability floors at small zooms. See the
+  // CLAUDE.md design system "Grid block scale + accessibility floors"
+  // section.
+  blockScale: number;
   cellLeft: (col: number) => number;
   cellTop: (row: number) => number;
   // gridWidth / gridHeight: total pixel span occupied by N cells in a row /
@@ -36,6 +49,7 @@ export function useGridLayout(): GridLayout {
     cellSize,
     gap,
     step,
+    blockScale: cellSize / BASELINE_CELL_SIZE,
     cellLeft: (col) => col * step,
     cellTop: (row) => row * step,
     gridWidth: (cols) => cols * cellSize + Math.max(0, cols - 1) * gap,

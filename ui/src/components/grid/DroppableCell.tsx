@@ -1,6 +1,6 @@
 import { forwardRef, memo } from 'react';
 import { useDroppable } from '@dnd-kit/core';
-import { CELL_SIZE, cellLeft, cellTop } from './layout';
+import { useGridLayout } from './layout';
 import styles from './Grid.module.css';
 
 interface Props {
@@ -20,6 +20,7 @@ export const DroppableCell = memo(
     { col, row, occupied, isHovered, isMenuOpen, onMouseEnter, onMouseLeave, onClick, children },
     forwardedRef,
   ) {
+    const layout = useGridLayout();
     const { isOver, setNodeRef } = useDroppable({
       id: `cell-${col}-${row}`,
       disabled: occupied,
@@ -50,10 +51,10 @@ export const DroppableCell = memo(
         onClick={onClick}
         className={cellClassName}
         style={{
-          left: cellLeft(col),
-          top: cellTop(row),
-          width: CELL_SIZE,
-          height: CELL_SIZE,
+          left: layout.cellLeft(col),
+          top: layout.cellTop(row),
+          width: layout.cellSize,
+          height: layout.cellSize,
         }}
       >
         {children}

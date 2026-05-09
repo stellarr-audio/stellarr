@@ -43,6 +43,7 @@
   --z-grid-above:     10;   /* hover chrome, block menus sitting over the grid */
   --z-floating-panel: 18;   /* Options panel shell */
   --z-popover:        20;   /* widget popovers inside the Options panel (colour picker, param slider popup, select dropdowns, target-loudness popup base) */
+  --z-floating-panel-midi: 22; /* Floating MIDI test panel — above OptionsPanel + popovers, below dialogs */
   --z-dropdown:       40;   /* Options panel overflow menu and its submenu */
   --z-dialog:         50;   /* modal dialogs (MIDI assign, confirm, rename) */
   --z-loudness-popup: 100;  /* LoudnessWindow popup */

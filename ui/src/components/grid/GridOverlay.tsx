@@ -1,4 +1,6 @@
+import { LuSparkles } from 'react-icons/lu';
 import { useStore } from '../../store';
+import { GridToolbar } from './GridToolbar';
 import styles from './GridOverlay.module.css';
 
 export function GridOverlay() {
@@ -17,12 +19,22 @@ export function GridOverlay() {
       ? scenes[activeSceneIndex].name
       : null;
 
-  if (!presetName && !sceneName) return null;
-
   return (
     <div className={styles.strip}>
-      <span className={styles.preset}>{presetName ?? 'Untitled'}</span>
-      {sceneName && <span className={styles.scenePill}>{sceneName}</span>}
+      <div className={styles.left}>
+        <span className={styles.preset}>{presetName ?? 'Untitled'}</span>
+        {sceneName && (
+          <>
+            <span className={styles.sep} aria-hidden="true">
+              <LuSparkles size={16} />
+            </span>
+            <span className={styles.scene}>{sceneName}</span>
+          </>
+        )}
+      </div>
+      <div className={styles.right}>
+        <GridToolbar />
+      </div>
     </div>
   );
 }

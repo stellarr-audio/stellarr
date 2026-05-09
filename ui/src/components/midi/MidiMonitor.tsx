@@ -1,36 +1,41 @@
 import { useState, useEffect, useRef } from 'react';
 import { useStore } from '../../store';
-import { requestSetMidiMonitorEnabled, requestInjectMidiCC } from '../../bridge';
+import { requestInjectMidiCC } from '../../bridge';
 import { Button } from '../common/Button';
 import { Input } from '../common/Input';
 import { InputGroup, InputGroupLabel } from '../common/InputGroup';
 import styles from './MidiMonitor.module.css';
 
 export function MidiMonitor() {
+  return (
+    <div className={styles.container}>
+      <span className={styles.panelTitle}>MIDI</span>
+      <div className={styles.divider} />
+      <MidiMonitorContent />
+    </div>
+  );
+}
+
+/** Inner content used by both the MIDI tab side-rail and the floating
+ * MIDI test panel. Excludes the chrome wrapper + panel title.
+ *
+ * `boundedLog` caps the log at a fixed height (rather than the default
+ * flex-grow behaviour). Use it when the surrounding container is
+ * height-constrained — e.g. the floating panel — so the Send CC controls
+ * stay anchored as the log fills. */
+export function MidiMonitorContent({ boundedLog = false }: { boundedLog?: boolean } = {}) {
   const events = useStore((s) => s.midiMonitorEvents);
   const clearMonitor = useStore((s) => s.clearMidiMonitor);
-  const setMonitorEnabled = useStore((s) => s.setMidiMonitorEnabled);
   const logRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    requestSetMidiMonitorEnabled(true);
-    setMonitorEnabled(true);
-    return () => {
-      requestSetMidiMonitorEnabled(false);
-      setMonitorEnabled(false);
-    };
-  }, [setMonitorEnabled]);
 
   useEffect(() => {
     if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight;
   }, [events]);
 
+  const logClass = boundedLog ? `${styles.log} ${styles.logBounded}` : styles.log;
+
   return (
-    <div className={styles.container}>
-      <span className={styles.panelTitle}>MIDI</span>
-
-      <div className={styles.divider} />
-
+    <>
       <div className={styles.monitorSection}>
         <div className={styles.sectionHeader}>
           <span className={styles.sectionTitle}>Monitor</span>
@@ -39,7 +44,7 @@ export function MidiMonitor() {
           </Button>
         </div>
 
-        <div ref={logRef} className={styles.log}>
+        <div ref={logRef} className={logClass}>
           {events.length === 0 ? (
             <span className={styles.logEmpty}>Waiting for MIDI...</span>
           ) : (
@@ -68,7 +73,7 @@ export function MidiMonitor() {
         <span className={styles.sectionTitle}>Send CC</span>
         <CcSender />
       </div>
-    </div>
+    </>
   );
 }
 

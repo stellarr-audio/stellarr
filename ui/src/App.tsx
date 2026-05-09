@@ -11,6 +11,7 @@ import { Tuner } from './components/tuner/Tuner';
 import { TunerPanel } from './components/tuner/TunerPanel';
 import { MidiPage } from './components/midi/MidiPage';
 import { MidiMonitor } from './components/midi/MidiMonitor';
+import { FloatingMidiPanel } from './components/midi/FloatingMidiPanel';
 import { LoadingScreen } from './components/header/LoadingScreen';
 import { PresetBrowser } from './components/header/PresetBrowser';
 import { Logo } from './components/header/Logo';
@@ -21,7 +22,11 @@ import { Tablist, Tab } from './components/common/Tablist';
 import { TabBadge } from './components/common/TabBadge';
 import { TbLayoutGrid, TbWaveSine, TbPlug, TbSunHigh, TbMoon, TbSettings } from 'react-icons/tb';
 import { useThemeStore, resolveTheme } from './store/theme';
-import { requestSetTunerEnabled, requestSaveSessionQuiet } from './bridge';
+import {
+  requestSetTunerEnabled,
+  requestSaveSessionQuiet,
+  requestSetMidiMonitorEnabled,
+} from './bridge';
 import styles from './App.module.css';
 
 function App() {
@@ -32,6 +37,10 @@ function App() {
   const activeTab = useStore((s) => s.activeTab);
   const setActiveTab = useStore((s) => s.setActiveTab);
   const settingsBadge = useStore((s) => s.badges.settings);
+  const developerModeEnabled = useStore((s) => s.developerModeEnabled);
+  const midiPanelOpen = useStore((s) => s.midiPanelOpen);
+  const setMidiPanelOpen = useStore((s) => s.setMidiPanelOpen);
+  const setMidiMonitorEnabled = useStore((s) => s.setMidiMonitorEnabled);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -43,6 +52,25 @@ function App() {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
+
+  // MIDI monitor enable coordinator — engine-side monitor runs only when
+  // a UI surface is actively viewing it: the MIDI tab side-rail OR the
+  // floating test panel while the Grid tab is visible. The floating
+  // panel is mounted inside the Grid tab body, so it's not rendered
+  // when the user has switched to Tuner / Settings — gate accordingly.
+  useEffect(() => {
+    const wantMonitor =
+      activeTab === 'midi' || (activeTab === 'grid' && midiPanelOpen);
+    requestSetMidiMonitorEnabled(wantMonitor);
+    setMidiMonitorEnabled(wantMonitor);
+  }, [activeTab, midiPanelOpen, setMidiMonitorEnabled]);
+
+  // Auto-close the floating MIDI panel when developer mode flips off.
+  // The button that opens it is dev-mode-gated, so leaving the panel open
+  // would orphan it.
+  useEffect(() => {
+    if (!developerModeEnabled && midiPanelOpen) setMidiPanelOpen(false);
+  }, [developerModeEnabled, midiPanelOpen, setMidiPanelOpen]);
 
 
   if (loading) return <LoadingScreen />;
@@ -124,7 +152,7 @@ function App() {
               // grid connections) still suppress the deselect.
               const t = e.target as HTMLElement;
               if (!e.currentTarget.contains(t)) return;
-              if (t.closest('[data-grid-block]') || t.closest('[data-options-panel]')) return;
+              if (t.closest('[data-grid-block]') || t.closest('[data-floating-panel]')) return;
               selectBlock(null);
             }}
             className={styles.gridBody}
@@ -135,6 +163,7 @@ function App() {
               </GridResizer>
             </div>
             <OptionsPanel />
+            <FloatingMidiPanel />
           </div>
         </div>
 

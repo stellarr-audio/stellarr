@@ -17,6 +17,13 @@ public:
                          std::unique_ptr<StandalonePluginHolder> holder)
         : StandaloneFilterWindow(title, backgroundColour, std::move(holder))
     {
+        // Add the maximise (zoom) button to the system titlebar — JUCE's
+        // StandaloneFilterWindow defaults to minimise + close only.
+        setTitleBarButtonsRequired(DocumentWindow::minimiseButton
+                                       | DocumentWindow::maximiseButton
+                                       | DocumentWindow::closeButton,
+                                   false);
+
         // Save audio device settings immediately whenever they change,
         // so they survive a crash during the session.
         pluginHolder->deviceManager.addChangeListener(this);

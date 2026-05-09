@@ -1,3 +1,7 @@
+.gridWrap {
+  position: relative;
+}
+
 .grid {
   position: relative;
   background: var(--color-bg);

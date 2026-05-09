@@ -25,6 +25,7 @@ import { GridBlockComponent } from './GridBlock';
 import { ConnectionLayer } from './ConnectionLayer';
 import { BlockMenu } from './BlockMenu';
 import { DroppableCell } from './DroppableCell';
+import { GridToolbar } from './GridToolbar';
 import { useGridLayout } from './layout';
 import { TYPE_ABBREVIATIONS } from '../common/constants';
 import { colors, blockPaletteByName } from '../common/colors';
@@ -272,12 +273,14 @@ export function Grid() {
   const isDragging = activeBlock !== null;
 
   return (
-    <DndContext
-      sensors={sensors}
-      collisionDetection={pointerWithin}
-      onDragStart={handleDragStart}
-      onDragEnd={handleDragEnd}
-    >
+    <div className={styles.gridWrap}>
+      <GridToolbar />
+      <DndContext
+        sensors={sensors}
+        collisionDetection={pointerWithin}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+      >
       <div
         ref={gridRef}
         onMouseMove={handleMouseMove}
@@ -419,5 +422,6 @@ export function Grid() {
         {activeBlock ? <BlockGhost block={activeBlock} /> : null}
       </DragOverlay>
     </DndContext>
+    </div>
   );
 }

@@ -33,8 +33,13 @@ describe('SoftwareUpdates', () => {
       });
     });
     render(<SoftwareUpdates />);
-    expect(screen.getByText(/you're on the latest version/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /install update/i })).toBeDisabled();
+    // Copy reads "You're on v{version}, the latest version." — match
+    // tolerant of the interjected version token.
+    expect(screen.getByText(/you're on .* the latest version/i)).toBeInTheDocument();
+    // Install button only renders when an update is actively available
+    // (`hasActiveUpdate`). With status === 'no-update' it should be absent
+    // entirely, not disabled.
+    expect(screen.queryByRole('button', { name: /install update/i })).toBeNull();
   });
 
   it('shows the update banner when an update is available', () => {

@@ -3,6 +3,8 @@ import { useStore } from '../../store';
 import { requestSetReferencePitch } from '../../bridge';
 import { Input } from '../common/Input';
 import { InputGroup, InputGroupLabel } from '../common/InputGroup';
+import { MidiAssignDialog } from '../common/MidiAssignDialog';
+import { MidiBadge } from '../common/MidiBadge';
 import { Tablist, Tab } from '../common/Tablist';
 import { Tag } from '../common/Tag';
 import styles from './TunerPanel.module.css';
@@ -13,8 +15,13 @@ export function TunerPanel() {
   const referencePitch = useStore((s) => s.referencePitch);
   const tunerMode = useStore((s) => s.tunerMode);
   const setTunerMode = useStore((s) => s.setTunerMode);
+  const mappings = useStore((s) => s.midiMappings);
   const [inputValue, setInputValue] = useState<string>(String(referencePitch));
   const [focused, setFocused] = useState(false);
+  const [midiDialogOpen, setMidiDialogOpen] = useState(false);
+
+  const tunerMidiIndex = mappings.findIndex((m) => m.target === 'tunerToggle');
+  const tunerMidi = tunerMidiIndex >= 0 ? mappings[tunerMidiIndex] : null;
 
   const displayValue = focused ? inputValue : String(referencePitch);
 
@@ -28,7 +35,14 @@ export function TunerPanel() {
 
   return (
     <div className={styles.panel}>
-      <span className={styles.title}>Tuner</span>
+      <div className={styles.titleRow}>
+        <span className={styles.title}>Tuner</span>
+        <MidiBadge
+          mapping={tunerMidi}
+          onClick={() => setMidiDialogOpen(true)}
+          title={tunerMidi ? `Tuner MIDI: CC ${tunerMidi.cc}` : 'Assign MIDI CC to Tuner toggle'}
+        />
+      </div>
 
       <div className={styles.divider} />
 
@@ -93,6 +107,13 @@ export function TunerPanel() {
           ))}
         </div>
       </div>
+      <MidiAssignDialog
+        open={midiDialogOpen}
+        onOpenChange={setMidiDialogOpen}
+        title="MIDI — Tuner Toggle"
+        target="tunerToggle"
+        existingIndex={tunerMidiIndex >= 0 ? tunerMidiIndex : undefined}
+      />
     </div>
   );
 }

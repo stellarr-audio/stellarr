@@ -141,6 +141,7 @@ namespace stellarr::bridge::events
     inline constexpr const char* TunerSetReferencePitch     = "tuner/setReferencePitch";     // inbound
     inline constexpr const char* TunerData                  = "tuner/data";                  // outbound
     inline constexpr const char* TunerReferencePitchState   = "tuner/referencePitchState";   // outbound
+    inline constexpr const char* TunerActiveState           = "tuner/activeState";           // outbound
 
     // ---- Input block (inbound + outbound) -------------------------------
     inline constexpr const char* InputToggleTestTone        = "input/toggleTestTone";        // inbound

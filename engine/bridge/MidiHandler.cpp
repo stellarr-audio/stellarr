@@ -109,6 +109,14 @@ void MidiHandler::registerMapperCallbacks()
     mapper.onTunerToggle = [this](bool enabled) {
         if (ctx.isRestoring()) return;
         ctx.setTunerActiveOnAllBlocks(enabled);
+
+        // Notify the UI so it can switch to / from the Tuner tab and keep
+        // its tab state in sync. The user pressing a foot-switch CC expects
+        // to see the tuner appear, not just have engine-side pitch
+        // detection running silently.
+        auto* detail = new juce::DynamicObject();
+        detail->setProperty("active", enabled);
+        ctx.emit.emit(events::TunerActiveState, detail);
     };
 
     mapper.onBlockState = [this](const juce::String& blockId, int stateIndex) {

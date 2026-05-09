@@ -815,6 +815,21 @@ export function initBridge(): void {
     useStore.getState().setReferencePitch(Number(d.hz));
   });
 
+  // MIDI-driven tuner toggle (Phase 10) — engine fires this when a CC
+  // mapped to `tunerToggle` crosses its threshold. Switch the active tab
+  // to / from the Tuner so the user actually sees the surface they just
+  // activated, instead of pitch detection running silently.
+  onEngineEvent(juce, EventNames.TunerActiveState, (detail: unknown) => {
+    const d = asRecord(detail);
+    const active = Boolean(d.active);
+    const store = useStore.getState();
+    if (active) {
+      if (store.activeTab !== 'tuner') store.setActiveTab('tuner');
+    } else if (store.activeTab === 'tuner') {
+      store.setActiveTab('grid');
+    }
+  });
+
   onEngineEvent(juce, EventNames.SettingsDeveloperModeState, (detail: unknown) => {
     const d = asRecord(detail);
     useStore.getState().setDeveloperModeEnabled(Boolean(d.enabled));

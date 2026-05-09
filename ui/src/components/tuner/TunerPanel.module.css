@@ -11,6 +11,12 @@
   overflow: hidden;
 }
 
+.titleRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .title {
   font-size: var(--text-base);
   font-weight: var(--text-base-strong-weight);

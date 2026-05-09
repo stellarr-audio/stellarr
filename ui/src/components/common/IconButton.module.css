@@ -46,3 +46,10 @@
   border-color: var(--color-danger);
   background: color-mix(in srgb, var(--color-danger) 8%, transparent);
 }
+
+/* Active state — orchid primary colour */
+.active {
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary) 8%, transparent);
+}

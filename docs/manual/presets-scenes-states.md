@@ -58,7 +58,7 @@ Every preset starts with one scene called "Scene 1". You can have up to 16 scene
 
 ### Stage Display
 
-Above the grid, the active preset and scene names are displayed in large type — preset on the left, scene on the right, separated by a small diamond. The two names are colour-coded so the distinction is readable from across a stage. Both react instantly when you switch.
+The Grid view's titlebar shows the active preset and scene names as a `Preset → ✦ → Scene` breadcrumb in large type, with a small sparkle as the separator. The two names are colour-coded -- preset in the orchid brand colour, scene in amber -- so the distinction is readable from across a stage. Both react instantly when you switch. The right side of the same titlebar holds the [Grid toolbar](/docs/grid/) (cell zoom and the developer-mode MIDI test panel toggle).
 
 ### How Scene Switching Works
 

@@ -39,9 +39,15 @@ Pick whichever you read better. The mode is remembered across sessions.
 
 When the Tuner tab is active, **audio output is automatically muted**. This lets you tune silently without the audience hearing your open strings. Audio resumes when you switch back to the Grid or any other tab.
 
+## MIDI Toggle
+
+The Tuner can be activated by a MIDI Control Change. Click the **MIDI link icon** next to the Tuner title to open the assign dialog. Pick a CC and threshold (default 64); when an incoming CC value crosses the threshold, the tuner activates AND Stellarr automatically switches to the Tuner tab so the note is on screen the moment your foot hits the switch. CC values below the threshold deactivate the tuner and switch you back to the Grid.
+
+The mapping is global — it persists across preset switches and survives a restart.
+
 ## Test Tone
 
-If you don't have an instrument plugged in, you can test the tuner using the built-in test tone:
+If you don't have an instrument plugged in, you can test the tuner using the built-in test tone (developer mode only — see [System Settings](/docs/system/) for how to enable):
 
 1. Go to the **Grid** tab.
 2. Select the Input block.

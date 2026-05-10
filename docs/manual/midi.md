@@ -55,14 +55,14 @@ The **Tuner** title has its own **Link icon** that opens the MIDI assign dialog 
 
 | Target | Description | CC Behaviour |
 |--------|-------------|--------------|
-| Block Bypass | Toggle block on/off | CC >= 64 = on, < 64 = off |
+| Block Bypass | Toggle block on/off | CC ≥ threshold = on, below = off (threshold per-mapping; default 64) |
 | Block Mix | Wet/dry blend | CC 0--127 maps to 0--100% |
 | Block Balance | Stereo balance | CC 0--127 maps to L100--R100 |
 | Block Level | Output gain | CC 0--127 maps to -60 to +12 dB |
-| Block State | Recall a state on a single block | CC >= 64 fires; CC < 64 ignored |
+| Block State | Recall a state on a single block | CC ≥ threshold fires; below ignored (threshold per-mapping; default 64) |
 | Scene Switch | Recall a scene | CC value = scene index |
 | Preset Change | Switch presets | Program Change value = preset index |
-| Tuner Toggle | Enable/disable tuner -- automatically switches to the Tuner tab when on | CC >= 64 = on, < 64 = off |
+| Tuner Toggle | Enable/disable tuner -- automatically switches to the Tuner tab when on | CC ≥ threshold = on, below = off (threshold per-mapping; default 64) |
 
 ### Per-State MIDI Mapping
 
@@ -74,7 +74,7 @@ To assign:
 2. In the **States** row, click the small link icon between the state number and the delete cross.
 3. Use **Learn** to capture an incoming CC, or enter the channel and CC manually.
 
-The state activates whenever the assigned CC arrives with a value of 64 or higher. Values below 64 are ignored, so a standard footswitch (sending 127 on press, 0 on release) latches the state cleanly.
+The state activates whenever the assigned CC arrives with a value at or above the mapping's threshold (default 64; configurable per mapping in the assign dialog). Values below the threshold are ignored, so a standard footswitch (sending 127 on press, 0 on release) latches the state cleanly.
 
 **How this interacts with scenes**
 
@@ -167,7 +167,7 @@ Below the monitor is a **Send** panel for testing your mappings without hardware
 
 Both modes inject into Stellarr's audio processing as if from a real MIDI device. CC sends flash the matching mapping's activity diamond and update the parameter; PC sends switch presets when the program number matches a preset's index in the active folder. (Scene switching is CC-based -- use CC mode for that.)
 
-The MIDI Sender is also available as a floating panel from the Grid toolbar (when developer mode is on) so you can test without leaving the Grid view.
+The MIDI Sender is also available as a floating panel from the Grid toolbar (when [developer mode](/docs/system/) is on) so you can test without leaving the Grid view. The floating panel is draggable and remembers where you left it; if you reopen Stellarr at a smaller window size, the panel snaps back inside the visible area on the first frame so you never have to chase a titlebar offscreen.
 
 ## MIDI Device Selection
 

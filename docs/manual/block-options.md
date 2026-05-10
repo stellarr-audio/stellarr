@@ -5,7 +5,9 @@ sidebar:
   order: 4
 ---
 
-Select any block on the grid to open the **Options panel** — a floating panel you can drag by its header to position anywhere on screen. Close it with the **×** in its top-right, or simply click an empty area of the grid.
+Select any block on the grid to open the **Options panel** — a floating panel you can drag by its header to position anywhere on screen. Close it with the **×** in its top-right, or simply click an empty area of the grid. There's a 16 px gutter around the parent edge that the panel can't be dragged across; if the window is resized smaller while the panel is open, it snaps back inside the visible area so you never have to chase a titlebar offscreen.
+
+The panel position resets to the default top-right corner whenever you deselect a block or relaunch Stellarr.
 
 ## Block Header
 
@@ -18,7 +20,7 @@ The top of the options panel shows:
 
 ## Input Block Options
 
-- **Test Tone** -- Toggle on to play a built-in pentatonic melody. Useful for testing your chain without plugging in a guitar.
+- **Test Tone** -- (Visible only when [developer mode](/docs/system/) is on.) Toggle on to play a built-in pentatonic melody. Useful for testing your chain without plugging in a guitar.
 - **Level** -- Output level from -60 dB to +12 dB. Double-click the slider to reset to 0 dB.
 
 ## Output Block Options

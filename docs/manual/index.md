@@ -52,3 +52,5 @@ A **preset** is a complete session file (`.stellarr`) containing:
 
 ### MIDI Control
 Map any MIDI CC to any parameter: block bypass, mix, balance, level, scene switching, and more. Use MIDI Learn to auto-detect your controller's CCs, or assign them manually.
+
+Most MIDI mappings are saved with the preset and switch when you change presets. Two are **global** -- they live in app settings and survive preset switches and restarts: **Preset Change** (Program Change selects a preset by index in the active folder) and **Tuner Toggle** (a CC activates the chromatic tuner and switches the UI to the Tuner tab). See [MIDI](/docs/midi/) for the full target list.

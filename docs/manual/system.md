@@ -100,6 +100,19 @@ For per-block LUFS readings and target loudness, see [Block Options](/docs/block
 
 Click the sun/moon icon in the header to switch between **Dark** and **Light** themes. Your choice is persisted across sessions. If you've never clicked the toggle, Stellarr follows your system appearance automatically.
 
+## Developer Mode
+
+Settings has a **Developer mode** toggle, **off by default**. The first-launch experience reflects what a non-technical user expects to see -- engineering scaffolding stays hidden until you opt in.
+
+Turning developer mode on reveals:
+
+- The **Test Tone** picker on the Input block's options panel ([Block Options](/docs/block-options/)) for testing the signal path without an instrument.
+- The **MIDI test panel** toggle on the Grid toolbar, which opens a floating panel for monitoring incoming MIDI and injecting CC / Program Change messages without external hardware ([MIDI](/docs/midi/)).
+
+Toggling developer mode off automatically closes the floating MIDI test panel and stops any active test tones, so disabling the surface also disables the engine work behind it.
+
+The setting is persisted across sessions.
+
 ## Audio & MIDI Settings
 
 Click the options button in the app's title bar and select **Audio/MIDI Settings** to configure:

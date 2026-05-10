@@ -39,7 +39,7 @@ Click the gear icon to open the plugin's own editor window.
 
 ## 6. Play
 
-Plug in your guitar (or enable **Test Tone** on the Input block to hear a demo melody) and play through your chain.
+Plug in your guitar and play through your chain. (No instrument handy? Turn on [developer mode](/docs/system/) in Settings to reveal a built-in **Test Tone** picker on the Input block's options panel.)
 
 ## 7. Save Your Preset
 

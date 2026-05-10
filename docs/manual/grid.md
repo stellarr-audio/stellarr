@@ -93,9 +93,14 @@ When you select or hover over a block, Stellarr highlights the **live signal rou
 
 This makes it easy to trace your signal flow at a glance, even in complex multi-path chains. Diamond and convergent topologies are fully supported.
 
-## Preset and Scene Display
+## Grid Toolbar
 
-Above the grid, the current preset name and active scene name are shown in large text, separated by a diamond. This is visible from across the room during a performance.
+A titlebar runs along the top of the Grid view. The **left side** shows the current preset and active scene names as a `Preset → ✦ → Scene` breadcrumb in large text -- readable from across the room during a performance. The **right side** holds the toolbar:
+
+- **Cell zoom** -- Two icon buttons step through three sizes: **S**, **M**, **L**. The chosen size is persisted across sessions. Block typography and icons scale proportionally with the cell size, with a readable floor so labels never shrink past legibility. The buttons disable themselves when you're already at the smallest or largest size.
+- **MIDI test panel** -- Visible only when [developer mode](/docs/system/) is on. Toggles a floating MIDI test panel for monitoring incoming MIDI and injecting CC / Program Change messages without external hardware. See [MIDI](/docs/midi/) for the panel's controls. The button shows orchid when the panel is open.
+
+The toolbar stays anchored to the titlebar regardless of grid scroll or zoom.
 
 ## Grid Size
 
@@ -106,6 +111,10 @@ You can resize the grid to fit the rig you're building.
 - Bounds: 1–20 columns, 1–12 rows.
 
 Changes apply immediately and are saved with the preset.
+
+## Window Controls
+
+The standalone macOS window has the standard red / amber / green title-bar buttons -- the green button toggles full-window zoom, useful when you want to dedicate the full screen to the Grid during a session.
 
 ## Keyboard Shortcuts
 

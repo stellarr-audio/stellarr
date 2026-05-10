@@ -145,6 +145,16 @@ void StellarrBridge::setProcessor(StellarrProcessor* proc)
             [this](int index)
             {
                 scene->tryRecallSceneByIndex(index);
+            },
+            // persistGlobalMappings: write the global MIDI mapping
+            // snapshot to ApplicationProperties immediately after a
+            // mapping add / remove / clear. Without this, a tuner-toggle
+            // or preset-change mapping assigned via the assign dialog
+            // would be lost on quit unless the user also triggered a
+            // preset save (which calls persistPresetInfo).
+            [this]()
+            {
+                preset->persistGlobalMidiMappings();
             }
         });
 

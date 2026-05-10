@@ -101,6 +101,14 @@ namespace stellarr::bridge
         void setPresetFromFile(const juce::File& file);
         void persistPresetInfo();
 
+        // Persist only the global MIDI mappings snapshot. Used by
+        // MidiHandler after add / remove / clear so a CC mapping
+        // assigned via the assign dialog survives a quit even when no
+        // preset save is triggered. Cheaper than persistPresetInfo
+        // because it skips the preset directory / index / last-file
+        // keys that haven't changed.
+        void persistGlobalMidiMappings();
+
         // Test accessors / cross-handler reads.
         const juce::StringArray& getPresetFiles() const { return presetFiles; }
         int getCurrentPresetIndex() const { return currentPresetIndex; }

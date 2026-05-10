@@ -71,6 +71,13 @@ namespace stellarr::bridge
         // Recall the scene at `index` on the active preset. Used by the
         // onSceneSwitch CC callback.
         std::function<void(int index)> recallSceneByIndex;
+
+        // Persist the current MidiMapper snapshot's global mappings
+        // (preset change + tuner toggle) to ApplicationProperties. Used
+        // by handleAddMidiMapping / handleRemoveMidiMapping /
+        // handleClearMidiMappings so a global mapping survives a quit
+        // even without a preset save.
+        std::function<void()> persistGlobalMappings;
     };
 
     // Bridge handlers for MIDI mapping CRUD, learn, monitor, and the one-shot

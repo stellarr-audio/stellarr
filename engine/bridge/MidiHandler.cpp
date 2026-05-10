@@ -149,6 +149,11 @@ void MidiHandler::registerMapperCallbacks()
         detail->setProperty("cc", cc);
         ctx.emit.emit(events::MidiLearnComplete, detail);
         emitMidiMappings();
+        // Learn-completed mappings are added inside the mapper during
+        // drainOutboundEvents, bypassing handleAddMidiMapping. Persist
+        // here so a global mapping (preset change / tuner toggle)
+        // captured via the Learn button survives a quit.
+        if (ctx.persistGlobalMappings) ctx.persistGlobalMappings();
     };
 }
 
@@ -232,6 +237,7 @@ void MidiHandler::handleAddMidiMapping(const juce::var& json)
 
     ctx.processor.getMidiMapper().addMapping(m);
     emitMidiMappings();
+    if (ctx.persistGlobalMappings) ctx.persistGlobalMappings();
 }
 
 void MidiHandler::handleRemoveMidiMapping(const juce::var& json)
@@ -241,12 +247,14 @@ void MidiHandler::handleRemoveMidiMapping(const juce::var& json)
 
     ctx.processor.getMidiMapper().removeMapping(static_cast<int>(obj->getProperty("index")));
     emitMidiMappings();
+    if (ctx.persistGlobalMappings) ctx.persistGlobalMappings();
 }
 
 void MidiHandler::handleClearMidiMappings()
 {
     ctx.processor.getMidiMapper().clearAll();
     emitMidiMappings();
+    if (ctx.persistGlobalMappings) ctx.persistGlobalMappings();
 }
 
 void MidiHandler::handleStartMidiLearn(const juce::var& json)

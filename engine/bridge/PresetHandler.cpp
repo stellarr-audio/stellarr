@@ -45,6 +45,17 @@ void PresetHandler::persistPresetInfo()
     ctx.appProperties->saveIfNeeded();
 }
 
+void PresetHandler::persistGlobalMidiMappings()
+{
+    if (ctx.appProperties == nullptr) return;
+
+    auto* settings = ctx.appProperties->getUserSettings();
+    auto globalJson = juce::JSON::toString(ctx.processor.getMidiMapper().globalMappingsToJson());
+    settings->setValue("globalMidiMappings", globalJson);
+
+    ctx.appProperties->saveIfNeeded();
+}
+
 void PresetHandler::handleNewSession()
 {
     ctx.clearGraph();

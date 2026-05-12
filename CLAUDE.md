@@ -205,7 +205,8 @@ macOS Apple Silicon, CMake 3.24+, Xcode CLI tools, Node.js 18+, npm. See `docs/C
 |---|---|
 | Tokens (source of truth) | `ui/src/design/tokens.css` |
 | Legacy alias layer (`--color-*`) | `ui/src/styles/variables.css` |
-| Primitive components | `ui/src/components/common/{Input,IconButton,Button,InputGroup,ToggleSwitch}.tsx` |
+| Font declarations (`--font-sans`, `--font-mono`) | `ui/src/assets/fonts/fonts.css` |
+| Primitive components | `ui/src/components/common/{Input,IconButton,Button,InputGroup,ToggleSwitch,Numeric}.tsx` |
 | Theme store | `ui/src/store/theme.ts` |
 | Theme sync hook | `ui/src/hooks/useSyncTheme.ts` |
 
@@ -226,9 +227,13 @@ macOS Apple Silicon, CMake 3.24+, Xcode CLI tools, Node.js 18+, npm. See `docs/C
 
 ### Typography
 
-- Typeface: Switzer (variable, 300–900) — already loaded globally
+Two typefaces, both SIL OFL 1.1, self-hosted as variable woff2. `@font-face` declarations live in `ui/src/assets/fonts/fonts.css`; the website mirrors them via `web/src/styles/fonts.css`.
+
+- **Space Grotesk** (variable, weights 300–700) — everything that reads as text: labels, headings, body copy, all chrome surfaces. Exposed as the `--font-sans` token; the app root sets `font-family: var(--font-sans)`.
+- **JetBrains Mono** — every numeric value and machine identifier: dB / Hz / cents / LUFS readouts, parameter values, MIDI labels (CC/PC), sample-buffer counts, version strings, plugin-format tags. Exposed as `--font-mono`. Applied via the **`<Numeric>` primitive** (`ui/src/components/common/Numeric.tsx`), which wraps numeric/identifier text and sets `font-family: var(--font-mono); font-variant-numeric: tabular-nums slashed-zero;` — never restyle colours/sizing on it, it inherits from context. Numeric *form fields* use the `mono` prop on the `Input` primitive instead (since `<Numeric>` cannot wrap an `<input>`). Do not hand-roll `font-variant-numeric: tabular-nums` on individual CSS rules — use `<Numeric>`.
+- Slashed zero: `<Numeric>` applies `slashed-zero` automatically, distinguishing 0 from O at a glance — standard pro-audio convention.
 - Chrome scale (panels, settings, dialogs, header, footer): `--text-xs` (13px, weight 500) · `--text-base` (15px, weight 400) · `--text-base-strong-weight` (600) · `--text-display` (reserved). Minimum 13px anywhere in chrome.
-- `font-variant-numeric: tabular-nums` for any aligning digits (meters, parameter values, timings).
+- **Weight for hierarchy, not size** — two text sizes only (13 / 15). If a third is needed, the design has failed; push back.
 
 ### Grid block scale + accessibility floors
 
@@ -267,8 +272,8 @@ Chrome typography (panels, settings, dialogs, header) is NOT scaled by zoom — 
   - Active fill: `var(--color-secondary)` (amber). Direction: from min toward the current value by default; flip to the right of the thumb (current → max) when the active range *is* the right-of-thumb region (e.g. binary "ON" trigger).
   - Thumb: square 16×16, `var(--color-secondary)` (amber) background, surface ring `box-shadow: 0 0 0 2px var(--color-surface)`. Sharp edges. Matches the active fill so the thumb reads as the position you've set.
   - Focus-visible ring: `box-shadow: 0 0 0 2px var(--color-surface), 0 0 0 4px var(--color-primary)` — orchid outer ring stays distinguishable against the amber thumb.
-  - Tick row (optional): 1px-wide × 4px-tall ticks in `var(--color-muted)` with 13px (`var(--text-xs)`) tabular-nums labels.
-  - Floating thumb value label (optional): 13px tabular-nums in `var(--color-secondary)`, centred over the thumb. Clamp `left` to `[8%, 92%]` so it doesn't bleed past the track at extremes.
+  - Tick row (optional): 1px-wide × 4px-tall ticks in `var(--color-muted)` with 13px (`var(--text-xs)`) labels — wrap the value in `<Numeric>` for monospace + tabular-nums alignment.
+  - Floating thumb value label (optional): 13px `var(--color-secondary)`, centred over the thumb — wrap in `<Numeric>` for monospace rendering. Clamp `left` to `[8%, 92%]` so it doesn't bleed past the track at extremes.
   - Reusable component: `ui/src/components/common/Slider.tsx` (Radix-backed). All sliders (Trigger, Options panel ParametersSection, SignalSection) consume this primitive — never roll a bespoke `<input type="range">` or duplicate styling.
 - **Radix-controlled triggers** (Select/DropdownMenu) expose `--trigger-border` and `--trigger-radius` CSS variables — set on a parent to fuse a trigger into an `InputGroup` without modifying its markup.
 

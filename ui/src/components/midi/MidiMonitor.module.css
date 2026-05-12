@@ -111,7 +111,6 @@
 
 .logData {
   color: var(--color-muted);
-  font-variant-numeric: tabular-nums;
 }
 
 .senderSection {

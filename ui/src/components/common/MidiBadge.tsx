@@ -1,5 +1,6 @@
 import type { MidiMapping } from '../../store';
 import { formatMidiLabel } from './constants';
+import { Numeric } from './Numeric';
 import styles from './MidiBadge.module.css';
 
 interface Props {
@@ -32,7 +33,7 @@ export function MidiBadge({ mapping, onClick, title, className, size = 'default'
     .join(' ');
   return (
     <button type="button" className={cls} onClick={onClick} title={tooltip} aria-label={tooltip}>
-      {label}
+      <Numeric>{label}</Numeric>
     </button>
   );
 }

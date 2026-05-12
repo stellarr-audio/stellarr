@@ -4,6 +4,7 @@ import { requestInjectMidiCC, requestInjectMidiPC } from '../../bridge';
 import { Button } from '../common/Button';
 import { Input } from '../common/Input';
 import { InputGroup, InputGroupLabel } from '../common/InputGroup';
+import { Numeric } from '../common/Numeric';
 import { Tablist, Tab } from '../common/Tablist';
 import styles from './MidiMonitor.module.css';
 
@@ -54,8 +55,8 @@ export function MidiMonitorContent({ boundedLog = false }: { boundedLog?: boolea
             events.map((e, i) => (
               <div key={i} className={styles.logEntry}>
                 <span className={styles.logType}>{e.type}</span>{' '}
-                <span className={styles.logChannel}>Ch{e.channel + 1}</span>{' '}
-                <span className={styles.logData}>
+                <Numeric className={styles.logChannel}>Ch{e.channel + 1}</Numeric>{' '}
+                <Numeric className={styles.logData}>
                   {e.type === 'CC'
                     ? `CC${e.data1}=${e.data2}`
                     : e.type === 'Note On' || e.type === 'Note Off'
@@ -63,7 +64,7 @@ export function MidiMonitorContent({ boundedLog = false }: { boundedLog?: boolea
                       : e.type === 'PC'
                         ? `#${e.data1}`
                         : `${e.data1}`}
-                </span>
+                </Numeric>
               </div>
             ))
           )}
@@ -112,6 +113,7 @@ function CcSender() {
         <InputGroupLabel className={styles.prefix}>CC#</InputGroupLabel>
         <Input
           inGroup
+          mono
           type="number"
           min={0}
           max={127}
@@ -124,6 +126,7 @@ function CcSender() {
         <InputGroupLabel className={styles.prefix}>Ch</InputGroupLabel>
         <Input
           inGroup
+          mono
           type="number"
           min={1}
           max={16}
@@ -138,6 +141,7 @@ function CcSender() {
         <InputGroupLabel className={styles.prefix}>Val</InputGroupLabel>
         <Input
           inGroup
+          mono
           type="number"
           min={0}
           max={127}
@@ -165,6 +169,7 @@ function PcSender() {
         <InputGroupLabel className={styles.prefix}>Prog</InputGroupLabel>
         <Input
           inGroup
+          mono
           type="number"
           min={0}
           max={127}
@@ -179,6 +184,7 @@ function PcSender() {
         <InputGroupLabel className={styles.prefix}>Ch</InputGroupLabel>
         <Input
           inGroup
+          mono
           type="number"
           min={1}
           max={16}

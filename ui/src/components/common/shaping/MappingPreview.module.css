@@ -40,13 +40,11 @@
 .tick {
   font-size: var(--text-xs);
   fill: var(--color-muted);
-  font-variant-numeric: tabular-nums;
 }
 
 .axisLabel {
   font-size: var(--text-xs);
   fill: var(--text-subtle, var(--color-muted));
-  font-variant-numeric: tabular-nums;
 }
 
 .axisTitle {
@@ -89,7 +87,6 @@
   font-size: var(--text-xs);
   font-weight: 600;
   color: var(--color-text);
-  font-variant-numeric: tabular-nums;
   pointer-events: none;
   white-space: nowrap;
 }

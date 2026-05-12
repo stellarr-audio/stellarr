@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { line as d3Line } from 'd3-shape';
 import type { MidiCurve } from '../../../store';
+import { Numeric } from '../Numeric';
 import styles from './MappingPreview.module.css';
 
 interface Props {
@@ -200,23 +201,25 @@ export function MappingPreview({
 
         {/* Anchor numeric labels — X axis */}
         {Array.from(xLabelCcs).map((cc) => (
-          <text
+          <Numeric
+            as="text"
             key={`xl-${cc}`}
             x={xOf(cc)}
             y={PAD_TOP + PLOT_H + 13}
             textAnchor="middle"
             className={styles.tick}
-          >{cc}</text>
+          >{cc}</Numeric>
         ))}
         {/* Anchor numeric labels — Y axis */}
         {yLabelParams.map((p, i) => (
-          <text
+          <Numeric
+            as="text"
             key={`yl-${i}`}
             x={PAD_LEFT - 5}
             y={yOf(p) + 3}
             textAnchor="end"
             className={styles.axisLabel}
-          >{fmt(p)}</text>
+          >{fmt(p)}</Numeric>
         ))}
 
         {/* Crosshair + hover dot — readout label rendered as DOM overlay below */}
@@ -265,9 +268,9 @@ export function MappingPreview({
         )}
       </svg>
       {hoverPoint && (
-        <div className={styles.hoverLabel}>
+        <Numeric as="div" className={styles.hoverLabel}>
           CC {hoverPoint.cc} → {fmt(hoverPoint.param)}
-        </div>
+        </Numeric>
       )}
     </div>
   );

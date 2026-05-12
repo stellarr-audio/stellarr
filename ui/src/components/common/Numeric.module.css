@@ -1,0 +1,6 @@
+/* Numerics & machine identifiers — JetBrains Mono, aligned digits, slashed
+   zero (0 vs O at a glance). No sizing/colour — inherits from context. */
+.numeric {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums slashed-zero;
+}

@@ -21,6 +21,20 @@
   background: color-mix(in srgb, var(--color-secondary) 8%, transparent);
 }
 
+/* Trailing chevron — an affordance hint, not content: muted, fixed 14px. */
+.chev {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-muted);
+  flex-shrink: 0;
+}
+
+.chev svg {
+  width: 14px;
+  height: 14px;
+}
+
 .content {
   background: var(--color-dropdown-bg);
   border: 1px solid var(--color-border);

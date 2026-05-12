@@ -1,5 +1,5 @@
 import { Select as RadixSelect } from 'radix-ui';
-import { ChevronDownIcon } from '@radix-ui/react-icons';
+import { TbChevronDown } from 'react-icons/tb';
 import styles from './Select.module.css';
 
 export interface SelectOption {
@@ -33,8 +33,8 @@ export function Select({
     <RadixSelect.Root value={value} onValueChange={onValueChange}>
       <RadixSelect.Trigger className={triggerCls} aria-label={ariaLabel}>
         <RadixSelect.Value />
-        <RadixSelect.Icon>
-          <ChevronDownIcon />
+        <RadixSelect.Icon className={styles.chev}>
+          <TbChevronDown />
         </RadixSelect.Icon>
       </RadixSelect.Trigger>
       <RadixSelect.Portal>

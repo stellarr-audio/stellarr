@@ -95,7 +95,7 @@ export function FloatingMidiPanel() {
           <span className={styles.titlebarText}>MIDI test</span>
         </div>
         <IconButton
-          icon={<IoCloseSharp size={14} />}
+          icon={<IoCloseSharp />}
           size="sm"
           title="Close MIDI test panel"
           onClick={() => setOpen(false)}

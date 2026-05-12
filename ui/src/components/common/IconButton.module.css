@@ -20,6 +20,13 @@
   background: color-mix(in srgb, var(--color-secondary) 8%, transparent);
 }
 
+/* Icon size is owned by the component, not the call site — pass `size="sm"`
+   for the compact glyph; never a per-icon `size` prop. */
+.button > svg {
+  width: 18px;
+  height: 18px;
+}
+
 /* When inside an InputGroup, remove own border/radius — the group frames
    the outer edge and provides a left-border divider between children. */
 .inGroup {
@@ -34,6 +41,11 @@
   height: var(--input-height-sm);
   min-width: var(--input-height-sm);
   padding: 0 0.35rem;
+}
+
+.sm > svg {
+  width: 14px;
+  height: 14px;
 }
 
 /* Danger variant */

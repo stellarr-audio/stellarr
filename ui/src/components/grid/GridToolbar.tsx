@@ -16,7 +16,7 @@ export function GridToolbar() {
       {developerModeEnabled && (
         <IconButton
           inGroup
-          icon={<PiTrafficSignal size={16} />}
+          icon={<PiTrafficSignal />}
           title={midiPanelOpen ? 'Close MIDI test panel' : 'Open MIDI test panel'}
           onClick={toggleMidiPanel}
           active={midiPanelOpen}
@@ -24,14 +24,14 @@ export function GridToolbar() {
       )}
       <IconButton
         inGroup
-        icon={<TbZoomOut size={16} />}
+        icon={<TbZoomOut />}
         title="Zoom out (smaller cells)"
         onClick={() => cycleCellZoom(-1)}
         disabled={cellZoom === 'S'}
       />
       <IconButton
         inGroup
-        icon={<TbZoomIn size={16} />}
+        icon={<TbZoomIn />}
         title="Zoom in (larger cells)"
         onClick={() => cycleCellZoom(+1)}
         disabled={cellZoom === 'L'}

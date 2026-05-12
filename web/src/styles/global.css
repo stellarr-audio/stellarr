@@ -75,7 +75,7 @@ html[data-theme-resolved="light"] {
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html { background: var(--bg); transition: background 0.3s ease; }
 body {
-  font-family: 'Switzer', system-ui, -apple-system, sans-serif;
+  font-family: 'Space Grotesk', system-ui, -apple-system, sans-serif;
   font-size: 16px; line-height: 1.5;
   color: var(--text);
   background: var(--bg);

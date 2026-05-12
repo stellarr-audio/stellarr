@@ -6,14 +6,17 @@ interface InputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, '
   inGroup?: boolean;
   /** Compact height (24px) to line up with IconButton size="sm". */
   size?: 'default' | 'sm';
+  /** Render typed content in JetBrains Mono — for numeric-content inputs. */
+  mono?: boolean;
 }
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ className, inGroup, size = 'default', ...props }, ref) => {
+  ({ className, inGroup, size = 'default', mono, ...props }, ref) => {
     const cls = [
       styles.input,
       inGroup && styles.inGroup,
       size !== 'default' && styles[size],
+      mono && styles.mono,
       className,
     ]
       .filter(Boolean)

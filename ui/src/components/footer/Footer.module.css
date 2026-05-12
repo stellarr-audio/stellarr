@@ -49,7 +49,6 @@
 .value {
   font-size: var(--text-base);
   font-weight: var(--text-base-strong-weight);
-  font-variant-numeric: tabular-nums;
   color: var(--color-muted);
   text-align: right;
   min-width: 5ch;

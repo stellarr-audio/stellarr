@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { useStore } from '../../store';
 import { LoudnessWindowPopup } from '../options/LoudnessWindowPopup';
+import { Numeric } from '../common/Numeric';
 import styles from './Footer.module.css';
 
 function CpuMeter() {
@@ -34,7 +35,7 @@ function CpuMeter() {
           />
         )}
       </div>
-      <span className={styles.value}>{clamped.toFixed(0)}%</span>
+      <Numeric className={styles.value}>{clamped.toFixed(0)}%</Numeric>
     </div>
   );
 }
@@ -107,7 +108,7 @@ function LufsMeter({
             />
           )}
         </div>
-        <span className={styles.value}>{display}</span>
+        <Numeric className={styles.value}>{display}</Numeric>
       </div>
       {clickable && (
         <LoudnessWindowPopup

@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { PiShootingStar, PiWarning, PiWarningCircle } from 'react-icons/pi';
 import { useStore } from '../../store';
 import {
@@ -10,10 +11,10 @@ import { Numeric } from '../common/Numeric';
 import { Row } from './Row';
 import styles from './SoftwareUpdates.module.css';
 
-function formatSize(bytes: number): string {
+function formatSize(bytes: number): ReactNode {
   if (bytes <= 0) return '';
   const mb = bytes / (1024 * 1024);
-  return `${mb.toFixed(1)} MB`;
+  return <><Numeric>{mb.toFixed(1)}</Numeric> MB</>;
 }
 
 function formatReleased(iso: string): string {
@@ -43,8 +44,8 @@ export function SoftwareUpdates() {
   //   available   → click commits to download + install on next termination
   //   ready       → install is already armed; "Restart now" only controls
   //                 *when* it installs (now vs. whenever you next quit)
-  const installLabel =
-    status === 'downloading' ? `Downloading… ${Math.round(state.downloadProgress * 100)}%` :
+  const installLabel: ReactNode =
+    status === 'downloading' ? <>Downloading… <Numeric>{Math.round(state.downloadProgress * 100)}%</Numeric></> :
     status === 'ready' ? 'Restart Now' :
     'Download & Install';
 
@@ -60,7 +61,7 @@ export function SoftwareUpdates() {
             </div>
             <div className={styles.bannerMeta}>
               {formatReleased(state.releasedAt)}
-              {state.sizeBytes > 0 && ` · ${formatSize(state.sizeBytes)}`}
+              {state.sizeBytes > 0 && <> · {formatSize(state.sizeBytes)}</>}
             </div>
           </div>
           {state.releaseNotesUrl && (

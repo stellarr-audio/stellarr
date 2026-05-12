@@ -168,7 +168,6 @@
   font-size: var(--text-xs);
   color: var(--color-muted);
   letter-spacing: 0.06em;
-  font-variant-numeric: tabular-nums;
 }
 
 .devMarker {

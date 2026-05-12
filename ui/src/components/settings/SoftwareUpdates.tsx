@@ -6,6 +6,7 @@ import {
   requestOpenReleaseNotes,
 } from '../../bridge';
 import { Button } from '../common/Button';
+import { Numeric } from '../common/Numeric';
 import { Row } from './Row';
 import styles from './SoftwareUpdates.module.css';
 
@@ -55,7 +56,7 @@ export function SoftwareUpdates() {
           <div className={styles.bannerBody}>
             <div className={styles.bannerTitle}>
               {status === 'ready' ? 'Update ready' : 'Update available'}
-              <span className={styles.bannerVersion}>v{state.latestVersion}</span>
+              <Numeric as="span" className={styles.bannerVersion}>v{state.latestVersion}</Numeric>
             </div>
             <div className={styles.bannerMeta}>
               {formatReleased(state.releasedAt)}
@@ -115,7 +116,7 @@ export function SoftwareUpdates() {
       {status === 'no-update' && (
         <div className={styles.status}>
           <span className={styles.statusMarker} aria-hidden="true" />
-          You're on v{__APP_VERSION__}, the latest version.
+          You're on <Numeric>v{__APP_VERSION__}</Numeric>, the latest version.
         </div>
       )}
 

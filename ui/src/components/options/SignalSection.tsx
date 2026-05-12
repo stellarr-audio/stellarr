@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { GridBlock } from '../../store';
 import { useStore } from '../../store';
+import { Numeric } from '../common/Numeric';
 import { Slider } from '../common/Slider';
 import { MidiAssignDialog } from '../common/MidiAssignDialog';
 import { MidiBadge } from '../common/MidiBadge';
@@ -38,7 +39,7 @@ export function SignalSection({ block }: Props) {
             title={existing ? `Level MIDI: CC ${existing.cc}` : 'Assign MIDI CC to Level'}
           />
         </span>
-        <span className={styles.value}>{formatDb(level)}</span>
+        <Numeric className={styles.value}>{formatDb(level)}</Numeric>
       </div>
       <Slider
         min={-60}

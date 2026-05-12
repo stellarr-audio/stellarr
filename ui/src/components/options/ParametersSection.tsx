@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Numeric } from '../common/Numeric';
 import { Slider } from '../common/Slider';
 import { MidiAssignDialog } from '../common/MidiAssignDialog';
 import { MidiBadge } from '../common/MidiBadge';
@@ -76,7 +77,7 @@ export function ParametersSection({ block }: Props) {
         <div>
           <div className={styles.paramRow}>
             <ParamLabel label="Mix" blockId={block.id} target="blockMix" />
-            <span className={styles.paramValue}>{Math.round((block.mix ?? 1) * 100)}%</span>
+            <Numeric className={styles.paramValue}>{Math.round((block.mix ?? 1) * 100)}%</Numeric>
           </div>
           <Slider
             value={Math.round((block.mix ?? 1) * 100)}
@@ -92,13 +93,13 @@ export function ParametersSection({ block }: Props) {
         <div>
           <div className={styles.paramRow}>
             <ParamLabel label="Balance" blockId={block.id} target="blockBalance" />
-            <span className={styles.paramValue}>
+            <Numeric className={styles.paramValue}>
               {(() => {
                 const bal = Math.round((block.balance ?? 0) * 100);
                 if (bal === 0) return 'C';
                 return bal < 0 ? `L${Math.abs(bal)}` : `R${bal}`;
               })()}
-            </span>
+            </Numeric>
           </div>
           <Slider
             min={-100}

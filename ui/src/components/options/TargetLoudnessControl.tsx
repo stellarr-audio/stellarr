@@ -38,6 +38,7 @@ export function TargetLoudnessControl({ blockId }: Props) {
         <InputGroup>
           <Input
             inGroup
+            mono
             type="number"
             value={target ?? -18}
             onChange={onChange}

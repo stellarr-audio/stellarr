@@ -115,7 +115,7 @@ export function MidiPage() {
                     <IconButton
                       size="sm"
                       variant="danger"
-                      icon={<IoCloseSharp size={14} />}
+                      icon={<IoCloseSharp />}
                       title="Remove mapping"
                       onClick={(e) => {
                         e.stopPropagation();

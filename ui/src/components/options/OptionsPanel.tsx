@@ -266,7 +266,7 @@ function BlockHeader({ block, onClose, bindDrag }: BlockHeaderProps) {
         <OptionsMenu block={block} />
         <Tooltip content="Close panel">
           <IconButton
-            icon={<IoCloseSharp size={14} />}
+            icon={<IoCloseSharp />}
             size="sm"
             onClick={onClose}
             title="Close panel"

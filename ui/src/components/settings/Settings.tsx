@@ -63,7 +63,7 @@ export function Settings() {
                   <IconButton
                     size="sm"
                     variant="danger"
-                    icon={<IoCloseSharp size={14} />}
+                    icon={<IoCloseSharp />}
                     title="Remove directory"
                     onClick={() => requestRemoveScanDirectory(dir.path)}
                   />

@@ -39,6 +39,6 @@
 .status {
   font-size: 1rem;
   color: var(--color-muted);
-  letter-spacing: 0.08em;
+  letter-spacing: var(--letter-spacing-label);
   text-transform: uppercase;
 }

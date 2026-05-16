@@ -47,7 +47,7 @@
   font-size: var(--text-base);
   font-weight: var(--text-base-strong-weight);
   color: var(--color-text);
-  letter-spacing: 0.08em;
+  letter-spacing: var(--letter-spacing-label);
   text-transform: uppercase;
 }
 

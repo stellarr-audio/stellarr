@@ -15,7 +15,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+  transition: color var(--transition-snap), background var(--transition-snap), border-color var(--transition-snap);
 }
 
 .tag:hover {
@@ -25,6 +25,10 @@
 
 .tag:focus-visible {
   border-color: var(--color-secondary);
+}
+
+.tag:active:not(:disabled) {
+  transform: translateY(0.5px);
 }
 
 /* Unified "selected" style — shared with StateSquare + Tablist secondary.

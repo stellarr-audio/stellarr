@@ -41,7 +41,7 @@
   font-size: 1rem;
   font-weight: 700;
   color: var(--color-primary);
-  letter-spacing: 0.08em;
+  letter-spacing: var(--letter-spacing-label);
   text-transform: uppercase;
   text-shadow: 0 0 12px color-mix(in srgb, var(--color-primary) 27%, transparent);
 }

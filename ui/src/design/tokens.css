@@ -25,7 +25,8 @@
   --line-height-display: 1.0;
 
   --letter-spacing-default: 0.01em;
-  --letter-spacing-label: 0.08em;
+  --letter-spacing-label: 0.06em;
+  --letter-spacing-display: -0.012em;
   --letter-spacing-tight: -0.01em;
 
   /* Shared radii — sharp-edge direction. Every bordered interactive primitive
@@ -41,6 +42,11 @@
      across sections regardless of which controls they carry. */
   --row-gap: 24px;
   --row-actions-width: 360px;
+
+  /* Motion — snappy hover/press feel. Sharp-out curve exits quickly and lands
+     gently, reads as more confident than `ease`. */
+  --easing-snap: cubic-bezier(0.2, 0, 0, 1);
+  --transition-snap: 0.18s var(--easing-snap);
 
   /* Z-index layers — globally defined scale so every surface references a
    * named layer rather than an ad-hoc number. Higher = closer to viewer. */
@@ -124,10 +130,11 @@
 /* === Light theme ========================================================== */
 :root,
 [data-theme="light"] {
-  --accent:         var(--orchid-600);     /* #c026d3 */
-  --accent-text:    var(--orchid-700);     /* #a21caf */
-  --secondary:      var(--amber-500);      /* #f59e0b */
-  --secondary-text: var(--amber-700);      /* #b45309 — darker amber that reads well on white */
+  --accent:            var(--orchid-600);   /* #c026d3 */
+  --accent-text:       var(--orchid-700);   /* #a21caf */
+  --secondary:         var(--amber-500);    /* #f59e0b */
+  --secondary-text:    var(--amber-700);    /* #b45309 — darker amber that reads well on white */
+  --secondary-outline: var(--amber-700);    /* #b45309 — darker amber outline */
   --success:      var(--emerald-500);      /* #10b981 */
   --danger:       var(--rose-600);         /* #e11d48 */
   --midi:         var(--azure-500);        /* #0ea5e9 — surface tint base for MIDI-assigned indicators */
@@ -166,10 +173,11 @@
 
 /* === Dark theme =========================================================== */
 [data-theme="dark"] {
-  --accent:         var(--orchid-500);     /* #d946ef — brighter, carries glow */
-  --accent-text:    var(--orchid-300);     /* #f0abfc */
-  --secondary:      var(--amber-400);      /* #fbbf24 */
-  --secondary-text: var(--amber-400);      /* same as --secondary on dark — already reads well */
+  --accent:            var(--orchid-500);   /* #d946ef — brighter, carries glow */
+  --accent-text:       var(--orchid-300);   /* #f0abfc */
+  --secondary:         var(--amber-400);    /* #fbbf24 */
+  --secondary-text:    var(--amber-400);    /* same as --secondary on dark — already reads well */
+  --secondary-outline: var(--amber-600);    /* #d97706 — darker amber outline; reads on dark navy */
   --success:      var(--emerald-500);      /* same */
   --danger:       var(--rose-600);         /* same */
   --midi:         var(--azure-400);        /* #38bdf8 — brighter on dark */

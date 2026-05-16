@@ -11,7 +11,7 @@
   cursor: pointer;
   display: inline-flex;
   align-items: center;
-  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+  transition: border-color var(--transition-snap), color var(--transition-snap), background var(--transition-snap);
 }
 
 /* Compact variant — 20h, matches the sharp ToggleSwitch height where the

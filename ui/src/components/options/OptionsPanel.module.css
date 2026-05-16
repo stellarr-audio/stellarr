@@ -62,7 +62,7 @@
   font-size: var(--text-base);
   font-weight: var(--text-base-strong-weight);
   color: var(--color-text);
-  letter-spacing: 0.08em;
+  letter-spacing: var(--letter-spacing-label);
   text-transform: uppercase;
 }
 
@@ -76,7 +76,7 @@
 
 .editInput {
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--letter-spacing-label);
   text-transform: uppercase;
   width: 60px;
   font-size: var(--text-xs);

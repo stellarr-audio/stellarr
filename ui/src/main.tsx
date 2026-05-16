@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import './design/tokens.css';
 import './assets/fonts/fonts.css';
 import './styles/variables.css';
+import './styles/base.css';
 import { initBridge } from './bridge';
 import { useStore } from './store';
 import App from './App';

@@ -13,7 +13,7 @@
   align-items: center;
   justify-content: space-between;
   outline: none;
-  transition: border-color 0.15s ease;
+  transition: border-color var(--transition-snap);
 }
 
 .trigger:hover {

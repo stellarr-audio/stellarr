@@ -50,6 +50,25 @@ describe('typography tokens', () => {
   it('exposes --font-mono with JetBrains Mono first', () => {
     expect(getVar('--font-mono')).toMatch(/^['"]?JetBrains Mono['"]?,/);
   });
+
+  it('exposes --letter-spacing-label as 0.06em', () => {
+    expect(getVar('--letter-spacing-label')).toBe('0.06em');
+  });
+
+  it('exposes --letter-spacing-display as -0.012em', () => {
+    expect(getVar('--letter-spacing-display')).toBe('-0.012em');
+  });
+
+  it('exposes --easing-snap as a sharp-out cubic-bezier', () => {
+    expect(getVar('--easing-snap')).toContain('cubic-bezier');
+  });
+
+  it('exposes --transition-snap referencing --easing-snap', () => {
+    const v = getComputedStyle(document.documentElement)
+      .getPropertyValue('--transition-snap')
+      .trim();
+    expect(v).toMatch(/0\.18s\s+var\(--easing-snap\)/);
+  });
 });
 
 describe('dimension tokens', () => {
@@ -95,6 +114,11 @@ describe('palette tokens — light theme', () => {
   it('has --text on grey-900', () => {
     expect(getVar('--text')).toBe('#1c1e22');
   });
+
+  it('exposes --secondary-outline as amber-700 in light theme', () => {
+    document.documentElement.removeAttribute('data-theme');
+    expect(getVar('--secondary-outline').toLowerCase()).toBe('#b45309');
+  });
 });
 
 describe('palette tokens — dark theme', () => {
@@ -120,5 +144,10 @@ describe('palette tokens — dark theme', () => {
 
   it('has --chrome on grey-dark-100 (header + footer surface over gradient bg)', () => {
     expect(getVar('--chrome')).toBe('#0f1a2e');
+  });
+
+  it('exposes --secondary-outline as amber-600 in dark theme', () => {
+    document.documentElement.setAttribute('data-theme', 'dark');
+    expect(getVar('--secondary-outline').toLowerCase()).toBe('#d97706');
   });
 });

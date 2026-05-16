@@ -35,13 +35,16 @@
   height: 16px;
   border-radius: 0;
   background: var(--color-secondary);
-  box-shadow: 0 0 0 2px var(--color-surface);
+  border: 2px solid var(--color-secondary-outline);
+  box-sizing: border-box;
   outline: none;
   cursor: grab;
+  transition: border-color var(--transition-snap);
 }
 
-/* Focus ring uses orchid so it stays distinguishable from the amber thumb. */
+/* Focus recolours the existing amber outline to orchid so it stays
+   distinguishable from the amber thumb fill, without adding an extra ring. */
 .thumb:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 2px var(--color-surface), 0 0 0 4px var(--color-primary);
+  border-color: var(--color-primary);
 }

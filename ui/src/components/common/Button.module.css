@@ -14,12 +14,16 @@
   align-items: center;
   justify-content: center;
   gap: 0.4rem;
-  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+  transition: color var(--transition-snap), border-color var(--transition-snap), background var(--transition-snap);
 }
 
 .button:hover {
   border-color: var(--color-primary);
   background: color-mix(in srgb, var(--color-primary) 6%, transparent);
+}
+
+.button:active:not(:disabled) {
+  transform: translateY(0.5px);
 }
 
 .button:disabled {

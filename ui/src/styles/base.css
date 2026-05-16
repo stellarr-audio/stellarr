@@ -1,0 +1,13 @@
+/*
+ * Global element base rules — non-token, non-component-scoped styling that
+ * applies app-wide. Keep this file tiny; most styling lives in CSS modules.
+ */
+
+/* Icon stroke — Tabler / Lucide default to stroke-width 2; pro-audio
+   reference UIs (Ableton, Logic, Push 3) sit at 1.5-1.75. Tightening
+   globally gives every stroke-based icon the same refined fingerprint.
+   Filled-glyph icon sets (Phosphor solid, Ionicons 5) carry `stroke="none"`
+   or no stroke attribute, so they're unaffected. */
+svg[stroke]:not([stroke="none"]) {
+  stroke-width: 1.75;
+}

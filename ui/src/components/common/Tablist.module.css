@@ -45,7 +45,7 @@
   background: color-mix(in srgb, var(--color-secondary) 14%, transparent);
 }
 
-.tab:active {
+.tab:active:not(:disabled) {
   transform: translateY(0.5px);
 }
 

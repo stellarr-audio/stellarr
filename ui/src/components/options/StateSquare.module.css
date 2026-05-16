@@ -6,7 +6,7 @@
   border: 1px solid var(--color-border);
   border-radius: var(--radius);
   overflow: hidden;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  transition: border-color var(--transition-snap), box-shadow var(--transition-snap);
 }
 
 .wrapper:hover {
@@ -37,7 +37,7 @@
   font-weight: 700;
   cursor: pointer;
   padding: 0;
-  transition: border-color 0.15s ease;
+  transition: border-color var(--transition-snap);
 }
 
 .button:hover {
@@ -81,7 +81,7 @@
   font-weight: var(--text-xs-weight);
   letter-spacing: var(--letter-spacing-default);
   cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease;
+  transition: background var(--transition-snap), color var(--transition-snap);
 }
 
 .midiSegment:hover {

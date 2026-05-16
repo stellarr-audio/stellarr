@@ -29,7 +29,7 @@
   font-weight: 500;
   cursor: pointer;
   outline: none;
-  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  transition: background var(--transition-snap), color var(--transition-snap), border-color var(--transition-snap);
 }
 
 .tab:first-child {

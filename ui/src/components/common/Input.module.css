@@ -9,7 +9,7 @@
   border-radius: var(--radius);
   outline: none;
   box-sizing: border-box;
-  transition: border-color 0.15s ease;
+  transition: border-color var(--transition-snap);
 }
 
 .input:hover {

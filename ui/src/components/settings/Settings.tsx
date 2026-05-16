@@ -10,6 +10,7 @@ import {
 } from '../../bridge';
 import { Button } from '../common/Button';
 import { IconButton } from '../common/IconButton';
+import { Numeric } from '../common/Numeric';
 import { ToggleSwitch } from '../common/ToggleSwitch';
 import { Row } from './Row';
 import { SoftwareUpdates } from './SoftwareUpdates';
@@ -86,7 +87,7 @@ export function Settings() {
                     <div className={styles.pluginName}>{plugin.name}</div>
                     <div className={styles.pluginManufacturer}>{plugin.manufacturer}</div>
                   </div>
-                  <span className={styles.pluginFormat}>{plugin.format}</span>
+                  <Numeric as="span" className={styles.pluginFormat}>{plugin.format}</Numeric>
                 </div>
               ))}
             </div>
@@ -140,7 +141,7 @@ export function Settings() {
 
       <div className={styles.infoPanel}>
         <span className={styles.infoTitle}>Stellarr</span>
-        <span className={styles.infoVersion}>v{__APP_VERSION__}</span>
+        <Numeric as="span" className={styles.infoVersion}>v{__APP_VERSION__}</Numeric>
         {flavour === 'dev' && (
           <span className={styles.devMarker}>
             Development build

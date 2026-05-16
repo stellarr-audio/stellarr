@@ -70,6 +70,7 @@ export function TunerPanel() {
           <InputGroupLabel>A4</InputGroupLabel>
           <Input
             inGroup
+            mono
             type="number"
             value={displayValue}
             min={420}

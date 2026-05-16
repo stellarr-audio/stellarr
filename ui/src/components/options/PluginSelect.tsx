@@ -4,6 +4,7 @@ import { ChevronDownIcon } from '@radix-ui/react-icons';
 import type { PluginInfo } from '../../store';
 import { pluginFormatColors } from '../common/colors';
 import { Input } from '../common/Input';
+import { Numeric } from '../common/Numeric';
 import styles from './PluginSelect.module.css';
 
 interface Props {
@@ -80,7 +81,8 @@ export function PluginSelect({ plugins, selectedId, onSelect }: Props) {
                       <Select.ItemText>{p.name}</Select.ItemText>
                       <div className={styles.itemManufacturer}>{p.manufacturer}</div>
                     </div>
-                    <span
+                    <Numeric
+                      as="span"
                       className={styles.formatBadge}
                       style={{
                         color: formatColor,
@@ -88,7 +90,7 @@ export function PluginSelect({ plugins, selectedId, onSelect }: Props) {
                       }}
                     >
                       {formatLabel}
-                    </span>
+                    </Numeric>
                   </Select.Item>
                 );
               })

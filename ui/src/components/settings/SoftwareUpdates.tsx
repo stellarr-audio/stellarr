@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { PiShootingStar, PiWarning, PiWarningCircle } from 'react-icons/pi';
 import { useStore } from '../../store';
 import {
@@ -6,23 +7,24 @@ import {
   requestOpenReleaseNotes,
 } from '../../bridge';
 import { Button } from '../common/Button';
+import { Numeric } from '../common/Numeric';
 import { Row } from './Row';
 import styles from './SoftwareUpdates.module.css';
 
-function formatSize(bytes: number): string {
+function formatSize(bytes: number): ReactNode {
   if (bytes <= 0) return '';
   const mb = bytes / (1024 * 1024);
-  return `${mb.toFixed(1)} MB`;
+  return <><Numeric>{mb.toFixed(1)}</Numeric> MB</>;
 }
 
-function formatReleased(iso: string): string {
+function formatReleased(iso: string): ReactNode {
   if (!iso) return '';
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return '';
   const days = Math.floor((Date.now() - d.getTime()) / 86_400_000);
   if (days <= 0) return 'Released today';
   if (days === 1) return 'Released yesterday';
-  return `Released ${days} days ago`;
+  return <>Released <Numeric>{days}</Numeric> days ago</>;
 }
 
 export function SoftwareUpdates() {
@@ -42,8 +44,8 @@ export function SoftwareUpdates() {
   //   available   → click commits to download + install on next termination
   //   ready       → install is already armed; "Restart now" only controls
   //                 *when* it installs (now vs. whenever you next quit)
-  const installLabel =
-    status === 'downloading' ? `Downloading… ${Math.round(state.downloadProgress * 100)}%` :
+  const installLabel: ReactNode =
+    status === 'downloading' ? <>Downloading… <Numeric>{Math.round(state.downloadProgress * 100)}%</Numeric></> :
     status === 'ready' ? 'Restart Now' :
     'Download & Install';
 
@@ -55,11 +57,11 @@ export function SoftwareUpdates() {
           <div className={styles.bannerBody}>
             <div className={styles.bannerTitle}>
               {status === 'ready' ? 'Update ready' : 'Update available'}
-              <span className={styles.bannerVersion}>v{state.latestVersion}</span>
+              <Numeric as="span" className={styles.bannerVersion}>v{state.latestVersion}</Numeric>
             </div>
             <div className={styles.bannerMeta}>
               {formatReleased(state.releasedAt)}
-              {state.sizeBytes > 0 && ` · ${formatSize(state.sizeBytes)}`}
+              {state.sizeBytes > 0 && <> · {formatSize(state.sizeBytes)}</>}
             </div>
           </div>
           {state.releaseNotesUrl && (
@@ -115,7 +117,7 @@ export function SoftwareUpdates() {
       {status === 'no-update' && (
         <div className={styles.status}>
           <span className={styles.statusMarker} aria-hidden="true" />
-          You're on v{__APP_VERSION__}, the latest version.
+          You're on <Numeric>v{__APP_VERSION__}</Numeric>, the latest version.
         </div>
       )}
 

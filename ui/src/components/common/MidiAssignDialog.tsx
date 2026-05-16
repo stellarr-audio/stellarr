@@ -11,6 +11,7 @@ import {
 import { PROGRAM_CHANGE_CC } from './constants';
 import { ContinuousShaping, type ShapingState } from './ContinuousShaping';
 import { BinaryShaping } from './BinaryShaping';
+import { Input } from './Input';
 import { Select } from './Select';
 import { TARGET_META } from './shaping/targetMeta';
 import styles from './MidiAssignDialog.module.css';
@@ -181,7 +182,9 @@ export function MidiAssignDialog({
                       >
                         <MixerHorizontalIcon width={16} height={16} />
                       </button>
-                      <input
+                      <Input
+                        inGroup
+                        mono
                         autoFocus
                         placeholder="0-127"
                         value={ccValue}

@@ -36,3 +36,9 @@
   height: 100%;
 }
 
+/* Numeric-content inputs (MIDI CC#, target loudness): mono so typed digits
+   match <Numeric> readouts. Text inputs do not get this. */
+.mono {
+  font-family: var(--font-mono);
+}
+

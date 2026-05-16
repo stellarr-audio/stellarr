@@ -42,7 +42,6 @@
 
 .frequency {
   font-size: 1.8rem;
-  font-variant-numeric: tabular-nums;
   letter-spacing: 0.04em;
 }
 
@@ -91,7 +90,6 @@
   justify-content: space-between;
   margin-top: 1rem;
   font-size: var(--text-xs);
-  font-variant-numeric: tabular-nums;
   color: var(--color-muted);
   letter-spacing: 0.06em;
 }

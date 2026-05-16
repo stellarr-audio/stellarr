@@ -42,6 +42,14 @@ describe('typography tokens', () => {
   it('exposes --text-xs-weight as 500', () => {
     expect(getVar('--text-xs-weight')).toBe('500');
   });
+
+  it('exposes --font-sans with Space Grotesk first', () => {
+    expect(getVar('--font-sans')).toMatch(/^['"]?Space Grotesk['"]?,/);
+  });
+
+  it('exposes --font-mono with JetBrains Mono first', () => {
+    expect(getVar('--font-mono')).toMatch(/^['"]?JetBrains Mono['"]?,/);
+  });
 });
 
 describe('dimension tokens', () => {

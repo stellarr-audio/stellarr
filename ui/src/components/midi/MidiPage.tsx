@@ -4,6 +4,7 @@ import { useStore } from '../../store';
 import { MidiAssignDialog } from '../common/MidiAssignDialog';
 import { Button } from '../common/Button';
 import { IconButton } from '../common/IconButton';
+import { Numeric } from '../common/Numeric';
 import { PROGRAM_CHANGE_CC } from '../common/constants';
 import {
   requestRemoveMidiMapping,
@@ -101,8 +102,8 @@ export function MidiPage() {
                   <span className={styles.activityCol}>
                     <ActivityDot active={isActive} />
                   </span>
-                  <span className={styles.ccValue}>{m.cc >= 0 ? m.cc : 'PC'}</span>
-                  <span className={styles.chValue}>{m.channel >= 0 ? m.channel + 1 : 'Any'}</span>
+                  <Numeric className={styles.ccValue}>{m.cc >= 0 ? m.cc : 'PC'}</Numeric>
+                  <Numeric className={styles.chValue}>{m.channel >= 0 ? m.channel + 1 : 'Any'}</Numeric>
                   <span className={styles.arrow}>&rarr;</span>
                   <span className={styles.target}>
                     {targetLabels[m.target] || m.target}

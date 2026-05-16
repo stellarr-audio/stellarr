@@ -1,3 +1,4 @@
+import { Numeric } from '../common/Numeric';
 import { useStore } from '../../store';
 import styles from './LoudnessHistory.module.css';
 
@@ -62,7 +63,8 @@ export function LoudnessHistory({ blockId }: Props) {
         return (
           <g key={lufs}>
             <line x1={LABEL_WIDTH} x2={TOTAL_WIDTH} y1={y} y2={y} className={styles.gridLine} />
-            <text
+            <Numeric
+              as="text"
               x={LABEL_WIDTH - 4}
               y={y}
               className={styles.label}
@@ -70,7 +72,7 @@ export function LoudnessHistory({ blockId }: Props) {
               dominantBaseline="central"
             >
               {lufs}
-            </text>
+            </Numeric>
           </g>
         );
       })}

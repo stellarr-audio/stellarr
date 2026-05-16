@@ -1,5 +1,6 @@
 import { useStore } from '../../store';
 import { colors } from '../common/colors';
+import { Numeric } from '../common/Numeric';
 import { StrobeBand } from './StrobeBand';
 import styles from './Tuner.module.css';
 
@@ -26,19 +27,21 @@ export function Tuner() {
         >
           {hasSignal ? note : '--'}
         </span>
-        <span
+        <Numeric
+          as="span"
           className={`${styles.octave} ${hasSignal ? styles.octaveActive : styles.octaveInactive}`}
         >
           {hasSignal ? octave : ''}
-        </span>
+        </Numeric>
       </div>
 
       {/* Frequency */}
-      <span
+      <Numeric
+        as="span"
         className={`${styles.frequency} ${hasSignal ? styles.frequencyActive : styles.frequencyInactive}`}
       >
         {hasSignal ? `${frequency.toFixed(1)} Hz` : '-- Hz'}
-      </span>
+      </Numeric>
 
       {/* Tuner visualisation */}
       {tunerMode === 'strobe' ? (
@@ -58,13 +61,13 @@ export function Tuner() {
               />
             )}
           </div>
-          <div className={styles.labels}>
+          <Numeric as="div" className={styles.labels}>
             <span>-50</span>
             <span>-25</span>
             <span>0</span>
             <span>+25</span>
             <span>+50</span>
-          </div>
+          </Numeric>
         </div>
       )}
     </div>

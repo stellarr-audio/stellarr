@@ -6,9 +6,9 @@
 @import './fonts.css';
 
 :root {
-  --sl-font: 'Switzer', system-ui, -apple-system, sans-serif;
-  --sl-font-system: 'Switzer', system-ui, -apple-system, sans-serif;
-  --sl-font-system-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+  --sl-font: 'Space Grotesk', system-ui, -apple-system, sans-serif;
+  --sl-font-system: 'Space Grotesk', system-ui, -apple-system, sans-serif;
+  --sl-font-system-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
 }
 
 /* ---- DARK ---- */
@@ -57,7 +57,7 @@
 }
 
 /* Logo lockup — matches the landing nav exactly:
-   22px mark, 16px all-caps Switzer at weight 700 with 0.08em tracking,
+   22px mark, 16px all-caps Space Grotesk at weight 700 with 0.08em tracking,
    theme-adaptive text colour (near-black in light / near-white in dark). */
 .site-title {
   font-size: 1rem;

@@ -105,13 +105,11 @@
 .ccValue {
   color: var(--color-text);
   font-weight: var(--text-base-strong-weight);
-  font-variant-numeric: tabular-nums;
   min-width: 6ch;
 }
 
 .chValue {
   color: var(--color-muted);
-  font-variant-numeric: tabular-nums;
   min-width: 5ch;
 }
 

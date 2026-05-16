@@ -32,7 +32,6 @@
 .label {
   fill: var(--color-muted);
   font-size: 8px;
-  font-variant-numeric: tabular-nums;
 }
 
 .unit {

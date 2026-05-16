@@ -1,7 +1,7 @@
 .root {
   background: var(--color-bg);
   color: var(--color-text);
-  font-family: 'Switzer', system-ui, -apple-system, sans-serif;
+  font-family: var(--font-sans);
   letter-spacing: 0.02em;
   height: 100vh;
   box-sizing: border-box;

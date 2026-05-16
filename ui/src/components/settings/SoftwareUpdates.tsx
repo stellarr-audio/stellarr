@@ -17,14 +17,14 @@ function formatSize(bytes: number): ReactNode {
   return <><Numeric>{mb.toFixed(1)}</Numeric> MB</>;
 }
 
-function formatReleased(iso: string): string {
+function formatReleased(iso: string): ReactNode {
   if (!iso) return '';
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return '';
   const days = Math.floor((Date.now() - d.getTime()) / 86_400_000);
   if (days <= 0) return 'Released today';
   if (days === 1) return 'Released yesterday';
-  return `Released ${days} days ago`;
+  return <>Released <Numeric>{days}</Numeric> days ago</>;
 }
 
 export function SoftwareUpdates() {

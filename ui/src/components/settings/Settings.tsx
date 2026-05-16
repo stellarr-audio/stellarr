@@ -87,7 +87,7 @@ export function Settings() {
                     <div className={styles.pluginName}>{plugin.name}</div>
                     <div className={styles.pluginManufacturer}>{plugin.manufacturer}</div>
                   </div>
-                  <span className={styles.pluginFormat}>{plugin.format}</span>
+                  <Numeric as="span" className={styles.pluginFormat}>{plugin.format}</Numeric>
                 </div>
               ))}
             </div>

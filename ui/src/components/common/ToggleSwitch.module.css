@@ -12,6 +12,9 @@
 
 .toggle.enabled {
   background: var(--color-primary);
+  box-shadow:
+    0 0 0 1px var(--color-primary),
+    0 0 10px -2px var(--color-primary);
 }
 
 .thumb {

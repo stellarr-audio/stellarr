@@ -20,6 +20,10 @@
   background: color-mix(in srgb, var(--color-secondary) 8%, transparent);
 }
 
+.button:active:not(:disabled) {
+  transform: translateY(0.5px);
+}
+
 /* Icon size is owned by the component, not the call site — pass `size="sm"`
    for the compact glyph; never a per-icon `size` prop. */
 .button > svg {

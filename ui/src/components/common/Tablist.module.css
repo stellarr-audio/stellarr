@@ -45,6 +45,10 @@
   background: color-mix(in srgb, var(--color-secondary) 14%, transparent);
 }
 
+.tab:active {
+  transform: translateY(0.5px);
+}
+
 /* Active tab — default primary (orchid). */
 .tabActive,
 .tabActive:hover,

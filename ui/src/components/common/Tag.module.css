@@ -27,6 +27,10 @@
   border-color: var(--color-secondary);
 }
 
+.tag:active:not(:disabled) {
+  transform: translateY(0.5px);
+}
+
 /* Unified "selected" style — shared with StateSquare + Tablist secondary.
    2px amber ring + 10% tint + neutral text. Keep the 1px base border and
    add a 1px inset ring so total visual weight hits 2px without shifting

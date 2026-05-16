@@ -22,6 +22,10 @@
   background: color-mix(in srgb, var(--color-primary) 6%, transparent);
 }
 
+.button:active:not(:disabled) {
+  transform: translateY(0.5px);
+}
+
 .button:disabled {
   opacity: 0.5;
   cursor: not-allowed;

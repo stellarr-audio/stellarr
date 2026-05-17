@@ -86,15 +86,19 @@ open:
 	open build/Stellarr_artefacts/Debug/Standalone/Stellarr.app
 
 # UI tests only — fast feedback for React / TypeScript / token changes.
-# Requires `make setup` (or any target that runs it) to have installed
-# ui/node_modules at least once.
-test-ui:
+# Depends on `setup` so the target is safe to run standalone on a fresh
+# checkout; under `make -j test` the dep graph dedupes setup to a single run.
+test-ui: setup
 	cd ui && npm test
 
 # Full test suite: UI (Vitest) first because it's faster — a failure here
 # typically signals a broken TypeScript or token change and is the quickest
 # fix-cycle. Then the C++ engine tests (ctest).
-test: debug test-ui
+# `$(MAKE) test-ui` is used in the recipe (not as a prereq of `test:`) so
+# the UI tests run sequentially after `debug` is fully built, rather than
+# racing the `debug -> dev-ui -> setup` chain under `make -j test`.
+test: debug
+	$(MAKE) test-ui
 	ctest --test-dir build --output-on-failure
 
 screenshots:

@@ -50,16 +50,9 @@ private:
         m.addSeparator();
         m.addItem(4, TRANS("Reset to default state"));
 
-#if JUCE_DEBUG
-        m.addSeparator();
-
-        bool devToolsOn = false;
-        if (auto* editor = dynamic_cast<StellarrEditor*>(
-                getAudioProcessor()->getActiveEditor()))
-            devToolsOn = editor->isDevToolsEnabled();
-
-        m.addItem(5, TRANS("Enable DevTools"), true, devToolsOn);
-#endif
+        // DevTools / Inspect Element is now gated by the Developer mode
+        // toggle in System settings (single source of truth across debug +
+        // release builds). No duplicate menu item here.
 
         m.showMenuAsync(PopupMenu::Options().withTargetComponent(button),
                         ModalCallbackFunction::forComponent(menuCallback, this));
@@ -70,16 +63,7 @@ private:
         if (window == nullptr || result == 0)
             return;
 
-        if (result == 5)
-        {
-            if (auto* editor = dynamic_cast<StellarrEditor*>(
-                    window->getAudioProcessor()->getActiveEditor()))
-                editor->toggleDevTools();
-        }
-        else
-        {
-            window->handleMenuResult(result);
-        }
+        window->handleMenuResult(result);
     }
 };
 

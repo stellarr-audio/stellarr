@@ -60,6 +60,12 @@ namespace stellarr::bridge
         // Stop any active test tones on all InputBlocks. Called when developer
         // mode is disabled so tones do not play silently with no UI to stop them.
         std::function<void()>                                       stopAllTestTones;
+
+        // Apply developer-tools state to the WebView (Inspect Element
+        // availability + right-click context-menu interception). Routed
+        // through StellarrBridge -> StellarrEditor::setDevToolsEnabled so
+        // PresetHandler does not need direct access to either.
+        std::function<void(bool)>                                   setDevToolsEnabled;
     };
 
     // Bridge handlers for preset / session CRUD plus grid sizing. Owns the

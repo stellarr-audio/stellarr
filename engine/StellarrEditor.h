@@ -30,14 +30,21 @@ public:
     void paint(juce::Graphics& g) override;
     void resized() override;
 
-    void toggleDevTools();
-    bool isDevToolsEnabled() const;
+    // Apply the developer-tools state to the WebView: toggles native Inspect
+    // Element availability and the right-click `oncontextmenu` interception.
+    // Called at startup with the persisted `developerModeEnabled` value and
+    // again whenever the user flips the Developer mode switch in System
+    // settings (PresetHandler routes the toggle through this method).
+    void setDevToolsEnabled(bool enabled);
+
     void hideSplash();
     StellarrBridge& getBridge() { return bridge; }
 
 private:
     static juce::String getMimeType(const juce::File& file);
     void timerCallback() override;
+    void applyContextMenuInterception();
+    void applyWebViewInspectable();
 
     StellarrBridge bridge;
     std::unique_ptr<juce::WebBrowserComponent> webView;

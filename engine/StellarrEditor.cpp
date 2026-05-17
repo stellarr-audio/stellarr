@@ -39,7 +39,24 @@ StellarrEditor::StellarrEditor(StellarrProcessor& p)
     bridge.setProcessor(&p);
     bridge.setAppProperties(p.getAppProperties());
     bridge.setWebView(webView.get());
-    bridge.setOnUiReady([this]() { hideSplash(); });
+
+    // Seed dev-tools state from the persisted setting so the WebView is
+    // gated from the first frame rather than after the UI finishes loading.
+    // Default OFF matches the production-usage-first design rule
+    // (CLAUDE.md: dev / debug / experimental surfaces hidden by default).
+    devToolsEnabled = p.getAppProperties()->getUserSettings()
+                       ->getBoolValue("developerModeEnabled", false);
+
+    bridge.setOnDevToolsToggle([this](bool enabled) { setDevToolsEnabled(enabled); });
+
+    bridge.setOnUiReady([this]()
+    {
+        hideSplash();
+        // document.body now exists — apply the right-click interception
+        // matching the persisted dev-tools state. Subsequent toggles also
+        // re-apply via setDevToolsEnabled().
+        applyContextMenuInterception();
+    });
 
     webView->goToURL(juce::WebBrowserComponent::getResourceProviderRoot());
 
@@ -60,11 +77,16 @@ StellarrEditor::StellarrEditor(StellarrProcessor& p)
     setResizeLimits(1440, 830, 2560, 1600);
 
     juce::MessageManager::callAsync(
-        [safeWebView = juce::Component::SafePointer(webView.get())]()
+        [safeWebView = juce::Component::SafePointer(webView.get()),
+         initialDevTools = devToolsEnabled]()
         {
             if (safeWebView != nullptr)
                 if (auto* peer = safeWebView->getTopLevelComponent()->getPeer())
-                    stellarrMakeWebViewInspectable(peer->getNativeHandle());
+                {
+                    auto* nativeHandle = peer->getNativeHandle();
+                    stellarrInitWebView(nativeHandle);
+                    stellarrSetWebViewInspectable(nativeHandle, initialDevTools);
+                }
         });
 
     startTimerHz(20);
@@ -146,17 +168,35 @@ void StellarrEditor::timerCallback()
     bridge.drainMidiEvents();
 }
 
-void StellarrEditor::toggleDevTools()
+void StellarrEditor::setDevToolsEnabled(bool enabled)
 {
-    devToolsEnabled = !devToolsEnabled;
+    devToolsEnabled = enabled;
+    applyWebViewInspectable();
+    applyContextMenuInterception();
+}
 
+void StellarrEditor::applyContextMenuInterception()
+{
+    if (webView == nullptr)
+        return;
+
+    // Suppress the native right-click menu (Inspect Element / Reload / etc.)
+    // when developer mode is off, so first-launch users only see what they
+    // expect from a normal app.
     if (devToolsEnabled)
         webView->evaluateJavascript("document.body.oncontextmenu = null;");
     else
         webView->evaluateJavascript("document.body.oncontextmenu = function() { return false; };");
 }
 
-bool StellarrEditor::isDevToolsEnabled() const { return devToolsEnabled; }
+void StellarrEditor::applyWebViewInspectable()
+{
+    if (webView == nullptr)
+        return;
+
+    if (auto* peer = getTopLevelComponent()->getPeer())
+        stellarrSetWebViewInspectable(peer->getNativeHandle(), devToolsEnabled);
+}
 
 void StellarrEditor::hideSplash()
 {

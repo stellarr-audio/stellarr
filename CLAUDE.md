@@ -263,15 +263,16 @@ Chrome typography (panels, settings, dialogs, header) is NOT scaled by zoom — 
 
 ### Interaction patterns
 
-- **Hover on bordered controls:** `border-color: var(--color-secondary)` + `background: color-mix(in srgb, var(--color-secondary) 8%, transparent)`. Transition 0.15s ease.
-- **Focus on text inputs:** `border-color: var(--color-secondary)` (same as hover); `outline: none`.
+- **Hover on bordered controls:** `border-color: var(--color-secondary)` + `background: color-mix(in srgb, var(--color-secondary) 8%, transparent)`. Transition `var(--transition-snap)` (180ms `cubic-bezier(0.2, 0, 0, 1)` — sharp-out, lands gently; replaces the older 150ms `ease`).
+- **Focus on text inputs:** `border-color: var(--color-secondary)` (same colour as hover); `outline: none`. Rationale — **focus is a hover-in-place**: the user expects visual continuity, not a separate ring colour. Don't introduce a blue focus ring; **blue is reserved exclusively for azure MIDI indicators** (`--midi` / `--midi-text`) so colour-vision-deficient users can still distinguish "MIDI-assigned" from "focused" at a glance.
 - **Active/selected:** `color: var(--color-primary)` + orchid tint background. Never blue/grey.
+- **Tactile press:** Button / IconButton / Tag / Tablist tab apply `:active:not(:disabled) { transform: translateY(0.5px); }`. Press is instant (no transition on transform); the rest of the snap easing handles colour/border changes.
 - **Section-title convention (Options panel):** orchid for grouping headers (Parameters, States). Neutral `var(--color-text)` for input labels (Plugin, Test Tone, Level, Target Loudness).
 - **Slider design spec** (canonical):
   - Track: 4px tall, background `color-mix(in srgb, var(--color-muted) 25%, transparent)`. Sharp edges (`--radius: 0`).
   - Active fill: `var(--color-secondary)` (amber). Direction: from min toward the current value by default; flip to the right of the thumb (current → max) when the active range *is* the right-of-thumb region (e.g. binary "ON" trigger).
-  - Thumb: square 16×16, `var(--color-secondary)` (amber) background, surface ring `box-shadow: 0 0 0 2px var(--color-surface)`. Sharp edges. Matches the active fill so the thumb reads as the position you've set.
-  - Focus-visible ring: `box-shadow: 0 0 0 2px var(--color-surface), 0 0 0 4px var(--color-primary)` — orchid outer ring stays distinguishable against the amber thumb.
+  - Thumb: square 16×16, `var(--color-secondary)` (amber) background, **darker-amber outline** `border: 2px solid var(--color-secondary-outline); box-sizing: border-box;` (`--secondary-outline` = `--amber-700` light / `--amber-600` dark). Sharp edges. Outline reads against the amber fill at any zoom; no surface-coloured halo, no layout shift on focus.
+  - Focus-visible: **recolour the existing border** to `var(--color-primary)` (orchid) — `transition: border-color var(--transition-snap);` makes the colour swap feel continuous with the rest of the hover system. No extra outer ring.
   - Tick row (optional): 1px-wide × 4px-tall ticks in `var(--color-muted)` with 13px (`var(--text-xs)`) labels — wrap the value in `<Numeric>` for monospace + tabular-nums alignment.
   - Floating thumb value label (optional): 13px `var(--color-secondary)`, centred over the thumb — wrap in `<Numeric>` for monospace rendering. Clamp `left` to `[8%, 92%]` so it doesn't bleed past the track at extremes.
   - Reusable component: `ui/src/components/common/Slider.tsx` (Radix-backed). All sliders (Trigger, Options panel ParametersSection, SignalSection) consume this primitive — never roll a bespoke `<input type="range">` or duplicate styling.

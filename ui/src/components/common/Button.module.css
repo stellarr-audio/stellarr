@@ -60,7 +60,7 @@
   color: var(--color-on-primary);
 }
 
-.primary:hover {
+.primary:hover:not(:disabled) {
   background: var(--color-primary);
   border-color: var(--color-primary);
   filter: brightness(1.08);

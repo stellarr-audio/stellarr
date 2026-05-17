@@ -1,4 +1,4 @@
-.PHONY: setup dev dev-ui dev-cpp debug debug-cpp release release-cpp run run-debug run-release run-ui open test docs web clean clear-cache purge-user-state screenshots regen-sparkle-keys-prod regen-sparkle-keys-dev dev-updater-serve
+.PHONY: setup dev dev-ui dev-cpp debug debug-cpp release release-cpp run run-debug run-release run-ui open test test-ui docs web clean clear-cache purge-user-state screenshots regen-sparkle-keys-prod regen-sparkle-keys-dev dev-updater-serve
 
 .DEFAULT_GOAL := dev
 
@@ -85,7 +85,16 @@ run-release: release
 open:
 	open build/Stellarr_artefacts/Debug/Standalone/Stellarr.app
 
-test: debug
+# UI tests only — fast feedback for React / TypeScript / token changes.
+# Requires `make setup` (or any target that runs it) to have installed
+# ui/node_modules at least once.
+test-ui:
+	cd ui && npm test
+
+# Full test suite: UI (Vitest) first because it's faster — a failure here
+# typically signals a broken TypeScript or token change and is the quickest
+# fix-cycle. Then the C++ engine tests (ctest).
+test: debug test-ui
 	ctest --test-dir build --output-on-failure
 
 screenshots:

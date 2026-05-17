@@ -11,6 +11,7 @@ import {
 import { PROGRAM_CHANGE_CC } from './constants';
 import { ContinuousShaping, type ShapingState } from './ContinuousShaping';
 import { BinaryShaping } from './BinaryShaping';
+import { Button } from './Button';
 import { Input } from './Input';
 import { Select } from './Select';
 import { TARGET_META } from './shaping/targetMeta';
@@ -249,18 +250,18 @@ export function MidiAssignDialog({
             <div className={styles.buttonRow}>
               <div>
                 {existing && (
-                  <button onClick={clear} className={styles.clearButton}>
+                  <Button variant="danger" onClick={clear}>
                     Clear
-                  </button>
+                  </Button>
                 )}
               </div>
               <div className={styles.buttonGroup}>
-                <button onClick={() => onOpenChange(false)} className={styles.cancelButton}>
+                <Button variant="secondary" onClick={() => onOpenChange(false)}>
                   Cancel
-                </button>
-                <button onClick={submit} className={styles.saveButton}>
+                </Button>
+                <Button variant="primary" onClick={submit}>
                   Save
-                </button>
+                </Button>
               </div>
             </div>
           </div>

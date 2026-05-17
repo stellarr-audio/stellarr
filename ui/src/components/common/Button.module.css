@@ -57,7 +57,7 @@
 .primary {
   background: var(--color-primary);
   border-color: var(--color-primary);
-  color: #ffffff;
+  color: var(--color-on-primary);
 }
 
 .primary:hover {

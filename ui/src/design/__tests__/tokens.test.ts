@@ -119,6 +119,11 @@ describe('palette tokens — light theme', () => {
     document.documentElement.removeAttribute('data-theme');
     expect(getVar('--secondary-outline').toLowerCase()).toBe('#b45309');
   });
+
+  it('exposes --on-primary as white in light theme', () => {
+    document.documentElement.removeAttribute('data-theme');
+    expect(getVar('--on-primary').toLowerCase()).toBe('#ffffff');
+  });
 });
 
 describe('palette tokens — dark theme', () => {
@@ -149,5 +154,10 @@ describe('palette tokens — dark theme', () => {
   it('exposes --secondary-outline as amber-600 in dark theme', () => {
     document.documentElement.setAttribute('data-theme', 'dark');
     expect(getVar('--secondary-outline').toLowerCase()).toBe('#d97706');
+  });
+
+  it('exposes --on-primary as grey-900 in dark theme (WCAG AA on bright orchid)', () => {
+    document.documentElement.setAttribute('data-theme', 'dark');
+    expect(getVar('--on-primary').toLowerCase()).toBe('#1c1e22');
   });
 });

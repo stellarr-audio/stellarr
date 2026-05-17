@@ -1,4 +1,4 @@
-.PHONY: setup dev dev-ui dev-cpp debug debug-cpp release release-cpp run run-debug run-release run-ui open test docs web clean clear-cache purge-user-state screenshots regen-sparkle-keys-prod regen-sparkle-keys-dev dev-updater-serve
+.PHONY: setup dev dev-ui dev-cpp debug debug-cpp release release-cpp run run-debug run-release run-ui open test test-ui docs web clean clear-cache purge-user-state screenshots regen-sparkle-keys-prod regen-sparkle-keys-dev dev-updater-serve
 
 .DEFAULT_GOAL := dev
 
@@ -85,7 +85,21 @@ run-release: release
 open:
 	open build/Stellarr_artefacts/Debug/Standalone/Stellarr.app
 
+# UI tests only — fast feedback for React / TypeScript / token changes.
+# Depends on `setup` so the target is safe to run standalone on a fresh
+# checkout; under `make -j test` the dep graph dedupes setup to a single run.
+test-ui: setup
+	cd ui && npm test
+
+# Full test suite: UI (Vitest) first because it's faster — a failure here
+# typically signals a broken TypeScript or token change and is the quickest
+# fix-cycle. Then the C++ engine tests (ctest).
+# UI step is inlined (rather than via a `test-ui` prereq) so it runs
+# sequentially after `debug` is fully built — recipe commands always run
+# in order regardless of `-j`. The duplicate npm install that a recursive
+# `$(MAKE) test-ui` would trigger is avoided.
 test: debug
+	cd ui && npm test
 	ctest --test-dir build --output-on-failure
 
 screenshots:

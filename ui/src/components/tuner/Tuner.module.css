@@ -91,5 +91,5 @@
   margin-top: 1rem;
   font-size: var(--text-xs);
   color: var(--color-muted);
-  letter-spacing: 0.06em;
+  letter-spacing: var(--letter-spacing-label);
 }

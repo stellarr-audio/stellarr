@@ -29,7 +29,7 @@
   font-size: 0.85rem;
   font-weight: 600;
   color: var(--color-muted);
-  letter-spacing: 0.06em;
+  letter-spacing: var(--letter-spacing-label);
   text-transform: uppercase;
   background: color-mix(in srgb, var(--color-border) 53%, transparent);
   padding: 0.3rem 0.5rem;

@@ -51,7 +51,7 @@
   font-size: max(11px, calc(0.72rem * var(--block-scale, 1)));
   font-weight: 700;
   color: var(--color-muted);
-  letter-spacing: 0.06em;
+  letter-spacing: var(--letter-spacing-label);
   text-transform: uppercase;
   overflow: hidden;
   text-overflow: ellipsis;

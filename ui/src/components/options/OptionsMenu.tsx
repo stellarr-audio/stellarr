@@ -2,13 +2,7 @@ import { useState } from 'react';
 import { DropdownMenu } from 'radix-ui';
 import { IconButton } from '../common/IconButton';
 import { Tooltip } from '../common/Tooltip';
-import {
-  DotsHorizontalIcon,
-  FrameIcon,
-  CheckIcon,
-  ChevronRightIcon,
-  TrashIcon,
-} from '@radix-ui/react-icons';
+import { TbCheck, TbChevronRight, TbDots, TbSquare, TbTrash } from 'react-icons/tb';
 import { blockPalette } from '../common/colors';
 import { requestSetBlockColor, requestRemoveBlock } from '../../bridge';
 import type { GridBlock } from '../../store';
@@ -33,7 +27,7 @@ export function OptionsMenu({ block }: Props) {
       <Tooltip content="More options">
         <DropdownMenu.Trigger asChild>
           <IconButton
-            icon={<DotsHorizontalIcon width={14} height={14} />}
+            icon={<TbDots />}
             size="sm"
             title="More options"
           />
@@ -53,7 +47,7 @@ export function OptionsMenu({ block }: Props) {
             }}
             className={`${styles.menuItem} ${idCopied ? styles.menuItemCopied : ''}`}
           >
-            {idCopied ? <CheckIcon width={14} height={14} /> : <FrameIcon width={14} height={14} />}
+            {idCopied ? <TbCheck size={14} /> : <TbSquare size={14} />}
             <span>{idCopied ? 'Copied' : 'Copy ID'}</span>
           </DropdownMenu.Item>
 
@@ -69,7 +63,7 @@ export function OptionsMenu({ block }: Props) {
                 }}
               />
               <span style={{ flex: 1 }}>Colour</span>
-              <ChevronRightIcon width={12} height={12} />
+              <TbChevronRight size={12} />
             </DropdownMenu.SubTrigger>
             <DropdownMenu.Portal>
               <DropdownMenu.SubContent sideOffset={4} className={styles.menuSubContent}>
@@ -97,7 +91,7 @@ export function OptionsMenu({ block }: Props) {
             onSelect={() => requestRemoveBlock(block.id)}
             className={`${styles.menuItem} ${styles.menuItemDanger}`}
           >
-            <TrashIcon width={14} height={14} />
+            <TbTrash size={14} />
             <span>Delete block</span>
           </DropdownMenu.Item>
         </DropdownMenu.Content>

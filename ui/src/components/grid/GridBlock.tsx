@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import { useDraggable } from '@dnd-kit/core';
-import { CopyIcon, ExclamationTriangleIcon, SpeakerLoudIcon } from '@radix-ui/react-icons';
+import { TbAlertTriangle, TbCopy, TbVolume } from 'react-icons/tb';
 import { IoCloseSharp } from 'react-icons/io5';
 import type { GridBlock as GridBlockData } from '../../store';
 import { requestCopyBlock, requestRemoveBlock, requestOpenPluginEditor } from '../../bridge';
@@ -132,7 +132,7 @@ export function GridBlockComponent({ block, onEdgeContextMenu }: Props) {
       {/* Top region — status icons (format tag dropped in favour of bigger icons) */}
       <div className={styles.topRegion}>
         {block.pluginMissing && (
-          <ExclamationTriangleIcon width={22} height={22} color={colors.warning} />
+          <TbAlertTriangle size={22} color={colors.warning} />
         )}
       </div>
 
@@ -140,7 +140,7 @@ export function GridBlockComponent({ block, onEdgeContextMenu }: Props) {
           copy / remove buttons (all three sit at the same y). */}
       {block.type === 'input' && block.testTone && (
         <span className={`${styles.iconSlot} ${styles.testToneBadge}`}>
-          <SpeakerLoudIcon width={14} height={14} color={colors.green} />
+          <TbVolume size={14} color={colors.green} />
         </span>
       )}
 
@@ -192,7 +192,7 @@ export function GridBlockComponent({ block, onEdgeContextMenu }: Props) {
           requestCopyBlock(block.id);
         }}
       >
-        <CopyIcon width={14} height={14} />
+        <TbCopy size={14} />
       </div>
 
       {/* Remove button — visible on block hover via CSS */}

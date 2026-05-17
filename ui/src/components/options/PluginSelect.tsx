@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef } from 'react';
 import { Select } from 'radix-ui';
-import { ChevronDownIcon } from '@radix-ui/react-icons';
+import { TbChevronDown } from 'react-icons/tb';
 import type { PluginInfo } from '../../store';
 import { pluginFormatColors } from '../common/colors';
 import { Input } from '../common/Input';
@@ -42,7 +42,7 @@ export function PluginSelect({ plugins, selectedId, onSelect }: Props) {
       >
         <Select.Value placeholder="Select a plugin..." />
         <Select.Icon>
-          <ChevronDownIcon />
+          <TbChevronDown size={16} />
         </Select.Icon>
       </Select.Trigger>
 

@@ -44,8 +44,13 @@ StellarrEditor::StellarrEditor(StellarrProcessor& p)
     // gated from the first frame rather than after the UI finishes loading.
     // Default OFF matches the production-usage-first design rule
     // (CLAUDE.md: dev / debug / experimental surfaces hidden by default).
-    devToolsEnabled = p.getAppProperties()->getUserSettings()
-                       ->getBoolValue("developerModeEnabled", false);
+    // Null-guard the read — getAppProperties() can be nullptr when the
+    // editor is constructed from a test harness or any bootstrap path that
+    // doesn't wire ApplicationProperties before createEditor().
+    devToolsEnabled = false;
+    if (auto* props = p.getAppProperties())
+        if (auto* settings = props->getUserSettings())
+            devToolsEnabled = settings->getBoolValue("developerModeEnabled", false);
 
     bridge.setOnDevToolsToggle([this](bool enabled) { setDevToolsEnabled(enabled); });
 

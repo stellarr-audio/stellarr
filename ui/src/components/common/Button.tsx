@@ -1,7 +1,13 @@
 import styles from './Button.module.css';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'default' | 'secondary' | 'danger';
+  /**
+   * `default` — neutral border, orchid hover (used for plain actions).
+   * `secondary` — neutral border, amber hover (used for cancel-style actions).
+   * `danger` — rose text, rose hover (used for destructive actions).
+   * `primary` — solid orchid fill, white text (used for primary CTAs / form submits).
+   */
+  variant?: 'default' | 'secondary' | 'danger' | 'primary';
   active?: boolean;
   size?: 'default' | 'sm';
 }

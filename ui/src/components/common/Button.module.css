@@ -51,6 +51,21 @@
   background: color-mix(in srgb, var(--color-danger) 8%, transparent);
 }
 
+/* Primary CTA — solid orchid fill, white text. For form submits and other
+   "this is the primary action" buttons. Distinct from `.active`, which is a
+   tinted "this thing is currently selected" treatment. */
+.primary {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: #ffffff;
+}
+
+.primary:hover {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  filter: brightness(1.08);
+}
+
 .active {
   color: var(--color-primary);
   border-color: var(--color-primary);

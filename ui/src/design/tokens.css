@@ -1,7 +1,8 @@
 /*
- * Stellarr design tokens.
- * Locked in Phase 0 — see docs/superpowers/specs/2026-04-15-phase-0-design-direction.md
- * Edit here only; all components consume these tokens.
+ * Stellarr design tokens — the source of truth.
+ * Edit here only; all components consume these tokens via `var(--…)`.
+ * Design-system rules and conventions are documented in CLAUDE.md
+ * under "Design system (UI)".
  */
 
 :root {

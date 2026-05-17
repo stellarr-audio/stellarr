@@ -94,11 +94,12 @@ test-ui: setup
 # Full test suite: UI (Vitest) first because it's faster — a failure here
 # typically signals a broken TypeScript or token change and is the quickest
 # fix-cycle. Then the C++ engine tests (ctest).
-# `$(MAKE) test-ui` is used in the recipe (not as a prereq of `test:`) so
-# the UI tests run sequentially after `debug` is fully built, rather than
-# racing the `debug -> dev-ui -> setup` chain under `make -j test`.
+# UI step is inlined (rather than via a `test-ui` prereq) so it runs
+# sequentially after `debug` is fully built — recipe commands always run
+# in order regardless of `-j`. The duplicate npm install that a recursive
+# `$(MAKE) test-ui` would trigger is avoided.
 test: debug
-	$(MAKE) test-ui
+	cd ui && npm test
 	ctest --test-dir build --output-on-failure
 
 screenshots:

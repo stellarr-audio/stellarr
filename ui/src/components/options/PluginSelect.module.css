@@ -82,7 +82,7 @@
   font-size: 0.85rem;
   font-weight: 700;
   padding: 0.1rem 0.25rem;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--letter-spacing-label);
   text-transform: uppercase;
   flex-shrink: 0;
   margin-left: 0.5rem;

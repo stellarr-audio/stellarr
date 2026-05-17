@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Dialog } from 'radix-ui';
-import { MixerHorizontalIcon } from '@radix-ui/react-icons';
+import { TbAdjustmentsHorizontal } from 'react-icons/tb';
 import { useStore } from '../../store';
 import {
   requestStartMidiLearn,
@@ -181,7 +181,7 @@ export function MidiAssignDialog({
                         }
                         className={`${styles.learnButton} ${learning ? styles.learning : ''}`}
                       >
-                        <MixerHorizontalIcon width={16} height={16} />
+                        <TbAdjustmentsHorizontal size={16} />
                       </button>
                       <Input
                         inGroup

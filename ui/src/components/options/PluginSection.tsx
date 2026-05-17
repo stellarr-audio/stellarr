@@ -1,4 +1,4 @@
-import { GearIcon } from '@radix-ui/react-icons';
+import { TbSettings } from 'react-icons/tb';
 import { IconButton } from '../common/IconButton';
 import { PluginSelect } from './PluginSelect';
 import { requestSetBlockPlugin, requestOpenPluginEditor } from '../../bridge';
@@ -26,7 +26,7 @@ export function PluginSection({ block, availablePlugins }: Props) {
         {block.pluginId && (
           <IconButton
             inGroup
-            icon={<GearIcon width={16} height={16} />}
+            icon={<TbSettings />}
             onClick={() => requestOpenPluginEditor(block.id)}
             title="Plugin Options"
           />

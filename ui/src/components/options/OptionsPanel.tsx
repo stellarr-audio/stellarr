@@ -9,7 +9,7 @@ import { IconButton } from '../common/IconButton';
 import { MidiAssignDialog } from '../common/MidiAssignDialog';
 import { MidiBadge } from '../common/MidiBadge';
 import { TYPE_ABBREVIATIONS } from '../common/constants';
-import { Pencil1Icon, PlayIcon, StopIcon, ChevronDownIcon, CheckIcon } from '@radix-ui/react-icons';
+import { TbCheck, TbChevronDown, TbPencil, TbPlayerPlay, TbPlayerStop } from 'react-icons/tb';
 import { IoCloseSharp } from 'react-icons/io5';
 import { PluginSection } from './PluginSection';
 import { ParametersSection } from './ParametersSection';
@@ -231,7 +231,7 @@ function BlockHeader({ block, onClose, bindDrag }: BlockHeaderProps) {
               className={styles.editInput}
             />
             <IconButton
-              icon={<CheckIcon width={12} height={12} />}
+              icon={<TbCheck />}
               inGroup
               onMouseDown={(e) => {
                 // Prevent the input's blur from firing before onClick.
@@ -250,7 +250,7 @@ function BlockHeader({ block, onClose, bindDrag }: BlockHeaderProps) {
             </span>
             <Tooltip content="Rename block">
               <IconButton
-                icon={<Pencil1Icon width={12} height={12} />}
+                icon={<TbPencil />}
                 size="sm"
                 onClick={startEdit}
                 title="Rename block"
@@ -335,7 +335,7 @@ function TestToneSamplePicker({ blockId, playing }: { blockId: string; playing: 
           <Select.Trigger className={styles.sampleTrigger}>
             <Select.Value />
             <Select.Icon>
-              <ChevronDownIcon />
+              <TbChevronDown size={16} />
             </Select.Icon>
           </Select.Trigger>
           <Select.Portal>
@@ -351,7 +351,7 @@ function TestToneSamplePicker({ blockId, playing }: { blockId: string; playing: 
           </Select.Portal>
         </Select.Root>
         <IconButton
-          icon={playing ? <StopIcon width={14} height={14} /> : <PlayIcon width={14} height={14} />}
+          icon={playing ? <TbPlayerStop /> : <TbPlayerPlay />}
           inGroup
           onClick={() => requestToggleTestTone(blockId)}
           title={playing ? 'Stop test tone' : 'Play test tone'}

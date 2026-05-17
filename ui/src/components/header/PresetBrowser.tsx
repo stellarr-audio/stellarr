@@ -1,13 +1,6 @@
 import { useEffect, useState } from 'react';
 import { DropdownMenu } from 'radix-ui';
-import {
-  CheckIcon,
-  UploadIcon,
-  BookmarkIcon,
-  ChevronDownIcon,
-  DotsHorizontalIcon,
-  Link1Icon,
-} from '@radix-ui/react-icons';
+import { TbBookmark, TbCheck, TbChevronDown, TbDots, TbLink, TbUpload } from 'react-icons/tb';
 import { useStore, sceneRewireRequired } from '../../store';
 import { StarLoader } from '../common/StarLoader';
 import { IconButton } from '../common/IconButton';
@@ -59,7 +52,7 @@ function DropdownTriggerContent({
             aria-label="Loading preset"
           />
         ) : (
-          <ChevronDownIcon width={12} height={12} className={styles.triggerChevron} />
+          <TbChevronDown size={12} className={styles.triggerChevron} />
         )}
       </span>
     </>
@@ -119,7 +112,7 @@ export function PresetBrowser() {
     <div className={styles.container}>
       {/* Open */}
       <IconButton
-        icon={<UploadIcon width={16} height={16} />}
+        icon={<TbUpload />}
         onClick={requestLoadSession}
         title="Open preset"
       />
@@ -135,7 +128,7 @@ export function PresetBrowser() {
         />
         <IconButton
           inGroup
-          icon={<Link1Icon width={16} height={16} />}
+          icon={<TbLink />}
           onClick={() => setPresetMidiOpen(true)}
           title={presetMidi ? `Preset MIDI: PC` : 'Assign MIDI Program Change to presets'}
           className={presetMidi ? styles.sceneMidiBtnAssigned : undefined}
@@ -164,7 +157,7 @@ export function PresetBrowser() {
         />
         <IconButton
           inGroup
-          icon={<Link1Icon width={16} height={16} />}
+          icon={<TbLink />}
           onClick={() => setSceneMidiOpen(true)}
           title={sceneMidi ? `Scene MIDI: ${formatMidiLabel(sceneMidi)}` : 'Assign MIDI to scenes'}
           className={sceneMidi ? styles.sceneMidiBtnAssigned : undefined}
@@ -184,9 +177,9 @@ export function PresetBrowser() {
           inGroup
           icon={
             justSaved ? (
-              <CheckIcon width={16} height={16} />
+              <TbCheck />
             ) : (
-              <BookmarkIcon width={16} height={16} />
+              <TbBookmark />
             )
           }
           onClick={requestSaveSessionQuiet}
@@ -198,7 +191,7 @@ export function PresetBrowser() {
           <DropdownMenu.Trigger asChild>
             <IconButton
               inGroup
-              icon={<ChevronDownIcon width={12} height={12} />}
+              icon={<TbChevronDown />}
               title="Save options"
               className={styles.saveChevron}
             />
@@ -355,7 +348,7 @@ function PresetDropdown({
                   </MenuItem>
                   <DropdownMenu.Sub>
                     <DropdownMenu.SubTrigger className={styles.subTrigger}>
-                      <DotsHorizontalIcon width={14} height={14} />
+                      <TbDots size={14} />
                     </DropdownMenu.SubTrigger>
                     <DropdownMenu.Portal>
                       <DropdownMenu.SubContent sideOffset={4} className={styles.subContent}>
@@ -499,7 +492,7 @@ function SceneDropdown({
                 </MenuItem>
                 <DropdownMenu.Sub>
                   <DropdownMenu.SubTrigger className={styles.subTrigger}>
-                    <DotsHorizontalIcon width={14} height={14} />
+                    <TbDots size={14} />
                   </DropdownMenu.SubTrigger>
                   <DropdownMenu.Portal>
                     <DropdownMenu.SubContent sideOffset={4} className={styles.subContent}>

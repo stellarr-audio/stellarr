@@ -44,10 +44,10 @@
 
 .danger {
   color: var(--color-danger);
+  border-color: var(--color-danger);
 }
 
 .danger:hover {
-  border-color: var(--color-danger);
   background: color-mix(in srgb, var(--color-danger) 8%, transparent);
 }
 

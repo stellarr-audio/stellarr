@@ -18,7 +18,7 @@ import {
   requestDeleteScene,
 } from '../../bridge';
 import { ensureSafeBasename } from '../../utils/filename';
-import { SceneRenameDialog } from './SceneRenameDialog';
+import { RenameDialog } from './RenameDialog';
 import { ConfirmDialog } from './ConfirmDialog';
 import { MidiAssignDialog } from '../common/MidiAssignDialog';
 import { formatMidiLabel } from '../common/constants';
@@ -276,7 +276,7 @@ function PresetDropdown({
 
   return (
     <>
-      <SceneRenameDialog
+      <RenameDialog
         open={renameOpen}
         onOpenChange={setRenameOpen}
         title="Rename Preset"
@@ -437,9 +437,10 @@ function SceneDropdown({
 
   return (
     <>
-      <SceneRenameDialog
+      <RenameDialog
         open={renameOpen}
         onOpenChange={setRenameOpen}
+        title="Rename Scene"
         value={renameValue}
         onChange={setRenameValue}
         onSubmit={submitRename}

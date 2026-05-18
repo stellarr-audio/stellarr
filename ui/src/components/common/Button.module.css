@@ -53,16 +53,18 @@
 
 /* Primary CTA — solid orchid fill, white text. For form submits and other
    "this is the primary action" buttons. Distinct from `.active`, which is a
-   tinted "this thing is currently selected" treatment. */
+   tinted "this thing is currently selected" treatment. Uses --color-accent-
+   solid (a slightly darker orchid in dark mode) so the white foreground
+   keeps AA contrast on either theme. */
 .primary {
-  background: var(--color-primary);
-  border-color: var(--color-primary);
+  background: var(--color-accent-solid);
+  border-color: var(--color-accent-solid);
   color: var(--color-on-primary);
 }
 
 .primary:hover:not(:disabled) {
-  background: var(--color-primary);
-  border-color: var(--color-primary);
+  background: var(--color-accent-solid);
+  border-color: var(--color-accent-solid);
   filter: brightness(1.08);
 }
 

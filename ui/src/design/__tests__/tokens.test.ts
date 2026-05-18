@@ -124,6 +124,11 @@ describe('palette tokens — light theme', () => {
     document.documentElement.removeAttribute('data-theme');
     expect(getVar('--on-primary').toLowerCase()).toBe('#ffffff');
   });
+
+  it('exposes --accent-solid as orchid-600 in light theme', () => {
+    document.documentElement.removeAttribute('data-theme');
+    expect(getVar('--accent-solid').toLowerCase()).toBe('#c026d3');
+  });
 });
 
 describe('palette tokens — dark theme', () => {
@@ -156,8 +161,13 @@ describe('palette tokens — dark theme', () => {
     expect(getVar('--secondary-outline').toLowerCase()).toBe('#d97706');
   });
 
-  it('exposes --on-primary as grey-900 in dark theme (WCAG AA on bright orchid)', () => {
+  it('exposes --on-primary as white in dark theme (paired with darker --accent-solid)', () => {
     document.documentElement.setAttribute('data-theme', 'dark');
-    expect(getVar('--on-primary').toLowerCase()).toBe('#1c1e22');
+    expect(getVar('--on-primary').toLowerCase()).toBe('#ffffff');
+  });
+
+  it('exposes --accent-solid as orchid-700 in dark theme (white text reads ~6.3:1 AA)', () => {
+    document.documentElement.setAttribute('data-theme', 'dark');
+    expect(getVar('--accent-solid').toLowerCase()).toBe('#a21caf');
   });
 });

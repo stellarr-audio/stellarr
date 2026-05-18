@@ -25,6 +25,9 @@ interface TablistProps {
   stretch?: boolean;
   /** Active-tab accent. Primary (orchid) for nav; secondary (amber) for inline mode switches. */
   accent?: 'primary' | 'secondary';
+  /** Icon-only tabs — each tab collapses to a square 32x32 (--input-height). For chrome
+      nav rows where the labels live in tooltips rather than the tab itself. */
+  iconOnly?: boolean;
   className?: string;
   'aria-label'?: string;
 }
@@ -35,6 +38,7 @@ export function Tablist({
   children,
   stretch,
   accent = 'primary',
+  iconOnly,
   className,
   'aria-label': ariaLabel,
 }: TablistProps) {
@@ -64,6 +68,7 @@ export function Tablist({
     styles.tablist,
     stretch && styles.stretch,
     accent === 'secondary' && styles.accentSecondary,
+    iconOnly && styles.iconOnly,
     className,
   ]
     .filter(Boolean)
@@ -123,6 +128,12 @@ export const Tab = forwardRef<HTMLButtonElement, TabProps>(function Tab(
       onKeyDown={handleKeyDown}
       className={cls}
     >
+      {/* Reticle corners for icon-only nav. Two corners come from CSS
+          ::before/::after on the tab; the other two need real DOM nodes
+          (only two pseudo-elements per element). All four hidden unless
+          the parent Tablist is in `iconOnly` mode AND the tab is active. */}
+      <span aria-hidden="true" className={styles.reticleTR} />
+      <span aria-hidden="true" className={styles.reticleBL} />
       {children}
     </button>
   );

@@ -133,7 +133,8 @@
 [data-theme="light"] {
   --accent:            var(--orchid-600);   /* #c026d3 */
   --accent-text:       var(--orchid-700);   /* #a21caf */
-  --on-primary:        #ffffff;             /* foreground on solid --accent CTAs — ~4.7:1 on orchid-600 */
+  --accent-solid:      var(--orchid-600);   /* #c026d3 — background for solid orchid CTAs (Button .primary, Tablist active tab). Matches --accent on light. */
+  --on-primary:        #ffffff;             /* foreground on --accent-solid CTAs — ~4.7:1 on orchid-600 (light), ~6.3:1 on orchid-700 (dark) */
   --secondary:         var(--amber-500);    /* #f59e0b */
   --secondary-text:    var(--amber-700);    /* #b45309 — darker amber that reads well on white */
   --secondary-outline: var(--amber-700);    /* #b45309 — darker amber outline */
@@ -177,7 +178,8 @@
 [data-theme="dark"] {
   --accent:            var(--orchid-500);   /* #d946ef — brighter, carries glow */
   --accent-text:       var(--orchid-300);   /* #f0abfc */
-  --on-primary:        var(--grey-900);     /* #1c1e22 — dark text on bright orchid (~5.8:1, white would fail AA at ~3.5:1) */
+  --accent-solid:      var(--orchid-700);   /* #a21caf — darker orchid for solid CTAs so white text stays at ~6.3:1 (AA strong). Bright --accent still used everywhere else (hover tints, selected text, borders). */
+  --on-primary:        #ffffff;             /* foreground on --accent-solid CTAs — white reads on orchid-700 */
   --secondary:         var(--amber-400);    /* #fbbf24 */
   --secondary-text:    var(--amber-400);    /* same as --secondary on dark — already reads well */
   --secondary-outline: var(--amber-600);    /* #d97706 — darker amber outline; reads on dark navy */

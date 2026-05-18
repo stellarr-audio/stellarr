@@ -17,6 +17,7 @@
   --color-divider:    var(--divider);
 
   --color-primary:            var(--accent);
+  --color-accent-solid:       var(--accent-solid);
   --color-on-primary:         var(--on-primary);
   --color-secondary:          var(--secondary);
   --color-secondary-text:     var(--secondary-text);

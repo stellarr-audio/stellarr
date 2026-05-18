@@ -49,12 +49,14 @@
   transform: translateY(0.5px);
 }
 
-/* Active tab — default primary (orchid). */
+/* Active tab — solid orchid fill. --color-accent-solid is a slightly
+   darker orchid in dark mode so the white foreground keeps strong AA
+   contrast (~6.3:1) on both themes. */
 .tabActive,
 .tabActive:hover,
 .tabActive:focus-visible {
-  background: var(--color-primary);
-  color: #ffffff;
+  background: var(--color-accent-solid);
+  color: var(--color-on-primary);
 }
 
 /* Secondary accent variant — unified "selected" style: 2px amber ring
@@ -76,4 +78,97 @@
 
 .stretch .tab {
   flex: 1;
+}
+
+/* Icon-only nav: 40x40 tabs, no outer frame, no left-divider, active state
+   is a four-corner reticle frame instead of a solid orchid fill. Reads as
+   "section navigation" rather than "yet another IconButton". Used by the
+   App header's main nav (Grid · Tuner · MIDI · System). */
+.iconOnly {
+  border: none;
+  overflow: visible;
+  gap: 6px;
+  height: auto;
+}
+
+.iconOnly .tab {
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  padding: 0;
+  gap: 0;
+  border-left: none;
+}
+
+/* Hover (inactive): icon brightens to orchid + a faint amber background
+   tint. Icon shares the colour story with the active reticle; the amber
+   tint matches the chrome convention used by IconButton / Tag / Select.
+   Reads as "hoverable nav" without imitating the active state too closely. */
+.iconOnly .tab:not(.tabActive):hover {
+  background: color-mix(in srgb, var(--color-secondary) 8%, transparent);
+  color: var(--color-primary);
+}
+
+/* Focus-visible mirrors hover for inactive tabs. */
+.iconOnly .tab:not(.tabActive):focus-visible {
+  background: color-mix(in srgb, var(--color-secondary) 8%, transparent);
+  color: var(--color-primary);
+}
+
+/* Active reticle — four 8px corner brackets, 2px stroke, 2px inset from
+   the tab's edges, in --color-primary. Replaces the default solid-fill
+   active style. Icon also brightens to --color-primary so brackets + icon
+   both signal "this is the current section". */
+.iconOnly .tabActive,
+.iconOnly .tabActive:hover,
+.iconOnly .tabActive:focus-visible {
+  background: transparent;
+  color: var(--color-primary);
+}
+
+.iconOnly .tabActive::before,
+.iconOnly .tabActive::after,
+.iconOnly .tabActive > .reticleTR,
+.iconOnly .tabActive > .reticleBL {
+  content: "";
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-color: var(--color-primary);
+  border-style: solid;
+  pointer-events: none;
+}
+
+.iconOnly .tabActive::before {
+  top: 2px;
+  left: 2px;
+  border-width: 2px 0 0 2px;
+}
+
+.iconOnly .tabActive::after {
+  bottom: 2px;
+  right: 2px;
+  border-width: 0 2px 2px 0;
+}
+
+/* The other two corners can only be rendered via real DOM elements
+   (an element has at most two pseudo-elements). Tab.tsx adds two spans
+   styled by these rules; they are invisible unless .tabActive is on. */
+.reticleTR,
+.reticleBL {
+  display: none;
+}
+
+.iconOnly .tabActive > .reticleTR {
+  display: block;
+  top: 2px;
+  right: 2px;
+  border-width: 2px 2px 0 0;
+}
+
+.iconOnly .tabActive > .reticleBL {
+  display: block;
+  bottom: 2px;
+  left: 2px;
+  border-width: 0 0 2px 2px;
 }

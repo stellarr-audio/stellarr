@@ -98,6 +98,7 @@ function App() {
             onChange={handleTabChange}
             aria-label="Main navigation"
             className={styles.headerTablist}
+            iconOnly
           >
             <Tooltip content="Grid" side="bottom">
               <Tab id="grid" title="Grid">

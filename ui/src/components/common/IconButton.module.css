@@ -82,6 +82,7 @@
 .primary:hover:not(:disabled) {
   background: var(--color-accent-solid);
   border-color: var(--color-accent-solid);
+  color: var(--color-on-primary);
   filter: brightness(1.08);
 }
 

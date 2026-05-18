@@ -6,8 +6,14 @@ interface IconButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> 
   /** When true, strips border/radius for use inside an InputGroup. */
   inGroup?: boolean;
   size?: 'default' | 'sm';
-  variant?: 'default' | 'danger';
-  /** When true, applies orchid-primary active state styling. */
+  /**
+   * `default` — neutral border, amber hover (standard icon action).
+   * `danger` — rose glyph + rose hover (destructive / close affordance).
+   * `primary` — solid orchid fill + white glyph (icon equivalent of
+   * `<Button variant="primary">` — for primary-CTA-style icon buttons).
+   */
+  variant?: 'default' | 'danger' | 'primary';
+  /** When true, applies the orchid "currently selected" tint (different from `variant="primary"`'s solid fill). */
   active?: boolean;
 }
 

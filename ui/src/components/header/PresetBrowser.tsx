@@ -352,12 +352,7 @@ function PresetDropdown({
                     </DropdownMenu.SubTrigger>
                     <DropdownMenu.Portal>
                       <DropdownMenu.SubContent sideOffset={4} className={styles.subContent}>
-                        <MenuItem
-                          onSelect={(e) => {
-                            e.preventDefault();
-                            startRename(i);
-                          }}
-                        >
+                        <MenuItem onSelect={() => startRename(i)}>
                           Rename
                         </MenuItem>
                         <MenuItem
@@ -496,12 +491,7 @@ function SceneDropdown({
                   </DropdownMenu.SubTrigger>
                   <DropdownMenu.Portal>
                     <DropdownMenu.SubContent sideOffset={4} className={styles.subContent}>
-                      <MenuItem
-                        onSelect={(e) => {
-                          e.preventDefault();
-                          startRename(i);
-                        }}
-                      >
+                      <MenuItem onSelect={() => startRename(i)}>
                         Rename
                       </MenuItem>
                       {scenes.length > 1 && (

@@ -228,7 +228,12 @@ void StellarrBridge::setProcessor(StellarrProcessor* proc)
             [this]() { midi->emitMidiMappings(); },
             // stopAllTestTones: stop any active test tone when developer mode
             // is disabled so tones do not play silently with no UI to stop them.
-            [this]() { input->stopAllTestTones(); }
+            [this]() { input->stopAllTestTones(); },
+            // setDevToolsEnabled: route developer-mode toggle to the editor so
+            // the WebView's Inspect Element + right-click context menu can be
+            // gated by the same setting. StellarrEditor installs the callback
+            // via setOnDevToolsToggle during construction.
+            [this](bool enabled) { if (onDevToolsToggle) onDevToolsToggle(enabled); }
         });
 
         sessionSerializer.emplace(stellarr::bridge::SessionSerializerContext {

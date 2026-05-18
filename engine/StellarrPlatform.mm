@@ -21,7 +21,7 @@ static WKWebView* findWebView(NSView* view)
     return nil;
 }
 
-void stellarrMakeWebViewInspectable(void* nativeView)
+void stellarrInitWebView(void* nativeView)
 {
     if (nativeView == nullptr)
         return;
@@ -31,13 +31,22 @@ void stellarrMakeWebViewInspectable(void* nativeView)
 
     if (webView != nil)
     {
-        if ([webView respondsToSelector:@selector(setInspectable:)])
-            [webView setInspectable:YES];
-
         // Prevent white flash while page loads
         [webView setValue:@NO forKey:@"drawsBackground"];
         webView.enclosingScrollView.backgroundColor = [NSColor colorWithRed:0.05 green:0.04 blue:0.1 alpha:1.0];
     }
+}
+
+void stellarrSetWebViewInspectable(void* nativeView, bool enabled)
+{
+    if (nativeView == nullptr)
+        return;
+
+    NSView* view = (__bridge NSView*)nativeView;
+    WKWebView* webView = findWebView(view);
+
+    if (webView != nil && [webView respondsToSelector:@selector(setInspectable:)])
+        [webView setInspectable:(enabled ? YES : NO)];
 }
 
 juce::File stellarrGetBundleResource(const juce::String& subpath)

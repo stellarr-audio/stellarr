@@ -348,6 +348,9 @@ void PresetHandler::handleSetDeveloperMode(const juce::var& json)
     if (! enabled)
         ctx.stopAllTestTones();
 
+    if (ctx.setDevToolsEnabled)
+        ctx.setDevToolsEnabled(enabled);
+
     auto* detail = new juce::DynamicObject();
     detail->setProperty("enabled", enabled);
     ctx.emit.emit(events::SettingsDeveloperModeState, detail);

@@ -48,6 +48,15 @@ public:
     bool isTunerActive() const { return input ? input->isTunerActive() : false; }
     void setOnUiReady(std::function<void()> callback) { onUiReady = std::move(callback); }
 
+    // Wired by StellarrEditor so that PresetHandler's developer-mode toggle
+    // can flip the WebView's Inspect Element availability + right-click
+    // context-menu interception. Invoked from PresetHandler via the bridge
+    // context callback.
+    void setOnDevToolsToggle(std::function<void(bool)> callback)
+    {
+        onDevToolsToggle = std::move(callback);
+    }
+
     // Test accessors — delegate to PresetHandler which now owns the
     // preset-tracking state. preset is emplaced iff processor != nullptr;
     // tests always set the processor before reading these so the optional
@@ -132,6 +141,7 @@ private:
     juce::var clipboardJson;
 
     std::function<void()> onUiReady;
+    std::function<void(bool)> onDevToolsToggle;
 
     juce::String selectedBlockId;
     juce::String lufsWindow { "shortTerm" }; // "shortTerm" or "momentary"

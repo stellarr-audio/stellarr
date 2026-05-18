@@ -3,7 +3,7 @@ import { Dialog } from 'radix-ui';
 import { Input } from '../common/Input';
 import { Button } from '../common/Button';
 import { sanitiseFilesystemName } from '../../utils/filename';
-import styles from './SceneRenameDialog.module.css';
+import styles from './RenameDialog.module.css';
 
 interface Props {
   open: boolean;
@@ -14,10 +14,17 @@ interface Props {
   onSubmit: () => void;
 }
 
-export function SceneRenameDialog({
+/**
+ * Generic rename dialog shared by Preset and Scene rename flows in
+ * PresetBrowser. Provides a focused, sanitised text input with the caret
+ * at the end of the existing name on open, and a Cancel / Rename button row.
+ * Filesystem-unsafe characters are stripped from the input on the fly via
+ * `sanitiseFilesystemName`.
+ */
+export function RenameDialog({
   open,
   onOpenChange,
-  title = 'Rename Scene',
+  title = 'Rename',
   value,
   onChange,
   onSubmit,

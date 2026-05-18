@@ -17,6 +17,7 @@ import {
   requestRenameScene,
   requestDeleteScene,
 } from '../../bridge';
+import { ensureSafeBasename } from '../../utils/filename';
 import { SceneRenameDialog } from './SceneRenameDialog';
 import { ConfirmDialog } from './ConfirmDialog';
 import { MidiAssignDialog } from '../common/MidiAssignDialog';
@@ -251,8 +252,9 @@ function PresetDropdown({
   };
 
   const submitRename = () => {
-    if (renameValue.trim()) {
-      requestRenamePreset(renamingIndex, renameValue.trim());
+    const trimmed = renameValue.trim();
+    if (trimmed) {
+      requestRenamePreset(renamingIndex, ensureSafeBasename(trimmed));
     }
     setRenameOpen(false);
   };
@@ -352,12 +354,7 @@ function PresetDropdown({
                     </DropdownMenu.SubTrigger>
                     <DropdownMenu.Portal>
                       <DropdownMenu.SubContent sideOffset={4} className={styles.subContent}>
-                        <MenuItem
-                          onSelect={(e) => {
-                            e.preventDefault();
-                            startRename(i);
-                          }}
-                        >
+                        <MenuItem onSelect={() => startRename(i)}>
                           Rename
                         </MenuItem>
                         <MenuItem
@@ -418,8 +415,9 @@ function SceneDropdown({
   };
 
   const submitRename = () => {
-    if (renameValue.trim()) {
-      requestRenameScene(renamingIndex, renameValue.trim());
+    const trimmed = renameValue.trim();
+    if (trimmed) {
+      requestRenameScene(renamingIndex, ensureSafeBasename(trimmed));
     }
     setRenameOpen(false);
   };
@@ -496,12 +494,7 @@ function SceneDropdown({
                   </DropdownMenu.SubTrigger>
                   <DropdownMenu.Portal>
                     <DropdownMenu.SubContent sideOffset={4} className={styles.subContent}>
-                      <MenuItem
-                        onSelect={(e) => {
-                          e.preventDefault();
-                          startRename(i);
-                        }}
-                      >
+                      <MenuItem onSelect={() => startRename(i)}>
                         Rename
                       </MenuItem>
                       {scenes.length > 1 && (

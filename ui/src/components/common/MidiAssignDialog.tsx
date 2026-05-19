@@ -12,6 +12,7 @@ import { PROGRAM_CHANGE_CC } from './constants';
 import { ContinuousShaping, type ShapingState } from './ContinuousShaping';
 import { BinaryShaping } from './BinaryShaping';
 import { Button } from './Button';
+import { IconButton } from './IconButton';
 import { Input } from './Input';
 import { Select } from './Select';
 import { TARGET_META } from './shaping/targetMeta';
@@ -156,7 +157,10 @@ export function MidiAssignDialog({
                   <div className={styles.fieldGroupFlex}>
                     <span className={styles.fieldLabel}>CC Number</span>
                     <div className={`${styles.ccInputWrap} ${learning ? styles.learning : ''}`}>
-                      <button
+                      <IconButton
+                        inGroup
+                        variant={learning ? 'primary' : 'default'}
+                        icon={<TbAdjustmentsHorizontal />}
                         onClick={() => {
                           if (learning) requestCancelMidiLearn();
                           else {
@@ -179,10 +183,7 @@ export function MidiAssignDialog({
                             ? 'Cancel MIDI learn'
                             : 'Learn — send a CC from your controller to auto-detect'
                         }
-                        className={`${styles.learnButton} ${learning ? styles.learning : ''}`}
-                      >
-                        <TbAdjustmentsHorizontal size={16} />
-                      </button>
+                      />
                       <Input
                         inGroup
                         mono

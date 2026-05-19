@@ -70,6 +70,22 @@
   background: color-mix(in srgb, var(--color-primary) 8%, transparent);
 }
 
+/* Primary CTA — solid orchid fill + white glyph. Icon-button equivalent of
+   <Button variant="primary">. --color-accent-solid is a darker orchid in
+   dark mode so the white glyph keeps strong contrast on either theme. */
+.primary {
+  background: var(--color-accent-solid);
+  border-color: var(--color-accent-solid);
+  color: var(--color-on-primary);
+}
+
+.primary:hover:not(:disabled) {
+  background: var(--color-accent-solid);
+  border-color: var(--color-accent-solid);
+  color: var(--color-on-primary);
+  filter: brightness(1.08);
+}
+
 /* Disabled — at-limit state for zoom buttons, etc. Suppresses hover so the
    button no longer reads as interactive. */
 .button:disabled,

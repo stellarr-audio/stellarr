@@ -1,3 +1,11 @@
+// react-scan — runtime "why did this re-render" instrumentation. Loaded
+// dynamically inside the dev-only gate so the production bundle
+// tree-shakes the package out entirely. Workflow + verification grep
+// documented in CLAUDE.md → "How to profile React renders".
+if (import.meta.env.DEV) {
+  void import('react-scan').then(({ scan }) => scan({ enabled: true }));
+}
+
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import './design/tokens.css';

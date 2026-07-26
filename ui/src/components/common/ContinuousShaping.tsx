@@ -79,6 +79,7 @@ function ParamInput({ meta, value, onCommit }: ParamInputProps) {
   return (
     <Input
       inGroup
+      mono
       type="number"
       min={meta.paramInputMin}
       max={meta.paramInputMax}
@@ -142,6 +143,7 @@ export function ContinuousShaping({ meta, state, onChange }: Props) {
       <InputGroupLabel className={styles.minMaxPrefix}>{label}</InputGroupLabel>
       <Input
         inGroup
+        mono
         type="number"
         min={0}
         max={127}
